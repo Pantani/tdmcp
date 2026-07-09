@@ -331,6 +331,58 @@ where one `disorder` knob morphs it from a perfect grid (0) into full tumbling c
 so the scatter is stable and reproducible. Georg Nees' 1968 "Schotter" as one
 automatable parameter, entirely procedural.*
 
+## RayTK toolkit (node-graph SDF)
+
+RayTK ([t3kt/raytk](https://github.com/t3kt/raytk)) is the community raymarching /
+signed-distance-field toolkit. These prompts build an **editable RayTK node graph**
+(SDF primitives → combine → material → camera → renderer) from RayTK's real operator
+(ROP) masters — the node-graph-native complement to the self-contained GLSL
+`create_raymarch_scene` above. RayTK is an external package: the tools require it
+**staged + loaded** first, and RayTK 0.46 needs **TouchDesigner 2025.30770+** (pin
+`build-045` for 2023.x builds). Anything needing a live cook stays
+**UNVERIFIED-pending-td** — with the toolkit absent the tools fail forward with a
+"stage & load RayTK first" message instead of a false render.
+
+> *"Check whether my TouchDesigner build can run the latest RayTK, then stage the
+> toolkit so I can use its operators."*
+
+```bash
+tdmcp-agent manage_packages --params '{"action":"doctor","package_id":"raytk"}'
+tdmcp-agent manage_packages --params '{"action":"install","package_id":"raytk","dry_run":false,"yes":true}'
+```
+
+*`manage_packages doctor raytk` reads the live TD build and reports the version gate
+(`ok` on 2025.30770+, a `warning` naming the required build otherwise), then `install`
+stages the `.tox` under `~/.tdmcp/packages`. It never runs third-party scripts — load
+the staged `.tox` in TouchDesigner before building a scene.*
+
+> *"Build me a real RayTK raymarch scene — a sphere unioned with a box, give it a
+> material, and add a light — as a node graph I can keep editing."*
+
+```bash
+tdmcp-agent raytk-scene --params '{"sdf_primitive":"sphereSdf","union_with":"boxSdf","material":true,"add_light":true}'
+```
+
+*`create_raytk_scene` copies RayTK's actual ROP masters (`sphereSdf`, `boxSdf`,
+`simpleUnion`, `basicMat`, `pointLight`, `raymarchRender3D`) and wires the minimal
+renderable chain, terminating in a Null TOP. Because these are live operators, you
+can keep tweaking the network by hand afterward — unlike the monolithic GLSL path.
+The renderer compiles its shader on a background thread, so the first preview may be
+pre-compile; do a live cook-wait before trusting the frame.*
+
+> *"Add a lookAtCamera to my RayTK scene and wire it into the renderer's camera
+> input."*
+
+```bash
+tdmcp-agent raytk-op --params '{"op_type":"lookAtCamera","category":"camera","parent_path":"/project1/raytk_scene_sphereSdf","connect_from":"/project1/raytk_scene_sphereSdf/render1","input_index":1}'
+```
+
+*`create_raytk_op` instances any single RayTK ROP by name and optionally wires an
+existing op into one of its 0-based typed inputs (for `raymarchRender3D`: 0=scene,
+1=camera, 2=light). The install-dependent master path is probed live, never
+hardcoded, and repeated calls auto-place to the right of existing siblings. Browse
+the full operator taxonomy via the `tdmcp://raytk/operators` catalog resource.*
+
 ## Artist studies & installations
 
 These prompts are for visual artists first: gallery loops, stage images, camera

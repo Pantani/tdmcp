@@ -344,6 +344,60 @@ posição, rotação e escala por célula, cada um hasheado do índice da célul
 estável e reproduzível. É o "Schotter" de Georg Nees (1968) como um parâmetro ao vivo
 automatizável, inteiramente procedural.*
 
+## Toolkit RayTK (SDF por node-graph)
+
+O RayTK ([t3kt/raytk](https://github.com/t3kt/raytk)) é o toolkit de raymarching /
+signed-distance-field da comunidade. Estes prompts constroem um **node-graph RayTK
+editável** (primitivas SDF → combine → material → câmera → renderer) a partir dos
+masters de operador (ROP) reais do RayTK — o complemento node-graph-native ao
+`create_raymarch_scene` em GLSL autossuficiente acima. RayTK é um pacote externo: as
+ferramentas exigem ele **staged + carregado** antes, e o RayTK 0.46 precisa do
+**TouchDesigner 2025.30770+** (fixe `build-045` para builds 2023.x). Qualquer coisa
+que precise de cook ao vivo permanece **UNVERIFIED-pending-td** — sem o toolkit as
+ferramentas fazem fail-forward com a mensagem "stage & load RayTK first" em vez de um
+render falso.
+
+> *"Verifique se meu build do TouchDesigner roda o RayTK mais recente, depois faça o
+> stage do toolkit para eu usar os operadores dele."*
+
+```bash
+tdmcp-agent manage_packages --params '{"action":"doctor","package_id":"raytk"}'
+tdmcp-agent manage_packages --params '{"action":"install","package_id":"raytk","dry_run":false,"yes":true}'
+```
+
+*`manage_packages doctor raytk` lê o build ao vivo do TD e reporta o version gate
+(`ok` no 2025.30770+, um `warning` nomeando o build necessário caso contrário), depois
+`install` faz o stage do `.tox` em `~/.tdmcp/packages`. Ele nunca roda scripts de
+terceiros — carregue o `.tox` staged no TouchDesigner antes de construir uma cena.*
+
+> *"Construa uma cena de raymarch RayTK de verdade — uma esfera unida a um box, com
+> material e uma luz — como um node graph que eu posso continuar editando."*
+
+```bash
+tdmcp-agent raytk-scene --params '{"sdf_primitive":"sphereSdf","union_with":"boxSdf","material":true,"add_light":true}'
+```
+
+*`create_raytk_scene` copia os masters de ROP reais do RayTK (`sphereSdf`, `boxSdf`,
+`simpleUnion`, `basicMat`, `pointLight`, `raymarchRender3D`) e conecta a cadeia
+renderizável mínima, terminando num Null TOP. Como são operadores ao vivo, você pode
+continuar ajustando a rede à mão depois — diferente do caminho GLSL monolítico. O
+renderer compila o shader numa thread em segundo plano, então o primeiro preview pode
+ser pré-compilação; faça um cook-wait ao vivo antes de confiar no frame.*
+
+> *"Adicione uma lookAtCamera à minha cena RayTK e ligue-a na entrada de câmera do
+> renderer."*
+
+```bash
+tdmcp-agent raytk-op --params '{"op_type":"lookAtCamera","category":"camera","parent_path":"/project1/raytk_scene_sphereSdf","connect_from":"/project1/raytk_scene_sphereSdf/render1","input_index":1}'
+```
+
+*`create_raytk_op` instancia qualquer ROP RayTK isolado pelo nome e opcionalmente
+conecta um op existente numa das suas entradas tipadas 0-based (para
+`raymarchRender3D`: 0=scene, 1=câmera, 2=luz). O master path, dependente da
+instalação, é probado ao vivo, nunca hardcoded, e chamadas repetidas se auto-posicionam
+à direita dos irmãos existentes. Explore a taxonomia completa de operadores pelo
+recurso de catálogo `tdmcp://raytk/operators`.*
+
 ## Estudos artísticos & instalações
 
 Estes prompts são para artistas visuais primeiro: loops de galeria, imagens de
