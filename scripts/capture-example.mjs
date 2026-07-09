@@ -90,6 +90,48 @@ ${presetList}`;
 }
 
 export function resolveCaptureOptions(argv = process.argv.slice(2)) {
+  const { presetName, preset } = resolvePreset(argv);
+  return {
+    ...resolveCaptureIdentity(argv, presetName),
+    ...resolveCaptureTiming(argv, preset),
+    ...resolveCaptureDimensions(argv, preset),
+    ...resolveVerificationOptions(argv, preset),
+  };
+}
+
+function resolveCaptureIdentity(argv, presetName) {
+  return {
+    node: arg(argv, "node"),
+    out: arg(argv, "out"),
+    preset: presetName,
+    host: arg(argv, "host", "127.0.0.1:9980"),
+    contactSheet: arg(argv, "contact-sheet"),
+  };
+}
+
+function resolveCaptureTiming(argv, preset) {
+  return {
+    ...resolveFrameStepTiming(argv, preset),
+    ...resolveEncodeTiming(argv, preset),
+  };
+}
+
+function resolveFrameStepTiming(argv, preset) {
+  return {
+    frames: numberArg(argv, "frames", preset?.frames ?? 40),
+    step: numberArg(argv, "step", preset?.step ?? 2),
+    warmupFrames: numberArg(argv, "warmup-frames", preset?.warmupFrames ?? 0),
+  };
+}
+
+function resolveEncodeTiming(argv, preset) {
+  return {
+    fps: numberArg(argv, "fps", preset?.fps ?? 16),
+    delayMs: numberArg(argv, "delay-ms", preset?.delayMs ?? 0),
+  };
+}
+
+function resolvePreset(argv) {
   const presetName = arg(argv, "preset");
   const preset = presetName ? PRESETS[presetName] : undefined;
   if (presetName && !preset) {
@@ -97,34 +139,29 @@ export function resolveCaptureOptions(argv = process.argv.slice(2)) {
       `Unknown --preset ${JSON.stringify(presetName)}. Known presets: ${Object.keys(PRESETS).join(", ")}`,
     );
   }
+  return { presetName, preset };
+}
 
-  const fallbackWidth = preset?.width ?? 480;
-  const size = arg(argv, "size");
-  const node = arg(argv, "node");
-  const out = arg(argv, "out");
+function resolveVerificationOptions(argv, preset) {
+  const allowStill = hasFlag(argv, "allow-still");
   const verify = hasFlag(argv, "no-verify")
     ? false
     : hasFlag(argv, "verify") || Boolean(preset?.verify);
-  const allowStill = hasFlag(argv, "allow-still");
-  const width = numberArg(argv, "width", size ?? fallbackWidth);
-
   return {
-    node,
-    out,
-    preset: presetName,
-    frames: numberArg(argv, "frames", preset?.frames ?? 40),
-    step: numberArg(argv, "step", preset?.step ?? 2),
-    width,
-    height: numberArg(argv, "height", size ?? preset?.height ?? width),
-    fps: numberArg(argv, "fps", preset?.fps ?? 16),
-    host: arg(argv, "host", "127.0.0.1:9980"),
-    delayMs: numberArg(argv, "delay-ms", preset?.delayMs ?? 0),
-    warmupFrames: numberArg(argv, "warmup-frames", preset?.warmupFrames ?? 0),
     verify,
     motionMinUnique: allowStill
       ? 1
       : numberArg(argv, "motion-min-unique", preset?.motionMinUnique ?? (verify ? 2 : 1)),
-    contactSheet: arg(argv, "contact-sheet"),
+  };
+}
+
+function resolveCaptureDimensions(argv, preset) {
+  const size = arg(argv, "size");
+  const fallbackWidth = preset?.width ?? 480;
+  const width = numberArg(argv, "width", size ?? fallbackWidth);
+  return {
+    width,
+    height: numberArg(argv, "height", size ?? preset?.height ?? width),
   };
 }
 
@@ -293,22 +330,39 @@ function encodeFrames({ dir, out, fps }) {
 }
 
 async function main(argv = process.argv.slice(2)) {
+  if (handleImmediateCommand(argv)) return;
+
+  const options = resolveCaptureOptions(argv);
+  if (printCapturePlan(argv, options)) return;
+  validateCaptureTarget(options);
+  await captureAndEncode(options);
+}
+
+function handleImmediateCommand(argv) {
   if (hasFlag(argv, "help") || hasFlag(argv, "h")) {
     console.log(usage());
-    return;
+    return true;
   }
   if (hasFlag(argv, "list-presets")) {
     console.log(JSON.stringify(PRESETS, null, 2));
-    return;
+    return true;
   }
+  return false;
+}
 
-  const options = resolveCaptureOptions(argv);
+function printCapturePlan(argv, options) {
   if (hasFlag(argv, "print-plan")) {
     console.log(JSON.stringify(options, null, 2));
-    return;
+    return true;
   }
-  if (!options.node || !options.out) throw new Error(`${usage()}\n\nMissing --node or --out.`);
+  return false;
+}
 
+function validateCaptureTarget(options) {
+  if (!options.node || !options.out) throw new Error(`${usage()}\n\nMissing --node or --out.`);
+}
+
+async function captureAndEncode(options) {
   const { dir, frameHashes } = await captureFrames(options);
   try {
     if (options.verify) {

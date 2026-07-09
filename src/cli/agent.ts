@@ -233,6 +233,10 @@ import {
   createInteractiveProjectionMappingImpl,
   createInteractiveProjectionMappingSchema,
 } from "../tools/layer1/createInteractiveProjectionMapping.js";
+import {
+  createIphoneDepthSourceImpl,
+  createIphoneDepthSourceSchema,
+} from "../tools/layer1/createIphoneDepthSource.js";
 import { createJfaVoronoiImpl, createJfaVoronoiSchema } from "../tools/layer1/createJfaVoronoi.js";
 import {
   createKaleidoscopeImpl,
@@ -273,9 +277,17 @@ import {
   multipass3dDepthSchema,
 } from "../tools/layer1/createMultipass3dDepth.js";
 import {
+  createNuitrackBodyBusImpl,
+  createNuitrackBodyBusSchema,
+} from "../tools/layer1/createNuitrackBodyBus.js";
+import {
   createOpticalFlowImpl,
   createOpticalFlowSchema,
 } from "../tools/layer1/createOpticalFlow.js";
+import {
+  createOrbbecDepthSilhouetteImpl,
+  createOrbbecDepthSilhouetteSchema,
+} from "../tools/layer1/createOrbbecDepthSilhouette.js";
 import {
   createParticleFlockImpl,
   createParticleFlockSchema,
@@ -343,6 +355,10 @@ import {
 } from "../tools/layer1/createRaymarchScene.js";
 import { createRaytkSceneImpl, createRaytkSceneSchema } from "../tools/layer1/createRaytkScene.js";
 import {
+  createRaytkSdfGraphImpl,
+  createRaytkSdfGraphSchema,
+} from "../tools/layer1/createRaytkSdfGraph.js";
+import {
   createReactionDiffusionImpl,
   createReactionDiffusionSchema,
 } from "../tools/layer1/createReactionDiffusion.js";
@@ -350,6 +366,10 @@ import {
   createSafetyBlackoutChainImpl,
   createSafetyBlackoutChainSchema,
 } from "../tools/layer1/createSafetyBlackoutChain.js";
+import {
+  createSam2SegmentationBridgeImpl,
+  createSam2SegmentationBridgeSchema,
+} from "../tools/layer1/createSam2SegmentationBridge.js";
 import { createSdfFieldImpl, createSdfFieldSchema } from "../tools/layer1/createSdfField.js";
 import { createSdfTextImpl, createSdfTextSchema } from "../tools/layer1/createSdfText.js";
 import {
@@ -435,6 +455,10 @@ import {
 } from "../tools/layer1/createVolumetricField.js";
 import { createVoxelStackImpl, createVoxelStackSchema } from "../tools/layer1/createVoxelStack.js";
 import { createWaveformImpl, createWaveformSchema } from "../tools/layer1/createWaveform.js";
+import {
+  createYoloOnnxTrackerImpl,
+  createYoloOnnxTrackerSchema,
+} from "../tools/layer1/createYoloOnnxTracker.js";
 import { describeProjectImpl, describeProjectSchema } from "../tools/layer1/describeProject.js";
 import { detectOnsetsImpl, detectOnsetsSchema } from "../tools/layer1/detectOnsets.js";
 import { detectPitchImpl, detectPitchSchema } from "../tools/layer1/detectPitch.js";
@@ -494,12 +518,342 @@ import { bindToChannelImpl, bindToChannelSchema } from "../tools/layer2/bindToCh
 import { buildChopChainImpl, buildChopChainSchema } from "../tools/layer2/buildChopChain.js";
 import { buildPopChainImpl, buildPopChainSchema } from "../tools/layer2/buildPopChain.js";
 import { buildSopGeometryImpl, buildSopGeometrySchema } from "../tools/layer2/buildSopGeometry.js";
+import {
+  connectA1111WebuiBridgeImpl,
+  connectA1111WebuiBridgeSchema,
+} from "../tools/layer2/connectA1111WebuiBridge.js";
+import {
+  connectAbletonLinkSessionImpl,
+  connectAbletonLinkSessionSchema,
+} from "../tools/layer2/connectAbletonLinkSession.js";
+import {
+  connectAdsbAircraftBusImpl,
+  connectAdsbAircraftBusSchema,
+} from "../tools/layer2/connectAdsbAircraftBus.js";
+import {
+  connectAirtableContentBusImpl,
+  connectAirtableContentBusSchema,
+} from "../tools/layer2/connectAirtableContentBus.js";
+import {
+  connectAisVesselBusImpl,
+  connectAisVesselBusSchema,
+} from "../tools/layer2/connectAisVesselBus.js";
+import {
+  connectArkitFaceCaptureImpl,
+  connectArkitFaceCaptureSchema,
+} from "../tools/layer2/connectArkitFaceCapture.js";
+import {
+  connectBlackmagicAtemImpl,
+  connectBlackmagicAtemSchema,
+} from "../tools/layer2/connectBlackmagicAtem.js";
+import {
+  connectBleBeaconBusImpl,
+  connectBleBeaconBusSchema,
+} from "../tools/layer2/connectBleBeaconBus.js";
+import {
+  connectCalendarScheduleBusImpl,
+  connectCalendarScheduleBusSchema,
+} from "../tools/layer2/connectCalendarScheduleBus.js";
+import {
+  connectCasparcgServerImpl,
+  connectCasparcgServerSchema,
+} from "../tools/layer2/connectCasparcgServer.js";
 import { connectComfyuiImpl, connectComfyuiSchema } from "../tools/layer2/connectComfyui.js";
 import {
   connectDaydreamCloudImpl,
   connectDaydreamCloudSchema,
 } from "../tools/layer2/connectDaydreamCloud.js";
+import {
+  connectDiscordInteractionBusImpl,
+  connectDiscordInteractionBusSchema,
+} from "../tools/layer2/connectDiscordInteractionBus.js";
+import {
+  connectDisguiseStageImpl,
+  connectDisguiseStageSchema,
+} from "../tools/layer2/connectDisguiseStage.js";
+import {
+  connectDoorAccessBusImpl,
+  connectDoorAccessBusSchema,
+} from "../tools/layer2/connectDoorAccessBus.js";
+import {
+  connectEnvironmentalSensorBusImpl,
+  connectEnvironmentalSensorBusSchema,
+} from "../tools/layer2/connectEnvironmentalSensorBus.js";
+import {
+  connectFigmaDesignTokensImpl,
+  connectFigmaDesignTokensSchema,
+} from "../tools/layer2/connectFigmaDesignTokens.js";
+import {
+  connectGeojsonFeatureBusImpl,
+  connectGeojsonFeatureBusSchema,
+} from "../tools/layer2/connectGeojsonFeatureBus.js";
+import {
+  connectGoogleSheetsCueTableImpl,
+  connectGoogleSheetsCueTableSchema,
+} from "../tools/layer2/connectGoogleSheetsCueTable.js";
+import {
+  connectGpsFleetTrackerImpl,
+  connectGpsFleetTrackerSchema,
+} from "../tools/layer2/connectGpsFleetTracker.js";
+import {
+  connectGrafanaAnnotationBridgeImpl,
+  connectGrafanaAnnotationBridgeSchema,
+} from "../tools/layer2/connectGrafanaAnnotationBridge.js";
+import {
+  connectGtfsTransitFeedImpl,
+  connectGtfsTransitFeedSchema,
+} from "../tools/layer2/connectGtfsTransitFeed.js";
+import {
+  connectHomeassistantStateBusImpl,
+  connectHomeassistantStateBusSchema,
+} from "../tools/layer2/connectHomeassistantStateBus.js";
+import {
+  connectHoudiniEngineBridgeImpl,
+  connectHoudiniEngineBridgeSchema,
+} from "../tools/layer2/connectHoudiniEngineBridge.js";
+import {
+  connectHuggingfaceInferenceBridgeImpl,
+  connectHuggingfaceInferenceBridgeSchema,
+} from "../tools/layer2/connectHuggingfaceInferenceBridge.js";
+import {
+  connectInfluxdbTimeseriesBridgeImpl,
+  connectInfluxdbTimeseriesBridgeSchema,
+} from "../tools/layer2/connectInfluxdbTimeseriesBridge.js";
+import {
+  connectIsadoraPatchImpl,
+  connectIsadoraPatchSchema,
+} from "../tools/layer2/connectIsadoraPatch.js";
+import {
+  connectKafkaEventBusImpl,
+  connectKafkaEventBusSchema,
+} from "../tools/layer2/connectKafkaEventBus.js";
+import {
+  connectLightingConsoleOscImpl,
+  connectLightingConsoleOscSchema,
+} from "../tools/layer2/connectLightingConsoleOsc.js";
+import {
+  connectMadmapperSurfaceImpl,
+  connectMadmapperSurfaceSchema,
+} from "../tools/layer2/connectMadmapperSurface.js";
+import {
+  connectMapTileOverlayImpl,
+  connectMapTileOverlaySchema,
+} from "../tools/layer2/connectMapTileOverlay.js";
+import {
+  connectMatrixRoomBusImpl,
+  connectMatrixRoomBusSchema,
+} from "../tools/layer2/connectMatrixRoomBus.js";
+import {
+  connectMaxMspBridgeImpl,
+  connectMaxMspBridgeSchema,
+} from "../tools/layer2/connectMaxMspBridge.js";
+import {
+  connectMidiMpeControllerImpl,
+  connectMidiMpeControllerSchema,
+} from "../tools/layer2/connectMidiMpeController.js";
+import {
+  connectMilluminShowImpl,
+  connectMilluminShowSchema,
+} from "../tools/layer2/connectMilluminShow.js";
+import {
+  connectMqttIotBusImpl,
+  connectMqttIotBusSchema,
+} from "../tools/layer2/connectMqttIotBus.js";
+import { connectNfcTapBusImpl, connectNfcTapBusSchema } from "../tools/layer2/connectNfcTapBus.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
+import {
+  connectNoiseLevelBusImpl,
+  connectNoiseLevelBusSchema,
+} from "../tools/layer2/connectNoiseLevelBus.js";
+import {
+  connectNotionShowRundownImpl,
+  connectNotionShowRundownSchema,
+} from "../tools/layer2/connectNotionShowRundown.js";
+import {
+  connectObsRecorderImpl,
+  connectObsRecorderSchema,
+} from "../tools/layer2/connectObsRecorder.js";
+import {
+  connectOmniverseUsdBridgeImpl,
+  connectOmniverseUsdBridgeSchema,
+} from "../tools/layer2/connectOmniverseUsdBridge.js";
+import {
+  connectOpcuaIndustrialBusImpl,
+  connectOpcuaIndustrialBusSchema,
+} from "../tools/layer2/connectOpcuaIndustrialBus.js";
+import {
+  connectOscqueryNamespaceImpl,
+  connectOscqueryNamespaceSchema,
+} from "../tools/layer2/connectOscqueryNamespace.js";
+import {
+  connectPangolinBeyondImpl,
+  connectPangolinBeyondSchema,
+} from "../tools/layer2/connectPangolinBeyond.js";
+import {
+  connectParkingOccupancyBusImpl,
+  connectParkingOccupancyBusSchema,
+} from "../tools/layer2/connectParkingOccupancyBus.js";
+import {
+  connectPeopleCountingBusImpl,
+  connectPeopleCountingBusSchema,
+} from "../tools/layer2/connectPeopleCountingBus.js";
+import {
+  connectPosSalesTelemetryImpl,
+  connectPosSalesTelemetrySchema,
+} from "../tools/layer2/connectPosSalesTelemetry.js";
+import {
+  connectPowerMeterBusImpl,
+  connectPowerMeterBusSchema,
+} from "../tools/layer2/connectPowerMeterBus.js";
+import {
+  connectPrometheusMetricsPanelImpl,
+  connectPrometheusMetricsPanelSchema,
+} from "../tools/layer2/connectPrometheusMetricsPanel.js";
+import {
+  connectPublicAlertsBusImpl,
+  connectPublicAlertsBusSchema,
+} from "../tools/layer2/connectPublicAlertsBus.js";
+import {
+  connectQlabCueStackImpl,
+  connectQlabCueStackSchema,
+} from "../tools/layer2/connectQlabCueStack.js";
+import { connectQrScanBusImpl, connectQrScanBusSchema } from "../tools/layer2/connectQrScanBus.js";
+import {
+  connectQueueLengthBusImpl,
+  connectQueueLengthBusSchema,
+} from "../tools/layer2/connectQueueLengthBus.js";
+import {
+  connectReaperTransportImpl,
+  connectReaperTransportSchema,
+} from "../tools/layer2/connectReaperTransport.js";
+import {
+  connectRedisPubsubBusImpl,
+  connectRedisPubsubBusSchema,
+} from "../tools/layer2/connectRedisPubsubBus.js";
+import {
+  connectReplicatePredictionBridgeImpl,
+  connectReplicatePredictionBridgeSchema,
+} from "../tools/layer2/connectReplicatePredictionBridge.js";
+import {
+  connectResolumeArenaImpl,
+  connectResolumeArenaSchema,
+} from "../tools/layer2/connectResolumeArena.js";
+import {
+  connectRfidBadgeBusImpl,
+  connectRfidBadgeBusSchema,
+} from "../tools/layer2/connectRfidBadgeBus.js";
+import {
+  connectRssFeedBusImpl,
+  connectRssFeedBusSchema,
+} from "../tools/layer2/connectRssFeedBus.js";
+import {
+  connectRunwayVideoBridgeImpl,
+  connectRunwayVideoBridgeSchema,
+} from "../tools/layer2/connectRunwayVideoBridge.js";
+import {
+  connectRvcVoiceConversionBusImpl,
+  connectRvcVoiceConversionBusSchema,
+} from "../tools/layer2/connectRvcVoiceConversionBus.js";
+import {
+  connectS3MediaBucketImpl,
+  connectS3MediaBucketSchema,
+} from "../tools/layer2/connectS3MediaBucket.js";
+import {
+  connectSerialDeviceBusImpl,
+  connectSerialDeviceBusSchema,
+} from "../tools/layer2/connectSerialDeviceBus.js";
+import {
+  connectSlackOpsBridgeImpl,
+  connectSlackOpsBridgeSchema,
+} from "../tools/layer2/connectSlackOpsBridge.js";
+import {
+  connectSpoutSyphonRouterImpl,
+  connectSpoutSyphonRouterSchema,
+} from "../tools/layer2/connectSpoutSyphonRouter.js";
+import {
+  connectSupercolliderSynthImpl,
+  connectSupercolliderSynthSchema,
+} from "../tools/layer2/connectSupercolliderSynth.js";
+import {
+  connectTicketingCheckinBusImpl,
+  connectTicketingCheckinBusSchema,
+} from "../tools/layer2/connectTicketingCheckinBus.js";
+import {
+  connectTidalcyclesLivecodingImpl,
+  connectTidalcyclesLivecodingSchema,
+} from "../tools/layer2/connectTidalcyclesLivecoding.js";
+import {
+  connectTiktokLiveEventsBusImpl,
+  connectTiktokLiveEventsBusSchema,
+} from "../tools/layer2/connectTiktokLiveEventsBus.js";
+import {
+  connectTouchengineNotchImpl,
+  connectTouchengineNotchSchema,
+} from "../tools/layer2/connectTouchengineNotch.js";
+import {
+  connectTuioTouchSurfaceImpl,
+  connectTuioTouchSurfaceSchema,
+} from "../tools/layer2/connectTuioTouchSurface.js";
+import {
+  connectTwitchEventsubBusImpl,
+  connectTwitchEventsubBusSchema,
+} from "../tools/layer2/connectTwitchEventsubBus.js";
+import {
+  connectUdpTelemetryBridgeImpl,
+  connectUdpTelemetryBridgeSchema,
+} from "../tools/layer2/connectUdpTelemetryBridge.js";
+import {
+  connectUnityOscBridgeImpl,
+  connectUnityOscBridgeSchema,
+} from "../tools/layer2/connectUnityOscBridge.js";
+import {
+  connectUwbAnchorBusImpl,
+  connectUwbAnchorBusSchema,
+} from "../tools/layer2/connectUwbAnchorBus.js";
+import {
+  connectVdmxWorkspaceImpl,
+  connectVdmxWorkspaceSchema,
+} from "../tools/layer2/connectVdmxWorkspace.js";
+import {
+  connectVideoStreamReceiverImpl,
+  connectVideoStreamReceiverSchema,
+} from "../tools/layer2/connectVideoStreamReceiver.js";
+import {
+  connectVmixProductionImpl,
+  connectVmixProductionSchema,
+} from "../tools/layer2/connectVmixProduction.js";
+import {
+  connectWeatherForecastBusImpl,
+  connectWeatherForecastBusSchema,
+} from "../tools/layer2/connectWeatherForecastBus.js";
+import {
+  connectWebrtcBrowserInputImpl,
+  connectWebrtcBrowserInputSchema,
+} from "../tools/layer2/connectWebrtcBrowserInput.js";
+import {
+  connectWebsocketControlBusImpl,
+  connectWebsocketControlBusSchema,
+} from "../tools/layer2/connectWebsocketControlBus.js";
+import {
+  connectWhisperTranscriptionBusImpl,
+  connectWhisperTranscriptionBusSchema,
+} from "../tools/layer2/connectWhisperTranscriptionBus.js";
+import {
+  connectWifiPresenceBusImpl,
+  connectWifiPresenceBusSchema,
+} from "../tools/layer2/connectWifiPresenceBus.js";
+import {
+  connectXsensMvnMocapImpl,
+  connectXsensMvnMocapSchema,
+} from "../tools/layer2/connectXsensMvnMocap.js";
+import {
+  connectYoutubeLiveChatBusImpl,
+  connectYoutubeLiveChatBusSchema,
+} from "../tools/layer2/connectYoutubeLiveChatBus.js";
+import {
+  createArtnetDiscoveryPanelImpl,
+  createArtnetDiscoveryPanelSchema,
+} from "../tools/layer2/createArtnetDiscoveryPanel.js";
 import {
   createAudioGlslUniformsImpl,
   createAudioGlslUniformsSchema,
@@ -508,12 +862,24 @@ import {
   createAutoMontageImpl,
   createAutoMontageSchema,
 } from "../tools/layer2/createAutoMontage.js";
+import {
+  createAzureKinectBodyBusImpl,
+  createAzureKinectBodyBusSchema,
+} from "../tools/layer2/createAzureKinectBodyBus.js";
 // Campaign Wave 3 — artist controls (backlog 2026-05-29):
 import { createBandRouterImpl, createBandRouterSchema } from "../tools/layer2/createBandRouter.js";
 import {
   createBeatGridSequencerImpl,
   createBeatGridSequencerSchema,
 } from "../tools/layer2/createBeatGridSequencer.js";
+import {
+  createBlacktraxTrackingBusImpl,
+  createBlacktraxTrackingBusSchema,
+} from "../tools/layer2/createBlacktraxTrackingBus.js";
+import {
+  createBlenderSceneBridgeImpl,
+  createBlenderSceneBridgeSchema,
+} from "../tools/layer2/createBlenderSceneBridge.js";
 import {
   createCaptureLoopImpl,
   createCaptureLoopSchema,
@@ -522,6 +888,10 @@ import {
   createClipLauncherImpl,
   createClipLauncherSchema,
 } from "../tools/layer2/createClipLauncher.js";
+import {
+  createCompanionSurfaceImpl,
+  createCompanionSurfaceSchema,
+} from "../tools/layer2/createCompanionSurface.js";
 import { createContainerImpl, createContainerSchema } from "../tools/layer2/createContainer.js";
 import {
   createControlPanelImpl,
@@ -544,7 +914,19 @@ import {
   createDataSourceHttpWsImpl,
   createDataSourceHttpWsSchema,
 } from "../tools/layer2/createDataSourceHttpWs.js";
+import {
+  createDecklinkIoRouterImpl,
+  createDecklinkIoRouterSchema,
+} from "../tools/layer2/createDecklinkIoRouter.js";
 import { createDecksImpl, createDecksSchema } from "../tools/layer2/createDecks.js";
+import {
+  createDepthaiOakPipelineImpl,
+  createDepthaiOakPipelineSchema,
+} from "../tools/layer2/createDepthaiOakPipeline.js";
+import {
+  createDirectDisplayOutputImpl,
+  createDirectDisplayOutputSchema,
+} from "../tools/layer2/createDirectDisplayOutput.js";
 import {
   createEnvelopeFollowerImpl,
   createEnvelopeFollowerSchema,
@@ -571,14 +953,66 @@ import {
   createHandGestureBusImpl,
   createHandGestureBusSchema,
 } from "../tools/layer2/createHandGestureBus.js";
+import {
+  createHokuyoLidarBusImpl,
+  createHokuyoLidarBusSchema,
+} from "../tools/layer2/createHokuyoLidarBus.js";
+import {
+  createLeapMotionHandBusImpl,
+  createLeapMotionHandBusSchema,
+} from "../tools/layer2/createLeapMotionHandBus.js";
 import { createLedMapperImpl, createLedMapperSchema } from "../tools/layer2/createLedMapper.js";
+import {
+  createLivoxLidarBusImpl,
+  createLivoxLidarBusSchema,
+} from "../tools/layer2/createLivoxLidarBus.js";
 import { createLlmChainImpl, createLlmChainSchema } from "../tools/layer2/createLlmChain.js";
 import { createLookBankImpl, createLookBankSchema } from "../tools/layer2/createLookBank.js";
+import {
+  createLtcTimecodeBridgeImpl,
+  createLtcTimecodeBridgeSchema,
+} from "../tools/layer2/createLtcTimecodeBridge.js";
 import { createMacroImpl, createMacroSchema } from "../tools/layer2/createMacro.js";
 import { createMidiMapImpl, createMidiMapSchema } from "../tools/layer2/createMidiMap.js";
+import {
+  createMocapStreamBridgeImpl,
+  createMocapStreamBridgeSchema,
+} from "../tools/layer2/createMocapStreamBridge.js";
 import { createModulatorsImpl, createModulatorsSchema } from "../tools/layer2/createModulators.js";
+import {
+  createMonitorLayoutPanelImpl,
+  createMonitorLayoutPanelSchema,
+} from "../tools/layer2/createMonitorLayoutPanel.js";
+import {
+  createMpcdiProjectionMapperImpl,
+  createMpcdiProjectionMapperSchema,
+} from "../tools/layer2/createMpcdiProjectionMapper.js";
+import {
+  createMultitouchPanelBusImpl,
+  createMultitouchPanelBusSchema,
+} from "../tools/layer2/createMultitouchPanelBus.js";
+import {
+  createNcamCameraTrackingBusImpl,
+  createNcamCameraTrackingBusSchema,
+} from "../tools/layer2/createNcamCameraTrackingBus.js";
+import {
+  createNdiRouterMatrixImpl,
+  createNdiRouterMatrixSchema,
+} from "../tools/layer2/createNdiRouterMatrix.js";
 import { createNodeChainImpl, createNodeChainSchema } from "../tools/layer2/createNodeChain.js";
 import { createNprFilterImpl, createNprFilterSchema } from "../tools/layer2/createNprFilter.js";
+import {
+  createOpenxrControllerBridgeImpl,
+  createOpenxrControllerBridgeSchema,
+} from "../tools/layer2/createOpenxrControllerBridge.js";
+import {
+  createOptitrackTrackingBusImpl,
+  createOptitrackTrackingBusSchema,
+} from "../tools/layer2/createOptitrackTrackingBus.js";
+import {
+  createOusterLidarBusImpl,
+  createOusterLidarBusSchema,
+} from "../tools/layer2/createOusterLidarBus.js";
 import { createPaletteImpl, createPaletteSchema } from "../tools/layer2/createPalette.js";
 import { createPanicImpl, createPanicSchema } from "../tools/layer2/createPanic.js";
 import {
@@ -593,7 +1027,15 @@ import {
   createPythonScriptImpl,
   createPythonScriptSchema,
 } from "../tools/layer2/createPythonScript.js";
+import {
+  createRealsenseDepthBusImpl,
+  createRealsenseDepthBusSchema,
+} from "../tools/layer2/createRealsenseDepthBus.js";
 import { createReplicatorImpl, createReplicatorSchema } from "../tools/layer2/createReplicator.js";
+import {
+  createScalableDisplayBusImpl,
+  createScalableDisplayBusSchema,
+} from "../tools/layer2/createScalableDisplayBus.js";
 import {
   createSceneTimelineImpl,
   createSceneTimelineSchema,
@@ -616,7 +1058,35 @@ import {
   createSynesthesiaUnrealOscSchema,
 } from "../tools/layer2/createSynesthesiaUnrealOsc.js";
 import { createTimeEchoImpl, createTimeEchoSchema } from "../tools/layer2/createTimeEcho.js";
+import {
+  createTouchoscLayoutImpl,
+  createTouchoscLayoutSchema,
+} from "../tools/layer2/createTouchoscLayout.js";
+import {
+  createUnrealLivelinkBridgeImpl,
+  createUnrealLivelinkBridgeSchema,
+} from "../tools/layer2/createUnrealLivelinkBridge.js";
+import {
+  createVcvRackBridgeImpl,
+  createVcvRackBridgeSchema,
+} from "../tools/layer2/createVcvRackBridge.js";
+import {
+  createViosoWarpPanelImpl,
+  createViosoWarpPanelSchema,
+} from "../tools/layer2/createViosoWarpPanel.js";
+import {
+  createVoicePromptPipelineImpl,
+  createVoicePromptPipelineSchema,
+} from "../tools/layer2/createVoicePromptPipeline.js";
+import {
+  createWindowOutputMatrixImpl,
+  createWindowOutputMatrixSchema,
+} from "../tools/layer2/createWindowOutputMatrix.js";
 import { createXyPadImpl, createXyPadSchema } from "../tools/layer2/createXyPad.js";
+import {
+  createZedDepthBusImpl,
+  createZedDepthBusSchema,
+} from "../tools/layer2/createZedDepthBus.js";
 import {
   diagnoseTdabletonMapperImpl,
   diagnoseTdabletonMapperSchema,
@@ -1425,6 +1895,684 @@ const COMMANDS: Record<string, Command> = {
       mutates: true,
     },
   ),
+  "companion-surface": r(
+    createCompanionSurfaceSchema,
+    createCompanionSurfaceImpl,
+    "Create a Companion/Stream Deck OSC button surface with optional feedback.",
+    { mutates: true },
+  ),
+  "obs-recorder": r(
+    connectObsRecorderSchema,
+    connectObsRecorderImpl,
+    "Create OBS websocket request templates and optional NDI/Syphon capture publishing.",
+    { mutates: true },
+  ),
+  "touchosc-layout": r(
+    createTouchoscLayoutSchema,
+    createTouchoscLayoutImpl,
+    "Create a TouchOSC OSC mapping surface and JSON layout manifest.",
+    { mutates: true },
+  ),
+  "voice-prompt-pipeline": r(
+    createVoicePromptPipelineSchema,
+    createVoicePromptPipelineImpl,
+    "Create a dry-run, policy-gated voice-to-prompt pipeline scaffold.",
+    { mutates: true },
+  ),
+  "touchengine-notch": r(
+    connectTouchengineNotchSchema,
+    connectTouchengineNotchImpl,
+    "Create a TouchEngine/Notch bridge scaffold with fallback output modes.",
+    { mutates: true },
+  ),
+  "resolume-arena": r(
+    connectResolumeArenaSchema,
+    connectResolumeArenaImpl,
+    "Create a Resolume Arena/Avenue OSC control scaffold.",
+    { mutates: true },
+  ),
+  "madmapper-surface": r(
+    connectMadmapperSurfaceSchema,
+    connectMadmapperSurfaceImpl,
+    "Create a MadMapper OSC surface/media control scaffold.",
+    { mutates: true },
+  ),
+  "mocap-stream-bridge": r(
+    createMocapStreamBridgeSchema,
+    createMocapStreamBridgeImpl,
+    "Create a generic mocap stream bridge for skeleton and rigid-body data.",
+    { mutates: true },
+  ),
+  "blender-scene-bridge": r(
+    createBlenderSceneBridgeSchema,
+    createBlenderSceneBridgeImpl,
+    "Create a Blender scene handoff scaffold for file, OSC, or WebSocket workflows.",
+    { mutates: true },
+  ),
+  "unreal-livelink-bridge": r(
+    createUnrealLivelinkBridgeSchema,
+    createUnrealLivelinkBridgeImpl,
+    "Create an Unreal Live Link/OSC/NDI handoff scaffold.",
+    { mutates: true },
+  ),
+  "vcv-rack-bridge": r(
+    createVcvRackBridgeSchema,
+    createVcvRackBridgeImpl,
+    "Create a VCV Rack OSC/MIDI/CV modulation bridge scaffold.",
+    { mutates: true },
+  ),
+  "qlab-cue-stack": r(
+    connectQlabCueStackSchema,
+    connectQlabCueStackImpl,
+    "Create a QLab OSC cue-stack command scaffold.",
+    { mutates: true },
+  ),
+  "lighting-console-osc": r(
+    connectLightingConsoleOscSchema,
+    connectLightingConsoleOscImpl,
+    "Create a safety-gated lighting-console OSC command scaffold.",
+    { mutates: true },
+  ),
+  "max-msp-bridge": r(
+    connectMaxMspBridgeSchema,
+    connectMaxMspBridgeImpl,
+    "Create a Max/MSP OSC bridge scaffold.",
+    { mutates: true },
+  ),
+  "openxr-controller-bridge": r(
+    createOpenxrControllerBridgeSchema,
+    createOpenxrControllerBridgeImpl,
+    "Create an OpenXR/SteamVR controller input scaffold.",
+    { mutates: true },
+  ),
+  "vmix-production": r(
+    connectVmixProductionSchema,
+    connectVmixProductionImpl,
+    "Create a vMix HTTP/API production-control scaffold.",
+    { mutates: true },
+  ),
+  "casparcg-server": r(
+    connectCasparcgServerSchema,
+    connectCasparcgServerImpl,
+    "Create a CasparCG AMCP/playout scaffold.",
+    { mutates: true },
+  ),
+  "millumin-show": r(
+    connectMilluminShowSchema,
+    connectMilluminShowImpl,
+    "Create a Millumin OSC layer, column, and dashboard control scaffold.",
+    { mutates: true },
+  ),
+  "isadora-patch": r(
+    connectIsadoraPatchSchema,
+    connectIsadoraPatchImpl,
+    "Create an Isadora OSC actor, watcher, and scene scaffold.",
+    { mutates: true },
+  ),
+  "unity-osc-bridge": r(
+    connectUnityOscBridgeSchema,
+    connectUnityOscBridgeImpl,
+    "Create a Unity OSC object/event bridge scaffold.",
+    { mutates: true },
+  ),
+  "reaper-transport": r(
+    connectReaperTransportSchema,
+    connectReaperTransportImpl,
+    "Create a REAPER OSC transport, track, and marker scaffold.",
+    { mutates: true },
+  ),
+  "ndi-router-matrix": r(
+    createNdiRouterMatrixSchema,
+    createNdiRouterMatrixImpl,
+    "Create an NDI source/output routing matrix scaffold.",
+    { mutates: true },
+  ),
+  "webrtc-browser-input": r(
+    connectWebrtcBrowserInputSchema,
+    connectWebrtcBrowserInputImpl,
+    "Create a browser/WebRTC input handoff scaffold.",
+    { mutates: true },
+  ),
+  "spout-syphon-router": r(
+    connectSpoutSyphonRouterSchema,
+    connectSpoutSyphonRouterImpl,
+    "Create a Syphon/Spout texture-sharing router scaffold.",
+    { mutates: true },
+  ),
+  "blackmagic-atem": r(
+    connectBlackmagicAtemSchema,
+    connectBlackmagicAtemImpl,
+    "Create a Blackmagic ATEM command-map scaffold.",
+    { mutates: true },
+  ),
+  "oscquery-namespace": r(
+    connectOscqueryNamespaceSchema,
+    connectOscqueryNamespaceImpl,
+    "Create an OSCQuery namespace and OSC command scaffold.",
+    { mutates: true },
+  ),
+  "mqtt-iot-bus": r(
+    connectMqttIotBusSchema,
+    connectMqttIotBusImpl,
+    "Create an MQTT IoT sensor/control bus scaffold.",
+    { mutates: true },
+  ),
+  "depthai-oak-pipeline": r(
+    createDepthaiOakPipelineSchema,
+    createDepthaiOakPipelineImpl,
+    "Create a DepthAI/OAK camera pipeline scaffold.",
+    { mutates: true },
+  ),
+  "arkit-face-capture": r(
+    connectArkitFaceCaptureSchema,
+    connectArkitFaceCaptureImpl,
+    "Create an ARKit Face Capture OSC scaffold.",
+    { mutates: true },
+  ),
+  "pangolin-beyond": r(
+    connectPangolinBeyondSchema,
+    connectPangolinBeyondImpl,
+    "Create a safety-gated Pangolin Beyond laser-control scaffold.",
+    { mutates: true },
+  ),
+  "hokuyo-lidar-bus": r(
+    createHokuyoLidarBusSchema,
+    createHokuyoLidarBusImpl,
+    "Create a Hokuyo LiDAR scanner bus scaffold.",
+    { mutates: true },
+  ),
+  "supercollider-synth": r(
+    connectSupercolliderSynthSchema,
+    connectSupercolliderSynthImpl,
+    "Create a SuperCollider OSC synth bridge scaffold.",
+    { mutates: true },
+  ),
+  "ableton-link-session": r(
+    connectAbletonLinkSessionSchema,
+    connectAbletonLinkSessionImpl,
+    "Create an Ableton Link beat/session timing scaffold.",
+    { mutates: true },
+  ),
+  "decklink-io-router": r(
+    createDecklinkIoRouterSchema,
+    createDecklinkIoRouterImpl,
+    "Create a Blackmagic DeckLink video I/O router scaffold.",
+    { mutates: true },
+  ),
+  "midi-mpe-controller": r(
+    connectMidiMpeControllerSchema,
+    connectMidiMpeControllerImpl,
+    "Create a MIDI MPE expressive-controller scaffold.",
+    { mutates: true },
+  ),
+  "tidalcycles-livecoding": r(
+    connectTidalcyclesLivecodingSchema,
+    connectTidalcyclesLivecodingImpl,
+    "Create a TidalCycles/SuperDirt OSC live-coding scaffold.",
+    { mutates: true },
+  ),
+  "vdmx-workspace": r(
+    connectVdmxWorkspaceSchema,
+    connectVdmxWorkspaceImpl,
+    "Create a VDMX OSC/Syphon workspace scaffold.",
+    { mutates: true },
+  ),
+  "disguise-stage": r(
+    connectDisguiseStageSchema,
+    connectDisguiseStageImpl,
+    "Create a disguise/d3 show-control scaffold.",
+    { mutates: true },
+  ),
+  "azure-kinect-body-bus": r(
+    createAzureKinectBodyBusSchema,
+    createAzureKinectBodyBusImpl,
+    "Create an Azure Kinect body/depth bus scaffold.",
+    { mutates: true },
+  ),
+  "zed-depth-bus": r(
+    createZedDepthBusSchema,
+    createZedDepthBusImpl,
+    "Create a ZED camera depth/body bus scaffold.",
+    { mutates: true },
+  ),
+  "leap-motion-hand-bus": r(
+    createLeapMotionHandBusSchema,
+    createLeapMotionHandBusImpl,
+    "Create a Leap Motion hand/gesture bus scaffold.",
+    { mutates: true },
+  ),
+  "blacktrax-tracking-bus": r(
+    createBlacktraxTrackingBusSchema,
+    createBlacktraxTrackingBusImpl,
+    "Create a BlackTrax tracking bus scaffold.",
+    { mutates: true },
+  ),
+  "ncam-camera-tracking-bus": r(
+    createNcamCameraTrackingBusSchema,
+    createNcamCameraTrackingBusImpl,
+    "Create an NCAM camera-tracking bus scaffold.",
+    { mutates: true },
+  ),
+  "ouster-lidar-bus": r(
+    createOusterLidarBusSchema,
+    createOusterLidarBusImpl,
+    "Create an Ouster LiDAR bus scaffold.",
+    { mutates: true },
+  ),
+  "tuio-touch-surface": r(
+    connectTuioTouchSurfaceSchema,
+    connectTuioTouchSurfaceImpl,
+    "Create a TUIO touch-surface scaffold.",
+    { mutates: true },
+  ),
+  "multitouch-panel-bus": r(
+    createMultitouchPanelBusSchema,
+    createMultitouchPanelBusImpl,
+    "Create a Multi Touch panel bus scaffold.",
+    { mutates: true },
+  ),
+  "ltc-timecode-bridge": r(
+    createLtcTimecodeBridgeSchema,
+    createLtcTimecodeBridgeImpl,
+    "Create an LTC timecode bridge scaffold.",
+    { mutates: true },
+  ),
+  "optitrack-tracking-bus": r(
+    createOptitrackTrackingBusSchema,
+    createOptitrackTrackingBusImpl,
+    "Create an OptiTrack/NatNet tracking bus scaffold.",
+    { mutates: true },
+  ),
+  "video-stream-receiver": r(
+    connectVideoStreamReceiverSchema,
+    connectVideoStreamReceiverImpl,
+    "Create a network video stream receiver scaffold.",
+    { mutates: true },
+  ),
+  "websocket-control-bus": r(
+    connectWebsocketControlBusSchema,
+    connectWebsocketControlBusImpl,
+    "Create a WebSocket control bus scaffold.",
+    { mutates: true },
+  ),
+  "serial-device-bus": r(
+    connectSerialDeviceBusSchema,
+    connectSerialDeviceBusImpl,
+    "Create a serial device bus scaffold.",
+    { mutates: true },
+  ),
+  "udp-telemetry-bridge": r(
+    connectUdpTelemetryBridgeSchema,
+    connectUdpTelemetryBridgeImpl,
+    "Create a UDP telemetry bridge scaffold.",
+    { mutates: true },
+  ),
+  "artnet-discovery-panel": r(
+    createArtnetDiscoveryPanelSchema,
+    createArtnetDiscoveryPanelImpl,
+    "Create an Art-Net discovery panel scaffold.",
+    { mutates: true },
+  ),
+  "mpcdi-projection-mapper": r(
+    createMpcdiProjectionMapperSchema,
+    createMpcdiProjectionMapperImpl,
+    "Create an MPCDI projection mapper scaffold.",
+    { mutates: true },
+  ),
+  "vioso-warp-panel": r(
+    createViosoWarpPanelSchema,
+    createViosoWarpPanelImpl,
+    "Create a VIOSO warp panel scaffold.",
+    { mutates: true },
+  ),
+  "direct-display-output": r(
+    createDirectDisplayOutputSchema,
+    createDirectDisplayOutputImpl,
+    "Create a Direct Display output scaffold.",
+    { mutates: true },
+  ),
+  "scalable-display-bus": r(
+    createScalableDisplayBusSchema,
+    createScalableDisplayBusImpl,
+    "Create a Scalable Display bus scaffold.",
+    { mutates: true },
+  ),
+  "window-output-matrix": r(
+    createWindowOutputMatrixSchema,
+    createWindowOutputMatrixImpl,
+    "Create a Window output matrix scaffold.",
+    { mutates: true },
+  ),
+  "monitor-layout-panel": r(
+    createMonitorLayoutPanelSchema,
+    createMonitorLayoutPanelImpl,
+    "Create a monitor layout panel scaffold.",
+    { mutates: true },
+  ),
+  "realsense-depth-bus": r(
+    createRealsenseDepthBusSchema,
+    createRealsenseDepthBusImpl,
+    "Create a RealSense depth bus scaffold.",
+    { mutates: true },
+  ),
+  "livox-lidar-bus": r(
+    createLivoxLidarBusSchema,
+    createLivoxLidarBusImpl,
+    "Create a Livox LiDAR bus scaffold.",
+    { mutates: true },
+  ),
+  "xsens-mvn-mocap": r(
+    connectXsensMvnMocapSchema,
+    connectXsensMvnMocapImpl,
+    "Create an Xsens MVN mocap scaffold.",
+    { mutates: true },
+  ),
+  "houdini-engine-bridge": r(
+    connectHoudiniEngineBridgeSchema,
+    connectHoudiniEngineBridgeImpl,
+    "Create a Houdini Engine bridge scaffold.",
+    { mutates: true },
+  ),
+  "omniverse-usd-bridge": r(
+    connectOmniverseUsdBridgeSchema,
+    connectOmniverseUsdBridgeImpl,
+    "Create an Omniverse USD bridge scaffold.",
+    { mutates: true },
+  ),
+  "opcua-industrial-bus": r(
+    connectOpcuaIndustrialBusSchema,
+    connectOpcuaIndustrialBusImpl,
+    "Create an OPC UA industrial bus scaffold.",
+    { mutates: true },
+  ),
+  "replicate-prediction-bridge": r(
+    connectReplicatePredictionBridgeSchema,
+    connectReplicatePredictionBridgeImpl,
+    "Create a Replicate prediction bridge scaffold.",
+    { mutates: true },
+  ),
+  "a1111-webui-bridge": r(
+    connectA1111WebuiBridgeSchema,
+    connectA1111WebuiBridgeImpl,
+    "Create an A1111 WebUI bridge scaffold.",
+    { mutates: true },
+  ),
+  "huggingface-inference-bridge": r(
+    connectHuggingfaceInferenceBridgeSchema,
+    connectHuggingfaceInferenceBridgeImpl,
+    "Create a Hugging Face inference bridge scaffold.",
+    { mutates: true },
+  ),
+  "whisper-transcription-bus": r(
+    connectWhisperTranscriptionBusSchema,
+    connectWhisperTranscriptionBusImpl,
+    "Create a Whisper transcription bus scaffold.",
+    { mutates: true },
+  ),
+  "rvc-voice-conversion-bus": r(
+    connectRvcVoiceConversionBusSchema,
+    connectRvcVoiceConversionBusImpl,
+    "Create an RVC voice conversion bus scaffold.",
+    { mutates: true },
+  ),
+  "runway-video-bridge": r(
+    connectRunwayVideoBridgeSchema,
+    connectRunwayVideoBridgeImpl,
+    "Create a Runway video bridge scaffold.",
+    { mutates: true },
+  ),
+  "kafka-event-bus": r(
+    connectKafkaEventBusSchema,
+    connectKafkaEventBusImpl,
+    "Create a Kafka event bus scaffold.",
+    { mutates: true },
+  ),
+  "redis-pubsub-bus": r(
+    connectRedisPubsubBusSchema,
+    connectRedisPubsubBusImpl,
+    "Create a Redis Pub/Sub bus scaffold.",
+    { mutates: true },
+  ),
+  "influxdb-timeseries-bridge": r(
+    connectInfluxdbTimeseriesBridgeSchema,
+    connectInfluxdbTimeseriesBridgeImpl,
+    "Create an InfluxDB time-series bridge scaffold.",
+    { mutates: true },
+  ),
+  "prometheus-metrics-panel": r(
+    connectPrometheusMetricsPanelSchema,
+    connectPrometheusMetricsPanelImpl,
+    "Create a Prometheus metrics panel scaffold.",
+    { mutates: true },
+  ),
+  "grafana-annotation-bridge": r(
+    connectGrafanaAnnotationBridgeSchema,
+    connectGrafanaAnnotationBridgeImpl,
+    "Create a Grafana annotation bridge scaffold.",
+    { mutates: true },
+  ),
+  "homeassistant-state-bus": r(
+    connectHomeassistantStateBusSchema,
+    connectHomeassistantStateBusImpl,
+    "Create a Home Assistant state bus scaffold.",
+    { mutates: true },
+  ),
+  "google-sheets-cue-table": r(
+    connectGoogleSheetsCueTableSchema,
+    connectGoogleSheetsCueTableImpl,
+    "Create a Google Sheets cue table scaffold.",
+    { mutates: true },
+  ),
+  "airtable-content-bus": r(
+    connectAirtableContentBusSchema,
+    connectAirtableContentBusImpl,
+    "Create an Airtable content bus scaffold.",
+    { mutates: true },
+  ),
+  "notion-show-rundown": r(
+    connectNotionShowRundownSchema,
+    connectNotionShowRundownImpl,
+    "Create a Notion show rundown scaffold.",
+    { mutates: true },
+  ),
+  "figma-design-tokens": r(
+    connectFigmaDesignTokensSchema,
+    connectFigmaDesignTokensImpl,
+    "Create a Figma design token scaffold.",
+    { mutates: true },
+  ),
+  "slack-ops-bridge": r(
+    connectSlackOpsBridgeSchema,
+    connectSlackOpsBridgeImpl,
+    "Create a Slack ops bridge scaffold.",
+    { mutates: true },
+  ),
+  "s3-media-bucket": r(
+    connectS3MediaBucketSchema,
+    connectS3MediaBucketImpl,
+    "Create an S3 media bucket scaffold.",
+    { mutates: true },
+  ),
+  "calendar-schedule-bus": r(
+    connectCalendarScheduleBusSchema,
+    connectCalendarScheduleBusImpl,
+    "Create a calendar schedule bus scaffold.",
+    { mutates: true },
+  ),
+  "ticketing-checkin-bus": r(
+    connectTicketingCheckinBusSchema,
+    connectTicketingCheckinBusImpl,
+    "Create a ticketing check-in bus scaffold.",
+    { mutates: true },
+  ),
+  "pos-sales-telemetry": r(
+    connectPosSalesTelemetrySchema,
+    connectPosSalesTelemetryImpl,
+    "Create a POS sales telemetry scaffold.",
+    { mutates: true },
+  ),
+  "weather-forecast-bus": r(
+    connectWeatherForecastBusSchema,
+    connectWeatherForecastBusImpl,
+    "Create a weather forecast bus scaffold.",
+    { mutates: true },
+  ),
+  "gtfs-transit-feed": r(
+    connectGtfsTransitFeedSchema,
+    connectGtfsTransitFeedImpl,
+    "Create a GTFS transit feed scaffold.",
+    { mutates: true },
+  ),
+  "parking-occupancy-bus": r(
+    connectParkingOccupancyBusSchema,
+    connectParkingOccupancyBusImpl,
+    "Create a parking occupancy bus scaffold.",
+    { mutates: true },
+  ),
+  "map-tile-overlay": r(
+    connectMapTileOverlaySchema,
+    connectMapTileOverlayImpl,
+    "Create a map tile overlay scaffold.",
+    { mutates: true },
+  ),
+  "geojson-feature-bus": r(
+    connectGeojsonFeatureBusSchema,
+    connectGeojsonFeatureBusImpl,
+    "Create a GeoJSON feature bus scaffold.",
+    { mutates: true },
+  ),
+  "gps-fleet-tracker": r(
+    connectGpsFleetTrackerSchema,
+    connectGpsFleetTrackerImpl,
+    "Create a GPS fleet tracker scaffold.",
+    { mutates: true },
+  ),
+  "adsb-aircraft-bus": r(
+    connectAdsbAircraftBusSchema,
+    connectAdsbAircraftBusImpl,
+    "Create an ADS-B aircraft bus scaffold.",
+    { mutates: true },
+  ),
+  "ais-vessel-bus": r(
+    connectAisVesselBusSchema,
+    connectAisVesselBusImpl,
+    "Create an AIS vessel bus scaffold.",
+    { mutates: true },
+  ),
+  "public-alerts-bus": r(
+    connectPublicAlertsBusSchema,
+    connectPublicAlertsBusImpl,
+    "Create a public alerts bus scaffold.",
+    { mutates: true },
+  ),
+  "twitch-eventsub-bus": r(
+    connectTwitchEventsubBusSchema,
+    connectTwitchEventsubBusImpl,
+    "Create a Twitch EventSub audience bus scaffold.",
+    { mutates: true },
+  ),
+  "youtube-live-chat-bus": r(
+    connectYoutubeLiveChatBusSchema,
+    connectYoutubeLiveChatBusImpl,
+    "Create a YouTube Live Chat audience bus scaffold.",
+    { mutates: true },
+  ),
+  "discord-interaction-bus": r(
+    connectDiscordInteractionBusSchema,
+    connectDiscordInteractionBusImpl,
+    "Create a Discord interaction bus scaffold.",
+    { mutates: true },
+  ),
+  "tiktok-live-events-bus": r(
+    connectTiktokLiveEventsBusSchema,
+    connectTiktokLiveEventsBusImpl,
+    "Create a TikTok Live events bus scaffold.",
+    { mutates: true },
+  ),
+  "matrix-room-bus": r(
+    connectMatrixRoomBusSchema,
+    connectMatrixRoomBusImpl,
+    "Create a Matrix room event bus scaffold.",
+    { mutates: true },
+  ),
+  "rss-feed-bus": r(
+    connectRssFeedBusSchema,
+    connectRssFeedBusImpl,
+    "Create an RSS/Atom feed bus scaffold.",
+    { mutates: true },
+  ),
+  "rfid-badge-bus": r(
+    connectRfidBadgeBusSchema,
+    connectRfidBadgeBusImpl,
+    "Create an RFID badge-reader bus scaffold.",
+    { mutates: true },
+  ),
+  "nfc-tap-bus": r(
+    connectNfcTapBusSchema,
+    connectNfcTapBusImpl,
+    "Create an NFC tap event bus scaffold.",
+    { mutates: true },
+  ),
+  "ble-beacon-bus": r(
+    connectBleBeaconBusSchema,
+    connectBleBeaconBusImpl,
+    "Create a BLE beacon proximity bus scaffold.",
+    { mutates: true },
+  ),
+  "uwb-anchor-bus": r(
+    connectUwbAnchorBusSchema,
+    connectUwbAnchorBusImpl,
+    "Create a UWB anchor/tag tracking bus scaffold.",
+    { mutates: true },
+  ),
+  "qr-scan-bus": r(
+    connectQrScanBusSchema,
+    connectQrScanBusImpl,
+    "Create a QR scan event bus scaffold.",
+    { mutates: true },
+  ),
+  "wifi-presence-bus": r(
+    connectWifiPresenceBusSchema,
+    connectWifiPresenceBusImpl,
+    "Create a Wi-Fi presence aggregate bus scaffold.",
+    { mutates: true },
+  ),
+  "people-counting-bus": r(
+    connectPeopleCountingBusSchema,
+    connectPeopleCountingBusImpl,
+    "Create a people-counting aggregate bus scaffold.",
+    { mutates: true },
+  ),
+  "queue-length-bus": r(
+    connectQueueLengthBusSchema,
+    connectQueueLengthBusImpl,
+    "Create a queue-length aggregate bus scaffold.",
+    { mutates: true },
+  ),
+  "door-access-bus": r(
+    connectDoorAccessBusSchema,
+    connectDoorAccessBusImpl,
+    "Create a door-access monitoring bus scaffold.",
+    { mutates: true },
+  ),
+  "environmental-sensor-bus": r(
+    connectEnvironmentalSensorBusSchema,
+    connectEnvironmentalSensorBusImpl,
+    "Create an environmental sensor bus scaffold.",
+    { mutates: true },
+  ),
+  "power-meter-bus": r(
+    connectPowerMeterBusSchema,
+    connectPowerMeterBusImpl,
+    "Create a power-meter telemetry bus scaffold.",
+    { mutates: true },
+  ),
+  "noise-level-bus": r(
+    connectNoiseLevelBusSchema,
+    connectNoiseLevelBusImpl,
+    "Create a noise-level telemetry bus scaffold.",
+    { mutates: true },
+  ),
   glsl: r(createGlslShaderSchema, createGlslShaderImpl, "Create a GLSL TOP shader.", {
     mutates: true,
   }),
@@ -1643,6 +2791,12 @@ const COMMANDS: Record<string, Command> = {
     createRaytkSceneSchema,
     createRaytkSceneImpl,
     "RayTK node-graph raymarch scene (sphereSdf → raymarchRender3D → Null); needs RayTK loaded.",
+    { mutates: true },
+  ),
+  "raytk-sdf-graph": r(
+    createRaytkSdfGraphSchema,
+    createRaytkSdfGraphImpl,
+    "Build an advanced RayTK SDF graph with optional union, material, camera, and light.",
     { mutates: true },
   ),
   "raytk-op": r(
@@ -1995,10 +3149,40 @@ const COMMANDS: Record<string, Command> = {
     "Estimate per-pixel depth from a 2D image/video source via an AI depth model.",
     { mutates: true },
   ),
+  "iphone-depth-source": r(
+    createIphoneDepthSourceSchema,
+    createIphoneDepthSourceImpl,
+    "Scaffold an iPhone LiDAR/depth source with video, depth, and OSC sensor outputs.",
+    { mutates: true },
+  ),
+  "yolo-onnx-tracker": r(
+    createYoloOnnxTrackerSchema,
+    createYoloOnnxTrackerImpl,
+    "Create a YOLO/ONNX object-tracking bridge scaffold with stable detection outputs.",
+    { mutates: true },
+  ),
+  "nuitrack-body-bus": r(
+    createNuitrackBodyBusSchema,
+    createNuitrackBodyBusImpl,
+    "Create a Nuitrack skeleton body-bus scaffold over OSC/WebSocket/TCP/sample input.",
+    { mutates: true },
+  ),
+  "orbbec-depth-silhouette": r(
+    createOrbbecDepthSilhouetteSchema,
+    createOrbbecDepthSilhouetteImpl,
+    "Create an Orbbec/Kinect-compatible depth silhouette scaffold with safe fallbacks.",
+    { mutates: true },
+  ),
   "create-gaussian-splat-scene": r(
     createGaussianSplatSceneSchema,
     createGaussianSplatSceneImpl,
     "Render a 3D Gaussian Splat scene (point/splat dataset) into the network.",
+    { mutates: true },
+  ),
+  "sam2-segmentation-bridge": r(
+    createSam2SegmentationBridgeSchema,
+    createSam2SegmentationBridgeImpl,
+    "Bridge an external SAM2/FastSAM mask service into TouchDesigner matte outputs.",
     { mutates: true },
   ),
   "create-ai-mirror": r(
