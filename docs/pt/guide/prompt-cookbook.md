@@ -23,8 +23,10 @@ A mídia desta página fica reservada para o resultado visual ou a superfície
 performável que o prompt cria. Se o prompt gera relatório, config, README ou
 health check, ele fica só em texto em vez de mostrar uma ilustração decorativa do
 comando.
+Não anexe um clipe até ele ter sido capturado da saída do TouchDesigner que o
+prompt produziu via tdmcp.
 
-## Starters de receita (v0.8.2)
+## Starters de receita (receitas first-party validadas)
 
 Use estes quando quiser começar por uma receita first-party validada e só depois
 pedir uma passada criativa. São bons para workshop e ensaio porque partem de redes
@@ -173,6 +175,91 @@ de oscilador brilhante com controles seguros para show.*
 
 *Uma receita de kinetic type sem áudio para title cards, contagens regressivas e
 labels de cue quando audio-reactivity ainda não é necessária.*
+
+As receitas twin do v0.13 espelham ferramentas de orquestração mais novas com
+redes checadas por schema e validadas por live cook. Elas ficam só em texto aqui
+até cada vídeo ser capturado do `out1` real depois de rodar o prompt pelo tdmcp.
+
+> *"Aplique `color_grade_basic` em uma rampa de teste limpa, deixe com cara de grade
+> teal e âmbar de madrugada, e exponha Brightness, Gamma, Contrast, Saturation e Hue
+> para eu trocar por footage do venue depois."*
+
+*Uma rampa horizontal alimenta estágios Level e HSV Adjust, terminando em um `out1`
+estável. A receita expõe controles de grade que você pode ensaiar offline e depois
+trocar por uma fonte real via Select TOP. É a twin validada de `create_color_grade`,
+útil quando você precisa de uma cadeia de colorista antes do clip real estar
+pronto.*
+
+> *"Aplique `transition_dissolve`, deixe as fontes A e B obviamente diferentes, e
+> mantenha um controle Progress para eu ensaiar o crossfade antes de ligar decks
+> reais."*
+
+*Duas fontes internas se misturam por um Cross TOP com um único knob Progress de
+0..1. É o menor ensaio seguro de transição A/B: suficiente para praticar o fader e
+depois substituir as fontes de teste por Select TOPs dos decks reais.*
+
+> *"Aplique `text_overlay_lower_third`, escreva um lower third legível para a
+> vocalista sobre o fundo de demo, e deixe a camada de texto fácil de trocar para o
+> program feed."*
+
+*Um Text TOP é composto sobre um fundo sintético e termina em `out1`. Parâmetros de
+texto e fonte ficam visíveis para titulação ao vivo ou binding posterior, então o
+overlay pode sair do lower third de demo para o program output real sem mudar a
+forma da receita.*
+
+> *"Aplique `layer_stack_blend`, crie três camadas de ensaio com cores e blend modes
+> diferentes, e exponha a opacidade de cada uma para eu praticar uma mixagem ao vivo
+> pequena."*
+
+*Fontes de noise, rampa e constant empilham de baixo para cima por estágios Level e
+Composite. A opacidade por camada fica exposta, fazendo da receita uma mini mesa de
+camadas legível antes de o show usar entradas reais.*
+
+> *"Aplique `strobe_flash` com uma taxa moderada de ensaio, mantenha Rate e Duty
+> visíveis, e me avise antes de eu subir para uma faixa insegura para
+> fotossensibilidade."*
+
+*Um Constant TOP pisca por um Level TOP guiado por expressão de LFO. Rate e Duty
+ficam performáveis, e o aviso de segurança importa porque isso é uma saída piscante
+real, não um preview decorativo.*
+
+> *"Aplique `test_pattern_grid`, faça uma grade de alinhamento de projetor com oito
+> divisões, e rotule de um jeito claro para a equipe identificar o output de longe."*
+
+*Um GLSL TOP autossuficiente desenha uma grade de calibração terminando em `out1`.
+Use para foco, alinhamento de mapping e checagens rápidas de output antes da arte
+entrar ao vivo.*
+
+> *"Aplique `datamosh_feedback_echo`, deixe o smear recursivo crescer por alguns
+> frames, e exponha Decay para eu tocar a trilha de codec quebrado ao vivo."*
+
+*Noise animado alimenta um loop limitado de Feedback / Composite / Level. O visual
+recursivo se desenvolve ao longo de vários frames processados pelo cook, então peça
+um preview com atraso quando for capturar o resultado.*
+
+> *"Aplique `chrome_blobs`, faça o metal líquido se mover devagar sobre um fundo
+> escuro de estúdio, e me diga qual binding de `uTime` eu preciso depois do import
+> para reflexos em movimento."*
+
+*Noise vira metaballs suavizadas e um passe GLSL de chrome. A receita é válida
+offline, com uma nota de binding manual de `uTime` para reflexos animados: um look
+reprodutível de bumper Y2K, não um shader colado uma vez.*
+
+> *"Aplique `displacement_warp_noise`, use o modulador de noise animado para fazer a
+> rampa ondular como miragem de calor, e deixe Amount e Speed prontos para um clip
+> real depois."*
+
+*Uma rampa é distorcida em UV por noise em movimento através de um Displace TOP. É
+um caminho seguro de ensaio offline para warps líquidos sobre footage real, com os
+controles ao vivo prontos antes da fonte chegar.*
+
+> *"Aplique `luma_keyer`, use a rampa como matte de luminância visível sobre um fundo
+> de noise em movimento, e exponha Threshold e Softness para eu ajustar uma fonte
+> real depois."*
+
+*Uma fonte de rampa, fundo de noise, matte por Level e Matte TOP tornam a key
+visível sem footage externo. É a twin de ensaio do luma key antes de uma câmera ou
+movie source real entrar na cadeia.*
 
 ## Generativo & abstrato
 

@@ -20,8 +20,10 @@ tunnel" works better than naming operators. The AI picks the operators.
 Media on this page is reserved for the visual result or performable surface a
 prompt creates. If a prompt produces a report, config, README or health check, it
 stays text-only instead of showing a decorative command illustration.
+Do not attach a clip until it has been captured from the TouchDesigner output that
+the prompt produced through tdmcp.
 
-## Recipe starters (v0.8.2)
+## Recipe starters (validated first-party recipes)
 
 Use these when you want a validated first-party recipe first, then a creative pass.
 They are good workshop and rehearsal prompts because they start from schema-checked
@@ -168,6 +170,86 @@ oscillator curve with show-safe controls.*
 
 *A text-only kinetic type recipe for lower-friction title cards, countdowns and
 cue labels when audio reactivity is not needed yet.*
+
+The v0.13 recipe twins mirror newer orchestrator tools with schema-checked,
+live-cook-validated networks. They stay text-only here until each video is captured
+from the actual `out1` result after running the prompt through tdmcp.
+
+> *"Apply `color_grade_basic` to a clean test ramp, make it feel like a late-night
+> teal-and-amber grade, and expose Brightness, Gamma, Contrast, Saturation and Hue
+> so I can swap in venue footage later."*
+
+*A horizontal ramp feeds Level and HSV Adjust stages, ending in a stable `out1`.
+The recipe exposes grading controls that can be rehearsed offline, then swapped to
+a real source via Select TOP. It is the validated recipe twin of
+`create_color_grade`, useful when you need a colorist chain before the real clip is
+ready.*
+
+> *"Apply `transition_dissolve`, make source A and B obviously different, and leave
+> one Progress control so I can rehearse the crossfade before wiring real decks."*
+
+*Two built-in sources blend through a Cross TOP with a single 0..1 Progress knob.
+This is the smallest safe A/B transition rehearsal: enough to practice the fader,
+then replace the test sources with real deck Select TOPs.*
+
+> *"Apply `text_overlay_lower_third`, write a readable vocalist lower third over the
+> demo background, and keep the text layer easy to replace with the program feed."*
+
+*A Text TOP composites over a synthetic background and ends at `out1`. Text and
+font parameters stay visible for live titling or later binding, so the overlay can
+move from a demo lower third to real program output without changing the recipe
+shape.*
+
+> *"Apply `layer_stack_blend`, make three rehearsal layers with different colors and
+> blend modes, and expose each opacity so I can practice a small live mix."*
+
+*Noise, ramp and constant sources stack bottom-up through Level and Composite
+stages. Per-layer opacity is exposed, making the recipe a readable miniature layer
+desk before the show uses real inputs.*
+
+> *"Apply `strobe_flash` with a moderate rehearsal rate, keep Rate and Duty visible,
+> and warn me before I raise it into unsafe photosensitive territory."*
+
+*A Constant TOP flashes through a Level TOP gated by an LFO expression. Rate and
+Duty stay performable, and the safety note matters because this is a real flashing
+output, not a decorative preview.*
+
+> *"Apply `test_pattern_grid`, make an eight-division projector alignment grid, and
+> label it clearly enough that the crew can identify the output from across the
+> room."*
+
+*A self-contained GLSL TOP draws a calibration grid ending at `out1`. Use it for
+focus, mapping alignment and quick output checks before the artwork goes live.*
+
+> *"Apply `datamosh_feedback_echo`, let the recursive smear build for a few frames,
+> and expose Decay so I can ride the broken-codec trail live."*
+
+*Animated noise feeds a bounded Feedback / Composite / Level loop. The recursive
+look develops over several cooked frames, so ask for a delayed preview when you
+capture the result.*
+
+> *"Apply `chrome_blobs`, make the liquid metal move slowly on a dark studio
+> background, and tell me which `uTime` binding I need after import for moving
+> reflections."*
+
+*Noise becomes softened metaballs and a GLSL chrome pass. The recipe is valid
+offline, with a manual `uTime` binding note for animated reflections: a reproducible
+Y2K logo-bumper look, not a one-off shader paste.*
+
+> *"Apply `displacement_warp_noise`, use the animated noise modulator to make the
+> ramp ripple like heat haze, and leave Amount and Speed ready for a real clip
+> later."*
+
+*A ramp source is UV-warped by drifting noise through a Displace TOP. It is a safe
+offline rehearsal path for liquid warps over real footage, with the live controls
+ready before the source arrives.*
+
+> *"Apply `luma_keyer`, use the ramp as a visible luminance matte over a moving noise
+> background, and expose Threshold and Softness so I can tune a real source later."*
+
+*A ramp source, noise background, Level matte and Matte TOP make the key visible
+without external footage. It is the luma-key rehearsal twin before a real camera or
+movie source enters the chain.*
 
 ## Generative & abstract
 
