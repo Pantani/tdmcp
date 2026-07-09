@@ -29,6 +29,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "rebuild_network", // can clear/recreate a parent's children
   "edit_dat_content", // destructive DAT rewrite, even though scoped/guarded
   "set_dat_content", // whole-DAT overwrite
+  "edit_shader_live_loop", // composed shader DAT rewrite + post-edit inspection loop
   "create_panic", // bypasses & deletes
   "manage_checkpoint", // overwrites saved state
   "manage_component", // can delete/replace components
@@ -40,6 +41,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "scaffold_recipe_template", // writes recipe files
   "attach_docs_as_assets", // copies files and rewrites manifests
   "local_marketplace_index", // writes index files
+  "marketplace_index_seed", // writes/overwrites user-specified seed JSON files
   "refresh_asset_previews", // writes preview images
   "install_library_package", // copies/extracts package files
   "create_modulators", // rebuilds a same-named container, clearing its children

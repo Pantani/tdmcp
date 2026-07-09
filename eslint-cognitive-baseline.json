@@ -1359,6 +1359,15 @@
     "stableKey": "src/tools/layer1/audioFingerprintToVisual.ts:classify"
   },
   {
+    "file": "src/tools/layer1/blenderSceneImport.ts",
+    "line": 82,
+    "column": 28,
+    "complexity": 11,
+    "signature": "blenderSceneImportImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/blenderSceneImport.ts:blenderSceneImportImpl"
+  },
+  {
     "file": "src/tools/layer1/composeCueList.ts",
     "line": 353,
     "column": 23,
@@ -1692,6 +1701,15 @@
     "stableKey": "src/tools/layer1/importShadertoy.ts:fetchShaderById"
   },
   {
+    "file": "src/tools/layer1/lidarFloorTracker.ts",
+    "line": 50,
+    "column": 28,
+    "complexity": 11,
+    "signature": "lidarFloorTrackerImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/lidarFloorTracker.ts:lidarFloorTrackerImpl"
+  },
+  {
     "file": "src/tools/layer1/moodboardToSystem.ts",
     "line": 402,
     "column": 10,
@@ -1719,6 +1737,33 @@
     "stableKey": "src/tools/layer1/moodboardToSystem.ts:resolveImagePath"
   },
   {
+    "file": "src/tools/layer1/projectorCalibrationWizard.ts",
+    "line": 71,
+    "column": 28,
+    "complexity": 10,
+    "signature": "projectorCalibrationWizardImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/projectorCalibrationWizard.ts:projectorCalibrationWizardImpl"
+  },
+  {
+    "file": "src/tools/layer1/raytkExprGraphBuilder.ts",
+    "line": 488,
+    "column": 10,
+    "complexity": 11,
+    "signature": "computeDepths",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/raytkExprGraphBuilder.ts:computeDepths"
+  },
+  {
+    "file": "src/tools/layer1/raytkExprGraphBuilder.ts",
+    "line": 539,
+    "column": 10,
+    "complexity": 33,
+    "signature": "normalizeGraph",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 33 to the 9 allowed.",
+    "stableKey": "src/tools/layer1/raytkExprGraphBuilder.ts:normalizeGraph"
+  },
+  {
     "file": "src/tools/layer1/setupOutput.ts",
     "line": 52,
     "column": 28,
@@ -1737,6 +1782,15 @@
     "stableKey": "src/tools/layer2/autoRepairLoop.ts:async () => {"
   },
   {
+    "file": "src/tools/layer2/autoUiFromParams.ts",
+    "line": 64,
+    "column": 17,
+    "complexity": 22,
+    "signature": "inferControlsFromNode",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 22 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/autoUiFromParams.ts:inferControlsFromNode"
+  },
+  {
     "file": "src/tools/layer2/connectHelper.ts",
     "line": 28,
     "column": 23,
@@ -1744,6 +1798,15 @@
     "signature": "connectNodesViaBridge",
     "message": "Refactor this function to reduce its Cognitive Complexity from 11 to the 9 allowed.",
     "stableKey": "src/tools/layer2/connectHelper.ts:connectNodesViaBridge"
+  },
+  {
+    "file": "src/tools/layer2/createCompanionSurface.ts",
+    "line": 85,
+    "column": 23,
+    "complexity": 10,
+    "signature": "createCompanionSurfaceImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 10 to the 9 allowed.",
+    "stableKey": "src/tools/layer2/createCompanionSurface.ts:createCompanionSurfaceImpl"
   },
   {
     "file": "src/tools/layer2/createDecks.ts",
@@ -1951,6 +2014,15 @@
     "signature": "draftRecipeFromTutorialImpl",
     "message": "Refactor this function to reduce its Cognitive Complexity from 19 to the 9 allowed.",
     "stableKey": "src/tools/layer3/draftRecipeFromTutorial.ts:draftRecipeFromTutorialImpl"
+  },
+  {
+    "file": "src/tools/layer3/editShaderLiveLoop.ts",
+    "line": 120,
+    "column": 23,
+    "complexity": 23,
+    "signature": "editShaderLiveLoopImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 23 to the 9 allowed.",
+    "stableKey": "src/tools/layer3/editShaderLiveLoop.ts:editShaderLiveLoopImpl"
   },
   {
     "file": "src/tools/layer3/elicitMissingArgs.ts",
@@ -2482,6 +2554,15 @@
     "signature": "buildPayloadScript",
     "message": "Refactor this function to reduce its Cognitive Complexity from 14 to the 9 allowed.",
     "stableKey": "src/tools/pythonReport.ts:buildPayloadScript"
+  },
+  {
+    "file": "src/tools/showPreflightReportCore.ts",
+    "line": 62,
+    "column": 23,
+    "complexity": 33,
+    "signature": "showPreflightReportImpl",
+    "message": "Refactor this function to reduce its Cognitive Complexity from 33 to the 9 allowed.",
+    "stableKey": "src/tools/showPreflightReportCore.ts:showPreflightReportImpl"
   },
   {
     "file": "src/tools/vault/autoTagLibraryAsset.ts",

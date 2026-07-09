@@ -4,6 +4,7 @@ import { registerApplyCreativeCard } from "./applyCreativeCard.js";
 import { registerApplyPostProcessing } from "./applyPostProcessing.js";
 import { registerApplyRecipe } from "./applyRecipe.js";
 import { registerAudioFingerprintToVisual } from "./audioFingerprintToVisual.js";
+import { registerBlenderSceneImport } from "./blenderSceneImport.js";
 import { registerComposeCueList } from "./composeCueList.js";
 import { registerControlledDisorderGrid } from "./controlledDisorderGrid.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
@@ -140,8 +141,11 @@ import { registerGetPreview } from "./getPreview.js";
 import { registerImportIsfShader } from "./importIsfShader.js";
 import { registerImportModel } from "./importModel.js";
 import { registerImportShadertoy } from "./importShadertoy.js";
+import { registerLidarFloorTracker } from "./lidarFloorTracker.js";
 import { registerListRecipes } from "./listRecipes.js";
 import { registerMoodboardToSystem } from "./moodboardToSystem.js";
+import { registerProjectorCalibrationWizard } from "./projectorCalibrationWizard.js";
+import { registerRaytkExprGraphBuilder } from "./raytkExprGraphBuilder.js";
 import { registerScaffoldGenre } from "./scaffoldGenre.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
 import { registerSetupBodyTracking } from "./setupBodyTracking.js";
@@ -173,6 +177,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVideoPlayer,
   registerCreate3dScene,
   registerCreateProjectionMapping,
+  registerProjectorCalibrationWizard,
   registerCreateKeyframeAnimation,
   registerCreateSimulation,
   registerListRecipes,
@@ -187,6 +192,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateColorGrade,
   registerCreateColorWheels,
   registerImportModel,
+  registerBlenderSceneImport,
   registerCreateShaderLib,
   registerCreateShaderPark,
   registerCreateVideoSynth,
@@ -207,6 +213,8 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateRaymarchScene,
   // RayTK integration (Wave W4) — native RayTK node-graph scene (complement to the GLSL one):
   registerCreateRaytkScene,
+  // Tool-integration Wave 7 — RayTK expression graph builder:
+  registerRaytkExprGraphBuilder,
   registerDetectTempo,
   // Post-0.3.0 parallel build — wave 2:
   registerCreatePbrScene,
@@ -315,6 +323,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateStepRepeat,
   registerCreatePointerReactive,
   registerCreateInteractionZones,
+  registerLidarFloorTracker,
   // Roadmap-to-1.0 Wave 4 (2026-07-06) — stock-TD generators:
   registerCreateTerrain,
   registerCreateAsemicWriting,

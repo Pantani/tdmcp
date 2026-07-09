@@ -10,6 +10,63 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Tool-integration campaign Waves 1-7:
+  - **`export_render_preset`** (Layer 3, CLI `export-render-preset`) wraps
+    `record_movie` with named delivery presets for HAP, HAP Alpha, ProRes 422/4444,
+    NotchLC, and MP4 review exports.
+  - **`show_preflight_report`** (Layer 3, CLI `show-preflight`) returns a read-only
+    PASS/WARN/FAIL pre-show report across bridge reachability, node errors,
+    topology, performance budget, and display checks.
+  - **`auto_ui_from_params`** (Layer 2, CLI `auto-ui-from-params`) infers primitive
+    node parameters and generates bound custom-parameter controls for quick playable
+    UI scaffolding.
+  - **`create_companion_surface`** (Layer 2, CLI `companion-surface`) composes auto
+    UI, a playable fader/cue surface, and optional preflight diagnostics around an
+    existing node or COMP.
+  - **`clip_audio_transport`** (Layer 2, CLI `clip-transport`) creates a deterministic
+    movie/audio transport container with video/audio outputs and shared Play, Loop,
+    and Speed controls.
+  - **`osc_router_matrix`** (Layer 2, CLI `osc-router`) creates a reusable OSC
+    target/control matrix with one Constant CHOP + OSC Out CHOP lane per external
+    target.
+  - **`qlab_osc_bridge`** (Layer 2, CLI `qlab-osc`) presets QLab transport and
+    cue-start OSC routes.
+  - **`atem_switcher_control`** (Layer 2, CLI `atem-switcher-control`) presets safe
+    atemOSC/Companion switcher routes for cut/auto/FTB plus program/preview input
+    selection without using the Blackmagic SDK directly.
+  - **`resolume_vdmx_output_chain`** (Layer 2, CLI `resolume-vdmx-output`) presets
+    OSC control lanes for Resolume, VDMX, or both.
+  - **`obs_stream_control`** (Layer 2, CLI `obs-stream-control`) creates an OBS
+    WebSocket v5 control rig with stream, recording, and scene-switch request
+    channels without storing OBS passwords.
+  - **`edit_shader_live_loop`** (Layer 3, CLI `shader-live-loop`) edits a GLSL/Text
+    DAT and immediately runs the shader feedback loop: post-edit error inspection
+    plus optional compact inline preview.
+  - **`blender_scene_import`** (Layer 1, CLI `blender-scene-import`) creates a
+    Blender-oriented PBR render scaffold from `.blend`/FBX/OBJ/glTF/GLB/USD assets,
+    with deterministic layout, fallback primitive, material controls, and `.blend`
+    export guidance.
+  - **`marketplace_index_seed`** (Library, CLI `marketplace-index-seed`) writes a
+    guarded starter marketplace seed JSON with built-in pack ideas plus custom
+    entries, without replacing `local_marketplace_index`.
+  - **`one_source_five_ways`** (AI, CLI `one-source-five-ways`) turns one source
+    node/asset into five deterministic remix briefs spanning colorway, motion,
+    texture, spatial reframing, and cueable performance variants.
+  - **`projector_calibration_wizard`** (Layer 1, CLI `projector-calibration`)
+    scaffolds generated-grid/source TOP calibration lanes with crop, corner-pin,
+    level, preview, and controls while keeping physical projector alignment marked
+    live-unverified.
+  - **`notch_touchengine_bridge`** (Layer 2, CLI `notch-touchengine-bridge`)
+    scaffolds a guarded Notch TOP or Engine COMP/TouchEngine bridge with notes and
+    output wiring while keeping license/runtime validation explicit.
+  - **`lidar_floor_tracker`** (Layer 1, CLI `lidar-floor-tracker`) scaffolds a
+    synthetic/Ouster/Leuze/UDP floor-tracking CHOP pipeline with preview output,
+    keeping real sensor validation marked hardware-unverified.
+  - **`raytk_expr_graph_builder`** (Layer 1, CLI `raytk-expr-graph`) builds a
+    preset or explicit RayTK ROP expression graph from copied RayTK masters,
+    typed connector edges, simple parameter values, deterministic node layout,
+    and a native `out1` TOP, while keeping live RayTK render/cook validation
+    explicit.
 - **RayTK native integration (node-graph, offline-built)** — beyond package-manager
   staging, tdmcp can now drive RayTK (t3kt/raytk) as editable ROP node graphs,
   complementary to (never replacing) the GLSL `create_raymarch_scene`/`create_sdf_field`:
@@ -38,6 +95,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     scene. `create_raytk_op` connects an existing op into a new op's input. Wiring uses
     connector-to-connector (`dst.inputConnectors[i].connect(src.outputConnectors[0])`) —
     RayTK COMP connectors reject `.connect(op)`.
+
+### Changed
+
+- Docs follow-through for the tool-integration campaign: public tool-count copy now
+  matches the generated 375-tool reference; EN/PT prompt cookbook entries cover the
+  new integration, RayTK expression-graph, show-readiness, external-control,
+  projector/LiDAR, Blender/Notch and render-handoff flows without adding decorative
+  media; `docs/reference/cli.md` lists the new `tdmcp-agent` campaign subcommands.
 
 ### Fixed
 
