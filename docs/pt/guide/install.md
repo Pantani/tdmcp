@@ -77,7 +77,7 @@ abaixo e continue.
 3. Cole esta **única linha** e aperte **Enter**:
 
    ```python
-   import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.0/td/bootstrap.py").read().decode())
+   import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.1/td/bootstrap.py").read().decode())
    ```
 
 Você deve ver:
