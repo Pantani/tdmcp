@@ -270,6 +270,55 @@ describe("raytk_expr_graph_builder", () => {
     });
   });
 
+  it("inserts material before an existing custom renderer instead of dangling after it", async () => {
+    const exec = mockExec(loadedReport());
+
+    const result = await raytkExprGraphBuilderImpl(
+      makeCtx(),
+      raytkExprGraphBuilderSchema.parse({
+        preset: "custom",
+        nodes: [
+          {
+            id: "shape",
+            op_type: "sphereSdf",
+            category: "sdf",
+          },
+          {
+            id: "render1",
+            op_type: "raymarchRender3D",
+            category: "output",
+          },
+        ],
+        edges: [{ from: "shape", to: "render1", input_index: 0, output_index: 0 }],
+        add_material: true,
+        add_renderer: true,
+        add_camera: false,
+        add_light: false,
+      }),
+    );
+
+    expect(result.isError).toBeFalsy();
+    const payload = exec.payload();
+    expect(payload?.edges).not.toContainEqual({
+      from: "render1",
+      to: "mat1",
+      input_index: 0,
+      output_index: 0,
+    });
+    expect(payload?.edges).toContainEqual({
+      from: "shape",
+      to: "mat1",
+      input_index: 0,
+      output_index: 0,
+    });
+    expect(payload?.edges).toContainEqual({
+      from: "mat1",
+      to: "render1",
+      input_index: 0,
+      output_index: 0,
+    });
+  });
+
   it("fails forward with load guidance when no RayTK masters resolve", async () => {
     mockExec(
       loadedReport({

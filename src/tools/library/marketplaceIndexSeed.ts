@@ -164,7 +164,7 @@ export const registerMarketplaceIndexSeed: ToolRegistrar = (server, ctx) => {
       description:
         "Write a guarded starter marketplace index JSON with optional built-in seed entries and custom package entries. Use this before local_marketplace_index when planning a local package marketplace; overwrite=false protects existing index files.",
       inputSchema: marketplaceIndexSeedSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
       outputSchema: marketplaceIndexSeedOutputSchema.shape,
     },
     (args) => marketplaceIndexSeedImpl(ctx, args),

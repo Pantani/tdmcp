@@ -1,8 +1,8 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { friendlyTdError } from "../../td-client/types.js";
-import { showPreflightReportImpl } from "../layer3/showPreflightReport.js";
 import { errorResult, jsonResult } from "../result.js";
+import { showPreflightReportImpl } from "../showPreflightReportCore.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { autoUiFromParamsImpl, inferControlsFromNode } from "./autoUiFromParams.js";
 import { toTdCustomParameterName } from "./createControlPanel.js";

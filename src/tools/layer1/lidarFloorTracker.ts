@@ -16,7 +16,7 @@ void main() {
   fragColor = TDOutputSwizzle(vec4(col, 1.0));
 }`;
 
-export const lidarFloorTrackerSchema = z.object({
+export const lidarFloorTrackerBaseSchema = z.object({
   parent_path: z.string().default("/project1").describe("Parent COMP path to build inside."),
   name: z.string().default("lidar_floor_tracker").describe("Generated container name."),
   sensor: z
@@ -33,6 +33,15 @@ export const lidarFloorTrackerSchema = z.object({
     .default(false)
     .describe("Enable live hardware input immediately. Defaults false for rehearsal safety."),
   expose_controls: z.boolean().default(true).describe("Expose Threshold and Scale controls."),
+});
+export const lidarFloorTrackerSchema = lidarFloorTrackerBaseSchema.superRefine((args, ctx) => {
+  if ((args.sensor === "ouster" || args.sensor === "leuze_rod4") && !args.sensor_address) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["sensor_address"],
+      message: `sensor_address is required when sensor is "${args.sensor}".`,
+    });
+  }
 });
 type LidarFloorTrackerArgs = z.infer<typeof lidarFloorTrackerSchema>;
 
@@ -79,11 +88,27 @@ export async function lidarFloorTrackerImpl(ctx: ToolContext, args: LidarFloorTr
           : source;
     if (points !== source) await builder.connect(source, points);
 
-    const normalize = await builder.add("mathCHOP", "normalize_floor", {
-      fromrange1: -1,
-      torange1: 1,
+    const xIn = await builder.add("selectCHOP", "x_in", { channames: "x" });
+    await builder.connect(points, xIn);
+    const xNorm = await builder.add("mathCHOP", "normalize_x", {
+      fromrange1: -args.floor_width_m / 2,
+      fromrange2: args.floor_width_m / 2,
+      torange1: -1,
+      torange2: 1,
     });
-    await builder.connect(points, normalize);
+    await builder.connect(xIn, xNorm);
+    const yIn = await builder.add("selectCHOP", "y_in", { channames: "y" });
+    await builder.connect(points, yIn);
+    const yNorm = await builder.add("mathCHOP", "normalize_y", {
+      fromrange1: -args.floor_depth_m / 2,
+      fromrange2: args.floor_depth_m / 2,
+      torange1: -1,
+      torange2: 1,
+    });
+    await builder.connect(yIn, yNorm);
+    const normalize = await builder.add("mergeCHOP", "normalize_floor", { align: "start" });
+    await builder.connect(xNorm, normalize, 0, 0);
+    await builder.connect(yNorm, normalize, 0, 1);
     const occupancy = await builder.add("logicCHOP", "occupancy", {
       convert: "bound",
       boundmin: args.threshold,
@@ -120,7 +145,7 @@ export async function lidarFloorTrackerImpl(ctx: ToolContext, args: LidarFloorTr
             min: 0.1,
             max: 10,
             default: 1,
-            bind_to: [`${normalize}.gain`],
+            bind_to: [`${xNorm}.gain`, `${yNorm}.gain`],
           },
         ]
       : [];
@@ -156,9 +181,9 @@ export const registerLidarFloorTracker: ToolRegistrar = (server, ctx) => {
       title: "LiDAR floor tracker",
       description:
         "Build a floor-occupancy tracker scaffold for synthetic rehearsal, Ouster TOP, Leuze ROD4 CHOP, or UDP point input. Produces a tracked_points CHOP plus a floor preview TOP; hardware modes default inactive and remain explicitly unverified until a real sensor is connected.",
-      inputSchema: lidarFloorTrackerSchema.shape,
+      inputSchema: lidarFloorTrackerBaseSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    (args) => lidarFloorTrackerImpl(ctx, args),
+    (args) => lidarFloorTrackerImpl(ctx, lidarFloorTrackerSchema.parse(args)),
   );
 };

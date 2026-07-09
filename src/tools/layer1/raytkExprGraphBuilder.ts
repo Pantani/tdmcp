@@ -563,6 +563,7 @@ function normalizeGraph(args: RaytkExprGraphBuilderArgs): NormalizedRaytkExprGra
   assertUniqueNodeIds(nodes);
   const ids = new Set(nodes.map((node) => node.id));
 
+  let renderer = findRenderer(nodes);
   if (args.add_material && !nodes.some((node) => node.op_type === "basicMat")) {
     const materialId = uniqueId("mat1", ids);
     nodes.push({
@@ -572,11 +573,24 @@ function normalizeGraph(args: RaytkExprGraphBuilderArgs): NormalizedRaytkExprGra
       label: "Material",
       parameters: {},
     });
-    edges.push({ from: tailId, to: materialId, input_index: 0, output_index: 0 });
-    tailId = materialId;
+    const rendererInputIndex =
+      renderer === undefined
+        ? -1
+        : edges.findIndex((edge) => edge.to === renderer?.id && edge.input_index === 0);
+    if (renderer && rendererInputIndex >= 0) {
+      const sourceId = edges[rendererInputIndex]?.from;
+      edges.splice(rendererInputIndex, 1);
+      if (sourceId) {
+        edges.push({ from: sourceId, to: materialId, input_index: 0, output_index: 0 });
+        edges.push({ from: materialId, to: renderer.id, input_index: 0, output_index: 0 });
+        tailId = materialId;
+      }
+    } else {
+      edges.push({ from: tailId, to: materialId, input_index: 0, output_index: 0 });
+      tailId = materialId;
+    }
   }
 
-  let renderer = findRenderer(nodes);
   if (args.add_renderer && !renderer) {
     const rendererId = uniqueId("render1", ids);
     renderer = {

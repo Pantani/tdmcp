@@ -47,6 +47,13 @@ export const oscRouterMatrixSchema = z.object({
     .describe("OSC destinations. Each target gets a Constant CHOP and OSC Out CHOP."),
 });
 export type OscRouterMatrixArgs = z.infer<typeof oscRouterMatrixSchema>;
+export type NormalizedOscRouterArgs = Omit<OscRouterMatrixArgs, "routes"> & {
+  routes: Array<
+    OscRouterMatrixArgs["routes"][number] & {
+      target_channels: Record<string, string>;
+    }
+  >;
+};
 
 interface OscRouterReport {
   container?: string;
@@ -162,7 +169,7 @@ except Exception:
 print(json.dumps(report))
 `;
 
-export function normalizeOscRouterArgs(args: OscRouterMatrixArgs): OscRouterMatrixArgs {
+export function normalizeOscRouterArgs(args: OscRouterMatrixArgs): NormalizedOscRouterArgs {
   const routes = args.routes.map((route) => {
     const targetChannels = Object.fromEntries(
       args.targets.map((target) => [
@@ -177,10 +184,10 @@ export function normalizeOscRouterArgs(args: OscRouterMatrixArgs): OscRouterMatr
       target_channels: targetChannels,
     };
   });
-  return { ...args, routes } as OscRouterMatrixArgs;
+  return { ...args, routes };
 }
 
-export function buildOscRouterMatrixScript(payload: object): string {
+export function buildOscRouterMatrixScript(payload: NormalizedOscRouterArgs): string {
   return buildPayloadScript(OSC_ROUTER_SCRIPT, payload);
 }
 

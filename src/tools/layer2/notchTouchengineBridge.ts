@@ -14,9 +14,22 @@ export const notchTouchengineBridgeSchema = z.object({
     .describe("Create a Notch TOP bridge or an Engine COMP TouchEngine bridge."),
   block_path: z.string().optional().describe("Notch .dfxdll block path for mode=notch_top."),
   tox_path: z.string().optional().describe("TouchEngine .tox path for mode=engine_comp."),
-  width: z.coerce.number().int().positive().default(1920).describe("Output width."),
-  height: z.coerce.number().int().positive().default(1080).describe("Output height."),
-  active: z.boolean().default(false).describe("Start the bridge active. Defaults false."),
+  width: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1920)
+    .describe("Notch TOP or placeholder output width. Ignored by mode=engine_comp."),
+  height: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1080)
+    .describe("Notch TOP or placeholder output height. Ignored by mode=engine_comp."),
+  active: z
+    .boolean()
+    .default(false)
+    .describe("Start the Notch TOP active. Ignored by mode=engine_comp."),
   play: z.boolean().default(false).describe("Start playback/cooking where supported."),
   expose_controls: z
     .boolean()
@@ -111,6 +124,11 @@ export async function notchTouchengineBridgeImpl(
         placeholder: isPlaceholder,
         block_path: args.block_path,
         tox_path: args.tox_path,
+        notch_top_only: {
+          width: args.width,
+          height: args.height,
+          active: args.active,
+        },
         validation_notes: validationNotes,
         live_validation: "UNVERIFIED-license-runtime",
       },

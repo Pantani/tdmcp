@@ -1,22 +1,15 @@
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { KnowledgeBase } from "../../src/knowledge/index.js";
-import { RecipeLibrary } from "../../src/recipes/loader.js";
-import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import {
   blenderSceneImportImpl,
   blenderSceneImportSchema,
 } from "../../src/tools/layer1/blenderSceneImport.js";
-import type { ToolContext } from "../../src/tools/types.js";
-import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
+import { captureCreateBodies, makeCtx, textOf } from "../helpers/tdToolTestUtils.js";
 
-interface CreatedNodeBody {
-  parent_path: string;
-  type: string;
-  name?: string;
-  parameters?: Record<string, unknown>;
+interface PatchedNodeBody {
+  path: string;
+  parameters: Record<string, unknown>;
 }
 
 const server = makeTdServer();
@@ -24,32 +17,16 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-function makeCtx(): ToolContext {
-  return {
-    client: new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000 }),
-    knowledge: new KnowledgeBase(),
-    recipes: new RecipeLibrary(),
-    logger: silentLogger,
-  };
-}
-
-function textOf(result: CallToolResult): string {
-  return result.content
-    .filter((c): c is { type: "text"; text: string } => c.type === "text")
-    .map((c) => c.text)
-    .join("\n");
-}
-
-function captureCreateBodies(): CreatedNodeBody[] {
-  const bodies: CreatedNodeBody[] = [];
+function capturePatchBodies(): PatchedNodeBody[] {
+  const bodies: PatchedNodeBody[] = [];
   server.use(
-    http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
-      const body = (await request.json()) as CreatedNodeBody;
-      bodies.push(body);
-      const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
+    http.patch(`${TD_BASE}/api/nodes/:seg`, async ({ params, request }) => {
+      const body = (await request.json()) as { parameters: Record<string, unknown> };
+      const path = `/${String(params.seg).replaceAll(":", "/")}`;
+      bodies.push({ path, parameters: body.parameters });
       return HttpResponse.json({
         ok: true,
-        data: { path: `${body.parent_path}/${name}`, type: body.type, name },
+        data: { path, type: "baseCOMP", name: path.split("/").at(-1), parameters: body.parameters },
       });
     }),
   );
@@ -78,7 +55,8 @@ describe("blender_scene_import", () => {
   });
 
   it("creates a File In SOP, PBR material, lights, camera, render, and output", async () => {
-    const bodies = captureCreateBodies();
+    const bodies = captureCreateBodies(server);
+    const patches = capturePatchBodies();
     const result = await blenderSceneImportImpl(makeCtx(), {
       scene_path: "/assets/stage.glb",
       parent_path: "/project1",
@@ -99,6 +77,11 @@ describe("blender_scene_import", () => {
 
     const fileIn = bodies.find((b) => b.type === "fileinSOP");
     expect(fileIn?.parameters?.file).toBe("/assets/stage.glb");
+    const geoPatch = patches.find((body) => body.path.endsWith("/geo"));
+    expect(geoPatch?.parameters).toMatchObject({ scale: 1.5, ry: 35 });
+    expect(geoPatch?.parameters).not.toHaveProperty("sx");
+    expect(geoPatch?.parameters).not.toHaveProperty("sy");
+    expect(geoPatch?.parameters).not.toHaveProperty("sz");
     for (const type of [
       "geometryCOMP",
       "pbrMAT",
@@ -114,7 +97,7 @@ describe("blender_scene_import", () => {
   });
 
   it("falls back to a primitive when scene_path is omitted", async () => {
-    const bodies = captureCreateBodies();
+    const bodies = captureCreateBodies(server);
     const result = await blenderSceneImportImpl(makeCtx(), {
       parent_path: "/project1",
       name: "fallback_scene",

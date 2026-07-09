@@ -52,6 +52,23 @@ describe("inferControlsFromNode", () => {
     expect(result.skipped).toContain("active");
     expect(result.skipped).toContain("tuple");
   });
+
+  it("matches user exclusions case-insensitively", () => {
+    const result = inferControlsFromNode(
+      {
+        path: "/project1/noise1",
+        type: "noiseTOP",
+        name: "noise1",
+        parameters: {
+          amplitude: 0.5,
+          seed: 2,
+        },
+      },
+      { exclude: ["Amplitude"], max_controls: 8, bind: true },
+    );
+    expect(result.controls.map((control) => control.name)).toEqual(["seed"]);
+    expect(result.skipped).toContain("amplitude");
+  });
 });
 
 describe("autoUiFromParamsImpl", () => {
@@ -125,5 +142,26 @@ describe("autoUiFromParamsImpl", () => {
     });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("No eligible");
+  });
+
+  it("returns a friendly error when TouchDesigner node lookup throws", async () => {
+    const ctx = {
+      client: {
+        getNode: vi.fn(async () => {
+          throw new Error("network down");
+        }),
+      },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+    const result = await autoUiFromParamsImpl(ctx, {
+      source_path: "/project1/missing",
+      page: "Auto UI",
+      exclude: [],
+      max_controls: 12,
+      bind: true,
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("auto_ui_from_params failed");
+    expect(textOf(result)).toContain("/project1/missing");
   });
 });

@@ -97,6 +97,8 @@ describe("buildObsStreamControlScript", () => {
     expect(script).toContain("sendText");
     expect(script).toContain("_place_container(parent, container)");
     expect(script).not.toContain('("protocol", "obswebsocket.json")');
+    expect(script).not.toContain('"valuechange"');
+    expect(script).not.toContain("def onValueChange");
 
     const payload = decodePayload(script);
     expect(payload.endpoint).toBe("ws://127.0.0.1:4455");

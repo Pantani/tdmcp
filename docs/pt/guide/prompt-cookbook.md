@@ -514,7 +514,7 @@ tdmcp-agent raytk-expr-graph --params '{"preset":"sphere_union_box","add_materia
 ```
 
 *`raytk_expr_graph_builder` é a superfície de graph maior: aceita presets ou `nodes` /
-`edges` explícitos, copia cada master RayTK ao vivo, conecta índices de entrada
+`edges` explícitos, copia os masters RayTK necessários ao vivo, conecta índices de entrada
 tipados, posiciona os ROPs copiados de forma determinística e expõe o renderer
 selecionado por `out1`. Trate o primeiro render local como `UNVERIFIED-raytk-render`
 até o `.tox` do RayTK estar carregado e o shader ter cozinhado no TouchDesigner.*

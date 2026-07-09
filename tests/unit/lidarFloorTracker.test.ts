@@ -1,60 +1,15 @@
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { KnowledgeBase } from "../../src/knowledge/index.js";
-import { RecipeLibrary } from "../../src/recipes/loader.js";
-import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import {
   lidarFloorTrackerImpl,
   lidarFloorTrackerSchema,
 } from "../../src/tools/layer1/lidarFloorTracker.js";
-import type { ToolContext } from "../../src/tools/types.js";
-import { silentLogger } from "../../src/utils/logger.js";
-import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
-
-interface CreatedNodeBody {
-  parent_path: string;
-  type: string;
-  name?: string;
-  parameters?: Record<string, unknown>;
-}
+import { makeTdServer } from "../helpers/tdMock.js";
+import { captureCreateBodies, makeCtx, textOf } from "../helpers/tdToolTestUtils.js";
 
 const server = makeTdServer();
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
-
-function makeCtx(): ToolContext {
-  return {
-    client: new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000 }),
-    knowledge: new KnowledgeBase(),
-    recipes: new RecipeLibrary(),
-    logger: silentLogger,
-  };
-}
-
-function textOf(result: CallToolResult): string {
-  return result.content
-    .filter((c): c is { type: "text"; text: string } => c.type === "text")
-    .map((c) => c.text)
-    .join("\n");
-}
-
-function captureCreateBodies(): CreatedNodeBody[] {
-  const bodies: CreatedNodeBody[] = [];
-  server.use(
-    http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
-      const body = (await request.json()) as CreatedNodeBody;
-      bodies.push(body);
-      const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
-      return HttpResponse.json({
-        ok: true,
-        data: { path: `${body.parent_path}/${name}`, type: body.type, name },
-      });
-    }),
-  );
-  return bodies;
-}
 
 describe("lidar_floor_tracker", () => {
   it("schema defaults to inactive synthetic rehearsal mode", () => {
@@ -64,15 +19,22 @@ describe("lidar_floor_tracker", () => {
     expect(parsed.threshold).toBe(0.35);
   });
 
+  it("requires sensor_address for hardware modes", () => {
+    expect(() => lidarFloorTrackerSchema.parse({ sensor: "ouster" })).toThrow(/sensor_address/);
+    expect(() => lidarFloorTrackerSchema.parse({ sensor: "leuze_rod4" })).toThrow(/sensor_address/);
+  });
+
   it("builds a synthetic CHOP tracker plus floor preview", async () => {
-    const bodies = captureCreateBodies();
+    const bodies = captureCreateBodies(server);
     const result = await lidarFloorTrackerImpl(makeCtx(), lidarFloorTrackerSchema.parse({}));
 
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain("offline-synthetic");
     for (const type of [
       "constantCHOP",
+      "selectCHOP",
       "mathCHOP",
+      "mergeCHOP",
       "logicCHOP",
       "nullCHOP",
       "glslTOP",
@@ -91,11 +53,46 @@ describe("lidar_floor_tracker", () => {
       boundmin: 0.35,
       boundmax: 1,
     });
+    expect(bodies.find((body) => body.name === "normalize_x")?.parameters).toMatchObject({
+      fromrange1: -3,
+      fromrange2: 3,
+      torange1: -1,
+      torange2: 1,
+    });
+    expect(bodies.find((body) => body.name === "normalize_y")?.parameters).toMatchObject({
+      fromrange1: -2,
+      fromrange2: 2,
+      torange1: -1,
+      torange2: 1,
+    });
     expect(bodies.some((body) => body.name === "tracked_points")).toBe(true);
   });
 
+  it("applies custom floor dimensions and threshold even without exposed controls", async () => {
+    const bodies = captureCreateBodies(server);
+    await lidarFloorTrackerImpl(
+      makeCtx(),
+      lidarFloorTrackerSchema.parse({
+        floor_width_m: 10,
+        floor_depth_m: 6,
+        threshold: 0.6,
+        expose_controls: false,
+      }),
+    );
+
+    expect(bodies.find((body) => body.name === "normalize_x")?.parameters).toMatchObject({
+      fromrange1: -5,
+      fromrange2: 5,
+    });
+    expect(bodies.find((body) => body.name === "normalize_y")?.parameters).toMatchObject({
+      fromrange1: -3,
+      fromrange2: 3,
+    });
+    expect(bodies.find((body) => body.name === "occupancy")?.parameters?.boundmin).toBe(0.6);
+  });
+
   it("scaffolds Ouster hardware inactive by default and reports unverified live validation", async () => {
-    const bodies = captureCreateBodies();
+    const bodies = captureCreateBodies(server);
     const result = await lidarFloorTrackerImpl(
       makeCtx(),
       lidarFloorTrackerSchema.parse({

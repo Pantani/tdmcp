@@ -247,14 +247,6 @@ def onOffToOn(channel, sampleIndex, val, prev):
     dispatch_channel(channel.name)
     return
 
-def onValueChange(channel, sampleIndex, val, prev):
-    try:
-        if float(prev) <= 0 and float(val) > 0:
-            dispatch_channel(channel.name)
-    except Exception:
-        pass
-    return
-
 def onConnect(websocketDAT):
     parent().store("tdmcp_obs_ws_status", "connected")
     try:
@@ -323,7 +315,6 @@ try:
         _setpar(dispatch, "chop", controls.name)
         _setpar(dispatch, "active", 1, warn=False)
         _setpar(dispatch, "offtoon", 1, warn=False)
-        _setpar(dispatch, "valuechange", 1, warn=False)
         _setpar(ws, "callbacks", dispatch.name, warn=False)
 
         if _p.get("auth_required"):

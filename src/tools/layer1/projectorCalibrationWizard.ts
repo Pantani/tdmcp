@@ -56,6 +56,14 @@ export const projectorCalibrationWizardSchema = z.object({
 });
 type ProjectorCalibrationWizardArgs = z.infer<typeof projectorCalibrationWizardSchema>;
 
+function projectorCropWindow(index: number, count: number, overlap: number) {
+  const laneWidth = 1 / count;
+  const seamOverlap = count > 1 ? laneWidth * overlap : 0;
+  const left = Math.max(0, index * laneWidth - (index > 0 ? seamOverlap : 0));
+  const right = Math.min(1, (index + 1) * laneWidth + (index < count - 1 ? seamOverlap : 0));
+  return { left, right, bottom: 0, top: 1 };
+}
+
 export async function projectorCalibrationWizardImpl(
   ctx: ToolContext,
   args: ProjectorCalibrationWizardArgs,
@@ -87,9 +95,27 @@ export async function projectorCalibrationWizardImpl(
     });
 
     const laneOutputs: string[] = [];
+    const cropWindows: Array<{
+      lane: number;
+      left: number;
+      right: number;
+      bottom: number;
+      top: number;
+    }> = [];
     const controls: ControlSpec[] = [];
     for (let i = 0; i < args.projectors; i++) {
+      const cropWindow = projectorCropWindow(i, args.projectors, args.overlap);
+      cropWindows.push({ lane: i + 1, ...cropWindow });
       const crop = await builder.add(`cropTOP`, `p${i + 1}_crop`, {
+        cropleftunit: "fraction",
+        croprightunit: "fraction",
+        cropbottomunit: "fraction",
+        croptopunit: "fraction",
+        cropleft: cropWindow.left,
+        cropright: cropWindow.right,
+        cropbottom: cropWindow.bottom,
+        croptop: cropWindow.top,
+        outputresolution: "custom",
         resolutionw: args.width,
         resolutionh: args.height,
       });
@@ -159,6 +185,7 @@ export async function projectorCalibrationWizardImpl(
         source_path: args.source_path,
         projectors: args.projectors,
         lane_outputs: laneOutputs,
+        crop_windows: cropWindows,
         overlap: args.overlap,
         validation_notes: validationNotes,
         live_validation: "UNVERIFIED-projector",

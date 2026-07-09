@@ -44,6 +44,7 @@ const SAFE_PROFILE_EXCLUDE = [
   "scaffold_recipe_template",
   "attach_docs_as_assets",
   "local_marketplace_index",
+  "marketplace_index_seed",
   "refresh_asset_previews",
   "install_library_package",
   "create_modulators",
@@ -177,7 +178,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(36);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(37);
   });
 
   it("safe exclusion list matches destructive tool annotations", async () => {

@@ -496,7 +496,7 @@ tdmcp-agent raytk-expr-graph --params '{"preset":"sphere_union_box","add_materia
 ```
 
 *`raytk_expr_graph_builder` is the larger graph-builder surface: it accepts presets
-or explicit `nodes` / `edges`, copies every RayTK master live, wires typed connector
+or explicit `nodes` / `edges`, copies needed RayTK masters live, wires typed connector
 indices, places copied ROPs deterministically and exposes the selected renderer
 through `out1`. Treat the first local render as `UNVERIFIED-raytk-render` until the
 RayTK `.tox` is loaded and the shader has cooked in TouchDesigner.*

@@ -113,7 +113,7 @@ describe("marketplace_index_seed", () => {
     expect(calls[0]?.name).toBe("marketplace_index_seed");
     expect(calls[0]?.options.annotations).toMatchObject({
       readOnlyHint: false,
-      destructiveHint: false,
+      destructiveHint: true,
       openWorldHint: false,
     });
   });

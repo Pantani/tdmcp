@@ -29,6 +29,9 @@ function decodePayload(exec: ReturnType<typeof vi.fn>) {
     file: string | null;
     fps: number;
     seconds: number | null;
+    video_codec: string | null;
+    video_codec_type: string | null;
+    movie_pixel_format: string | null;
   };
 }
 
@@ -69,6 +72,9 @@ describe("exportRenderPresetImpl", () => {
     const payload = decodePayload(exec);
     expect(payload.fps).toBe(60);
     expect(payload.seconds).toBe(4);
+    expect(payload.video_codec).toBe("hap");
+    expect(payload.video_codec_type).toBe("hap");
+    expect(payload.movie_pixel_format).toBe("rgba");
   });
 
   it("surfaces record_movie fatal errors while preserving preset context", async () => {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { friendlyTdError } from "../../td-client/types.js";
 import type { TdNodeDetail } from "../../td-client/validators.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -65,7 +66,7 @@ export function inferControlsFromNode(
   args: Pick<AutoUiFromParamsArgs, "parameters" | "exclude" | "max_controls" | "bind">,
 ): { controls: ControlSpec[]; skipped: string[] } {
   const requested = args.parameters ? new Set(args.parameters) : undefined;
-  const excluded = new Set([...DEFAULT_EXCLUDE, ...args.exclude]);
+  const excluded = new Set([...DEFAULT_EXCLUDE, ...args.exclude.map((name) => name.toLowerCase())]);
   const controls: ControlSpec[] = [];
   const skipped: string[] = [];
 
@@ -102,35 +103,45 @@ export function inferControlsFromNode(
 }
 
 export async function autoUiFromParamsImpl(ctx: ToolContext, args: AutoUiFromParamsArgs) {
-  const node = await ctx.client.getNode(args.source_path);
-  const { controls, skipped } = inferControlsFromNode(node, args);
-  if (controls.length === 0) {
-    return errorResult(`No eligible primitive parameters found on ${args.source_path}.`, {
+  const compPath = args.comp_path ?? args.source_path;
+  try {
+    const node = await ctx.client.getNode(args.source_path);
+    const { controls, skipped } = inferControlsFromNode(node, args);
+    if (controls.length === 0) {
+      return errorResult(`No eligible primitive parameters found on ${args.source_path}.`, {
+        source_path: args.source_path,
+        skipped,
+      });
+    }
+
+    const panel = await createControlPanelImpl(ctx, {
+      comp_path: compPath,
+      page: args.page,
+      controls,
+    });
+    if (panel.isError) return panel;
+
+    return jsonResult(`Generated ${controls.length} auto UI control(s) on ${compPath}.`, {
       source_path: args.source_path,
+      comp_path: compPath,
+      page: args.page,
+      controls: controls.map((control) => ({
+        source_parameter: control.name,
+        custom_parameter: toTdCustomParameterName(control.name),
+        type: control.type,
+        bind_to: control.bind_to ?? [],
+      })),
       skipped,
     });
+  } catch (err) {
+    return errorResult(
+      `auto_ui_from_params failed for ${args.source_path}: ${friendlyTdError(err)}`,
+      {
+        source_path: args.source_path,
+        comp_path: compPath,
+      },
+    );
   }
-
-  const compPath = args.comp_path ?? args.source_path;
-  const panel = await createControlPanelImpl(ctx, {
-    comp_path: compPath,
-    page: args.page,
-    controls,
-  });
-  if (panel.isError) return panel;
-
-  return jsonResult(`Generated ${controls.length} auto UI control(s) on ${compPath}.`, {
-    source_path: args.source_path,
-    comp_path: compPath,
-    page: args.page,
-    controls: controls.map((control) => ({
-      source_parameter: control.name,
-      custom_parameter: toTdCustomParameterName(control.name),
-      type: control.type,
-      bind_to: control.bind_to ?? [],
-    })),
-    skipped,
-  });
 }
 
 export const registerAutoUiFromParams: ToolRegistrar = (server, ctx) => {

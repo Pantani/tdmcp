@@ -1,60 +1,15 @@
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { KnowledgeBase } from "../../src/knowledge/index.js";
-import { RecipeLibrary } from "../../src/recipes/loader.js";
-import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import {
   projectorCalibrationWizardImpl,
   projectorCalibrationWizardSchema,
 } from "../../src/tools/layer1/projectorCalibrationWizard.js";
-import type { ToolContext } from "../../src/tools/types.js";
-import { silentLogger } from "../../src/utils/logger.js";
-import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
-
-interface CreatedNodeBody {
-  parent_path: string;
-  type: string;
-  name?: string;
-  parameters?: Record<string, unknown>;
-}
+import { makeTdServer } from "../helpers/tdMock.js";
+import { captureCreateBodies, makeCtx, textOf } from "../helpers/tdToolTestUtils.js";
 
 const server = makeTdServer();
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
-
-function makeCtx(): ToolContext {
-  return {
-    client: new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000 }),
-    knowledge: new KnowledgeBase(),
-    recipes: new RecipeLibrary(),
-    logger: silentLogger,
-  };
-}
-
-function textOf(result: CallToolResult): string {
-  return result.content
-    .filter((c): c is { type: "text"; text: string } => c.type === "text")
-    .map((c) => c.text)
-    .join("\n");
-}
-
-function captureCreateBodies(): CreatedNodeBody[] {
-  const bodies: CreatedNodeBody[] = [];
-  server.use(
-    http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
-      const body = (await request.json()) as CreatedNodeBody;
-      bodies.push(body);
-      const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
-      return HttpResponse.json({
-        ok: true,
-        data: { path: `${body.parent_path}/${name}`, type: body.type, name },
-      });
-    }),
-  );
-  return bodies;
-}
 
 describe("projector_calibration_wizard", () => {
   it("schema defaults are a one-projector generated-pattern rehearsal build", () => {
@@ -66,7 +21,7 @@ describe("projector_calibration_wizard", () => {
   });
 
   it("builds generated pattern plus per-projector crop/corner-pin/level/output lanes", async () => {
-    const bodies = captureCreateBodies();
+    const bodies = captureCreateBodies(server);
     const result = await projectorCalibrationWizardImpl(
       makeCtx(),
       projectorCalibrationWizardSchema.parse({ projectors: 2 }),
@@ -80,6 +35,17 @@ describe("projector_calibration_wizard", () => {
     ).toBe(true);
     expect(bodies.filter((body) => body.type === "cornerpinTOP")).toHaveLength(2);
     expect(bodies.filter((body) => body.type === "levelTOP")).toHaveLength(2);
+    expect(bodies.find((body) => body.name === "p1_crop")?.parameters).toMatchObject({
+      cropleftunit: "fraction",
+      croprightunit: "fraction",
+      cropleft: 0,
+      cropright: 0.54,
+      outputresolution: "custom",
+    });
+    expect(bodies.find((body) => body.name === "p2_crop")?.parameters).toMatchObject({
+      cropleft: 0.46,
+      cropright: 1,
+    });
     for (const level of bodies.filter((body) => body.type === "levelTOP")) {
       expect(level.parameters).toMatchObject({ brightness1: 1, gamma1: 1, opacity: 1 });
       expect(level.parameters).not.toHaveProperty("brightness");
@@ -91,7 +57,7 @@ describe("projector_calibration_wizard", () => {
   });
 
   it("uses a Select TOP when source_path is provided", async () => {
-    const bodies = captureCreateBodies();
+    const bodies = captureCreateBodies(server);
     await projectorCalibrationWizardImpl(
       makeCtx(),
       projectorCalibrationWizardSchema.parse({ source_path: "/project1/show/out1" }),

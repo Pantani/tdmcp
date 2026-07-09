@@ -96,11 +96,20 @@ describe("notch_touchengine_bridge", () => {
     const bodies = captureCreateBodies();
     const result = await notchTouchengineBridgeImpl(
       makeCtx(),
-      notchTouchengineBridgeSchema.parse({ mode: "engine_comp", tox_path: "/tox/scene.tox" }),
+      notchTouchengineBridgeSchema.parse({
+        mode: "engine_comp",
+        tox_path: "/tox/scene.tox",
+        width: 3840,
+        height: 2160,
+        active: true,
+      }),
     );
 
     const engine = bodies.find((body) => body.type === "engineCOMP");
     expect(engine?.parameters?.file).toBe("/tox/scene.tox");
+    expect(engine?.parameters).not.toHaveProperty("active");
+    expect(engine?.parameters).not.toHaveProperty("resolutionw");
+    expect(engine?.parameters).not.toHaveProperty("resolutionh");
     expect(textOf(result)).toContain("engine_comp");
   });
 

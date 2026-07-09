@@ -102,9 +102,6 @@ export async function blenderSceneImportImpl(ctx: ToolContext, args: BlenderScen
       material: mat,
       ry: args.rotate_y,
       scale: args.import_scale,
-      sx: args.import_scale,
-      sy: args.import_scale,
-      sz: args.import_scale,
     });
 
     const env = await builder.add("constantTOP", "env_color", {

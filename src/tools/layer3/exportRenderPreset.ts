@@ -35,43 +35,66 @@ type ExportRenderPresetArgs = z.infer<typeof exportRenderPresetSchema>;
 
 const PRESET_DETAILS: Record<
   RenderPreset,
-  { fps: number; extension: ".mov" | ".mp4"; codec: string; use: string }
+  {
+    fps: number;
+    extension: ".mov" | ".mp4";
+    codec: string;
+    use: string;
+    video_codec: string;
+    video_codec_type?: string;
+    movie_pixel_format?: string;
+  }
 > = {
   hap: {
     fps: 60,
     extension: ".mov",
     codec: "HAP",
     use: "VJ playback where fast GPU decoding matters more than small files",
+    video_codec: "hap",
+    video_codec_type: "hap",
+    movie_pixel_format: "rgb",
   },
   hap_alpha: {
     fps: 60,
     extension: ".mov",
     codec: "HAP Alpha",
     use: "VJ playback with transparency / keyable overlays",
+    video_codec: "hap",
+    video_codec_type: "hap",
+    movie_pixel_format: "rgba",
   },
   prores_422: {
     fps: 30,
     extension: ".mov",
     codec: "Apple ProRes 422",
     use: "editorial handoff and high-quality masters",
+    video_codec: "prores",
+    video_codec_type: "prores422",
+    movie_pixel_format: "yuv422",
   },
   prores_4444: {
     fps: 30,
     extension: ".mov",
     codec: "Apple ProRes 4444",
     use: "high-quality alpha-capable masters",
+    video_codec: "prores",
+    video_codec_type: "prores4444",
+    movie_pixel_format: "rgba",
   },
   notchlc: {
     fps: 60,
     extension: ".mov",
     codec: "NotchLC",
     use: "media-server playback when NotchLC is installed on the TD machine",
+    video_codec: "notchlc",
   },
   mp4_review: {
     fps: 30,
     extension: ".mp4",
     codec: "H.264 / MP4 review",
     use: "small review files for sharing with collaborators",
+    video_codec: "h264",
+    movie_pixel_format: "yuv420",
   },
 };
 
@@ -92,6 +115,9 @@ export function resolveRenderPreset(args: ExportRenderPresetArgs) {
     recommended_use: preset.use,
     recommended_extension: preset.extension,
     fps: args.fps ?? preset.fps,
+    video_codec: preset.video_codec,
+    video_codec_type: preset.video_codec_type,
+    movie_pixel_format: preset.movie_pixel_format,
     warnings,
   };
 }
@@ -126,6 +152,9 @@ export async function exportRenderPresetImpl(ctx: ToolContext, args: ExportRende
     file: args.file,
     fps: preset.fps,
     seconds: args.seconds,
+    video_codec: preset.video_codec,
+    video_codec_type: preset.video_codec_type,
+    movie_pixel_format: preset.movie_pixel_format,
   });
   return withPresetSummary(result, preset);
 }
