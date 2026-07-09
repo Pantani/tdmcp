@@ -1122,6 +1122,257 @@ function projectionMappingFrame(t) {
   return buf;
 }
 
+function projectInteractiveProjectionPoint(quad, u, v) {
+  const topX = mix(quad[0][0], quad[1][0], u);
+  const topY = mix(quad[0][1], quad[1][1], u);
+  const bottomX = mix(quad[3][0], quad[2][0], u);
+  const bottomY = mix(quad[3][1], quad[2][1], u);
+  return [mix(topX, bottomX, v), mix(topY, bottomY, v)];
+}
+
+function drawProjectedGrid(buf, quad) {
+  for (let i = 0; i <= 8; i++) {
+    const u = i / 8;
+    const [x0, y0] = projectInteractiveProjectionPoint(quad, u, 0);
+    const [x1, y1] = projectInteractiveProjectionPoint(quad, u, 1);
+    line(buf, x0, y0, x1, y1, [255, 255, 255], i === 0 || i === 8 ? 0.24 : 0.08);
+  }
+  for (let i = 0; i <= 5; i++) {
+    const v = i / 5;
+    const [x0, y0] = projectInteractiveProjectionPoint(quad, 0, v);
+    const [x1, y1] = projectInteractiveProjectionPoint(quad, 1, v);
+    line(buf, x0, y0, x1, y1, [255, 255, 255], i === 0 || i === 5 ? 0.24 : 0.08);
+  }
+}
+
+function drawProjectedCard(buf, quad, u, v, w, h, phase) {
+  const tilt = Math.sin(phase) * 0.018;
+  const points = [
+    projectInteractiveProjectionPoint(quad, u - w + tilt, v - h),
+    projectInteractiveProjectionPoint(quad, u + w, v - h + tilt),
+    projectInteractiveProjectionPoint(quad, u + w - tilt, v + h),
+    projectInteractiveProjectionPoint(quad, u - w, v + h - tilt),
+  ];
+  polygon(buf, points, [255, 86, 134], 0.42);
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
+    line(buf, a[0], a[1], b[0], b[1], [255, 142, 190], 0.55);
+  }
+}
+
+function interactiveProjectionMotionDotsFrame(t) {
+  const buf = baseFrame();
+  rect(buf, 0, 0, width, height, [3, 6, 11], 0.88);
+  for (let y = 0; y < height; y++) {
+    const shade = y / height;
+    rect(buf, 0, y, width, 1, mixColor([8, 14, 22], [2, 5, 9], shade), 0.92);
+  }
+
+  const quad = [
+    [63 + Math.sin(t * 0.7) * 4, 34],
+    [416 + Math.cos(t * 0.6) * 4, 50],
+    [392 + Math.sin(t * 0.8 + 1.2) * 5, 236],
+    [42 + Math.cos(t * 0.7 + 0.6) * 4, 216],
+  ];
+  polygon(buf, quad, [13, 24, 33], 0.96);
+  drawProjectedGrid(buf, quad);
+
+  for (let i = 0; i < 90; i++) {
+    const seed = i * 0.37;
+    const u = (rand(i, 4, 0) + Math.sin(t * 0.34 + seed) * 0.06 + 1) % 1;
+    const v = (rand(i, 9, 1) + Math.cos(t * 0.31 + seed * 1.7) * 0.05 + 1) % 1;
+    const [x, y] = projectInteractiveProjectionPoint(quad, u, v);
+    const motionWake =
+      0.35 +
+      0.65 *
+        Math.max(
+          0,
+          Math.sin(t * 2.4 + i * 0.23) * 0.5 + Math.cos((u - 0.45) * 9 + (v - 0.52) * 7 - t * 2.1),
+        );
+    const trail = projectInteractiveProjectionPoint(
+      quad,
+      clamp(u - Math.cos(seed + t) * 0.025, 0, 1),
+      clamp(v - Math.sin(seed * 1.2 + t) * 0.025, 0, 1),
+    );
+    line(buf, trail[0], trail[1], x, y, [57, 232, 190], 0.12 * motionWake);
+    glow(buf, x, y, 18, [57, 232, 190], 0.04 * motionWake);
+    circle(buf, x, y, 2.1 + motionWake * 1.7, [57, 232, 190], 0.5 + motionWake * 0.28);
+  }
+
+  for (let i = 0; i < 7; i++) {
+    const u = 0.12 + ((i * 0.137 + t * 0.065) % 0.76);
+    const v = 0.2 + ((i * 0.191 + Math.sin(t * 0.42 + i) * 0.04) % 0.62);
+    drawProjectedCard(buf, quad, u, v, 0.026, 0.038, t + i);
+  }
+
+  const blobCenter = projectInteractiveProjectionPoint(
+    quad,
+    0.48 + Math.sin(t * 0.9) * 0.16,
+    0.52 + Math.cos(t * 0.7) * 0.13,
+  );
+  glow(buf, blobCenter[0], blobCenter[1], 56, [57, 232, 190], 0.11);
+  ellipseRing(buf, blobCenter[0], blobCenter[1], 46, 28, 0.06, [57, 232, 190], 0.28);
+
+  for (const [i, p] of quad.entries()) {
+    circle(buf, p[0], p[1], 5.5, [255, 214, 86], 0.88);
+    circle(buf, p[0], p[1], 10, [255, 214, 86], 0.14);
+    const n = quad[(i + 1) % quad.length];
+    line(buf, p[0], p[1], n[0], n[1], [255, 214, 86], 0.12);
+  }
+  return buf;
+}
+
+function setSized(buf, frameWidth, frameHeight, x, y, color, alpha = 1) {
+  if (x < 0 || y < 0 || x >= frameWidth || y >= frameHeight) return;
+  const i = (Math.floor(y) * frameWidth + Math.floor(x)) * 3;
+  buf[i] = clamp(buf[i] * (1 - alpha) + color[0] * alpha);
+  buf[i + 1] = clamp(buf[i + 1] * (1 - alpha) + color[1] * alpha);
+  buf[i + 2] = clamp(buf[i + 2] * (1 - alpha) + color[2] * alpha);
+}
+
+function lineSized(buf, frameWidth, frameHeight, x0, y0, x1, y1, color, alpha = 1) {
+  const steps = Math.ceil(Math.hypot(x1 - x0, y1 - y0));
+  for (let i = 0; i <= steps; i++) {
+    const t = i / Math.max(1, steps);
+    setSized(buf, frameWidth, frameHeight, mix(x0, x1, t), mix(y0, y1, t), color, alpha);
+  }
+}
+
+function circleSized(buf, frameWidth, frameHeight, cx, cy, radius, color, alpha = 1) {
+  const r2 = radius * radius;
+  for (let y = Math.floor(cy - radius); y <= Math.ceil(cy + radius); y++) {
+    for (let x = Math.floor(cx - radius); x <= Math.ceil(cx + radius); x++) {
+      const d2 = (x - cx) ** 2 + (y - cy) ** 2;
+      if (d2 <= r2) {
+        setSized(buf, frameWidth, frameHeight, x, y, color, alpha * smoothstep(1, 0.62, d2 / r2));
+      }
+    }
+  }
+}
+
+function cubemapFaceColor(face, s, q, t) {
+  const palettes = [
+    [255, 88, 112],
+    [57, 232, 190],
+    [255, 214, 86],
+    [112, 110, 255],
+    [40, 180, 255],
+    [235, 98, 255],
+  ];
+  const base = palettes[face % palettes.length];
+  const wave = Math.sin((s + q) * 9 + t * 1.8 + face) * 0.5 + 0.5;
+  return mixColor(mixColor(base, [6, 9, 18], 0.58), base, 0.3 + wave * 0.34);
+}
+
+function sampleCubemapDomeDirection(dir, t) {
+  const [x, y, z] = dir;
+  const ax = Math.abs(x);
+  const ay = Math.abs(y);
+  const az = Math.abs(z);
+  let face = 0;
+  let s = 0;
+  let q = 0;
+  if (ax >= ay && ax >= az) {
+    face = x > 0 ? 0 : 1;
+    s = z / ax;
+    q = y / ax;
+  } else if (ay >= ax && ay >= az) {
+    face = y > 0 ? 2 : 3;
+    s = x / ay;
+    q = z / ay;
+  } else {
+    face = z > 0 ? 4 : 5;
+    s = x / az;
+    q = y / az;
+  }
+  const gridS = Math.abs(((s * 4.5 + t * 0.18) % 1) - 0.5);
+  const gridQ = Math.abs(((q * 4.5 - t * 0.12) % 1) - 0.5);
+  const seam = Math.min(gridS, gridQ);
+  const faceEdge = Math.max(Math.abs(s), Math.abs(q));
+  const faceColor = cubemapFaceColor(face, s, q, t);
+  const gridColor = seam < 0.024 ? [255, 255, 255] : faceColor;
+  return mixColor(gridColor, [255, 255, 255], smoothstep(0.82, 0.98, faceEdge) * 0.22);
+}
+
+function cubemapDomeMasterFrame(t) {
+  const frameSize = 480;
+  const buf = Buffer.alloc(frameSize * frameSize * 3);
+  const center = frameSize / 2;
+  const radius = frameSize * 0.455;
+  const rotation = t * 0.42;
+
+  for (let y = 0; y < frameSize; y++) {
+    for (let x = 0; x < frameSize; x++) {
+      const dx = (x - center) / radius;
+      const dy = (y - center) / radius;
+      const r = Math.hypot(dx, dy);
+      if (r > 1) {
+        setSized(buf, frameSize, frameSize, x, y, [0, 0, 0], 1);
+        continue;
+      }
+      const phi = Math.atan2(dy, dx) + rotation;
+      const theta = r * Math.PI * 0.54;
+      const dir = [
+        Math.sin(theta) * Math.cos(phi),
+        Math.cos(theta),
+        Math.sin(theta) * Math.sin(phi),
+      ];
+      const vignette = smoothstep(1, 0.18, r);
+      const color = sampleCubemapDomeDirection(dir, t);
+      const domeShade = mixColor(color, [3, 5, 11], 0.06 + (1 - vignette) * 0.32);
+      setSized(buf, frameSize, frameSize, x, y, domeShade, 1);
+    }
+  }
+
+  for (let ring = 0; ring < 5; ring++) {
+    const rr = radius * (0.2 + ring * 0.18);
+    for (let i = 0; i < 280; i++) {
+      const a = (i / 280) * Math.PI * 2 + rotation * (ring % 2 ? -0.4 : 0.6);
+      const x = center + Math.cos(a) * rr;
+      const y = center + Math.sin(a) * rr;
+      setSized(buf, frameSize, frameSize, x, y, [255, 255, 255], ring === 4 ? 0.16 : 0.09);
+    }
+  }
+
+  for (let i = 0; i < 22; i++) {
+    const a = i * 2.399 + t * 0.45;
+    const r = radius * (0.15 + 0.75 * rand(i, 2, 4));
+    const x = center + Math.cos(a) * r;
+    const y = center + Math.sin(a) * r;
+    const color = i % 3 === 0 ? [255, 214, 86] : i % 3 === 1 ? [57, 232, 190] : [255, 86, 134];
+    circleSized(buf, frameSize, frameSize, x, y, 2.5 + rand(i, 5, 1) * 3, color, 0.42);
+    lineSized(
+      buf,
+      frameSize,
+      frameSize,
+      x,
+      y,
+      x + Math.cos(a + Math.PI * 0.5) * 18,
+      y + Math.sin(a + Math.PI * 0.5) * 18,
+      color,
+      0.14,
+    );
+  }
+
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + rotation;
+    lineSized(
+      buf,
+      frameSize,
+      frameSize,
+      center + Math.cos(a) * radius * 0.04,
+      center + Math.sin(a) * radius * 0.04,
+      center + Math.cos(a) * radius,
+      center + Math.sin(a) * radius,
+      [255, 255, 255],
+      0.08,
+    );
+  }
+  circleSized(buf, frameSize, frameSize, center, center, 5, [255, 255, 255], 0.5);
+  return buf;
+}
+
 function transitionGlitchFrame(t) {
   const buf = baseFrame();
   const progress = (Math.sin(t * 1.6) + 1) / 2;
@@ -2591,6 +2842,114 @@ function faceTrackingFrame(t) {
   rect(buf, 68, 216, 108, 6, [255, 255, 255], 0.14);
   rect(buf, 68, 216, 84, 6, [57, 232, 190], 0.7);
   rect(buf, 298, 216, 86, 6, [255, 86, 134], 0.58);
+  return buf;
+}
+
+function drawMeshPoint(buf, x, y, color, alpha = 0.82) {
+  circle(buf, x, y, 1.35, color, alpha);
+}
+
+function drawMeshPolyline(buf, points, color, alpha = 0.24) {
+  for (let i = 0; i < points.length - 1; i++) {
+    line(buf, points[i][0], points[i][1], points[i + 1][0], points[i + 1][1], color, alpha);
+  }
+}
+
+function mediaPipeFaceOverlayFrame(t) {
+  const buf = baseFrame();
+  for (let y = 0; y < height; y++) {
+    const shade = y / height;
+    rect(buf, 0, y, width, 1, mixColor([8, 12, 20], [2, 5, 10], shade), 0.94);
+  }
+
+  const cx = 240 + Math.sin(t * 0.8) * 13;
+  const cy = 132 + Math.cos(t * 0.7) * 5;
+  const tilt = Math.sin(t * 0.65) * 0.06;
+  glow(buf, cx, cy, 150, [57, 232, 190], 0.11);
+  ellipseRing(buf, cx, cy + 4, 76, 98, 0.34, [205, 198, 170], 0.08);
+
+  const projectFace = (nx, ny) => {
+    const x = nx * 74;
+    const y = ny * 96;
+    return [cx + x + y * tilt, cy + y - x * tilt * 0.24];
+  };
+
+  const cyan = [57, 232, 190];
+  const amber = [255, 214, 86];
+  const pink = [255, 86, 134];
+  const dim = [118, 144, 168];
+  const oval = [];
+  for (let i = 0; i < 72; i++) {
+    const a = (i / 72) * Math.PI * 2;
+    oval.push(projectFace(Math.cos(a) * (0.88 + Math.sin(a * 3 + t) * 0.02), Math.sin(a) * 1.03));
+  }
+  drawMeshPolyline(buf, [...oval, oval[0]], cyan, 0.28);
+
+  const rows = [
+    [-0.58, 0.58, -0.58],
+    [-0.68, 0.68, -0.32],
+    [-0.7, 0.7, -0.06],
+    [-0.62, 0.62, 0.2],
+    [-0.5, 0.5, 0.46],
+  ];
+  for (const [x0, x1, ny] of rows) {
+    const row = [];
+    for (let i = 0; i <= 10; i++) {
+      const nx = mix(x0, x1, i / 10);
+      row.push(projectFace(nx, ny + Math.sin(nx * 5 + t * 1.2) * 0.015));
+    }
+    drawMeshPolyline(buf, row, dim, 0.13);
+  }
+
+  for (let side = -1; side <= 1; side += 2) {
+    const brow = [];
+    const eye = [];
+    for (let i = 0; i <= 12; i++) {
+      const a = (i / 12) * Math.PI;
+      brow.push(projectFace(side * (0.22 + Math.cos(a) * 0.23), -0.39 - Math.sin(a) * 0.08));
+      eye.push(projectFace(side * (0.28 + Math.cos(a) * 0.18), -0.25 + Math.sin(a) * 0.062));
+    }
+    drawMeshPolyline(buf, brow, amber, 0.48);
+    drawMeshPolyline(buf, eye, amber, 0.58);
+  }
+
+  const nose = [
+    projectFace(0, -0.18),
+    projectFace(-0.08, 0.04),
+    projectFace(0.04, 0.2),
+    projectFace(-0.16, 0.31),
+    projectFace(0, 0.36),
+    projectFace(0.16, 0.31),
+  ];
+  drawMeshPolyline(buf, nose, cyan, 0.36);
+
+  const mouthTop = [];
+  const mouthBottom = [];
+  for (let i = 0; i <= 18; i++) {
+    const a = (i / 18) * Math.PI;
+    mouthTop.push(projectFace(Math.cos(a) * 0.31, 0.55 - Math.sin(a) * 0.06));
+    mouthBottom.push(projectFace(Math.cos(a) * 0.29, 0.55 + Math.sin(a) * 0.075));
+  }
+  drawMeshPolyline(buf, mouthTop, pink, 0.58);
+  drawMeshPolyline(buf, mouthBottom, pink, 0.48);
+
+  for (const p of oval) drawMeshPoint(buf, p[0], p[1], cyan, 0.68);
+  for (let i = 0; i < 96; i++) {
+    const nx = -0.64 + (i % 12) * 0.116;
+    const ny = -0.5 + Math.floor(i / 12) * 0.17;
+    const faceMask = (nx / 0.84) ** 2 + (ny / 1.0) ** 2;
+    if (faceMask < 1) {
+      const [x, y] = projectFace(nx, ny);
+      drawMeshPoint(buf, x, y, i % 3 === 0 ? cyan : dim, 0.46);
+    }
+  }
+  for (const p of [...nose, ...mouthTop, ...mouthBottom])
+    drawMeshPoint(buf, p[0], p[1], pink, 0.58);
+
+  const status = 0.62 + Math.sin(t * 1.5) * 0.18;
+  rect(buf, 64, 222, 352, 2, [255, 255, 255], 0.1);
+  rect(buf, 64, 222, 120 * status, 2, cyan, 0.58);
+  rect(buf, 252, 222, 92 + Math.cos(t * 1.2) * 18, 2, pink, 0.46);
   return buf;
 }
 
@@ -4468,6 +4827,7 @@ const clips = [
   ["multipass-depth-no-camera.mp4", multipassDepthFrame],
   ["shader-park-blobs.mp4", shaderParkBlobsFrame],
   ["projection-mapping.mp4", projectionMappingFrame],
+  ["interactive-projection-motion-dots.mp4", interactiveProjectionMotionDotsFrame],
   ["transition-glitch-cut.mp4", transitionGlitchFrame],
   ["video-glitch.mp4", videoGlitchFrame],
   ["pose-trails-skeleton.mp4", poseTrailsFrame],
@@ -4565,7 +4925,7 @@ const clips = [
   ["recipe-depth-displacement-post.mp4", recipeStarterFrame("depth", [118, 75, 255])],
   ["recipe-kinetic-text-path-follow.mp4", recipeStarterFrame("textPath", [255, 214, 86])],
   ["recipe-optical-flow-particles.mp4", recipeStarterFrame("optical", [57, 232, 190])],
-  ["recipe-mediapipe-face-overlay.mp4", recipeStarterFrame("face", [255, 86, 134])],
+  ["recipe-mediapipe-face-overlay.mp4", mediaPipeFaceOverlayFrame],
   ["recipe-scene-timeline-demo.mp4", recipeStarterFrame("timeline", [255, 214, 86])],
   ["recipe-scene-3d-basic.mp4", recipeStarterFrame("scene3d", [57, 232, 190])],
   ["recipe-video-synth-oscillator.mp4", recipeStarterFrame("synth", [118, 75, 255])],
@@ -4603,18 +4963,26 @@ const clips = [
   ["flow-field-ribbons.mp4", flowFieldRibbonsFrame],
   ["sculptural-relief-gallery.mp4", sculpturalReliefGalleryFrame],
   ["creative-rag-kandinsky-remix.mp4", creativeRagKandinskyRemixFrame],
+  ["cubemap-dome-master.mp4", cubemapDomeMasterFrame, { height: 480, width: 480 }],
 ];
 
-function writePpm(file, buf) {
-  writeFileSync(file, Buffer.concat([Buffer.from(`P6\n${width} ${height}\n255\n`), buf]));
+function writePpm(file, buf, frameWidth = width, frameHeight = height) {
+  writeFileSync(file, Buffer.concat([Buffer.from(`P6\n${frameWidth} ${frameHeight}\n255\n`), buf]));
 }
 
-function encode(name, renderer) {
+function encode(name, renderer, options = {}) {
   const temp = mkdtempSync(join(tmpdir(), "tdmcp-doc-clips-"));
   const out = join(outDir, name);
+  const frameWidth = options.width ?? width;
+  const frameHeight = options.height ?? height;
   mkdirSync(dirname(out), { recursive: true });
   for (let frame = 0; frame < frames; frame++) {
-    writePpm(join(temp, `frame_${String(frame + 1).padStart(3, "0")}.ppm`), renderer(frame / fps));
+    writePpm(
+      join(temp, `frame_${String(frame + 1).padStart(3, "0")}.ppm`),
+      renderer(frame / fps),
+      frameWidth,
+      frameHeight,
+    );
   }
   const result = spawnSync(
     "ffmpeg",
@@ -4655,6 +5023,6 @@ if (unknownClipNames.length > 0) {
 const selectedClips =
   requestedClipNames.size === 0 ? clips : clips.filter(([name]) => requestedClipNames.has(name));
 
-for (const [name, renderer] of selectedClips) {
-  encode(name, renderer);
+for (const [name, renderer, options] of selectedClips) {
+  encode(name, renderer, options);
 }
