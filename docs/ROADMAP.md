@@ -29,12 +29,13 @@ consolidation gates below are all green.
 **Also in the current source tree (Unreleased): native RayTK integration.** RayTK
 (t3kt/raytk) is now driven as an editable ROP **node graph** — `create_raytk_op`
 (instance one ROP master), `create_raytk_scene` (the minimal `sphereSdf →
-raymarchRender3D → Null` chain), a `tdmcp://raytk/operators` catalog resource, and a
+raymarchRender3D → Null` chain), `raytk_expr_graph_builder` (preset/custom SDF
+expression graphs), a `tdmcp://raytk/operators` catalog resource, and a
 TD-build-aware `manage_packages doctor` version gate (RayTK 0.46 needs TD 2025.30770+;
 pin ≤0.45 on 2023.x). This is complementary to — not a replacement for — the GLSL
 `create_raymarch_scene`/`create_sdf_field`. Built and gated **offline**; live cook/render
 validation stays **UNVERIFIED** pending a TD 2025.30770+ build with the RayTK `.tox`
-loaded. (Deep RayTK follow-ups such as EX-51's SDF expression-graph remain planned.)
+loaded.
 
 The project has grown through five arcs:
 
@@ -850,8 +851,8 @@ properly:
 
 ## v1.0.0 — Consolidation {#v100-consolidation}
 
-With the feature surface at **355 tools** on HEAD (the generated Tools-reference
-total after #128's 20 new tools), the road to 1.0 is
+With the feature surface at **375 tools** on HEAD (the generated Tools-reference
+total), the road to 1.0 is
 a set of **measurable consolidation gates**, not a new feature wave. Each gate
 below states the current posture and what "done" looks like, using the same
 legend as the rest of the page (✅ shipped / 🧪 in progress / ⬜ planned).

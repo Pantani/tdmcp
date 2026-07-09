@@ -505,6 +505,20 @@ flags `add_camera` / `add_light` do `create_raytk_scene` — essa direção é o
 renderer, não coberta por este wire origem → op-novo.) Explore a taxonomia completa de
 operadores pelo recurso de catálogo `tdmcp://raytk/operators`.*
 
+> *"Construa um estudo RayTK de expression graph: esfera mais box entrando num union,
+> material, câmera e luz, tudo disposto como ROPs editáveis para eu continuar
+> expandindo a árvore SDF à mão."*
+
+```bash
+tdmcp-agent raytk-expr-graph --params '{"preset":"sphere_union_box","add_material":true,"add_camera":true,"add_light":true}'
+```
+
+*`raytk_expr_graph_builder` é a superfície de graph maior: aceita presets ou `nodes` /
+`edges` explícitos, copia cada master RayTK ao vivo, conecta índices de entrada
+tipados, posiciona os ROPs copiados de forma determinística e expõe o renderer
+selecionado por `out1`. Trate o primeiro render local como `UNVERIFIED-raytk-render`
+até o `.tox` do RayTK estar carregado e o shader ter cozinhado no TouchDesigner.*
+
 ## Estudos artísticos & instalações
 
 Estes prompts são para artistas visuais primeiro: loops de galeria, imagens de
@@ -1645,6 +1659,51 @@ porta 6448; unreal → `/unreal`, porta 8000): um Constant CHOP com um canal por
 já nomeado com o endereço OSC exato, ligado num OSC-Out CHOP em host:porta. Basta ligar
 sua análise nos canais de origem — o controle cross-app "simplesmente funciona" porque
 os templates de endereço já vêm preenchidos, sem digitar endereço à mão.*
+
+> *"Antes de abrir a casa, me dê um relatório pre-show de `/project1/show`: status
+> da bridge, erros de nós, topologia, orçamento de performance e prontidão de
+> displays; se estiver limpo, monte uma companion surface para os controles do hero."*
+
+*`show_preflight_report` fica read-only e devolve PASS/WARN/FAIL em vez de um visual.
+`create_companion_surface` então embrulha um COMP escolhido com controles gerados,
+faders/cues e o mesmo contexto de preflight, para o operador receber uma superfície
+tocável mais os checks que explicam se ela está pronta para uso.*
+
+> *"Monte o roteamento da sala de controle: uma matriz OSC para Resolume e VDMX,
+> uma bridge de cues para QLab, controles de cut/auto do ATEM via Companion e botões
+> de cena/gravação do OBS, mas deixe credencial e disparo ao vivo sempre explícitos."*
+
+*`osc_router_matrix`, `resolume_vdmx_output_chain`, `qlab_osc_bridge`,
+`atem_switcher_control` e `obs_stream_control` criam lanes de controle e notas. São
+scaffolds para softwares externos reais: valide host/porta/auth na sala antes de
+tratar qualquer botão como live.*
+
+> *"Prepare playback e handoff de saída: um transport de movie/audio com Play, Loop
+> e Speed, um loop de edição de shader para correções GLSL de última hora e um preset
+> ProRes de review quando o look for aprovado."*
+
+*`clip_audio_transport` constrói o player seguro para ensaio, `edit_shader_live_loop`
+edita um GLSL/Text DAT e logo inspeciona erros e preview opcional, e
+`export_render_preset` envolve `record_movie` com presets nomeados para review, HAP,
+ProRes e handoff estilo NotchLC.*
+
+> *"Prepare os scaffolds de calibração do venue: dois lanes de projetor com corner-pin
+> e level, mais um tracker LiDAR sintético de chão para eu ensaiar zonas antes do
+> sensor real chegar."*
+
+*`projector_calibration_wizard` e `lidar_floor_tracker` separam de propósito scaffold
+offline de verdade física. O graph pode ser construído e inspecionado agora; alinhamento
+de projetor e tracking de sensor real continuam `UNVERIFIED` até validação nas saídas
+e hardwares reais.*
+
+> *"Importe esta cena Blender para um scaffold de render PBR e coloque ao lado uma
+> bridge guardada de Notch / TouchEngine, para eu testar asset e engine em tempo real
+> no mesmo projeto de ensaio."*
+
+*`blender_scene_import` cria um scaffold PBR no TD ao redor de um caminho de asset
+adjacente ao `.blend`, ou uma primitiva fallback. `notch_touchengine_bridge` adiciona
+o placeholder guardado de Notch TOP / Engine COMP e notas; licença/runtime continuam
+passo ao vivo do operador, não algo que o cookbook possa fingir.*
 
 ## Consertar & entender
 

@@ -29,6 +29,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "rebuild_network", // can clear/recreate a parent's children
   "edit_dat_content", // destructive DAT rewrite, even though scoped/guarded
   "set_dat_content", // whole-DAT overwrite
+  "edit_shader_live_loop", // composed shader DAT rewrite + post-edit inspection loop
   "create_panic", // bypasses & deletes
   "manage_checkpoint", // overwrites saved state
   "manage_component", // can delete/replace components

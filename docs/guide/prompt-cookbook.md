@@ -487,6 +487,20 @@ siblings. (Cameras and lights are wired straight into the renderer by
 new-op → renderer, not covered by this source → new-op wire.) Browse the full
 operator taxonomy via the `tdmcp://raytk/operators` catalog resource.*
 
+> *"Build a RayTK expression graph study: sphere plus box into a union, material,
+> camera and light, laid out as editable ROP nodes so I can keep expanding the SDF
+> tree by hand."*
+
+```bash
+tdmcp-agent raytk-expr-graph --params '{"preset":"sphere_union_box","add_material":true,"add_camera":true,"add_light":true}'
+```
+
+*`raytk_expr_graph_builder` is the larger graph-builder surface: it accepts presets
+or explicit `nodes` / `edges`, copies every RayTK master live, wires typed connector
+indices, places copied ROPs deterministically and exposes the selected renderer
+through `out1`. Treat the first local render as `UNVERIFIED-raytk-render` until the
+RayTK `.tox` is loaded and the shader has cooked in TouchDesigner.*
+
 ## Artist studies & installations
 
 These prompts are for visual artists first: gallery loops, stage images, camera
@@ -1590,6 +1604,51 @@ the addresses are pre-filled: synesthesia targets `/syn` on port 6448, unreal ta
 `/unreal` on port 8000. A Constant CHOP carries one channel per control named to the
 exact OSC address, wired into an OSC-Out CHOP at host:port — bind your analysis to the
 source channels and it pushes straight into the other app's scenes, no manual typing.*
+
+> *"Before doors, give me a pre-show report for `/project1/show`: bridge status,
+> node errors, topology, performance budget and display readiness, then build a
+> companion surface for the hero controls if the report is clean."*
+
+*`show_preflight_report` stays read-only and returns PASS/WARN/FAIL instead of a
+visual. `create_companion_surface` then wraps a chosen COMP with generated controls,
+fader/cue affordances and the same preflight context, so the operator gets a playable
+surface plus the checks that explain whether it is safe to use.*
+
+> *"Build the control room routing: one OSC matrix for Resolume and VDMX, a QLab
+> cue bridge, ATEM cut/auto controls through Companion, and OBS scene/recording
+> buttons, but keep every external app credential and live dispatch explicit."*
+
+*`osc_router_matrix`, `resolume_vdmx_output_chain`, `qlab_osc_bridge`,
+`atem_switcher_control` and `obs_stream_control` create the control lanes and notes.
+They are scaffolds for real external software: validate host/port/auth against the
+room before treating any button as live.*
+
+> *"Set up clip playback and output handoff: a movie/audio transport with Play,
+> Loop and Speed controls, a shader edit loop for last-minute GLSL fixes, and a
+> ProRes review export preset when the look is approved."*
+
+*`clip_audio_transport` builds the rehearsal-safe player, `edit_shader_live_loop`
+edits a GLSL/Text DAT then immediately inspects errors and optional preview, and
+`export_render_preset` wraps `record_movie` with named delivery presets for review,
+HAP, ProRes and NotchLC-style handoff.*
+
+> *"Prepare the venue calibration scaffolds: two projector lanes with corner-pin
+> and level controls, plus a synthetic LiDAR floor tracker so I can rehearse zones
+> before the real sensor arrives."*
+
+*`projector_calibration_wizard` and `lidar_floor_tracker` intentionally separate
+offline scaffolding from physical truth. The graph can be built and inspected now;
+projector alignment and real sensor tracking remain `UNVERIFIED` until validated on
+the actual outputs/hardware.*
+
+> *"Import this Blender scene into a PBR render scaffold, and add a guarded Notch /
+> TouchEngine bridge container beside it so I can test both asset and real-time
+> engine paths in one rehearsal project."*
+
+*`blender_scene_import` creates a TD-side PBR scaffold around a `.blend`-adjacent
+asset path or fallback primitive. `notch_touchengine_bridge` adds the guarded Notch
+TOP / Engine COMP placeholder and notes; license/runtime validation remains a live
+operator step, not something the cookbook can fake.*
 
 **What you'll get:** stage-prep tools for displays, GPU capability, DMX / Art-Net,
 shared-memory IPC and multi-agent fanout. These are infrastructure surfaces, so the

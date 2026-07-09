@@ -4,14 +4,17 @@ import { registerAddTimecodeOverlay } from "./addTimecodeOverlay.js";
 import { registerAnimateParameter } from "./animateParameter.js";
 import { registerApplyLut } from "./applyLut.js";
 import { registerArrangeNetwork } from "./arrangeNetwork.js";
+import { registerAtemSwitcherControl } from "./atemSwitcherControl.js";
 import { registerAuthorScriptOperator } from "./authorScriptOperator.js";
 import { registerAutoRepairLoop } from "./autoRepairLoop.js";
+import { registerAutoUiFromParams } from "./autoUiFromParams.js";
 import { registerBatchOperations } from "./batchOperations.js";
 import { registerBindAudioReactive } from "./bindAudioReactive.js";
 import { registerBindToChannel } from "./bindToChannel.js";
 import { registerBuildChopChain } from "./buildChopChain.js";
 import { registerBuildPopChain } from "./buildPopChain.js";
 import { registerBuildSopGeometry } from "./buildSopGeometry.js";
+import { registerClipAudioTransport } from "./clipAudioTransport.js";
 import { registerConnectComfyui } from "./connectComfyui.js";
 import { registerConnectDaydreamCloud } from "./connectDaydreamCloud.js";
 import { registerConnectNodes } from "./connectNodes.js";
@@ -22,6 +25,7 @@ import { registerCreateBandRouter } from "./createBandRouter.js";
 import { registerCreateBeatGridSequencer } from "./createBeatGridSequencer.js";
 import { registerCreateCaptureLoop } from "./createCaptureLoop.js";
 import { registerCreateClipLauncher } from "./createClipLauncher.js";
+import { registerCreateCompanionSurface } from "./createCompanionSurface.js";
 import { registerCreateContainer } from "./createContainer.js";
 import { registerCreateControlPanel } from "./createControlPanel.js";
 import { registerCreateControlSurface } from "./createControlSurface.js";
@@ -70,9 +74,14 @@ import { registerManageCheckpoint } from "./manageCheckpoint.js";
 import { registerManageComponent } from "./manageComponent.js";
 import { registerManageCue } from "./manageCue.js";
 import { registerManagePresets } from "./managePresets.js";
+import { registerNotchTouchengineBridge } from "./notchTouchengineBridge.js";
+import { registerObsStreamControl } from "./obsStreamControl.js";
+import { registerOscRouterMatrix } from "./oscRouterMatrix.js";
 import { registerPostPasses3d } from "./postPasses3d.js";
+import { registerQlabOscBridge } from "./qlabOscBridge.js";
 import { registerRandomizeControls } from "./randomizeControls.js";
 import { registerRebuildNetwork } from "./rebuildNetwork.js";
+import { registerResolumeVdmxOutputChain } from "./resolumeVdmxOutputChain.js";
 import { registerScaffoldExtension } from "./scaffoldExtension.js";
 import { registerScaffoldToolGenerator } from "./scaffoldToolGenerator.js";
 import { registerScaffoldVjDeck } from "./scaffoldVjDeck.js";
@@ -92,6 +101,8 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerSetParametersBatch,
   registerCreateContainer,
   registerCreateControlPanel,
+  registerAutoUiFromParams,
+  registerCreateCompanionSurface,
   registerCreateControlSurface,
   registerAnimateParameter,
   registerBindToChannel,
@@ -111,6 +122,13 @@ export const layer2Registrars: ToolRegistrar[] = [
   // Wave 4 — live-performance ergonomics:
   registerCreatePanic,
   registerCreateClipLauncher,
+  registerClipAudioTransport,
+  registerOscRouterMatrix,
+  registerQlabOscBridge,
+  registerAtemSwitcherControl,
+  registerResolumeVdmxOutputChain,
+  registerObsStreamControl,
+  registerNotchTouchengineBridge,
   // Wave 6 — DJ decks + MIDI/OSC learn:
   registerCreateDecks,
   registerLearnControl,

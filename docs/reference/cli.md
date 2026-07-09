@@ -167,6 +167,30 @@ The 21 Obsidian **vault** tools are available as subcommands too (all need
 `scaffold_vault`, `style_memory`, `sync_presets_vault`, `tag_and_search_library`,
 `tutorial_companion_pack`, and `version_library_asset`.
 
+The tool-integration campaign also exposes production-handoff and external-control
+commands:
+
+| Subcommand | What it does |
+| --- | --- |
+| `export-render-preset` | Record a TOP with a named VJ/editorial export preset. |
+| `show-preflight` | Run a read-only PASS/WARN/FAIL pre-show check. |
+| `auto-ui-from-params` | Generate a playable control panel from a node's parameters. |
+| `companion-surface` | Create a companion auto UI, fader surface and preflight report. |
+| `clip-transport` | Build a movie/audio clip transport with Play, Loop and Speed controls. |
+| `osc-router` | Build an OSC control matrix for one or more external targets. |
+| `qlab-osc` | Build a QLab OSC bridge with transport and cue-start routes. |
+| `atem-switcher-control` | Build an atemOSC/Companion switcher-control preset. |
+| `resolume-vdmx-output` | Build Resolume/VDMX OSC output-control lanes. |
+| `obs-stream-control` | Build an OBS WebSocket stream/record/scene control rig. |
+| `shader-live-loop` | Edit a shader DAT, then inspect errors and optionally capture a preview. |
+| `raytk-expr-graph` | Build a preset/custom RayTK ROP expression graph; requires RayTK loaded. |
+| `projector-calibration` | Build a multi-projector calibration scaffold with corner-pin lanes. |
+| `blender-scene-import` | Import a Blender scene or exported asset into a PBR render scaffold. |
+| `notch-touchengine-bridge` | Build a guarded Notch TOP or TouchEngine bridge scaffold. |
+| `lidar-floor-tracker` | Build a synthetic/Ouster/Leuze/UDP LiDAR floor-tracker scaffold. |
+| `marketplace-index-seed` | Write a guarded starter marketplace seed JSON. |
+| `one-source-five-ways` | Generate five deterministic remix briefs from one source. |
+
 ### Packaging, narration & preview subcommands
 
 | Subcommand | What it does |
