@@ -35,7 +35,7 @@ All create the same idempotent `tdmcp_bridge` COMP and can be undone with
 (`Dialogs → Textport and DATs`):
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.0/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.1/td/bootstrap.py").read().decode())
 ```
 
 It downloads the bridge to `~/tdmcp-bridge/modules` and starts it on port 9980.
