@@ -421,8 +421,10 @@ signed-distance-field toolkit. These prompts build an **editable RayTK node grap
 (ROP) masters — the node-graph-native complement to the self-contained GLSL
 `create_raymarch_scene` above. RayTK is an external package: the tools require it
 **staged + loaded** first, and RayTK 0.46 needs **TouchDesigner 2025.30770+** (pin
-`build-045` for 2023.x builds). Anything needing a live cook stays
-**UNVERIFIED-pending-td** — with the toolkit absent the tools fail forward with a
+`build-045` for 2023.x builds). The videos below were captured from a live
+TouchDesigner 2025.32820 graph with RayTK 0.46 loaded; for a fresh local build,
+anything you have not live-cooked yet should still be treated as
+**UNVERIFIED-pending-td**. With the toolkit absent, the tools fail forward with a
 "stage & load RayTK first" message instead of a false render.
 
 > *"Check whether my TouchDesigner build can run the latest RayTK, then stage the
@@ -442,8 +444,10 @@ the staged `.tox` in TouchDesigner before building a scene.*
 > material, and add a light — as a node graph I can keep editing."*
 
 ```bash
-tdmcp-agent raytk-scene --params '{"sdf_primitive":"sphereSdf","union_with":"boxSdf","material":true,"add_light":true}'
+tdmcp-agent raytk-scene --params '{"sdf_primitive":"sphereSdf","union_with":"boxSdf","material":true,"add_camera":true,"add_light":true}'
 ```
+
+<video :src="withBase('/examples/raytk-sphere-box-nodegraph.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
 
 *`create_raytk_scene` copies RayTK's actual ROP masters (`sphereSdf`, `boxSdf`,
 `simpleUnion`, `basicMat`, `pointLight`, `raymarchRender3D`) and wires the minimal
@@ -451,6 +455,21 @@ renderable chain, terminating in a Null TOP. Because these are live operators, y
 can keep tweaking the network by hand afterward — unlike the monolithic GLSL path.
 The renderer compiles its shader on a background thread, so the first preview may be
 pre-compile; do a live cook-wait before trusting the frame.*
+
+> *"Make a second RayTK node-graph study with a torus SDF unioned into a box-frame
+> SDF, magenta material and a light, so I can inspect the ROP chain and keep
+> editing the operators."*
+
+```bash
+tdmcp-agent raytk-scene --params '{"sdf_primitive":"torusSdf","union_with":"boxFrameSdf","material":true,"add_camera":true,"add_light":true}'
+```
+
+<video :src="withBase('/examples/raytk-torus-frame-nodegraph.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*This is still a RayTK graph, not a standalone shader: `torusSdf`, `boxFrameSdf`,
+`simpleUnion`, `basicMat`, `lookAtCamera`, `pointLight` and `raymarchRender3D`
+are copied from the loaded RayTK package, then the final TOP is captured after a
+live cook-wait.*
 
 > *"Add a smooth-union combine to my RayTK scene and pull the existing sphere into
 > it, so I can start blending in more shapes."*
