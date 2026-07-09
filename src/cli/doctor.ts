@@ -405,6 +405,8 @@ function checkTools(config: TdmcpConfig): DoctorCheck {
   if (config.rawPython === "off") locked.push("raw-Python escape hatches (TDMCP_RAW_PYTHON=off)");
   if (config.toolProfile === "safe")
     locked.push("destructive/raw-code tools (TDMCP_TOOL_PROFILE=safe)");
+  if (config.toolProfile === "directory")
+    locked.push("non-directory tools (TDMCP_TOOL_PROFILE=directory)");
   return {
     id: "tools",
     title: "Tool exposure",

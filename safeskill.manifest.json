@@ -32,6 +32,6 @@
   "securityNotes": [
     "Secrets are loaded from explicit environment/config fields and redacted before diagnostic printing.",
     "Archive extraction validates paths and rejects traversal or symlink entries before unpacking.",
-    "Raw Python tools can be disabled with TDMCP_RAW_PYTHON=off or hidden with TDMCP_TOOL_PROFILE=safe."
+    "Raw Python tools can be disabled with TDMCP_RAW_PYTHON=off, hidden with TDMCP_TOOL_PROFILE=safe, or excluded from the compact TDMCP_TOOL_PROFILE=directory surface."
   ]
 }

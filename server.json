@@ -14,6 +14,18 @@
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@dpantani/tdmcp",
       "version": "0.13.0",
+      "environmentVariables": [
+        {
+          "name": "TDMCP_TOOL_PROFILE",
+          "value": "directory",
+          "description": "Expose the compact registry-facing build/inspect tool profile for MCP directories."
+        },
+        {
+          "name": "TDMCP_RAW_PYTHON",
+          "value": "off",
+          "description": "Hide raw client-authored Python escape-hatch tools in registry scans."
+        }
+      ],
       "transport": {
         "type": "stdio"
       }

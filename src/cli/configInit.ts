@@ -84,7 +84,7 @@ export function renderStarterConfig(opts: { bridgeToken?: string } = {}): string
     'TDMCP_EVENTS="on"',
     "",
     "# --- Tool exposure ---------------------------------------------------------",
-    '# Tool surface: "full" (every tool) or "safe" (hides destructive + raw-code tools).',
+    '# Tool surface: "full" (every tool), "safe" (hide destructive/raw-code), or "directory" (compact registry surface).',
     'TDMCP_TOOL_PROFILE="full"',
     "# Raw Python escape-hatch tools (execute_python_script, exec_node_method). on|off.",
     'TDMCP_RAW_PYTHON="on"',
