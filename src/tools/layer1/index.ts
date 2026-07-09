@@ -92,6 +92,7 @@ import { registerCreatePoseTracking } from "./createPoseTracking.js";
 import { registerCreateProbSequencer } from "./createProbSequencer.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
+import { registerCreateRaytkScene } from "./createRaytkScene.js";
 import { registerCreateReactionDiffusion } from "./createReactionDiffusion.js";
 import { registerCreateSafetyBlackoutChain } from "./createSafetyBlackoutChain.js";
 import { registerCreateSdfField } from "./createSdfField.js";
@@ -204,6 +205,8 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateGpuParticleField,
   // Post-0.3.0 parallel build — wave 1:
   registerCreateRaymarchScene,
+  // RayTK integration (Wave W4) — native RayTK node-graph scene (complement to the GLSL one):
+  registerCreateRaytkScene,
   registerDetectTempo,
   // Post-0.3.0 parallel build — wave 2:
   registerCreatePbrScene,

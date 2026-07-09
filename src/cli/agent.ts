@@ -341,6 +341,7 @@ import {
   createRaymarchSceneImpl,
   createRaymarchSceneSchema,
 } from "../tools/layer1/createRaymarchScene.js";
+import { createRaytkSceneImpl, createRaytkSceneSchema } from "../tools/layer1/createRaytkScene.js";
 import {
   createReactionDiffusionImpl,
   createReactionDiffusionSchema,
@@ -696,6 +697,7 @@ import {
   controlTimelineTransportSchema,
 } from "../tools/layer3/controlTimelineTransport.js";
 import { copilotVisionImpl, copilotVisionSchema } from "../tools/layer3/copilotVision.js";
+import { createRaytkOpImpl, createRaytkOpSchema } from "../tools/layer3/createRaytkOp.js";
 import { createTdNodeImpl, createTdNodeSchema } from "../tools/layer3/createTdNode.js";
 import { deleteTdNodeImpl, deleteTdNodeSchema } from "../tools/layer3/deleteTdNode.js";
 import {
@@ -1635,6 +1637,18 @@ const COMMANDS: Record<string, Command> = {
     createRaymarchSceneSchema,
     createRaymarchSceneImpl,
     "Volumetric GLSL raymarcher: SDF scenes (sphere-field/menger/tunnel).",
+    { mutates: true },
+  ),
+  "raytk-scene": r(
+    createRaytkSceneSchema,
+    createRaytkSceneImpl,
+    "RayTK node-graph raymarch scene (sphereSdf → raymarchRender3D → Null); needs RayTK loaded.",
+    { mutates: true },
+  ),
+  "raytk-op": r(
+    createRaytkOpSchema,
+    createRaytkOpImpl,
+    "Instance one RayTK ROP master by op-name and optionally wire a typed input; needs RayTK loaded.",
     { mutates: true },
   ),
   "detect-tempo": r(

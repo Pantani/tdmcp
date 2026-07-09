@@ -26,6 +26,16 @@ CHANGELOG blocks list every entry; the always-current tool list is the
 line is the active feature/consolidation line, and v1.0 will land only once the
 consolidation gates below are all green.
 
+**Also in the current source tree (Unreleased): native RayTK integration.** RayTK
+(t3kt/raytk) is now driven as an editable ROP **node graph** — `create_raytk_op`
+(instance one ROP master), `create_raytk_scene` (the minimal `sphereSdf →
+raymarchRender3D → Null` chain), a `tdmcp://raytk/operators` catalog resource, and a
+TD-build-aware `manage_packages doctor` version gate (RayTK 0.46 needs TD 2025.30770+;
+pin ≤0.45 on 2023.x). This is complementary to — not a replacement for — the GLSL
+`create_raymarch_scene`/`create_sdf_field`. Built and gated **offline**; live cook/render
+validation stays **UNVERIFIED** pending a TD 2025.30770+ build with the RayTK `.tox`
+loaded. (Deep RayTK follow-ups such as EX-51's SDF expression-graph remain planned.)
+
 The project has grown through five arcs:
 
 1. **Generate** — one-line tools that build a whole wired network (audio-reactive,

@@ -2070,6 +2070,22 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "raytk-op",
+    summary:
+      "Instance one RayTK ROP master by op-name and optionally wire a typed input; needs RayTK loaded.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "raytk-scene",
+    summary:
+      "RayTK node-graph raymarch scene (sphereSdf → raymarchRender3D → Null); needs RayTK loaded.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "react-audio",
     summary: "One-shot: auto-map a COMP's knobs to audio bands and bind them to a feature CHOP.",
     mutates: true,
