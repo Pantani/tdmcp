@@ -26,7 +26,8 @@ recipes, docs, CHANGELOG, ROADMAP, CLAUDE.md). Builders only create their own ne
    truth for RayTK facts. If it does not exist, spawn `raytk-cartographer` before planning.
 2. `src/packages/registry.ts` (`raytk` manifest) and `src/tools/layer3/managePackages.ts`.
 3. `src/tools/layer1/createRaymarchScene.ts` + the closest Layer 1 tool as a copy target.
-4. The builder contract: `.claude/skills/tdmcp-tool-builder/SKILL.md` and `td-feature-build`.
+4. The builder contract — each `td-builder` loads the `td-feature-build` skill itself; brief
+   builders against that contract (do not read other skills' files from here).
 
 ## Plan the waves (dependency-ordered)
 

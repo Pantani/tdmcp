@@ -310,7 +310,7 @@ export function readRaytkOperatorCatalog(): RaytkOperatorCatalog {
         "RayTK 0.46 (build-046) requires the TouchDesigner 2025.30770 experimental build and is NOT compatible with the 2023.x releases.",
       fallback: "On a 2023.x TouchDesigner build, pin RayTK <=0.45 instead of the latest release.",
     },
-    dataTypes: ["Sdf", "float", "vec4", "Ray", "Light"],
+    dataTypes: ["Sdf", "float", "vec4", "Ray", "Light", "mixed"],
     opStatuses: ["default", "Alpha", "Beta", "Deprecated"],
     minimalChain: {
       description:

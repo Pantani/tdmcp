@@ -44,7 +44,9 @@ describe("RayTK operator catalog dataset", () => {
   });
 
   it("carries the typed connector data types", () => {
-    expect(catalog.dataTypes).toEqual(["Sdf", "float", "vec4", "Ray", "Light"]);
+    // Includes "mixed" — several categories (filter/output/convert/post/utility/geo/pop/custom)
+    // declare outputType: "mixed", so consumers validating connectors must accept it.
+    expect(catalog.dataTypes).toEqual(["Sdf", "float", "vec4", "Ray", "Light", "mixed"]);
   });
 
   it("declares the minimal renderable chain with renderer input order", () => {

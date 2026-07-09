@@ -77,7 +77,11 @@ export type UninstallStrategy = z.infer<typeof UninstallStrategySchema>;
  * gate, offering `fallback` (e.g. pin an older package release for older TD builds).
  */
 export const VersionGateSchema = z.object({
-  minBuild: z.string().min(1),
+  // TouchDesigner build identifier in `YYYY.NNNNN` form (e.g. "2025.30770"); doctor.ts compares
+  // it numerically, so reject malformed gate values before they drive a misleading check.
+  minBuild: z
+    .string()
+    .regex(/^\d{4}\.\d+$/, "minBuild must be a TouchDesigner build like '2025.30770'"),
   reason: z.string().min(1),
   fallback: z.string().min(1).optional(),
 });

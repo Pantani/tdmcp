@@ -49,7 +49,8 @@ Read before changing code:
 2. `src/packages/registry.ts` (`raytk` manifest) + `src/tools/layer3/managePackages.ts`.
 3. `src/tools/layer1/createRaymarchScene.ts`, `createSdfField.ts`, `createSdfText.ts`,
    `recipes/raymarch_*.json` — the complementary GLSL surface, to avoid collisions.
-4. `.claude/skills/tdmcp-tool-builder/SKILL.md` — the builder contract.
+4. The builder contract lives in the `td-feature-build` skill, which each `td-builder` loads
+   itself — brief builders to it rather than reading other skills' files here.
 
 ## Workflow
 
