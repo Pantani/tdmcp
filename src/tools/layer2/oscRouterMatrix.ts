@@ -2,6 +2,7 @@ import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { TD_LAYOUT_HELPERS } from "./pythonLayoutSnippets.js";
 
 export const oscRouteSchema = z.object({
   address: z
@@ -99,29 +100,7 @@ def _safe_name(value):
         out = "t_" + out
     return out
 
-def _place(node, x, y):
-    try:
-        node.nodeX = x
-        node.nodeY = y
-    except Exception:
-        pass
-
-def _place_container(parent, container):
-    try:
-        cw, ch, rows = 260, 200, 6
-        def _cell(child):
-            return (
-                round((child.nodeX + child.nodeWidth / 2.0) / cw),
-                round(-(child.nodeY + child.nodeHeight / 2.0) / ch),
-            )
-        occupied = {_cell(child) for child in parent.children if child is not container}
-        k = 0
-        while (k // rows, k % rows) in occupied:
-            k += 1
-        container.nodeX = (k // rows) * cw
-        container.nodeY = -((k % rows) * ch)
-    except Exception:
-        pass
+${TD_LAYOUT_HELPERS}
 
 def _setpar(node, name, value):
     try:
