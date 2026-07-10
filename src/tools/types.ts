@@ -5,6 +5,7 @@ import type { LlmClientLike } from "../llm/client.js";
 import type { ProjectRagService } from "../projectRag/index.js";
 import type { RecipeLibrary } from "../recipes/loader.js";
 import type { ImageProvider } from "../services/imageGen/types.js";
+import type { VideoGenProvider } from "../services/videoGen/types.js";
 import type { TouchDesignerClient } from "../td-client/touchDesignerClient.js";
 import type { Logger } from "../utils/logger.js";
 import type { Vault } from "../vault/index.js";
@@ -73,6 +74,19 @@ export interface ToolContext {
    * BEFORE any TD call, then points a Movie File In TOP at the absolute path.
    */
   imageCacheDir?: string;
+  /**
+   * Optional video-gen provider (hosted fal OR local ComfyUI; set when
+   * `videoGenProvider != "none"` AND its prerequisite is present); undefined when
+   * off. Tools MUST degrade via `errorResult` when undefined. Keys live only in
+   * Node, never threaded to the TD bridge.
+   */
+  videoGen?: VideoGenProvider;
+  /**
+   * Cache dir for generated clips (`config.videoCacheDir`). Set together with
+   * `videoGen`. The generation helper writes the clip here (absolute path) BEFORE
+   * any TD call, then points a Movie File In TOP at it.
+   */
+  videoCacheDir?: string;
 }
 
 /** A function that registers one tool against the MCP server. */

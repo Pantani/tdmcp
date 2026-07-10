@@ -405,6 +405,28 @@ export const ConfigSchema = z.object({
    * Dot-dir, gitignored, user-clearable (mirrors `ragDataDir`).
    */
   imageCacheDir: z.string().min(1).default(".tdmcp/image-gen"),
+  /**
+   * Hosted/local video-generation provider for the AI-video lane
+   * (`create_ai_video` / `create_ai_video_backdrop`). `none` (default) leaves the
+   * feature off; `fal` uses fal.ai (reuses `TDMCP_FAL_KEY` — no separate key);
+   * `comfyui` drives a local headless ComfyUI REST server. Keys stay Node-only,
+   * never threaded to the TD bridge.
+   */
+  videoGenProvider: z.enum(["fal", "comfyui", "none"]).default("none"),
+  /** Override the provider's default video model slug (e.g. an ltx-2 queue model). */
+  videoGenModel: z.string().optional(),
+  /**
+   * Local cache dir for generated clips. The generation helper writes each clip
+   * here (absolute path) BEFORE any TD call, then points a Movie File In TOP at it.
+   * Dot-dir, gitignored, user-clearable (mirrors `imageCacheDir`).
+   */
+  videoCacheDir: z.string().min(1).default(".tdmcp/video-gen"),
+  /** ComfyUI REST server URL for the headless video provider (not the TD streaming bridge). */
+  comfyuiUrl: z.string().url().default("http://127.0.0.1:8188"),
+  /** Absolute path to a ComfyUI API-format workflow JSON (required for the comfyui video provider). */
+  comfyuiVideoWorkflow: z.string().optional(),
+  /** Optional override for the video generation timeout (ms); provider default is 10 min. */
+  videoGenTimeoutMs: z.coerce.number().int().positive().optional(),
 });
 
 type ParsedConfig = z.infer<typeof ConfigSchema>;
@@ -508,6 +530,12 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     imageGenProvider: env.TDMCP_IMAGE_GEN_PROVIDER,
     imageGenModel: env.TDMCP_IMAGE_GEN_MODEL || undefined,
     imageCacheDir: env.TDMCP_IMAGE_CACHE_DIR || undefined,
+    videoGenProvider: env.TDMCP_VIDEO_GEN_PROVIDER,
+    videoGenModel: env.TDMCP_VIDEO_GEN_MODEL || undefined,
+    videoCacheDir: env.TDMCP_VIDEO_CACHE_DIR || undefined,
+    comfyuiUrl: env.TDMCP_COMFYUI_URL || undefined,
+    comfyuiVideoWorkflow: env.TDMCP_COMFYUI_VIDEO_WORKFLOW || undefined,
+    videoGenTimeoutMs: env.TDMCP_VIDEO_GEN_TIMEOUT_MS || undefined,
   };
 }
 

@@ -11,6 +11,7 @@ import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
 import { registerCreateAiBackdrop } from "./createAiBackdrop.js";
 import { registerCreateAiMirror } from "./createAiMirror.js";
+import { registerCreateAiVideoBackdrop } from "./createAiVideoBackdrop.js";
 import { registerCreateAsciiRender } from "./createAsciiRender.js";
 import { registerCreateAsemicWriting } from "./createAsemicWriting.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
@@ -348,6 +349,8 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateBlobTrace,
   // AI backdrop generation (2026-07-07) — prompt → wired AI-generated backdrop system:
   registerCreateAiBackdrop,
+  // AI video backdrop (2026-07-10) — prompt → wired AI-generated video-backdrop system:
+  registerCreateAiVideoBackdrop,
 ];
 
 // v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).

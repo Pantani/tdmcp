@@ -8,6 +8,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **AI video asset lane** — a provider-agnostic text/image-to-video lane that turns
+  a prompt (and optional init image) into a real TouchDesigner clip, extending the
+  hosted AI texture lane. Adopts the evolutionary-video-synthesis project NEvo's
+  *off-the-shelf generator choice* (LTX-Video), never NEvo code (arXiv 2607.02317,
+  CC BY 4.0):
+  - `create_ai_video` (Layer 2, CLI `create-ai-video`) — generate a clip and drop
+    it into TouchDesigner as a Movie File In TOP pointing at the cached asset.
+  - `create_ai_video_backdrop` (Layer 1, CLI `create-ai-video-backdrop`) — prompt →
+    a fully wired AI-generated moving backdrop (Movie File In → Level → Transform →
+    Blur → Null) with exposed **Brightness / Blur / Scale / Play / Speed** controls.
+  - New `src/services/videoGen/` provider seam with **two first-class backends**
+    selected by `TDMCP_VIDEO_GEN_PROVIDER`: **`comfyui`** (local ComfyUI REST,
+    zero per-generation cost, fully offline, runs LTX-Video on a local GPU) and
+    **`fal`** (hosted fal.ai, pay-per-generation). Both write the render to a local
+    cache file handed to a Movie File In TOP — no new bridge endpoint. Model default
+    `ltx-video`, `ltx-2` opt-in; the schema rejects controls a model lacks
+    (fixed-length / 4K) instead of silently ignoring them.
+  - New config (Node-only, never sent to the TD bridge): `TDMCP_VIDEO_GEN_PROVIDER`,
+    `TDMCP_VIDEO_GEN_MODEL`, `TDMCP_VIDEO_GEN_CACHE_DIR`, `TDMCP_VIDEO_GEN_TIMEOUT_MS`,
+    `TDMCP_COMFYUI_URL`, `TDMCP_COMFYUI_VIDEO_WORKFLOW`; reuses `TDMCP_FAL_KEY` (no new
+    secret, redacted in `doctor`). Generation is "generate-ahead, then play back
+    live" — the clip plays in real time, generation is not per-frame. Live fal/comfyui
+    contracts + TD cook are UNVERIFIED-pending (bridge offline, no fal key / GPU probe
+    at build time); all offline gates pass.
 - **External-integration Wave 1** — five new artist-facing bridge/scaffold tools:
   - **`create_raytk_sdf_graph`** (Layer 1, CLI `raytk-sdf-graph`) builds a deeper
     RayTK SDF graph with optional secondary SDF, `simpleUnion`, `basicMat`,

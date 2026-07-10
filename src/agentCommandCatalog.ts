@@ -746,6 +746,22 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "create-ai-video",
+    summary:
+      "Prompt (+ optional init image) → a short clip (fal or comfyui) dropped as a Movie File In TOP.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create-ai-video-backdrop",
+    summary:
+      "Prompt → a fully wired AI-generated video-backdrop system (movie/level/transform + Play/Speed/Brightness/Scale).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "create-ascii-render",
     summary: "Render a source as ASCII art (glyph atlas + GLSL sampler).",
     mutates: true,

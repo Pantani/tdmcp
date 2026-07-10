@@ -86,6 +86,10 @@ import { create3dSceneImpl, create3dSceneSchema } from "../tools/layer1/create3d
 import { createAiBackdropImpl, createAiBackdropSchema } from "../tools/layer1/createAiBackdrop.js";
 import { createAiMirrorImpl, createAiMirrorSchema } from "../tools/layer1/createAiMirror.js";
 import {
+  createAiVideoBackdropImpl,
+  createAiVideoBackdropSchema,
+} from "../tools/layer1/createAiVideoBackdrop.js";
+import {
   createAsciiRenderImpl,
   createAsciiRenderSchema,
 } from "../tools/layer1/createAsciiRender.js";
@@ -692,7 +696,6 @@ import {
 } from "../tools/layer2/connectMqttIotBus.js";
 import { connectNfcTapBusImpl, connectNfcTapBusSchema } from "../tools/layer2/connectNfcTapBus.js";
 import { connectNodesImpl, connectNodesSchema } from "../tools/layer2/connectNodes.js";
-import { createAiTextureImpl, createAiTextureSchema } from "../tools/layer2/createAiTexture.js";
 import {
   connectNoiseLevelBusImpl,
   connectNoiseLevelBusSchema,
@@ -882,6 +885,8 @@ import {
   connectYoutubeLiveChatBusImpl,
   connectYoutubeLiveChatBusSchema,
 } from "../tools/layer2/connectYoutubeLiveChatBus.js";
+import { createAiTextureImpl, createAiTextureSchema } from "../tools/layer2/createAiTexture.js";
+import { createAiVideoImpl, createAiVideoSchema } from "../tools/layer2/createAiVideo.js";
 import {
   createArtnetDiscoveryPanelImpl,
   createArtnetDiscoveryPanelSchema,
@@ -3345,6 +3350,18 @@ const COMMANDS: Record<string, Command> = {
     "Prompt → a fully wired AI-generated backdrop system (level/transform/blur + controls).",
     { mutates: true },
   ),
+  "create-ai-video": r(
+    createAiVideoSchema,
+    createAiVideoImpl,
+    "Prompt (+ optional init image) → a short clip (fal or comfyui) dropped as a Movie File In TOP.",
+    { mutates: true },
+  ),
+  "create-ai-video-backdrop": r(
+    createAiVideoBackdropSchema,
+    createAiVideoBackdropImpl,
+    "Prompt → a fully wired AI-generated video-backdrop system (movie/level/transform + Play/Speed/Brightness/Scale).",
+    { mutates: true },
+  ),
   "connect-comfyui": r(
     connectComfyuiSchema,
     connectComfyuiImpl,
@@ -4986,6 +5003,12 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   replicateKey: "TDMCP_REPLICATE_KEY",
   imageGenModel: "TDMCP_IMAGE_GEN_MODEL",
   imageCacheDir: "TDMCP_IMAGE_CACHE_DIR",
+  videoGenProvider: "TDMCP_VIDEO_GEN_PROVIDER",
+  videoGenModel: "TDMCP_VIDEO_GEN_MODEL",
+  videoCacheDir: "TDMCP_VIDEO_CACHE_DIR",
+  comfyuiUrl: "TDMCP_COMFYUI_URL",
+  comfyuiVideoWorkflow: "TDMCP_COMFYUI_VIDEO_WORKFLOW",
+  videoGenTimeoutMs: "TDMCP_VIDEO_GEN_TIMEOUT_MS",
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",
