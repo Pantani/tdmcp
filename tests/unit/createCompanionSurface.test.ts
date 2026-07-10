@@ -118,6 +118,83 @@ describe("create_companion_surface", () => {
     expect((ctx.client.getInfo as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
   });
 
+  it("can build only the bound auto UI without a playable fader surface", async () => {
+    const { ctx, exec } = makeCtx();
+    const result = await createCompanionSurfaceImpl(
+      ctx,
+      createCompanionSurfaceSchema.parse({
+        source_path: "/project1/noise1",
+        parameters: ["amplitude"],
+        include_faders: false,
+        include_preflight: false,
+      }),
+    );
+
+    expect(textOf(result)).toContain("1 auto UI control(s), 0 fader(s).");
+    expect(result.isError).toBeFalsy();
+    expect(exec).toHaveBeenCalledTimes(1);
+    expect((ctx.client.getInfo as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+  });
+
+  it("can build unbound controls when bind is disabled", async () => {
+    const { ctx, exec } = makeCtx();
+    const result = await createCompanionSurfaceImpl(
+      ctx,
+      createCompanionSurfaceSchema.parse({
+        source_path: "/project1/noise1",
+        parameters: ["amplitude"],
+        bind: false,
+        include_preflight: false,
+      }),
+    );
+
+    expect(result.isError).toBeFalsy();
+    const panelPayload = decodePayload(exec.mock.calls[0]?.[0] as string);
+    expect(panelPayload.controls?.[0]).toMatchObject({ name: "amplitude" });
+    expect(panelPayload.controls?.[0]?.bind_to).toBeUndefined();
+    expect(exec).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns the auto UI context when the playable surface build fails", async () => {
+    const { ctx, exec } = makeCtx();
+    exec
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          comp: "/project1/noise1",
+          page: "Companion",
+          created: [
+            { control: "amplitude", name: "Amplitude", type: "float", pars: ["Amplitude"] },
+          ],
+          bound: [{ control: "Amplitude", target: "/project1/noise1.amplitude" }],
+          warnings: [],
+        }),
+      })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          comp: "/project1/noise1",
+          surface: "",
+          faders: [],
+          cue_buttons: [],
+          warnings: [],
+          fatal: "panel create failed",
+        }),
+      });
+
+    const result = await createCompanionSurfaceImpl(
+      ctx,
+      createCompanionSurfaceSchema.parse({
+        source_path: "/project1/noise1",
+        parameters: ["amplitude"],
+      }),
+    );
+
+    expect(result.isError).toBe(true);
+    const text = textOf(result);
+    expect(text).toContain("control surface build failed");
+    expect(text).toContain("panel create failed");
+    expect(text).toContain('"auto_ui"');
+  });
+
   it("returns an error before mutating when no primitive parameters are eligible", async () => {
     const { ctx, exec } = makeCtx();
     (ctx.client.getNode as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
@@ -132,6 +209,22 @@ describe("create_companion_surface", () => {
     );
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("No eligible");
+    expect(exec).not.toHaveBeenCalled();
+  });
+
+  it("formats TouchDesigner lookup failures as tool errors", async () => {
+    const { ctx, exec } = makeCtx();
+    (ctx.client.getNode as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("TD bridge unavailable"),
+    );
+
+    const result = await createCompanionSurfaceImpl(
+      ctx,
+      createCompanionSurfaceSchema.parse({ source_path: "/project1/noise1" }),
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("TD bridge unavailable");
     expect(exec).not.toHaveBeenCalled();
   });
 });

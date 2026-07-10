@@ -32,11 +32,46 @@
     { "from": "grade_hsv", "to": "out1" }
   ],
   "controls": [
-    { "name": "Brightness", "type": "float", "min": 0, "max": 4, "default": 1.0, "bind_to": ["grade_level.brightness1"] },
-    { "name": "Gamma", "type": "float", "min": 0.1, "max": 4, "default": 1.0, "bind_to": ["grade_level.gamma1"] },
-    { "name": "Contrast", "type": "float", "min": 0, "max": 4, "default": 1.15, "bind_to": ["grade_level.contrast"] },
-    { "name": "Saturation", "type": "float", "min": 0, "max": 4, "default": 1.3, "bind_to": ["grade_hsv.saturationmult"] },
-    { "name": "Hue", "type": "float", "min": 0, "max": 360, "default": 0, "bind_to": ["grade_hsv.hueoffset"] }
+    {
+      "name": "Brightness",
+      "type": "float",
+      "min": 0,
+      "max": 4,
+      "default": 1.0,
+      "bind_to": ["grade_level.brightness1"]
+    },
+    {
+      "name": "Gamma",
+      "type": "float",
+      "min": 0.1,
+      "max": 4,
+      "default": 1.0,
+      "bind_to": ["grade_level.gamma1"]
+    },
+    {
+      "name": "Contrast",
+      "type": "float",
+      "min": 0,
+      "max": 4,
+      "default": 1.15,
+      "bind_to": ["grade_level.contrast"]
+    },
+    {
+      "name": "Saturation",
+      "type": "float",
+      "min": 0,
+      "max": 4,
+      "default": 1.3,
+      "bind_to": ["grade_hsv.saturationmult"]
+    },
+    {
+      "name": "Hue",
+      "type": "float",
+      "min": 0,
+      "max": 360,
+      "default": 0,
+      "bind_to": ["grade_hsv.hueoffset"]
+    }
   ],
   "preview_description": "A horizontal color ramp pushed warmer and more saturated with a touch of added contrast — a clean grading chain with brightness, gamma, contrast, saturation and hue on live knobs."
 }

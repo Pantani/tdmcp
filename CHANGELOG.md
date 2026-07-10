@@ -6,6 +6,368 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **External-integration Wave 1** — five new artist-facing bridge/scaffold tools:
+  - **`create_raytk_sdf_graph`** (Layer 1, CLI `raytk-sdf-graph`) builds a deeper
+    RayTK SDF graph with optional secondary SDF, `simpleUnion`, `basicMat`,
+    `lookAtCamera`, `pointLight`, `raymarchRender3D`, and native output TOP.
+  - **`create_iphone_depth_source`** (Layer 1, CLI `iphone-depth-source`) scaffolds
+    TDLidar/Record3D/generic NDI+OSC iPhone depth inputs with color, depth, sensor,
+    setup-hint, and point-cloud placeholder outputs.
+  - **`create_sam2_segmentation_bridge`** (Layer 1, CLI `sam2-segmentation-bridge`)
+    builds a TouchDesigner bridge surface for external SAM2/FastSAM masks via ComfyUI,
+    WebSocket, NDI, Syphon/Spout, or file-watch transports.
+  - **`connect_companion_surface`** (Layer 2, CLI `companion-osc-surface`) creates an OSC
+    Companion/Stream Deck button surface with mapping DATs, target parameter binding,
+    and optional feedback channels.
+  - **`connect_obs_recorder`** (Layer 2, CLI `obs-recorder`) creates OBS websocket v5
+    request templates, status/setup DATs, and optional NDI or Syphon/Spout capture
+    publishing while redacting the OBS password from returned reports.
+- **External-integration Wave 2** — six additional runtime-gated scaffolds for
+  computer vision, body tracking, mobile OSC, voice prompting, and engine hosts:
+  - **`create_yolo_onnx_tracker`** (Layer 1, CLI `yolo-onnx-tracker`) creates a
+    YOLO/ONNX detection bridge with external WebSocket, ONNX Script CHOP, NDI, and
+    file-watch modes plus stable `detections`, `tracks_out`, and `annotated_out`
+    outputs.
+  - **`create_nuitrack_body_bus`** (Layer 1, CLI `nuitrack-body-bus`) scaffolds a
+    Nuitrack skeleton channel bus over OSC, WebSocket, TCP JSON, or sample data.
+  - **`create_orbbec_depth_silhouette`** (Layer 1, CLI
+    `orbbec-depth-silhouette`) builds an Orbbec/Kinect-compatible depth silhouette
+    chain with synthetic/file fallback modes and explicit SDK/hardware warnings.
+  - **`create_touchosc_layout`** (Layer 2, CLI `touchosc-layout`) creates a
+    TouchOSC-oriented OSC mapping surface and JSON layout manifest without claiming
+    proprietary `.tosc` document generation.
+  - **`create_voice_prompt_pipeline`** (Layer 2, CLI `voice-prompt-pipeline`)
+    creates a dry-run/approval-gated voice-to-prompt scaffold aligned with the AI
+    Party policy boundary.
+  - **`connect_touchengine_notch`** (Layer 2, CLI `touchengine-notch`) creates a
+    TouchEngine/Notch host scaffold with NDI/Syphon fallback modes, stable output
+    TOP, control channels, and licensing/runtime warnings.
+- **External-integration Wave 3** — six VJ/show-pipeline scaffolds for external
+  control surfaces and engine handoffs:
+  - **`connect_resolume_arena`** (Layer 2, CLI `resolume-arena`) creates a
+    Resolume Arena/Avenue OSC command/status scaffold with layer, deck, clip, and
+    preview handoff metadata.
+  - **`connect_madmapper_surface`** (Layer 2, CLI `madmapper-surface`) creates a
+    MadMapper OSC surface/media map plus Syphon/Spout/NDI handoff notes.
+  - **`create_mocap_stream_bridge`** (Layer 2, CLI `mocap-stream-bridge`) creates
+    an OptiTrack/Rokoko/Axis Studio/VRPN-style skeleton and rigid-body mapping bus.
+  - **`create_blender_scene_bridge`** (Layer 2, CLI `blender-scene-bridge`) creates
+    a Blender scene handoff scaffold for file-watch, OSC, or WebSocket metadata
+    workflows without claiming to launch Blender.
+  - **`create_unreal_livelink_bridge`** (Layer 2, CLI `unreal-livelink-bridge`)
+    creates an Unreal Live Link/OSC/NDI handoff scaffold with subject maps and event
+    queue metadata.
+  - **`create_vcv_rack_bridge`** (Layer 2, CLI `vcv-rack-bridge`) creates a VCV
+    Rack OSC/MIDI/CV modulation map with explicit live-Rack validation warnings.
+- **External-integration Wave 4** — six show-control and broadcast/playout
+  scaffolds for runtime-gated venue workflows:
+  - **`connect_qlab_cue_stack`** (Layer 2, CLI `qlab-cue-stack`) creates a QLab
+    OSC cue-stack command/status surface with transport rows and rehearsal notes.
+  - **`connect_lighting_console_osc`** (Layer 2, CLI `lighting-console-osc`)
+    creates a safety-gated OSC command surface for grandMA3, ETC Eos, ChamSys,
+    Avolites, or generic OSC lighting consoles without sending direct DMX.
+  - **`connect_max_msp_bridge`** (Layer 2, CLI `max-msp-bridge`) creates a
+    Max/MSP OSC bridge scaffold with parameter and audio-feature channel maps.
+  - **`create_openxr_controller_bridge`** (Layer 2, CLI
+    `openxr-controller-bridge`) creates an OpenXR/SteamVR controller pose and
+    button bus for external OSC/WebSocket/manual adapters.
+  - **`connect_vmix_production`** (Layer 2, CLI `vmix-production`) creates a vMix
+    HTTP/API command-template scaffold for input switching, overlays, recording,
+    and streaming.
+  - **`connect_casparcg_server`** (Layer 2, CLI `casparcg-server`) creates a
+    CasparCG AMCP/playout scaffold with channel/layer command maps and media
+    manifest notes.
+- **External-integration Wave 5** — six creative-app, DAW, NDI, and browser-input
+  scaffolds:
+  - **`connect_millumin_show`** (Layer 2, CLI `millumin-show`) creates a Millumin
+    OSC layer/column/dashboard command surface.
+  - **`connect_isadora_patch`** (Layer 2, CLI `isadora-patch`) creates an Isadora
+    OSC actor, watcher, and scene exchange scaffold.
+  - **`connect_unity_osc_bridge`** (Layer 2, CLI `unity-osc-bridge`) creates a
+    Unity OSC object/event bridge with NDI/Syphon preview handoff notes.
+  - **`connect_reaper_transport`** (Layer 2, CLI `reaper-transport`) creates a
+    REAPER OSC transport, marker, and track-control scaffold.
+  - **`create_ndi_router_matrix`** (Layer 2, CLI `ndi-router-matrix`) creates an
+    NDI source/output routing matrix contract without claiming live NDI discovery.
+  - **`connect_webrtc_browser_input`** (Layer 2, CLI `webrtc-browser-input`)
+    creates a browser/WebRTC media/data-channel handoff scaffold for external
+    signaling apps.
+- **External-integration Wave 6** — six runtime I/O, switcher, IoT, and sensor
+  scaffolds:
+  - **`connect_spout_syphon_router`** (Layer 2, CLI `spout-syphon-router`) creates
+    a Syphon/Spout texture-sharing ingress/egress router with route maps and
+    platform-gated setup notes.
+  - **`connect_blackmagic_atem`** (Layer 2, CLI `blackmagic-atem`) creates a
+    Blackmagic ATEM command-map scaffold with UDP transport placeholders, input
+    rows, macro rows, and operator-approval warnings.
+  - **`connect_oscquery_namespace`** (Layer 2, CLI `oscquery-namespace`) creates
+    an OSCQuery HTTP namespace fetcher plus OSC send/receive action maps.
+  - **`connect_mqtt_iot_bus`** (Layer 2, CLI `mqtt-iot-bus`) creates an MQTT Client
+    DAT bus scaffold for IoT sensors, installation telemetry, and policy-gated
+    operator command topics.
+  - **`create_depthai_oak_pipeline`** (Layer 2, CLI `depthai-oak-pipeline`) creates
+    a DepthAI/OAK camera scaffold with OAK Device and OAK Select TOP/CHOP
+    placeholders.
+  - **`connect_arkit_face_capture`** (Layer 2, CLI `arkit-face-capture`) creates an
+    ARKit Face Capture OSC scaffold with blendshape and head-transform maps.
+- **External-integration Wave 7** — six performance-hardware and show-protocol
+  scaffolds:
+  - **`connect_pangolin_beyond`** (Layer 2, CLI `pangolin-beyond`) creates a
+    safety-gated Pangolin Beyond laser-control scaffold with zone, cue, blackout,
+    and operator-approval maps.
+  - **`create_hokuyo_lidar_bus`** (Layer 2, CLI `hokuyo-lidar-bus`) creates a
+    Hokuyo LiDAR scanner bus with scan-zone maps and live-calibration notes.
+  - **`connect_supercollider_synth`** (Layer 2, CLI `supercollider-synth`) creates a
+    SuperCollider OSC synth/bus scaffold without evaluating SuperCollider code.
+  - **`connect_ableton_link_session`** (Layer 2, CLI `ableton-link-session`) creates
+    an Ableton Link beat/bar/session timing scaffold for tempo-locked visuals.
+  - **`create_decklink_io_router`** (Layer 2, CLI `decklink-io-router`) creates a
+    Blackmagic DeckLink video-device input/output router scaffold.
+  - **`connect_midi_mpe_controller`** (Layer 2, CLI `midi-mpe-controller`) creates a
+    MIDI MPE expressive-controller scaffold with zone and expression maps.
+- **External-integration Wave 8** — six live-coding, VJ/media-server, and
+  specialized tracking scaffolds:
+  - **`connect_tidalcycles_livecoding`** (Layer 2, CLI `tidalcycles-livecoding`)
+    creates a TidalCycles/SuperDirt OSC pattern and orbit bridge scaffold.
+  - **`connect_vdmx_workspace`** (Layer 2, CLI `vdmx-workspace`) creates a VDMX
+    OSC/Syphon workspace scaffold with layer, clip, and preview maps.
+  - **`connect_disguise_stage`** (Layer 2, CLI `disguise-stage`) creates a
+    disguise/d3 HTTP and OSC show-control scaffold for timelines and layers.
+  - **`create_azure_kinect_body_bus`** (Layer 2, CLI `azure-kinect-body-bus`)
+    creates an Azure Kinect body/depth source scaffold.
+  - **`create_zed_depth_bus`** (Layer 2, CLI `zed-depth-bus`) creates a ZED camera
+    depth, body, and point-cloud source scaffold.
+  - **`create_leap_motion_hand_bus`** (Layer 2, CLI `leap-motion-hand-bus`) creates
+    a Leap Motion hand and gesture source scaffold.
+- **External-integration Wave 9** — six tracking, touch-surface, and timecode
+  infrastructure scaffolds:
+  - **`create_blacktrax_tracking_bus`** (Layer 2, CLI `blacktrax-tracking-bus`)
+    creates a BlackTrax tracking bus with trackable, zone, and calibration maps.
+  - **`create_ncam_camera_tracking_bus`** (Layer 2, CLI
+    `ncam-camera-tracking-bus`) creates an NCAM camera-tracking bus with camera
+    and lens-profile maps.
+  - **`create_ouster_lidar_bus`** (Layer 2, CLI `ouster-lidar-bus`) creates an
+    Ouster LiDAR bus with range selection, zone maps, and sensor setup notes.
+  - **`connect_tuio_touch_surface`** (Layer 2, CLI `tuio-touch-surface`) creates
+    a TUIO touch-surface ingress scaffold with cursor and surface maps.
+  - **`create_multitouch_panel_bus`** (Layer 2, CLI `multitouch-panel-bus`)
+    creates a Windows Multi Touch In DAT scaffold with panel and touch-slot maps.
+  - **`create_ltc_timecode_bridge`** (Layer 2, CLI `ltc-timecode-bridge`) creates
+    an LTC receive/generate bridge with cue maps and audio-routing notes.
+- **External-integration Wave 10** — six network/protocol ingest scaffolds:
+  - **`create_optitrack_tracking_bus`** (Layer 2, CLI `optitrack-tracking-bus`)
+    creates an OptiTrack/NatNet tracking scaffold with rigid-body and marker maps.
+  - **`connect_video_stream_receiver`** (Layer 2, CLI `video-stream-receiver`)
+    creates a Video Stream In TOP scaffold for RTSP, HLS, SRT, or WebRTC ingest.
+  - **`connect_websocket_control_bus`** (Layer 2, CLI `websocket-control-bus`)
+    creates a WebSocket DAT control scaffold with command and schema maps.
+  - **`connect_serial_device_bus`** (Layer 2, CLI `serial-device-bus`) creates a
+    Serial DAT/CHOP scaffold for microcontrollers, sensors, and device telemetry.
+  - **`connect_udp_telemetry_bridge`** (Layer 2, CLI `udp-telemetry-bridge`)
+    creates a UDP In/Out DAT telemetry scaffold with packet and reply maps.
+  - **`create_artnet_discovery_panel`** (Layer 2, CLI `artnet-discovery-panel`)
+    creates an Art-Net DAT discovery scaffold with optional DMX In monitor maps.
+- **External-integration Wave 11** — six projection/display infrastructure
+  scaffolds:
+  - **`create_mpcdi_projection_mapper`** (Layer 2, CLI `mpcdi-projection-mapper`)
+    creates an MPCDI TOP/DAT calibration scaffold with projector and region maps.
+  - **`create_vioso_warp_panel`** (Layer 2, CLI `vioso-warp-panel`) creates a
+    VIOSO TOP projection-warp scaffold with projector and blend-zone maps.
+  - **`create_direct_display_output`** (Layer 2, CLI `direct-display-output`)
+    creates a Direct Display Out TOP scaffold with monitor inventory and output maps.
+  - **`create_scalable_display_bus`** (Layer 2, CLI `scalable-display-bus`)
+    creates a Scalable Display TOP scaffold with tile maps and canvas metadata.
+  - **`create_window_output_matrix`** (Layer 2, CLI `window-output-matrix`)
+    creates a Window COMP output-matrix scaffold with window and source maps.
+  - **`create_monitor_layout_panel`** (Layer 2, CLI `monitor-layout-panel`)
+    creates a Monitors DAT preflight scaffold with monitor, GPU, and checklist maps.
+- **External-integration Wave 12** — six spatial/industrial data bridge scaffolds:
+  - **`create_realsense_depth_bus`** (Layer 2, CLI `realsense-depth-bus`) creates
+    a RealSense depth-camera scaffold with RealSense TOP, NDI, WebSocket adapter,
+    and sample-source modes.
+  - **`create_livox_lidar_bus`** (Layer 2, CLI `livox-lidar-bus`) creates a Livox
+    LiDAR adapter scaffold with point-stream schemas, zone maps, and calibration notes.
+  - **`connect_xsens_mvn_mocap`** (Layer 2, CLI `xsens-mvn-mocap`) creates an
+    Xsens MVN mocap scaffold with actor/segment maps and coordinate-space notes.
+  - **`connect_houdini_engine_bridge`** (Layer 2, CLI `houdini-engine-bridge`)
+    creates a Houdini Engine/HDA/cache handoff scaffold with parameter maps.
+  - **`connect_omniverse_usd_bridge`** (Layer 2, CLI `omniverse-usd-bridge`)
+    creates an Omniverse/USD stage scaffold with layer and variant maps.
+  - **`connect_opcua_industrial_bus`** (Layer 2, CLI `opcua-industrial-bus`)
+    creates an OPC UA telemetry scaffold with node maps and read-only safety notes.
+- **External-integration Wave 13** — six creative AI inference bridge scaffolds:
+  - **`connect_replicate_prediction_bridge`** (Layer 2, CLI
+    `replicate-prediction-bridge`) creates a Replicate-style prediction handoff
+    scaffold with request templates, webhook/polling maps, and output contracts.
+  - **`connect_a1111_webui_bridge`** (Layer 2, CLI `a1111-webui-bridge`) creates
+    an AUTOMATIC1111/Forge WebUI scaffold with prompt slots and result maps.
+  - **`connect_huggingface_inference_bridge`** (Layer 2, CLI
+    `huggingface-inference-bridge`) creates a Hugging Face inference scaffold with
+    task input maps and token-env hints.
+  - **`connect_whisper_transcription_bus`** (Layer 2, CLI
+    `whisper-transcription-bus`) creates a Whisper-compatible transcription bus
+    with audio/chunk ingest and segment maps.
+  - **`connect_rvc_voice_conversion_bus`** (Layer 2, CLI
+    `rvc-voice-conversion-bus`) creates an RVC voice-conversion scaffold with
+    source audio, model maps, and consent/latency notes.
+  - **`connect_runway_video_bridge`** (Layer 2, CLI `runway-video-bridge`) creates
+    a Runway-style video generation scaffold with prompt, request, and result maps.
+- **External-integration Wave 14** — six observability/data-ops bridge scaffolds:
+  - **`connect_kafka_event_bus`** (Layer 2, CLI `kafka-event-bus`) creates a
+    Kafka/Redpanda event-bus scaffold with topic maps and schema hints.
+  - **`connect_redis_pubsub_bus`** (Layer 2, CLI `redis-pubsub-bus`) creates a
+    Redis Pub/Sub/Streams scaffold with channel maps and keyspace safety notes.
+  - **`connect_influxdb_timeseries_bridge`** (Layer 2, CLI
+    `influxdb-timeseries-bridge`) creates an InfluxDB telemetry scaffold with
+    measurement and field maps.
+  - **`connect_prometheus_metrics_panel`** (Layer 2, CLI
+    `prometheus-metrics-panel`) creates a Prometheus metrics scaffold with metric
+    maps and alert routes.
+  - **`connect_grafana_annotation_bridge`** (Layer 2, CLI
+    `grafana-annotation-bridge`) creates a Grafana annotation/event-marker scaffold
+    with dashboard, panel, and tag maps.
+  - **`connect_homeassistant_state_bus`** (Layer 2, CLI
+    `homeassistant-state-bus`) creates a Home Assistant state/service scaffold with
+    entity maps, service maps, and physical-action safety notes.
+- **External-integration Wave 15** — six content-ops and collaboration bridge
+  scaffolds:
+  - **`connect_google_sheets_cue_table`** (Layer 2, CLI
+    `google-sheets-cue-table`) creates a Google Sheets cue-table scaffold with
+    cue rows, column validation, and adapter/writeback safety notes.
+  - **`connect_airtable_content_bus`** (Layer 2, CLI
+    `airtable-content-bus`) creates an Airtable content scaffold with record maps,
+    field maps, and sync-policy notes.
+  - **`connect_notion_show_rundown`** (Layer 2, CLI
+    `notion-show-rundown`) creates a Notion editorial rundown scaffold with scene
+    maps, property maps, and approval policy.
+  - **`connect_figma_design_tokens`** (Layer 2, CLI
+    `figma-design-tokens`) creates a Figma token scaffold with token rows,
+    component-review rows, and style metadata.
+  - **`connect_slack_ops_bridge`** (Layer 2, CLI `slack-ops-bridge`) creates a
+    Slack operator-alert scaffold with alert rows and approval-gated command rows.
+  - **`connect_s3_media_bucket`** (Layer 2, CLI `s3-media-bucket`) creates an
+    S3-compatible media manifest scaffold with asset rows, cache policy, and
+    credential/signing safety notes.
+- **External-integration Wave 16** — six venue/public-ops bridge scaffolds:
+  - **`connect_calendar_schedule_bus`** (Layer 2, CLI
+    `calendar-schedule-bus`) creates a calendar/ICS schedule scaffold with event
+    rows, reminder maps, and blackout-window policy.
+  - **`connect_ticketing_checkin_bus`** (Layer 2, CLI
+    `ticketing-checkin-bus`) creates a ticketing/check-in scaffold with aggregate
+    gate counts, ticket-tier maps, and PII/token safety notes.
+  - **`connect_pos_sales_telemetry`** (Layer 2, CLI
+    `pos-sales-telemetry`) creates a POS aggregate telemetry scaffold with sales
+    metrics, revenue buckets, and PCI/PII safety notes.
+  - **`connect_weather_forecast_bus`** (Layer 2, CLI
+    `weather-forecast-bus`) creates a weather forecast/station scaffold with
+    forecast rows, sensor maps, and alert maps.
+  - **`connect_gtfs_transit_feed`** (Layer 2, CLI `gtfs-transit-feed`) creates a
+    GTFS static/realtime transit scaffold with route maps, stop maps, and arrival
+    predictions.
+  - **`connect_parking_occupancy_bus`** (Layer 2, CLI
+    `parking-occupancy-bus`) creates a parking occupancy scaffold with zone
+    occupancy rows, sensor maps, and signage policy.
+- **External-integration Wave 17** — six geospatial and mobility feed scaffolds:
+  - **`connect_map_tile_overlay`** (Layer 2, CLI `map-tile-overlay`) creates a
+    map tile overlay scaffold with tile layer maps, viewport metadata, and
+    attribution rows.
+  - **`connect_geojson_feature_bus`** (Layer 2, CLI
+    `geojson-feature-bus`) creates a GeoJSON feature scaffold with feature rows,
+    property maps, and style rules.
+  - **`connect_gps_fleet_tracker`** (Layer 2, CLI `gps-fleet-tracker`) creates a
+    GPS/fleet tracking scaffold with sanitized asset positions and geofence maps.
+  - **`connect_adsb_aircraft_bus`** (Layer 2, CLI `adsb-aircraft-bus`) creates an
+    ADS-B aircraft scaffold with aircraft rows, altitude bands, and track-history
+    metadata.
+  - **`connect_ais_vessel_bus`** (Layer 2, CLI `ais-vessel-bus`) creates an AIS
+    vessel scaffold with vessel rows, waterway zones, and route hints.
+  - **`connect_public_alerts_bus`** (Layer 2, CLI `public-alerts-bus`) creates a
+    public-alert scaffold with advisory alert rows, severity maps, and routing
+    policy.
+- **External-integration Wave 18** — six audience/social interaction feed
+  scaffolds:
+  - **`connect_twitch_eventsub_bus`** (Layer 2, CLI `twitch-eventsub-bus`)
+    creates a Twitch EventSub/chat scaffold with sanitized event rows, reward
+    maps, and moderation policy.
+  - **`connect_youtube_live_chat_bus`** (Layer 2, CLI
+    `youtube-live-chat-bus`) creates a YouTube Live Chat scaffold with message
+    rows, super-chat tiers, and moderation policy.
+  - **`connect_discord_interaction_bus`** (Layer 2, CLI
+    `discord-interaction-bus`) creates a Discord gateway/webhook scaffold with
+    command maps, message maps, and interaction approval policy.
+  - **`connect_tiktok_live_events_bus`** (Layer 2, CLI
+    `tiktok-live-events-bus`) creates a TikTok Live event scaffold with event
+    rows, gift tiers, and moderation policy.
+  - **`connect_matrix_room_bus`** (Layer 2, CLI `matrix-room-bus`) creates a
+    Matrix room event scaffold with room-event rows, reaction maps, and approval
+    policy.
+  - **`connect_rss_feed_bus`** (Layer 2, CLI `rss-feed-bus`) creates an RSS/Atom
+    feed scaffold with item rows, categories, and refresh policy.
+- **External-integration Wave 19** — six onsite proximity and visitor-input
+  scaffolds:
+  - **`connect_rfid_badge_bus`** (Layer 2, CLI `rfid-badge-bus`) creates an RFID
+    badge-reader scaffold with sanitized badge-event rows, reader maps, and
+    privacy policy.
+  - **`connect_nfc_tap_bus`** (Layer 2, CLI `nfc-tap-bus`) creates an NFC tap
+    scaffold with tap-event rows, station maps, and consent policy.
+  - **`connect_ble_beacon_bus`** (Layer 2, CLI `ble-beacon-bus`) creates a BLE
+    beacon proximity scaffold with beacon rows, zone maps, and smoothing policy.
+  - **`connect_uwb_anchor_bus`** (Layer 2, CLI `uwb-anchor-bus`) creates a UWB
+    anchor/tag scaffold with anchor rows, tag-position rows, and spatial policy.
+  - **`connect_qr_scan_bus`** (Layer 2, CLI `qr-scan-bus`) creates a QR scan
+    scaffold with scan rows, route maps, and sanitization policy.
+  - **`connect_wifi_presence_bus`** (Layer 2, CLI `wifi-presence-bus`) creates a
+    Wi-Fi presence scaffold with aggregate occupancy rows, dwell buckets, and
+    privacy policy.
+- **RayTK native integration (node-graph, offline-built)** — beyond package-manager
+  staging, tdmcp can now drive RayTK (t3kt/raytk) as editable ROP node graphs,
+  complementary to (never replacing) the GLSL `create_raymarch_scene`/`create_sdf_field`:
+  - **`create_raytk_op`** (Layer 3) — instances one RayTK ROP master by op-name (e.g.
+    `sphereSdf`, `raymarchRender3D`, `lookAtCamera`) via the same `COMP.copy(master)`
+    primitive RayTK's palette uses, resolving the install-dependent master path **live**
+    (RayTK's `pathsByOpType` lookup → category-folder search, never hardcoded) and
+    optionally wiring a typed input. CLI: `tdmcp-agent raytk-op`.
+  - **`create_raytk_scene`** (Layer 1) — builds the minimal renderable RayTK chain
+    (`sphereSdf → raymarchRender3D → Null TOP`, renderer inputs 1=scene/2=camera/3=light,
+    built-in camera+light by default) with optional second SDF (`simpleUnion`), inline
+    `basicMat`, explicit `lookAtCamera`/`pointLight`. Fails forward with "stage & load
+    RayTK first" guidance and warns that the async shader compile may leave the first
+    preview black. CLI: `tdmcp-agent raytk-scene`.
+  - **`tdmcp://raytk/operators`** (+ `tdmcp://raytk/operators/{category}`) MCP resource —
+    a committed RayTK operator catalog (18 categories, verified op masters, typed
+    Sdf/float/vec4/Ray/Light connectors, the TD version gate, the minimal chain) so the
+    AI picks the right ROP before instancing.
+  - **Package version-gate honesty** — the `raytk` manifest's stale `tdVersionRange`
+    (`2022+`) is corrected to `2025.30770+` with a `versionGate` (RayTK 0.46 needs the TD
+    2025.30770 experimental build; pin ≤0.45 on 2023.x); `manage_packages doctor raytk`
+    now detects the live TD build and warns when it predates the gate.
+  - Live-validated on TouchDesigner build **2025.32820** with RayTK **0.46** loaded:
+    all six ROP masters resolve via `pathsByOpType`, copy, and wire; the raymarch shader
+    compiles and the output TOP renders a real (non-black) `sphereSdf ∪ boxSdf` + `basicMat`
+    scene. `create_raytk_op` connects an existing op into a new op's input. Wiring uses
+    connector-to-connector (`dst.inputConnectors[i].connect(src.outputConnectors[0])`) —
+    RayTK COMP connectors reject `.connect(op)`.
+
+### Fixed
+
+- **`create_raytk_sdf_graph`** now sets the copied RayTK `raymarchRender3D`
+  renderer to `1280x720` by default, avoiding TouchDesigner Non-Commercial
+  resolution warnings during live QA while keeping the resolution configurable.
+- Glama/MCP directory score surface: the package metadata now exposes
+  `TDMCP_TOOL_PROFILE` as a configurable full/safe/directory setting so hosted
+  scanners can opt into the compact build/inspect surface without forcing
+  registry installs away from the default `full` runtime; low-scoring tool
+  definitions also gained clearer descriptions and parameter guidance.
+- Creative RAG Smithsonian adapter: cards whose Open Access record omits
+  `record_link` no longer emit the bare `record_ID` (an `edanmdm-…` identifier)
+  as `sourceUrl`, which failed the probe-live URL gate ("Shape drift … sourceUrl:
+  Invalid URL"). The adapter now validates URL-ness and builds the canonical
+  object page `https://www.si.edu/object/{record_ID}` when `record_link` is
+  absent, keeping `guid` (ARK) as a last-resort fallback, so every card yields a
+  valid absolute URL.
+
 ## [0.13.1] - 2026-07-09
 
 ### Added
