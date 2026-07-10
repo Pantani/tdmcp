@@ -478,6 +478,7 @@ import {
   driveStreamdiffusionSchema,
 } from "../tools/layer1/driveStreamdiffusion.js";
 import { enhanceBuildImpl, enhanceBuildSchema } from "../tools/layer1/enhanceBuild.js";
+import { evolveParametersImpl, evolveParametersSchema } from "../tools/layer1/evolveParameters.js";
 import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
@@ -3360,6 +3361,12 @@ const COMMANDS: Record<string, Command> = {
     createAiVideoBackdropSchema,
     createAiVideoBackdropImpl,
     "Prompt → a fully wired AI-generated video-backdrop system (movie/level/transform + Play/Speed/Brightness/Scale).",
+    { mutates: true },
+  ),
+  "evolve-parameters": r(
+    evolveParametersSchema,
+    evolveParametersImpl,
+    "EXPERIMENTAL, OFFLINE: genetic-algorithm search over a recipe's categorical parameter genome, scored by a tdmcp-measurable fitness; rebuilds only the winning genome. Minutes-long, mutates a scratch graph — not a real-time controller.",
     { mutates: true },
   ),
   "connect-comfyui": r(

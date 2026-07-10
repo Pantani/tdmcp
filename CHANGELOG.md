@@ -8,6 +8,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`evolve_parameters`** (Layer 1, CLI `evolve-parameters`, **experimental /
+  offline**) — an evolutionary parameter search that adopts NEvo's categorical
+  genetic-algorithm *method* (arXiv 2607.02317, CC BY 4.0), retargeting its
+  fMRI-based fitness to a **TouchDesigner-measurable** one. Evolves a genome of
+  operator parameters (`genes` keyed `"<node>.<param>"`) against a fitness the
+  bridge can read back — `audio_energy` (Info CHOP `.chan.eval()`, default),
+  `top_luma`, or `top_motion` (two-frame luma delta) — using μ+λ elitism
+  (population 20, generations 6, elite 0.3, crossover 0.5, mutation 0.2; hard
+  cap population×generations ≤ 300). Deterministic under `seed` (seeded RNG, no
+  `Math.random`). Each losing candidate is torn down as it is scored and only the
+  champion is rebuilt, so the project graph is never flooded. It is a **design-time
+  search tool, not a real-time controller** — a full run is minutes of build→cook→
+  score cycles. No bridge endpoint, no config. Live cook behavior is
+  UNVERIFIED-pending (bridge offline); all offline gates pass.
 - **AI video asset lane** — a provider-agnostic text/image-to-video lane that turns
   a prompt (and optional init image) into a real TouchDesigner clip, extending the
   hosted AI texture lane. Adopts the evolutionary-video-synthesis project NEvo's

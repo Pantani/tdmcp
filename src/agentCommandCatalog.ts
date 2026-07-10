@@ -1209,6 +1209,14 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "evolve-parameters",
+    summary:
+      "EXPERIMENTAL, OFFLINE: genetic-algorithm search over a recipe's categorical parameter genome, scored by a tdmcp-measurable fitness; rebuilds only the winning genome. Minutes-long, mutates a scratch graph — not a real-time controller.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "exec node-method",
     summary: "Escape hatch: call a Python method on a node.",
     mutates: true,

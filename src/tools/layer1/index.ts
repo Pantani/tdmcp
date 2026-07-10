@@ -144,6 +144,7 @@ import { registerDetectPitch } from "./detectPitch.js";
 import { registerDetectTempo } from "./detectTempo.js";
 import { registerDriveStreamdiffusion } from "./driveStreamdiffusion.js";
 import { registerEnhanceBuild } from "./enhanceBuild.js";
+import { registerEvolveParameters } from "./evolveParameters.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportIsfShader } from "./importIsfShader.js";
@@ -351,6 +352,8 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateAiBackdrop,
   // AI video backdrop (2026-07-10) — prompt → wired AI-generated video-backdrop system:
   registerCreateAiVideoBackdrop,
+  // NEvo Deliverable 2 (2026-07-10) — experimental, offline GA parameter search:
+  registerEvolveParameters,
 ];
 
 // v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).
