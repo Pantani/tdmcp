@@ -84,7 +84,7 @@ export function isCrossOriginRejected(origin: string | undefined): boolean {
   }
 }
 
-/** Host-header protection options for loopback versus explicitly wildcard HTTP binds. */
+/** Host-header protection options for specific versus explicitly wildcard HTTP binds. */
 export function httpHostProtectionOptions(
   httpHost: string,
   httpPort: number,
@@ -93,11 +93,23 @@ export function httpHostProtectionOptions(
   allowedHosts: string[];
 } {
   const isWildcard = httpHost === "0.0.0.0" || httpHost === "::";
-  const loopbackHosts = [`127.0.0.1:${httpPort}`, `localhost:${httpPort}`, `[::1]:${httpPort}`];
-  if (httpPort === 80) loopbackHosts.push("127.0.0.1", "localhost", "[::1]");
+  const configuredHost =
+    httpHost.includes(":") && !httpHost.startsWith("[") ? `[${httpHost}]` : httpHost;
+  const allowedHosts = new Set([
+    `127.0.0.1:${httpPort}`,
+    `localhost:${httpPort}`,
+    `[::1]:${httpPort}`,
+    `${configuredHost}:${httpPort}`,
+  ]);
+  if (httpPort === 80) {
+    allowedHosts.add("127.0.0.1");
+    allowedHosts.add("localhost");
+    allowedHosts.add("[::1]");
+    allowedHosts.add(configuredHost);
+  }
   return {
     enableDnsRebindingProtection: !isWildcard,
-    allowedHosts: isWildcard ? [] : loopbackHosts,
+    allowedHosts: isWildcard ? [] : [...allowedHosts],
   };
 }
 

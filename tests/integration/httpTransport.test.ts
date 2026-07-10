@@ -47,6 +47,28 @@ describe("integration: Streamable HTTP transport", () => {
       enableDnsRebindingProtection: true,
       allowedHosts: ["127.0.0.1:80", "localhost:80", "[::1]:80", "127.0.0.1", "localhost", "[::1]"],
     });
+    expect(httpHostProtectionOptions("192.168.1.20", PORT)).toEqual({
+      enableDnsRebindingProtection: true,
+      allowedHosts: [
+        `127.0.0.1:${PORT}`,
+        `localhost:${PORT}`,
+        `[::1]:${PORT}`,
+        `192.168.1.20:${PORT}`,
+      ],
+    });
+    expect(httpHostProtectionOptions("fd00::20", 80)).toEqual({
+      enableDnsRebindingProtection: true,
+      allowedHosts: [
+        "127.0.0.1:80",
+        "localhost:80",
+        "[::1]:80",
+        "[fd00::20]:80",
+        "127.0.0.1",
+        "localhost",
+        "[::1]",
+        "[fd00::20]",
+      ],
+    });
   });
 
   it("serves MCP over HTTP and lists tools", async () => {
