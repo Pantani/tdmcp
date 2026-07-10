@@ -15,8 +15,14 @@ This folder ships a matching workflow: [`ltx-video-t2v.api.json`](./ltx-video-t2
 - **Custom node:** [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite)
   (provides `VHS_VideoCombine`, the mp4 saver this workflow uses).
 - **Model weights** in `ComfyUI/models/checkpoints/` — an LTX-Video checkpoint, e.g.
-  `ltx-video-2b-v0.9.5.safetensors` (from Lightricks' Hugging Face repo,
-  weights under OpenRAIL-M — read its `LICENSE` for use terms).
+  `ltx-video-2b-v0.9.5.safetensors` (from Lightricks' Hugging Face repo).
+
+  **License (verified):** LTX-Video 2B is Apache-2.0 code with OpenRAIL-M weights;
+  the newer **LTX-2** ships open weights under the **LTX-2 Community License** — free
+  for academic use and for commercial/production use by organizations **under $10M
+  ARR**, no usage/token/inference fees. Above $10M ARR needs a commercial license.
+  Running locally is free per generation regardless. (Sources: Lightricks/LTX-2
+  `LICENSE`; Lightricks LTX-2 open-weights announcement, Jan 2026.)
 
 > If your checkpoint filename differs, edit node `"8".inputs.ckpt_name` in the JSON.
 
