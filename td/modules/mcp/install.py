@@ -53,6 +53,11 @@ def _event_hooks_source(modules_dir=None):
         "        pass\n\n"
         "def onFrameEnd(frame):\n"
         "    try:\n"
+        "        from mcp.services import api_service\n"
+        "        api_service.mark_heartbeat()\n"
+        "    except Exception:\n"
+        "        pass\n"
+        "    try:\n"
         "        f = int(frame)\n"
         "        if f % 30 == 0:\n"
         "            _broadcast('timeline.frame', {'frame': f, 'seconds': float(absTime.seconds)})\n"
@@ -347,9 +352,6 @@ def package_callbacks_source(
         "    if allow_exec:\n"
         "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '1'\n"
         "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=1; arbitrary exec endpoints enabled')\n"
-        "    elif token:\n"
-        "        os.environ.pop('TDMCP_BRIDGE_ALLOW_EXEC', None)\n"
-        "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC unset; token-authenticated exec endpoints enabled')\n"
         "    else:\n"
         "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '0'\n"
         "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=0; arbitrary exec endpoints disabled')\n"
@@ -682,7 +684,7 @@ def run(
     print(
         "[tdmcp] SECURITY: the Web Server DAT listens on ALL network interfaces and, by "
         "default, refuses arbitrary Python endpoints (/api/exec and node-method) unless "
-        "TDMCP_BRIDGE_TOKEN or TDMCP_BRIDGE_ALLOW_EXEC=1 is set. On a shared/untrusted "
+        "TDMCP_BRIDGE_ALLOW_EXEC=1 is set; a token authenticates but does not authorize exec. On a shared/untrusted "
         "network, keep exec disabled, set TDMCP_BRIDGE_TOKEN for authenticated use, "
         "and/or firewall port %d to localhost." % port
     )

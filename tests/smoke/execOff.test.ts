@@ -43,7 +43,7 @@ afterAll(() => mock.close());
  * Python stored in a DAT). Must be ABSENT when exec is off. The other two raw
  * tools (execute_python_script, exec_node_method) live in Layer 3, out of this
  * smoke's Layer-1/2 scope but reported in the campaign notes. */
-const LAYER12_EXEC_ONLY = ["create_python_script"] as const;
+const LAYER12_EXEC_ONLY = ["create_python_script", "author_script_operator"] as const;
 
 /** A representative slice of ordinary build tools that MUST stay available with
  * exec off — they don't depend on raw Python and must register cleanly. */

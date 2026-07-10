@@ -3803,7 +3803,17 @@ function envExportLines(config: TdmcpConfig): string[] {
     const value = config[key];
     if (value === undefined) continue;
     if (SECRET_ENV.has(key)) lines.push(`# export ${name}=<set manually>`);
-    else lines.push(`export ${name}=${JSON.stringify(String(value))}`);
+    else if (key === "projectRagScoreWeights" && value && typeof value === "object") {
+      const weights = value as {
+        technical: number;
+        license: number;
+        freshness: number;
+        reliability: number;
+      };
+      lines.push(
+        `export ${name}=${JSON.stringify(`${weights.technical}:${weights.license}:${weights.freshness}:${weights.reliability}`)}`,
+      );
+    } else lines.push(`export ${name}=${JSON.stringify(String(value))}`);
   }
   return lines;
 }

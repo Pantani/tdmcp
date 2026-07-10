@@ -21,6 +21,10 @@ describe("listRecipesImpl", () => {
       type: "text",
       text: expect.stringContaining(`${allCount}`),
     });
+    expect(result.content[0]).toMatchObject({
+      type: "text",
+      text: expect.stringContaining(ctx.recipes.list()[0]?.id ?? ""),
+    });
     // Structured payload has full recipe list.
     expect((result as { structuredContent?: { count: number } }).structuredContent?.count).toBe(
       allCount,

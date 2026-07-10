@@ -178,7 +178,7 @@ export const ConfigSchema = z.object({
   events: z.enum(["on", "off"]).default("on"),
   /**
    * Raw Python escape-hatch tools (`execute_python_script`, `exec_node_method`,
-   * `create_python_script`).
+   * `create_python_script`, `author_script_operator`).
    * Set to "off" to lock them out for restricted setups; on by default.
    */
   rawPython: z.enum(["on", "off"]).default("on"),

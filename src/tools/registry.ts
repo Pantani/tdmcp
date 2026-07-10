@@ -25,6 +25,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "execute_python_script", // raw client-authored code (also gated by rawPython)
   "exec_node_method", // raw client-authored code (also gated by rawPython)
   "create_python_script", // raw client-authored code stored in DATs (also gated by rawPython)
+  "author_script_operator", // raw client-authored Script callback code (also gated by rawPython)
   "delete_td_node", // removes nodes
   "rebuild_network", // can clear/recreate a parent's children
   "edit_dat_content", // destructive DAT rewrite, even though scoped/guarded

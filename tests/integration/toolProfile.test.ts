@@ -28,6 +28,7 @@ const SAFE_PROFILE_EXCLUDE = [
   "execute_python_script",
   "exec_node_method",
   "create_python_script",
+  "author_script_operator",
   "delete_td_node",
   "rebuild_network",
   "edit_dat_content",
@@ -178,7 +179,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(37);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(38);
   });
 
   it("safe exclusion list matches destructive tool annotations", async () => {

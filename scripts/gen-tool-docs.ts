@@ -14,6 +14,8 @@ import { fileURLToPath } from "node:url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { aiRegistrars } from "../src/tools/ai/index.js";
+import { cliRegistrars } from "../src/tools/cli/index.js";
+import { foundationRegistrars } from "../src/tools/foundation/index.js";
 import { layer1Registrars } from "../src/tools/layer1/index.js";
 import { layer2Registrars } from "../src/tools/layer2/index.js";
 import { layer3Registrars } from "../src/tools/layer3/index.js";
@@ -162,6 +164,13 @@ function renderGroup(group: ToolGroup): string {
 function main(): void {
   const groups: ToolGroup[] = [
     {
+      id: "foundation",
+      heading: "Foundation primitives",
+      blurb:
+        "Low-level visual building blocks shared by higher-level importers and effects, exposed directly when you need precise control over the underlying mapping or shader network.",
+      tools: capture(foundationRegistrars),
+    },
+    {
       id: "layer1",
       heading: "Artist tools (Layer 1)",
       blurb:
@@ -188,6 +197,13 @@ function main(): void {
       blurb:
         "Local-first component, recipe and package tooling: browse libraries, inspect manifests, bundle/import recipes, package .tox components, refresh previews, and maintain a local marketplace index.",
       tools: capture(libraryRegistrars),
+    },
+    {
+      id: "cli",
+      heading: "CLI automation",
+      blurb:
+        "Tools that expose local CLI automation workflows, including recording and replaying repeatable TouchDesigner actions.",
+      tools: capture(cliRegistrars),
     },
     {
       id: "vault",

@@ -63,15 +63,14 @@ def _required_token():
 def _exec_allowed():
     """Whether the arbitrary-code endpoints (`/api/exec`, node `method`) are enabled.
 
-    Default-deny unless the bridge is authenticated with TDMCP_BRIDGE_TOKEN or the
-    operator explicitly opts in with `TDMCP_BRIDGE_ALLOW_EXEC=1` (also accepts
-    true/yes/on). This holds even against a direct network caller, independent of
-    the Node server's own `TDMCP_RAW_PYTHON` gate (which only hides the tools
-    client-side). Structured endpoints stay available.
+    Default-deny. Authentication and authorization are separate controls: a
+    bearer token proves who may call the bridge, while
+    `TDMCP_BRIDGE_ALLOW_EXEC=1` (also accepts true/yes/on) is still required to
+    authorize arbitrary code. Structured endpoints stay available.
     """
     raw = os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC")
     if raw is None:
-        return _required_token() is not None
+        return False
     return raw.strip().lower() in ("1", "true", "yes", "on")
 
 

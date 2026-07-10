@@ -20,7 +20,12 @@ export function listRecipesImpl(ctx: ToolContext, args: ListRecipesArgs) {
         r.tags.some((t) => t.toLowerCase().includes(needle)),
     );
   }
-  return structuredResult(`${recipes.length} recipe(s) available.`, {
+  const summary = recipes.length
+    ? `${recipes.length} recipe(s) available:\n${recipes
+        .map((recipe) => `- ${recipe.id} — ${recipe.name} (${recipe.difficulty})`)
+        .join("\n")}`
+    : "0 recipe(s) available.";
+  return structuredResult(summary, {
     count: recipes.length,
     recipes,
   });

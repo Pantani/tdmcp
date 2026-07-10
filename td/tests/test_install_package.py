@@ -281,7 +281,7 @@ class InstallPackageHelperTests(unittest.TestCase):
         finally:
             namespace["urllib"].request.urlopen = previous_urlopen
 
-    def test_package_callbacks_source_clears_stale_token_when_token_is_blank(self):
+    def test_package_callbacks_source_configures_token_and_explicit_exec_gate(self):
         namespace = {}
         exec(install.package_callbacks_source(), namespace)
         owner = _FakeOp("/package")
@@ -295,7 +295,7 @@ class InstallPackageHelperTests(unittest.TestCase):
             os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
             namespace["_configure_security"](owner)
             self.assertEqual(os.environ.get("TDMCP_BRIDGE_TOKEN"), "s3cret")
-            self.assertIsNone(os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC"))
+            self.assertEqual(os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC"), "0")
 
             owner.par.Token.val = " "
             namespace["_configure_security"](owner)

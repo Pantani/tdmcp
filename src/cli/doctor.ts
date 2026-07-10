@@ -739,6 +739,24 @@ function render(report: DoctorReport): string {
   return lines.join("\n");
 }
 
+function applyBridgeTokenRepair(
+  checks: DoctorCheck[],
+  tokenRepairs: NonNullable<DoctorReport["repairs"]>,
+): DoctorCheck[] {
+  if (!tokenRepairs.some((repair) => repair.status === "applied")) return checks;
+  return checks.map((check) =>
+    check.id === "bridge_token"
+      ? {
+          ...check,
+          status: "pass",
+          detail:
+            "TDMCP_BRIDGE_TOKEN was written to the env file; restart tdmcp and set the same value in TouchDesigner.",
+          data: { set: true, pendingRestart: true },
+        }
+      : check,
+  );
+}
+
 /**
  * Runs every diagnostic and returns a CliResult-shaped payload (plus the structured
  * report). Exit code is 0 unless a critical check (bridge or config) fails.
@@ -824,6 +842,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
       envFileWrite,
     );
     allRepairs = allRepairs.concat(tokenRepairs);
+    checks = applyBridgeTokenRepair(checks, tokenRepairs);
 
     const bridgeRepairs = await repairBridge(
       checks.find((c) => c.id === "bridge"),

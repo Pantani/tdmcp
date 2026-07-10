@@ -16,6 +16,14 @@ const INSTALL_BRIDGE_FLAGS_WITH_VALUE = new Set([
   "--palette-dir",
   "--package-name",
 ]);
+const INSTALL_BRIDGE_FLAGS = new Set([
+  ...INSTALL_BRIDGE_FLAGS_WITH_VALUE,
+  "--verify",
+  "--wait",
+  "--palette",
+  "--help",
+  "-h",
+]);
 
 interface InstallBridgeOptions {
   targetRoot: string;
@@ -23,6 +31,7 @@ interface InstallBridgeOptions {
   wait: boolean;
   port: number;
   token?: string;
+  verifyToken?: string;
   palette: boolean;
   paletteDir?: string;
   packageName: string;
@@ -50,6 +59,16 @@ interface BridgeInfo {
 interface TextportCommands {
   textportCommand: string;
   noPrefsTextportCommand: string;
+}
+
+interface InstallBridgeFlagValues {
+  explicitDir?: string;
+  explicitToken?: string;
+  port: number;
+  paletteDirFlag: number;
+  explicitPaletteDir?: string;
+  packageNameFlag: number;
+  explicitPackageName?: string;
 }
 
 /**
@@ -118,9 +137,10 @@ export function runInstallBridge(
       `  You should see: [tdmcp] bridge running on port ${options.port} (/project1/tdmcp_bridge)`,
       "",
       "  Security: the Web Server DAT listens on all network interfaces. By default,",
-      "  arbitrary Python endpoints stay disabled unless you set TDMCP_BRIDGE_TOKEN",
-      "  or TDMCP_BRIDGE_ALLOW_EXEC=1 inside TouchDesigner.",
-      `  On untrusted networks, keep exec disabled and firewall port ${options.port} to localhost.`,
+      "  arbitrary Python endpoints stay disabled unless you set",
+      "  TDMCP_BRIDGE_ALLOW_EXEC=1 inside TouchDesigner. A token authenticates",
+      "  callers but does not enable exec; on untrusted networks, set the shared",
+      `  TDMCP_BRIDGE_TOKEN too and firewall port ${options.port} to localhost.`,
       "",
       "  Prefer not to touch Preferences? Paste this in the Textport instead:",
       "",
@@ -189,54 +209,74 @@ function installBridgeHelp(): string {
 }
 
 function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefined {
+  const values = readInstallBridgeFlagValues(args);
+  if (!values || hasUnknownInstallBridgeArg(args)) return undefined;
+
+  return {
+    targetRoot: values.explicitDir ?? join(homedir(), "tdmcp-bridge"),
+    verify: args.includes("--verify"),
+    wait: args.includes("--wait"),
+    port: values.port,
+    token: values.explicitToken,
+    verifyToken: values.explicitToken ?? process.env.TDMCP_BRIDGE_TOKEN,
+    palette:
+      args.includes("--palette") || values.paletteDirFlag !== -1 || values.packageNameFlag !== -1,
+    paletteDir: values.explicitPaletteDir,
+    packageName: values.explicitPackageName ?? DEFAULT_PALETTE_PACKAGE_NAME,
+  };
+}
+
+function readInstallBridgeFlagValues(args: string[]): InstallBridgeFlagValues | undefined {
+  const base = readInstallBridgeBaseValues(args);
+  if (!base) return undefined;
+  const port = readInstallBridgePortValue(args);
+  if (port === undefined) return undefined;
+  const palette = readInstallBridgePaletteValues(args);
+  if (!palette) return undefined;
+
+  return { ...base, port, ...palette };
+}
+
+function readInstallBridgeBaseValues(
+  args: string[],
+): Pick<InstallBridgeFlagValues, "explicitDir" | "explicitToken"> | undefined {
   const dirFlag = args.indexOf("--dir");
   const explicitDir = dirFlag !== -1 ? args[dirFlag + 1] : undefined;
-  if (dirFlag !== -1 && (!explicitDir || explicitDir.startsWith("-"))) {
-    console.error("[tdmcp] Missing install-bridge --dir value.");
-    process.exitCode = 2;
-    return undefined;
-  }
+  if (missingInstallBridgeValue("--dir", dirFlag, explicitDir, true)) return undefined;
 
   const tokenFlag = args.indexOf("--token");
   const explicitToken = tokenFlag !== -1 ? args[tokenFlag + 1] : undefined;
   // Tokens generated via randomBytes(...).toString("base64url") can legitimately begin
   // with "-", so do NOT reject them as a missing-value flag. Only reject undefined / "".
-  if (tokenFlag !== -1 && (explicitToken === undefined || explicitToken === "")) {
-    console.error("[tdmcp] Missing install-bridge --token value.");
-    process.exitCode = 2;
-    return undefined;
-  }
+  if (missingInstallBridgeValue("--token", tokenFlag, explicitToken, false)) return undefined;
 
+  return { explicitDir, explicitToken };
+}
+
+function readInstallBridgePortValue(args: string[]): number | undefined {
   const portFlag = args.indexOf("--port");
   const explicitPort = portFlag !== -1 ? args[portFlag + 1] : undefined;
-  if (portFlag !== -1 && (!explicitPort || explicitPort.startsWith("-"))) {
-    console.error("[tdmcp] Missing install-bridge --port value.");
-    process.exitCode = 2;
-    return undefined;
-  }
-  const port = explicitPort === undefined ? DEFAULT_BRIDGE_PORT : Number(explicitPort);
+  if (missingInstallBridgeValue("--port", portFlag, explicitPort, true)) return undefined;
+  return parseInstallBridgePort(explicitPort);
+}
 
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    console.error(
-      `[tdmcp] Invalid install-bridge --port value "${explicitPort ?? ""}". Expected 1-65535.`,
-    );
-    process.exitCode = 2;
-    return undefined;
-  }
-
+function readInstallBridgePaletteValues(
+  args: string[],
+):
+  | Pick<
+      InstallBridgeFlagValues,
+      "paletteDirFlag" | "explicitPaletteDir" | "packageNameFlag" | "explicitPackageName"
+    >
+  | undefined {
   const paletteDirFlag = args.indexOf("--palette-dir");
   const explicitPaletteDir = paletteDirFlag !== -1 ? args[paletteDirFlag + 1] : undefined;
-  if (paletteDirFlag !== -1 && (!explicitPaletteDir || explicitPaletteDir.startsWith("-"))) {
-    console.error("[tdmcp] Missing install-bridge --palette-dir value.");
-    process.exitCode = 2;
+  if (missingInstallBridgeValue("--palette-dir", paletteDirFlag, explicitPaletteDir, true)) {
     return undefined;
   }
 
   const packageNameFlag = args.indexOf("--package-name");
   const explicitPackageName = packageNameFlag !== -1 ? args[packageNameFlag + 1] : undefined;
-  if (packageNameFlag !== -1 && (!explicitPackageName || explicitPackageName.startsWith("-"))) {
-    console.error("[tdmcp] Missing install-bridge --package-name value.");
-    process.exitCode = 2;
+  if (missingInstallBridgeValue("--package-name", packageNameFlag, explicitPackageName, true)) {
     return undefined;
   }
   if (explicitPackageName !== undefined && !isSafePalettePackageName(explicitPackageName)) {
@@ -248,15 +288,50 @@ function parseInstallBridgeArgs(args: string[]): InstallBridgeOptions | undefine
   }
 
   return {
-    targetRoot: explicitDir ?? join(homedir(), "tdmcp-bridge"),
-    verify: args.includes("--verify"),
-    wait: args.includes("--wait"),
-    port,
-    token: explicitToken,
-    palette: args.includes("--palette") || paletteDirFlag !== -1 || packageNameFlag !== -1,
-    paletteDir: explicitPaletteDir,
-    packageName: explicitPackageName ?? DEFAULT_PALETTE_PACKAGE_NAME,
+    paletteDirFlag,
+    explicitPaletteDir,
+    packageNameFlag,
+    explicitPackageName,
   };
+}
+
+function missingInstallBridgeValue(
+  flag: string,
+  flagIndex: number,
+  value: string | undefined,
+  rejectLeadingDash: boolean,
+): boolean {
+  if (
+    flagIndex === -1 ||
+    (value !== undefined && value !== "" && !(rejectLeadingDash && value.startsWith("-")))
+  ) {
+    return false;
+  }
+  console.error(`[tdmcp] Missing install-bridge ${flag} value.`);
+  process.exitCode = 2;
+  return true;
+}
+
+function parseInstallBridgePort(value: string | undefined): number | undefined {
+  const port = value === undefined ? DEFAULT_BRIDGE_PORT : Number(value);
+  if (Number.isInteger(port) && port >= 1 && port <= 65535) return port;
+  console.error(`[tdmcp] Invalid install-bridge --port value "${value ?? ""}". Expected 1-65535.`);
+  process.exitCode = 2;
+  return undefined;
+}
+
+function hasUnknownInstallBridgeArg(args: string[]): boolean {
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === undefined || INSTALL_BRIDGE_FLAGS.has(arg)) {
+      if (arg !== undefined && INSTALL_BRIDGE_FLAGS_WITH_VALUE.has(arg)) i += 1;
+      continue;
+    }
+    console.error(`[tdmcp] Unknown install-bridge option or argument "${arg}".`);
+    process.exitCode = 2;
+    return true;
+  }
+  return false;
 }
 
 function isSafePalettePackageName(value: string): boolean {
@@ -356,7 +431,7 @@ async function verifyInstalledBridge(
 
   do {
     try {
-      const info = await fetchBridgeInfo(url, options.token);
+      const info = await fetchBridgeInfo(url, options.verifyToken);
       console.log(`  Bridge verified at ${url}${formatBridgeInfo(info)}.`);
       return {
         ...baseResult,

@@ -30,6 +30,15 @@ function createEventStream(
   onEvent: (event: TdEvent) => void,
 ): TdEventStream | undefined {
   if (config.events !== "on") return undefined;
+  // The platform WebSocket constructor cannot set an Authorization header and
+  // the TouchDesigner callback has no authenticated handshake hook. Do not
+  // open an unauthenticated event channel while REST auth is enabled.
+  if (config.bridgeToken) {
+    logger.warn(
+      "TDMCP_EVENTS disabled because the bridge token cannot be sent securely over WebSocket",
+    );
+    return undefined;
+  }
   const url = `${tdBaseUrl(config).replace(/^http/, "ws")}/`;
   const stream = new TdEventStream({ url, logger, onEvent });
   stream.start();

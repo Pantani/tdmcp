@@ -24,7 +24,7 @@ project = td.project
 _TYPE_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]*$")
 _STARTED_AT = datetime.now(timezone.utc)
 _STARTED_MONOTONIC = time.monotonic()
-_LAST_HEALTH_AT = _STARTED_AT
+_LAST_HEARTBEAT_AT = _STARTED_AT
 _HEARTBEAT_STALE_AFTER_SECONDS = 10.0
 
 
@@ -511,18 +511,26 @@ def get_info():
     return info
 
 
+def mark_heartbeat():
+    """Record that the TouchDesigner frame callback is still running."""
+    global _LAST_HEARTBEAT_AT
+    _LAST_HEARTBEAT_AT = datetime.now(timezone.utc)
+
+
 def get_health(webserver=None):
-    global _LAST_HEALTH_AT
     now = datetime.now(timezone.utc)
     timestamp = _iso_utc(now)
-    last_seen_at = _LAST_HEALTH_AT
+    last_seen_at = _LAST_HEARTBEAT_AT
     heartbeat_age_seconds = round(max(0.0, (now - last_seen_at).total_seconds()), 3)
     heartbeat_stale = heartbeat_age_seconds > _HEARTBEAT_STALE_AFTER_SECONDS
-    _LAST_HEALTH_AT = now
     info = _health_touchdesigner_info()
     performance = _health_performance(webserver)
     degraded_signals = []
     warnings = []
+
+    if heartbeat_stale:
+        degraded_signals.append("heartbeat")
+        warnings.append("TouchDesigner frame heartbeat is stale.")
 
     if not any(info.get(key) for key in ("td_version", "build", "project")):
         degraded_signals.append("touchdesigner")

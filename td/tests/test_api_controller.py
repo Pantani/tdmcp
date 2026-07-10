@@ -81,10 +81,10 @@ class ExecGateTests(unittest.TestCase):
         _clear_token_env()
         self.assertFalse(ac._exec_allowed())
 
-    def test_token_enables_exec_by_default_for_authenticated_bridge(self):
+    def test_token_does_not_enable_exec_without_explicit_opt_in(self):
         _clear_exec_env()
         os.environ["TDMCP_BRIDGE_TOKEN"] = "s3cret"
-        self.assertTrue(ac._exec_allowed())
+        self.assertFalse(ac._exec_allowed())
 
     def test_disabled_values(self):
         for value in ("0", "false", "FALSE", "no", "off", " Off ", "", "anything"):
