@@ -43,6 +43,10 @@ describe("integration: Streamable HTTP transport", () => {
       enableDnsRebindingProtection: false,
       allowedHosts: [],
     });
+    expect(httpHostProtectionOptions("127.0.0.1", 80)).toEqual({
+      enableDnsRebindingProtection: true,
+      allowedHosts: ["127.0.0.1:80", "localhost:80", "[::1]:80", "127.0.0.1", "localhost", "[::1]"],
+    });
   });
 
   it("serves MCP over HTTP and lists tools", async () => {

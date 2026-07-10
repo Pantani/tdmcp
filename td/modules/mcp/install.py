@@ -45,6 +45,13 @@ def _event_hooks_source(modules_dir=None):
             "    sys.path.insert(0, %r)\n\n" % (modules_dir, modules_dir)
         )
     return header + (
+        "_api_service = None\n\n"
+        "def _mark_heartbeat():\n"
+        "    global _api_service\n"
+        "    if _api_service is None:\n"
+        "        from mcp.services import api_service\n"
+        "        _api_service = api_service\n"
+        "    _api_service.mark_heartbeat()\n\n"
         "def _broadcast(event, data):\n"
         "    try:\n"
         "        from mcp import events\n"
@@ -53,8 +60,7 @@ def _event_hooks_source(modules_dir=None):
         "        pass\n\n"
         "def onFrameEnd(frame):\n"
         "    try:\n"
-        "        from mcp.services import api_service\n"
-        "        api_service.mark_heartbeat()\n"
+        "        _mark_heartbeat()\n"
         "    except Exception:\n"
         "        pass\n"
         "    try:\n"

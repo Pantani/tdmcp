@@ -93,11 +93,11 @@ export function httpHostProtectionOptions(
   allowedHosts: string[];
 } {
   const isWildcard = httpHost === "0.0.0.0" || httpHost === "::";
+  const loopbackHosts = [`127.0.0.1:${httpPort}`, `localhost:${httpPort}`, `[::1]:${httpPort}`];
+  if (httpPort === 80) loopbackHosts.push("127.0.0.1", "localhost", "[::1]");
   return {
     enableDnsRebindingProtection: !isWildcard,
-    allowedHosts: isWildcard
-      ? []
-      : [`127.0.0.1:${httpPort}`, `localhost:${httpPort}`, `[::1]:${httpPort}`],
+    allowedHosts: isWildcard ? [] : loopbackHosts,
   };
 }
 

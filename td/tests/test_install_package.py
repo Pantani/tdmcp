@@ -169,6 +169,16 @@ class _TdPatch:
 
 
 class InstallPackageHelperTests(unittest.TestCase):
+    def test_event_hooks_source_caches_heartbeat_service_after_first_import(self):
+        source = install._event_hooks_source()
+
+        self.assertIn("_api_service = None", source)
+        self.assertIn("global _api_service", source)
+        self.assertEqual(source.count("from mcp.services import api_service"), 1)
+        self.assertIn("_api_service = api_service", source)
+        self.assertIn("_api_service.mark_heartbeat()", source)
+        self.assertIn("        _mark_heartbeat()", source)
+
     def test_palette_package_path_defaults_to_derivative_palette_folder(self):
         path = install.palette_package_path(home="/Users/artist")
         self.assertEqual(

@@ -19,18 +19,18 @@ describe("listRecipesImpl", () => {
     const expectedRecipeId = "chrome_blobs";
     expect(all.some((recipe) => recipe.id === expectedRecipeId)).toBe(true);
     const result = listRecipesImpl(ctx, {});
-    // Text summary contains the count.
+    // Text stays compact; complete recipe data belongs in structuredContent.
     expect(result.content[0]).toMatchObject({
       type: "text",
-      text: expect.stringContaining(`${allCount}`),
-    });
-    expect(result.content[0]).toMatchObject({
-      type: "text",
-      text: expect.stringContaining(expectedRecipeId),
+      text: `${allCount} recipe(s) available.`,
     });
     // Structured payload has full recipe list.
-    expect((result as { structuredContent?: { count: number } }).structuredContent?.count).toBe(
-      allCount,
+    const structured = (
+      result as { structuredContent?: { count: number; recipes: Array<{ id: string }> } }
+    ).structuredContent;
+    expect(structured?.count).toBe(allCount);
+    expect(structured?.recipes).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: expectedRecipeId })]),
     );
   });
 
