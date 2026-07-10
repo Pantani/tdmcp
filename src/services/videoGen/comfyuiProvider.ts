@@ -31,6 +31,20 @@ import {
 
 const HISTORY_POLL_INTERVAL_MS = 1_000;
 
+/**
+ * LTX-Video sampling frame rate. ComfyUI's LTXV latent node takes `length` in
+ * FRAMES (not seconds), and the model requires `length % 8 === 1` (e.g. 121).
+ * Convert the request's seconds to a valid frame count so live runs don't error
+ * or produce a wrong-length clip.
+ */
+const LTX_FRAME_RATE = 24;
+
+export function secondsToLtxFrames(seconds: number): number {
+  const raw = Math.round(seconds * LTX_FRAME_RATE);
+  const snapped = Math.round((raw - 1) / 8) * 8 + 1;
+  return Math.max(9, snapped);
+}
+
 interface WorkflowNode {
   class_type?: string;
   inputs?: Record<string, unknown>;
@@ -75,7 +89,8 @@ function injectMedia(
   req: VideoGenRequest,
   uploadedImage?: string,
 ): void {
-  if ("length" in inputs && req.durationSeconds !== undefined) inputs.length = req.durationSeconds;
+  if ("length" in inputs && req.durationSeconds !== undefined)
+    inputs.length = secondsToLtxFrames(req.durationSeconds);
   if ("image" in inputs && uploadedImage) inputs.image = uploadedImage;
 }
 

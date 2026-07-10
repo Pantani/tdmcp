@@ -115,7 +115,8 @@ describe("ComfyuiVideoProvider", () => {
     expect(g["3"]?.inputs?.seed).toBe(42);
     expect(g["3"]?.inputs?.steps).toBe(28);
     expect(g["3"]?.inputs?.cfg).toBe(4);
-    expect(g["10"]?.inputs?.length).toBe(5);
+    // `length` is FRAMES (seconds * 24, snapped to k*8+1): 5s -> 121, not 5.
+    expect(g["10"]?.inputs?.length).toBe(121);
 
     // The result is a local, free clip fully downloaded into bytes.
     expect(result.provider).toBe("comfyui");
