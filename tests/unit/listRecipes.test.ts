@@ -14,7 +14,10 @@ function makeCtx(): ToolContext {
 describe("listRecipesImpl", () => {
   it("returns all recipes when no tag filter is given", () => {
     const ctx = makeCtx();
-    const allCount = ctx.recipes.list().length;
+    const all = ctx.recipes.list();
+    const allCount = all.length;
+    const expectedRecipeId = "chrome_blobs";
+    expect(all.some((recipe) => recipe.id === expectedRecipeId)).toBe(true);
     const result = listRecipesImpl(ctx, {});
     // Text summary contains the count.
     expect(result.content[0]).toMatchObject({
@@ -23,7 +26,7 @@ describe("listRecipesImpl", () => {
     });
     expect(result.content[0]).toMatchObject({
       type: "text",
-      text: expect.stringContaining(ctx.recipes.list()[0]?.id ?? ""),
+      text: expect.stringContaining(expectedRecipeId),
     });
     // Structured payload has full recipe list.
     expect((result as { structuredContent?: { count: number } }).structuredContent?.count).toBe(

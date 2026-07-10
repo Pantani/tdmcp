@@ -21,9 +21,10 @@ import { makeTdServer } from "../helpers/tdMock.js";
 //   1. TDMCP_RAW_PYTHON=off  → Node server side. Parsed in src/utils/config.ts
 //      into `config.rawPython`, which buildToolContext turns into
 //      `allowRawPython: config.rawPython !== "off"` (src/server/context.ts).
-//      When false, the raw-Python registrars (create_python_script in Layer 2;
-//      execute_python_script / exec_node_method in Layer 3) early-return and
-//      never register their tool. THIS is what the smoke exercises.
+//      When false, the raw-Python registrars (create_python_script and
+//      author_script_operator in Layer 2; execute_python_script / exec_node_method
+//      in Layer 3) early-return and never register their tool. THIS is what the
+//      smoke exercises.
 //
 //   2. TDMCP_BRIDGE_ALLOW_EXEC=0 → TD/bridge side env (documented in the
 //      ROADMAP / architecture). It refuses `/api/exec` INSIDE TouchDesigner.

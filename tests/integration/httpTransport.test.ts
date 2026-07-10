@@ -3,6 +3,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTdmcpServer } from "../../src/server/tdmcpServer.js";
 import {
+  httpHostProtectionOptions,
   isCrossOriginRejected,
   isHttpBearerAuthorized,
   isUnsupportedPostMediaType,
@@ -29,6 +30,21 @@ afterAll(async () => {
 });
 
 describe("integration: Streamable HTTP transport", () => {
+  it("keeps Host protection on loopback and disables it for explicit wildcard binds", () => {
+    expect(httpHostProtectionOptions("127.0.0.1", PORT)).toEqual({
+      enableDnsRebindingProtection: true,
+      allowedHosts: [`127.0.0.1:${PORT}`, `localhost:${PORT}`, `[::1]:${PORT}`],
+    });
+    expect(httpHostProtectionOptions("0.0.0.0", PORT)).toEqual({
+      enableDnsRebindingProtection: false,
+      allowedHosts: [],
+    });
+    expect(httpHostProtectionOptions("::", PORT)).toEqual({
+      enableDnsRebindingProtection: false,
+      allowedHosts: [],
+    });
+  });
+
   it("serves MCP over HTTP and lists tools", async () => {
     const client = new Client({ name: "tdmcp-http-test", version: "0.0.0" });
     const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${PORT}/mcp`));

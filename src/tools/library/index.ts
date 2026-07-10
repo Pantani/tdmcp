@@ -442,7 +442,7 @@ export async function exportRecipeBundleImpl(ctx: ToolContext, args: ExportRecip
       missing,
     };
     writeJson(args.out_file, bundle);
-    return jsonResult(`Exported ${recipes.length} recipe(s) to ${args.out_file}.`, bundle);
+    return structuredResult(`Exported ${recipes.length} recipe(s) to ${args.out_file}.`, bundle);
   } catch (err) {
     return errorResult(err instanceof Error ? err.message : String(err));
   }

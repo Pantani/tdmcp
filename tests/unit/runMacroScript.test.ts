@@ -118,6 +118,26 @@ describe("runMacroScriptImpl", () => {
     expect(sc.skipped).toBe(1);
   });
 
+  it("requires per-replay opt-in for author_script_operator", async () => {
+    const file = join(tmp, "author-script.json");
+    await writeRecord(file, [{ tool: "author_script_operator", args: { callbacks: {} } }]);
+    const spy = vi.fn();
+    __setHandlersForTests(new Map<string, Handler>([["author_script_operator", spy]]));
+
+    const result = await runMacroScriptImpl(
+      { allowRawPython: true } as ToolContext,
+      makeArgs({ macroPath: file, stopOnError: false }),
+    );
+
+    expect(spy).not.toHaveBeenCalled();
+    const structured = result.structuredContent as {
+      entries: Array<{ skipped?: string }>;
+      skipped: number;
+    };
+    expect(structured.entries[0]?.skipped).toBe("raw-python-blocked");
+    expect(structured.skipped).toBe(1);
+  });
+
   it("calls raw-Python handler when caller opts in via args.allowRawPython=true", async () => {
     const file = join(tmp, "py-ok.json");
     await writeRecord(file, [{ tool: "execute_python_script", args: { script: "x" } }]);
@@ -217,6 +237,7 @@ describe("runMacroScriptImpl", () => {
     expect(isRawPythonTool("execute_python_script")).toBe(true);
     expect(isRawPythonTool("create_python_script")).toBe(true);
     expect(isRawPythonTool("exec_node_method")).toBe(true);
+    expect(isRawPythonTool("author_script_operator")).toBe(true);
     expect(isRawPythonTool("find_td_nodes")).toBe(false);
   });
 });

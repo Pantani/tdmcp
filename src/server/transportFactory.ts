@@ -84,6 +84,23 @@ export function isCrossOriginRejected(origin: string | undefined): boolean {
   }
 }
 
+/** Host-header protection options for loopback versus explicitly wildcard HTTP binds. */
+export function httpHostProtectionOptions(
+  httpHost: string,
+  httpPort: number,
+): {
+  enableDnsRebindingProtection: boolean;
+  allowedHosts: string[];
+} {
+  const isWildcard = httpHost === "0.0.0.0" || httpHost === "::";
+  return {
+    enableDnsRebindingProtection: !isWildcard,
+    allowedHosts: isWildcard
+      ? []
+      : [`127.0.0.1:${httpPort}`, `localhost:${httpPort}`, `[::1]:${httpPort}`],
+  };
+}
+
 /**
  * True when a POST carries a Content-Type that is present and not `application/json`
  * — reject with 415. A missing Content-Type is left for the normal flow (the SDK
@@ -186,6 +203,8 @@ async function startHttp(
   config: TdmcpConfig,
   logger: Logger,
 ): Promise<TransportHandle> {
+  const httpHost = config.httpHost ?? "127.0.0.1";
+  const hostProtection = httpHostProtectionOptions(httpHost, config.httpPort);
   const transports = new Map<string, StreamableHTTPServerTransport>();
   const servers = new Map<string, McpServer>();
   const events = createEventStream(config, logger, (event) => {
@@ -229,9 +248,10 @@ async function startHttp(
             transports.set(id, created);
             servers.set(id, sessionServer);
           },
-          // Reject Host headers other than loopback to block DNS-rebinding attacks.
-          enableDnsRebindingProtection: true,
-          allowedHosts: [`127.0.0.1:${config.httpPort}`, `localhost:${config.httpPort}`],
+          // Loopback binds reject non-loopback Host headers. Explicit wildcard
+          // container binds accept the address used by the remote client; the
+          // Origin check above still rejects cross-site browser requests.
+          ...hostProtection,
         });
         created.onclose = () => {
           if (created.sessionId) {
@@ -273,7 +293,6 @@ async function startHttp(
   // Bind to loopback by default so HTTP isn't unexpectedly exposed. Containers
   // opt into 0.0.0.0 explicitly through TDMCP_HTTP_HOST; Host/Origin checks and
   // optional bearer auth remain enforced by the request path above.
-  const httpHost = config.httpHost ?? "127.0.0.1";
   // Wrap listen() in a Promise so EADDRINUSE (port already bound) surfaces as a
   // clean rejection at startup instead of an unhandled 'error' event that would
   // crash the whole server process the moment listen reports back.
