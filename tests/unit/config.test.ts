@@ -15,6 +15,7 @@ describe("loadConfig", () => {
     expect(config.tdHost).toBe("127.0.0.1");
     expect(config.tdPort).toBe(9980);
     expect(config.transport).toBe("stdio");
+    expect(config.httpHost).toBeUndefined();
     expect(config.logLevel).toBe("info");
     expect(config.requestTimeoutMs).toBe(10000);
     expect(config.llmTier).toBe("standard");
@@ -26,10 +27,12 @@ describe("loadConfig", () => {
     const config = loadConfig({
       TDMCP_TD_HOST: "10.0.0.5",
       TDMCP_TD_PORT: "8080",
+      TDMCP_HTTP_HOST: "0.0.0.0",
       TDMCP_LOG_LEVEL: "debug",
     });
     expect(config.tdHost).toBe("10.0.0.5");
     expect(config.tdPort).toBe(8080);
+    expect(config.httpHost).toBe("0.0.0.0");
     expect(config.logLevel).toBe("debug");
   });
 

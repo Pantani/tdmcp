@@ -15,6 +15,7 @@ do cliente MCP continuam simples. Toda variável é opcional e tem um padrão se
 | `TDMCP_TD_HOST` | `127.0.0.1` | Host da ponte do TouchDesigner. |
 | `TDMCP_TD_PORT` | `9980` | Porta do Web Server DAT. |
 | `TDMCP_TRANSPORT` | `stdio` | Transporte MCP: `stdio` (padrão) ou `http` (Streamable HTTP). |
+| `TDMCP_HTTP_HOST` | `127.0.0.1` | Host de bind do transporte HTTP. Mantenha loopback em execuções locais; a imagem Docker usa `0.0.0.0` explicitamente para tornar a porta publicada acessível. |
 | `TDMCP_HTTP_PORT` | `3939` | Porta do transporte HTTP (quando `TDMCP_TRANSPORT=http`). |
 | `TDMCP_EVENTS` | `on` | Assina os eventos por WebSocket do TD e os encaminha como notificações de log do MCP (`on`/`off`). Os eventos são desativados automaticamente quando `TDMCP_BRIDGE_TOKEN` está configurado, até existir um handshake WebSocket autenticado na ponte. |
 | `TDMCP_RAW_PYTHON` | `on` | Se expõe as tools Python escritas pelo cliente, incluindo callbacks persistentes de Script. Defina como `off` para trancá-las em configurações restritas. A ponte mantém os endpoints de código arbitrário desligados até `TDMCP_BRIDGE_ALLOW_EXEC=1` ser definido explicitamente; o token autentica, mas não autoriza exec sozinho. |

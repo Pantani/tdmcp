@@ -15,6 +15,7 @@ config stay simple. Every variable is optional and has a sensible default.
 | `TDMCP_TD_HOST` | `127.0.0.1` | TouchDesigner bridge host. |
 | `TDMCP_TD_PORT` | `9980` | Web Server DAT port. |
 | `TDMCP_TRANSPORT` | `stdio` | MCP transport: `stdio` (default) or `http` (Streamable HTTP). |
+| `TDMCP_HTTP_HOST` | `127.0.0.1` | Bind host for the HTTP transport. Keep loopback for local runs; the Docker image explicitly uses `0.0.0.0` so its published port is reachable. |
 | `TDMCP_HTTP_PORT` | `3939` | Port for the HTTP transport (when `TDMCP_TRANSPORT=http`). |
 | `TDMCP_EVENTS` | `on` | Subscribe to TD WebSocket events and forward them as MCP logging notifications (`on`/`off`). Events are disabled automatically when `TDMCP_BRIDGE_TOKEN` is set until the bridge exposes an authenticated WebSocket handshake. |
 | `TDMCP_RAW_PYTHON` | `on` | Whether to expose client-authored raw-Python tools, including persistent Script callbacks. Set to `off` to lock them out for restricted setups. This removes only client-authored-code tools — many higher-level tools still send their own *templated* Python to the bridge, so `off` is **not** "no code runs in TD". The bridge keeps arbitrary-code endpoints disabled unless `TDMCP_BRIDGE_ALLOW_EXEC=1` is explicitly set; a token authenticates but does not authorize exec by itself. |

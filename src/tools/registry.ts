@@ -37,6 +37,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "manage_packages", // stages/uninstalls community package files
   "make_portable_tox", // writes/overwrites .tox packages on disk
   "export_recipe_bundle", // writes bundle files
+  "optimize_performance", // apply can resize live TOPs
   "publish_recipe_bundle", // writes bundle publish artifacts and checksum manifests
   "import_recipe_bundle", // writes recipe files
   "scaffold_recipe_template", // writes recipe files

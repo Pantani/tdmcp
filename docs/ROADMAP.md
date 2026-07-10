@@ -854,7 +854,7 @@ properly:
 
 ## v1.0.0 — Consolidation {#v100-consolidation}
 
-With the feature surface at **375 tools** on HEAD (the generated Tools-reference
+With the feature surface at **378 tools** on HEAD (the generated Tools-reference
 total), the road to 1.0 is
 a set of **measurable consolidation gates**, not a new feature wave. Each gate
 below states the current posture and what "done" looks like, using the same

@@ -270,7 +270,10 @@ async function startHttp(
     sendJson(res, 405, { error: "Method not allowed." });
   }
 
-  // Bind to loopback by default so HTTP isn't unexpectedly exposed.
+  // Bind to loopback by default so HTTP isn't unexpectedly exposed. Containers
+  // opt into 0.0.0.0 explicitly through TDMCP_HTTP_HOST; Host/Origin checks and
+  // optional bearer auth remain enforced by the request path above.
+  const httpHost = config.httpHost ?? "127.0.0.1";
   // Wrap listen() in a Promise so EADDRINUSE (port already bound) surfaces as a
   // clean rejection at startup instead of an unhandled 'error' event that would
   // crash the whole server process the moment listen reports back.
@@ -283,6 +286,7 @@ async function startHttp(
       const onListening = (): void => {
         httpServer.removeListener("error", onListenError);
         logger.info("tdmcp listening over Streamable HTTP", {
+          host: httpHost,
           port: config.httpPort,
           path: MCP_PATH,
         });
@@ -290,7 +294,7 @@ async function startHttp(
       };
       httpServer.once("error", onListenError);
       httpServer.once("listening", onListening);
-      httpServer.listen(config.httpPort, "127.0.0.1");
+      httpServer.listen(config.httpPort, httpHost);
     });
   } catch (err) {
     // The event stream was started above (before we knew whether the HTTP port

@@ -406,11 +406,27 @@ export async function makePortableToxImpl(ctx: ToolContext, args: MakePortableTo
 }
 
 export const exportRecipeBundleSchema = z.object({
-  out_file: z.string(),
-  recipe_ids: z.array(z.string()).default([]),
-  include_all: z.boolean().default(false),
+  out_file: z.string().describe("Destination path for the portable recipe-bundle JSON file."),
+  recipe_ids: z
+    .array(z.string())
+    .default([])
+    .describe("Recipe IDs to export when include_all=false; unknown IDs are listed in missing."),
+  include_all: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Export the complete local recipe library when true; otherwise export recipe_ids only.",
+    ),
 });
 type ExportRecipeBundleArgs = z.infer<typeof exportRecipeBundleSchema>;
+
+export const exportRecipeBundleOutputSchema = z.object({
+  kind: z.literal("tdmcp-recipe-bundle"),
+  version: z.number(),
+  exported_at: z.string(),
+  recipes: z.array(z.unknown()),
+  missing: z.array(z.string()),
+});
 
 export async function exportRecipeBundleImpl(ctx: ToolContext, args: ExportRecipeBundleArgs) {
   try {
@@ -991,8 +1007,13 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Export recipe bundle",
         description:
-          "Write selected recipes to a portable JSON bundle on disk. Use it to hand recipes to another machine or to CI; re-import the bundle with import_recipe_bundle, or produce a signed/versioned artifact with publish_recipe_bundle. Writes a file (destructive).",
+          "Write a portable JSON recipe bundle to out_file. When include_all=false, recipe_ids selects the entries; " +
+          "when include_all=true, the full local library is exported and recipe_ids is ignored. Unknown IDs are " +
+          "reported in missing rather than silently substituted. Use import_recipe_bundle to restore the bundle on " +
+          "another machine or publish_recipe_bundle when you need checksums/versioned handoff artifacts. This writes " +
+          "a local file and returns the bundle kind, version, timestamp, exported recipes, and missing IDs.",
         inputSchema: exportRecipeBundleSchema.shape,
+        outputSchema: exportRecipeBundleOutputSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
       (args) => exportRecipeBundleImpl(ctx, args),

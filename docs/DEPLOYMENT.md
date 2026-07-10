@@ -17,7 +17,8 @@ In a container the server **must** use the HTTP transport. The default `stdio`
 transport only works when the MCP client spawns the server as a local child
 process; it cannot cross the container boundary. The image therefore defaults to
 `TDMCP_TRANSPORT=http` on port `3939`, and reaches TouchDesigner on the host via
-`host.docker.internal`.
+`host.docker.internal`. It binds `0.0.0.0` inside the container so Docker can
+publish the port; non-container HTTP runs remain loopback-only by default.
 
 ### Compose (recommended)
 
@@ -29,6 +30,12 @@ This builds the `Dockerfile`, publishes `3939:3939`, and maps
 `host.docker.internal` to the host gateway so the container can reach the
 host-resident TouchDesigner bridge. Override the bridge location in the
 `environment:` block of `docker-compose.yml` if TD listens elsewhere.
+
+The image itself defaults to `TDMCP_TOOL_PROFILE=directory` and
+`TDMCP_RAW_PYTHON=off` so hosted MCP registries can introspect a compact,
+non-destructive tool surface. `docker-compose.yml` explicitly overrides those
+values to `full` / `on` for the complete local runtime. Keep the compact defaults
+for registry builds; set the variables explicitly when running the image by hand.
 
 ### Plain Docker
 

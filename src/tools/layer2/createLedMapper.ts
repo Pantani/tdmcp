@@ -303,7 +303,12 @@ export const registerCreateLedMapper: ToolRegistrar = (server, ctx) => {
     {
       title: "Create LED pixel-mapper",
       description:
-        "Pixel-map a source TOP onto an LED fixture layout and send per-pixel colors out as DMX over Art-Net/sACN. Resizes the source to a tiny WxH grid (one texel = one fixture pixel), samples it into per-pixel r/g/b channels with a TOP-to-CHOP, and feeds those into a DMX Out CHOP — the pixel-mapping editor that artnet_out lacked. Defaults to a built-in moving test source so the chain cooks with no input. Exposes Brightness and Universe controls. Sending real Art-Net needs a fixture/node on the network; this validates the per-pixel color CHOP is correct.",
+        "Build a pixel-mapping chain from a source TOP to an LED fixture grid and DMX Out CHOP over Art-Net or sACN. " +
+        "The generated network resizes to width×height, samples one texel per fixture pixel, preserves RGB channels, " +
+        "and returns created node paths, channel count, warnings, and live Brightness/Universe controls on the parent " +
+        "COMP. It defaults to a moving Ramp test source so the chain can cook without input; real network output still " +
+        "requires a reachable fixture/node and should be verified before sending. Use create_dmx_fixture_pipeline for " +
+        "fixture patching and this tool when you specifically need image-to-pixel mapping.",
       inputSchema: createLedMapperSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
