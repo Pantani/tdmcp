@@ -212,14 +212,12 @@ try:
         try:
             _resx = max(1, int(_render_resolution[0]))
             _resy = max(1, int(_render_resolution[1]))
-            if hasattr(_render.par, "Resx"):
-                _safe(lambda: setattr(_render.par, "Resx", _resx), "render Resx")
+            if hasattr(_render.par, "Resolution"):
+                _safe(lambda: setattr(_render.par, "Resolution", [_resx, _resy]), "render Resolution")
+            elif hasattr(_render.par, "resolution"):
+                _safe(lambda: setattr(_render.par, "resolution", [_resx, _resy]), "render resolution")
             else:
-                report["warnings"].append("RayTK renderer has no Resx parameter; width left at library default.")
-            if hasattr(_render.par, "Resy"):
-                _safe(lambda: setattr(_render.par, "Resy", _resy), "render Resy")
-            else:
-                report["warnings"].append("RayTK renderer has no Resy parameter; height left at library default.")
+                report["warnings"].append("RayTK renderer has no Resolution parameter; resolution left at library default.")
         except Exception as _e:
             report["warnings"].append("RayTK renderer resolution setup failed: %s" % _e)
         report["render_path"] = _render.path

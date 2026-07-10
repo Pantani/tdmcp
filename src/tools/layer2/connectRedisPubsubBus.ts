@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -12,6 +13,7 @@ export const connectRedisPubsubBusSchema = z.object({
   redis_port: z.coerce.number().int().min(1).max(65535).default(6379),
   adapter_mode: z.enum(["websocket_json", "udp_json", "manual"]).default("websocket_json"),
   server_url: z.string().default("ws://127.0.0.1:9051"),
+  adapter_port: z.coerce.number().int().min(1).max(65535).default(9051),
   channel_root: z.string().default("tdmcp:show"),
   channel_count: z.coerce.number().int().min(1).max(128).default(8),
   database_index: z.coerce.number().int().min(0).max(15).default(0),
@@ -28,7 +30,7 @@ function sourceNode(args: ConnectRedisPubsubBusArgs): ExternalShowNodeSpec {
       optype: "udpinDAT",
       x: 0,
       y: 120,
-      params: { port: 9051, active: args.active ? 1 : 0 },
+      params: { port: args.adapter_port, active: args.active ? 1 : 0 },
     };
   }
   if (args.adapter_mode === "manual") {
@@ -45,7 +47,7 @@ function sourceNode(args: ConnectRedisPubsubBusArgs): ExternalShowNodeSpec {
     optype: "websocketDAT",
     x: 0,
     y: 120,
-    params: { url: args.server_url, active: args.active ? 1 : 0 },
+    params: websocketDatParams(args.server_url, args.active),
   };
 }
 
@@ -74,6 +76,7 @@ export async function connectRedisPubsubBusImpl(ctx: ToolContext, args: ConnectR
         redis_port: args.redis_port,
         adapter_mode: args.adapter_mode,
         server_url: args.server_url,
+        adapter_port: args.adapter_port,
         channel_root: args.channel_root,
         channel_count: args.channel_count,
         database_index: args.database_index,
@@ -95,6 +98,7 @@ export async function connectRedisPubsubBusImpl(ctx: ToolContext, args: ConnectR
           table: [
             ["field", "value"],
             ["redis", `${args.redis_host}:${args.redis_port}`],
+            ["adapter_port", String(args.adapter_port)],
             ["database_index", String(args.database_index)],
             ["stream_mode", args.stream_mode],
             ["active", String(args.active)],

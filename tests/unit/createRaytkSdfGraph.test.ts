@@ -201,6 +201,7 @@ describe("create_raytk_sdf_graph", () => {
       type: "nullTOP",
       name: "beauty",
     });
+    expect(bodies).toHaveLength(2);
 
     const payload = decodeGraphPayload(scripts);
     expect(payload).toBeDefined();
@@ -241,8 +242,7 @@ describe("create_raytk_sdf_graph", () => {
     const copyWireScript = scripts.find((script) =>
       script.includes("create_raytk_sdf_graph copy-wire pass"),
     );
-    expect(copyWireScript).toContain('setattr(_render.par, "Resx"');
-    expect(copyWireScript).toContain('setattr(_render.par, "Resy"');
+    expect(copyWireScript).toContain('setattr(_render.par, "Resolution"');
   });
 
   it("summarizes the container and output paths on success", async () => {

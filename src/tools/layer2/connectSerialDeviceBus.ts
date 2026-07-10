@@ -62,7 +62,11 @@ export async function connectSerialDeviceBusImpl(
           optype: "serialDAT",
           x: 0,
           y: 120,
-          params: { active: args.active ? 1 : 0, device: args.device, baudrate: args.baud_rate },
+          params: {
+            active: args.active && !args.include_chop ? 1 : 0,
+            device: args.device,
+            baudrate: args.baud_rate,
+          },
         },
         {
           name: "serial_chop",

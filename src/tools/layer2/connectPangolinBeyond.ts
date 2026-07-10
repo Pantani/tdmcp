@@ -5,7 +5,8 @@ import { runExternalShowScaffold } from "./externalShowBridgeScaffold.js";
 export const connectPangolinBeyondSchema = z.object({
   parent_path: z.string().default("/project1").describe("Parent COMP for the Pangolin scaffold."),
   name: z.string().default("pangolin_beyond").describe("Generated baseCOMP name."),
-  source_mode: z.enum(["sop", "chop", "zone"]).default("chop"),
+  source_mode: z.enum(["sop", "chop"]).default("chop"),
+  zone: z.string().default("zone_1"),
   zone_count: z.coerce.number().int().min(1).max(64).default(4),
   cue_count: z.coerce.number().int().min(1).max(256).default(8),
   output_rate: z.coerce.number().min(1).max(100).default(30),
@@ -41,6 +42,7 @@ export async function connectPangolinBeyondImpl(ctx: ToolContext, args: ConnectP
       name: args.name,
       metadata: {
         source_mode: args.source_mode,
+        zone: args.zone,
         zone_count: args.zone_count,
         cue_count: args.cue_count,
         output_rate: args.output_rate,
@@ -59,8 +61,10 @@ export async function connectPangolinBeyondImpl(ctx: ToolContext, args: ConnectP
           y: 120,
           params: {
             source: args.source_mode,
+            zone: args.zone,
             rate: args.output_rate,
             blackout: args.safety_blackout ? 1 : 0,
+            active: args.active ? 1 : 0,
           },
         },
         { name: "zone_map", optype: "tableDAT", x: 300, y: 120, table: zoneRows(args) },
@@ -73,6 +77,7 @@ export async function connectPangolinBeyondImpl(ctx: ToolContext, args: ConnectP
           table: [
             ["field", "value"],
             ["source_mode", args.source_mode],
+            ["zone", args.zone],
             ["zone_count", String(args.zone_count)],
             ["cue_count", String(args.cue_count)],
             ["output_rate", String(args.output_rate)],

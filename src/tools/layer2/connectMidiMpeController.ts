@@ -60,13 +60,17 @@ export async function connectMidiMpeControllerImpl(
           y: 120,
           params: { active: args.active ? 1 : 0, device: args.device_name },
         },
-        {
-          name: "mpe_out",
-          optype: "midioutCHOP",
-          x: 0,
-          y: -40,
-          params: { active: args.include_output && args.active ? 1 : 0, device: args.device_name },
-        },
+        ...(args.include_output
+          ? [
+              {
+                name: "mpe_out",
+                optype: "midioutCHOP",
+                x: 0,
+                y: -40,
+                params: { active: args.active ? 1 : 0, device: args.device_name },
+              },
+            ]
+          : []),
         { name: "zone_map", optype: "tableDAT", x: 300, y: 120, table: zoneRows(args) },
         {
           name: "expression_map",

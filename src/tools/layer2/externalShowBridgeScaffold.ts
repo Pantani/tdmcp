@@ -10,6 +10,7 @@ export interface ExternalShowNodeSpec {
   x: number;
   y: number;
   params?: Record<string, Scalar>;
+  pulses?: string[];
   text?: string;
   table?: string[][];
 }
@@ -252,6 +253,18 @@ try:
 
             for par_name, value in (spec.get("params") or {}).items():
                 _setpar(node, par_name, value)
+            for par_name in spec.get("pulses", []):
+                try:
+                    par = getattr(node.par, par_name, None)
+                except Exception:
+                    par = None
+                if par is None:
+                    _warn("No pulse parameter '%s' on %s." % (par_name, getattr(node, "path", node)))
+                    continue
+                try:
+                    par.pulse()
+                except Exception as exc:
+                    _warn("Could not pulse %s on %s: %s" % (par_name, getattr(node, "path", node), exc))
             if spec.get("text") is not None:
                 try:
                     node.text = str(spec.get("text"))

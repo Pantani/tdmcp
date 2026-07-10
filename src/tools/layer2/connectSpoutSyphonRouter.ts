@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { runExternalShowScaffold } from "./externalShowBridgeScaffold.js";
+import {
+  type ExternalShowConnectionSpec,
+  type ExternalShowNodeSpec,
+  runExternalShowScaffold,
+} from "./externalShowBridgeScaffold.js";
 
 export const connectSpoutSyphonRouterSchema = z.object({
   parent_path: z.string().default("/project1").describe("Parent COMP for the router scaffold."),
@@ -15,16 +19,93 @@ export const connectSpoutSyphonRouterSchema = z.object({
 type ConnectSpoutSyphonRouterArgs = z.infer<typeof connectSpoutSyphonRouterSchema>;
 
 function routeRows(args: ConnectSpoutSyphonRouterArgs): string[][] {
-  const rows = [["route", "input_sender", "output_sender", "mode"]];
+  const rows = [["route", "input_sender", "output_sender", "mode", "nodes"]];
   for (let index = 1; index <= args.route_count; index += 1) {
     rows.push([
       `route_${index}`,
       index === 1 ? args.source_name : `${args.source_name}_${index}`,
       index === 1 ? args.output_name : `${args.output_name}_${index}`,
       args.mode,
+      routeNodeNames(index, args.mode).join(" -> "),
     ]);
   }
   return rows;
+}
+
+function routeNodeNames(index: number, mode: ConnectSpoutSyphonRouterArgs["mode"]): string[] {
+  const names: string[] = [];
+  if (routeUsesInput(mode)) names.push(`route_${index}_in`);
+  names.push(`route_${index}_bus`);
+  if (routeUsesOutput(mode)) names.push(`route_${index}_out`);
+  return names;
+}
+
+function routeUsesInput(mode: ConnectSpoutSyphonRouterArgs["mode"]): boolean {
+  return mode === "receive" || mode === "roundtrip";
+}
+
+function routeUsesOutput(mode: ConnectSpoutSyphonRouterArgs["mode"]): boolean {
+  return mode === "send" || mode === "roundtrip";
+}
+
+function routeInputNode(
+  args: ConnectSpoutSyphonRouterArgs,
+  index: number,
+  y: number,
+): ExternalShowNodeSpec | undefined {
+  if (!routeUsesInput(args.mode)) return undefined;
+  const sourceName = index === 1 ? args.source_name : `${args.source_name}_${index}`;
+  return {
+    name: `route_${index}_in`,
+    optype: "syphonspoutinTOP",
+    x: 0,
+    y,
+    params: { sendername: sourceName, active: args.active ? 1 : 0 },
+  };
+}
+
+function routeOutputNode(
+  args: ConnectSpoutSyphonRouterArgs,
+  index: number,
+  y: number,
+): ExternalShowNodeSpec | undefined {
+  if (!routeUsesOutput(args.mode)) return undefined;
+  const outputName = index === 1 ? args.output_name : `${args.output_name}_${index}`;
+  return {
+    name: `route_${index}_out`,
+    optype: "syphonspoutoutTOP",
+    x: 600,
+    y,
+    params: { sendername: outputName, active: args.active ? 1 : 0 },
+  };
+}
+
+function routeNodesForIndex(args: ConnectSpoutSyphonRouterArgs, index: number) {
+  const y = 160 - (index - 1) * 140;
+  return [
+    routeInputNode(args, index, y),
+    { name: `route_${index}_bus`, optype: "nullTOP", x: 300, y },
+    routeOutputNode(args, index, y),
+  ].filter((node): node is ExternalShowNodeSpec => node !== undefined);
+}
+
+function routeNodes(args: ConnectSpoutSyphonRouterArgs): ExternalShowNodeSpec[] {
+  return Array.from({ length: args.route_count }, (_, index) =>
+    routeNodesForIndex(args, index + 1),
+  ).flat();
+}
+
+function routeConnections(args: ConnectSpoutSyphonRouterArgs): ExternalShowConnectionSpec[] {
+  const connections: ExternalShowConnectionSpec[] = [];
+  for (let index = 1; index <= args.route_count; index += 1) {
+    if (routeUsesInput(args.mode)) {
+      connections.push({ from: `route_${index}_in`, to: `route_${index}_bus` });
+    }
+    if (routeUsesOutput(args.mode)) {
+      connections.push({ from: `route_${index}_bus`, to: `route_${index}_out` });
+    }
+  }
+  return connections;
 }
 
 export async function connectSpoutSyphonRouterImpl(
@@ -49,21 +130,7 @@ export async function connectSpoutSyphonRouterImpl(
         "Use only one active sender name per route during show operation to avoid ambiguous texture handoffs.",
       ],
       nodes: [
-        {
-          name: "texture_in",
-          optype: "syphonspoutinTOP",
-          x: 0,
-          y: 120,
-          params: { sendername: args.source_name, active: args.active ? 1 : 0 },
-        },
-        { name: "router_out", optype: "nullTOP", x: 300, y: 120 },
-        {
-          name: "texture_out",
-          optype: "syphonspoutoutTOP",
-          x: 600,
-          y: 120,
-          params: { sendername: args.output_name, active: args.active ? 1 : 0 },
-        },
+        ...routeNodes(args),
         { name: "route_map", optype: "tableDAT", x: 300, y: -40, table: routeRows(args) },
         {
           name: "status",
@@ -87,10 +154,7 @@ export async function connectSpoutSyphonRouterImpl(
           text: "Syphon/Spout uses syphonspoutinTOP and syphonspoutoutTOP. Confirm platform support, exact sender names, and GPU visibility before enabling active routes.",
         },
       ],
-      connections: [
-        { from: "texture_in", to: "router_out" },
-        { from: "router_out", to: "texture_out" },
-      ],
+      connections: routeConnections(args),
     },
     "connect_spout_syphon_router failed",
     (report) =>

@@ -19,7 +19,8 @@ describe("connectCasparcgServerImpl", () => {
 
     server.use(
       http.post(`${TD_BASE}/api/exec`, async ({ request }) => {
-        const body = (await request.json()) as { script?: unknown };
+        const body = (await request.json()) as { script?: unknown; return_output?: unknown };
+        expect(body.return_output).toBe(true);
         capturedScript = String(body.script ?? "");
         return execOk({
           kind: "casparcg_server",

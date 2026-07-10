@@ -45,7 +45,8 @@ export async function connectWebsocketControlBusImpl(
   args: ConnectWebsocketControlBusArgs,
 ) {
   const scheme = args.tls ? "wss" : "ws";
-  const url = `${scheme}://${args.net_address}:${args.port}${args.path.startsWith("/") ? args.path : `/${args.path}`}`;
+  const path = args.path.startsWith("/") ? args.path : `/${args.path}`;
+  const url = `${scheme}://${args.net_address}:${args.port}${path}`;
 
   return runExternalShowScaffold(
     ctx,
@@ -74,10 +75,8 @@ export async function connectWebsocketControlBusImpl(
           y: 120,
           params: {
             active: args.active ? 1 : 0,
-            netaddress: args.net_address,
+            netaddress: url,
             port: args.port,
-            path: args.path,
-            secure: args.tls ? 1 : 0,
           },
         },
         { name: "command_map", optype: "tableDAT", x: 300, y: 120, table: commandRows(args) },

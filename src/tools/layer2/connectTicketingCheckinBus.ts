@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -11,7 +12,7 @@ export const connectTicketingCheckinBusSchema = z.object({
   provider: z.enum(["eventbrite", "dice", "shotgun", "custom"]).default("eventbrite"),
   event_id: z.string().default("venue_event"),
   venue_zone: z.string().default("front_gate"),
-  adapter_mode: z.enum(["rest_json", "webhook_json", "manual"]).default("rest_json"),
+  adapter_mode: z.enum(["rest_json", "websocket_json", "manual"]).default("rest_json"),
   adapter_url: z.string().default("http://127.0.0.1:9067/ticketing"),
   expected_capacity: z.coerce.number().int().min(1).max(250000).default(1200),
   ticket_tier_count: z.coerce.number().int().min(1).max(64).default(4),
@@ -22,13 +23,13 @@ export const connectTicketingCheckinBusSchema = z.object({
 type ConnectTicketingCheckinBusArgs = z.infer<typeof connectTicketingCheckinBusSchema>;
 
 function sourceNode(args: ConnectTicketingCheckinBusArgs): ExternalShowNodeSpec {
-  if (args.adapter_mode === "webhook_json") {
+  if (args.adapter_mode === "websocket_json") {
     return {
       name: "ticketing_ws_adapter",
       optype: "websocketDAT",
       x: 0,
       y: 120,
-      params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+      params: websocketDatParams(args.adapter_url, args.active),
     };
   }
   if (args.adapter_mode === "manual") {

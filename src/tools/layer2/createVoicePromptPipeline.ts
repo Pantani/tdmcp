@@ -3,19 +3,29 @@ import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
-export const createVoicePromptPipelineSchema = z.object({
-  parent_path: z.string().default("/project1").describe("Parent COMP for the pipeline."),
-  name: z.string().default("voice_prompt_pipeline").describe("Generated baseCOMP name."),
-  audio_source: z.enum(["microphone", "file", "external_text"]).default("microphone"),
-  audio_file: z.string().optional(),
-  stt_mode: z.enum(["external_websocket", "file_drop", "manual_text"]).default("manual_text"),
-  llm_target: z
-    .enum(["ai_party", "comfyui_prompt", "streamdiffusion_prompt", "text_only"])
-    .default("text_only"),
-  approval_mode: z.enum(["dry_run", "approval_required"]).default("dry_run"),
-  server_url: z.string().default("ws://127.0.0.1:8770"),
-  active: z.boolean().default(false),
-});
+export const createVoicePromptPipelineSchema = z
+  .object({
+    parent_path: z.string().default("/project1").describe("Parent COMP for the pipeline."),
+    name: z.string().default("voice_prompt_pipeline").describe("Generated baseCOMP name."),
+    audio_source: z.enum(["microphone", "file", "external_text"]).default("microphone"),
+    audio_file: z.string().optional(),
+    stt_mode: z.enum(["external_websocket", "file_drop", "manual_text"]).default("manual_text"),
+    llm_target: z
+      .enum(["ai_party", "comfyui_prompt", "streamdiffusion_prompt", "text_only"])
+      .default("text_only"),
+    approval_mode: z.enum(["dry_run", "approval_required"]).default("dry_run"),
+    server_url: z.string().default("ws://127.0.0.1:8770"),
+    active: z.boolean().default(false),
+  })
+  .superRefine((value, ctx) => {
+    if (value.audio_source === "file" && !value.audio_file?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["audio_file"],
+        message: "audio_file is required when audio_source is file.",
+      });
+    }
+  });
 
 type CreateVoicePromptPipelineArgs = z.infer<typeof createVoicePromptPipelineSchema>;
 
@@ -27,12 +37,14 @@ export interface VoicePromptPipelineReport {
   approval_queue?: string;
   dispatch_dat?: string;
   audio_monitor?: string;
+  stt_adapter?: string;
   warnings: string[];
   fatal?: string;
 }
 
 const VOICE_PROMPT_PIPELINE_SCRIPT = `
 import json, base64, traceback
+from urllib.parse import urlparse
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"warnings": []}
 
@@ -99,6 +111,13 @@ def _connect(src, dst, input_index=0):
         _warn("Could not connect %s -> %s: %s" % (getattr(src, "name", src), getattr(dst, "name", dst), exc))
         return False
 
+def _ws_parts(url):
+    parsed = urlparse(url or "ws://127.0.0.1:8770")
+    scheme = parsed.scheme or "ws"
+    host = parsed.hostname or "127.0.0.1"
+    port = parsed.port or (443 if scheme in ("wss", "https") else 80)
+    return host, port
+
 try:
     parent = op(_p["parent_path"])
     if parent is None:
@@ -113,11 +132,13 @@ try:
         if _p.get("audio_source") == "file":
             audio = _or_create(comp, "audio_in", audiofileinCHOP)
             _setpar(audio, "file", _p.get("audio_file"))
+            _setpar(audio, "play", 1 if _p.get("active") else 0, warn=False)
         elif _p.get("audio_source") == "external_text":
             audio = _or_create(comp, "audio_in_note", textDAT)
             audio.text = "External text mode: write transcript text into transcript_in."
         else:
             audio = _or_create(comp, "audio_in", audiodeviceinCHOP)
+            _setpar(audio, "active", 1 if _p.get("active") else 0, warn=False)
         _place(audio, 0, 0)
 
         monitor = _or_create(comp, "voice_level", analyzeCHOP)
@@ -128,8 +149,27 @@ try:
 
         transcript = _or_create(comp, "transcript_in", textDAT)
         _place(transcript, 0, -180)
-        transcript.text = "Manual transcript or external STT callback target."
+        if _p.get("stt_mode") == "manual_text":
+            transcript.text = "Manual STT mode: type or paste transcript text here."
+        elif _p.get("stt_mode") == "file_drop":
+            transcript.text = "File-drop STT mode: adapter writes transcript text here after processing audio_file."
+        else:
+            transcript.text = "External WebSocket STT mode: callbacks write transcript text here."
         report["transcript_dat"] = transcript.path
+
+        if _p.get("stt_mode") == "external_websocket":
+            stt = _or_create(comp, "stt_ws", websocketDAT)
+            _place(stt, 520, 0)
+            host, port = _ws_parts(_p.get("server_url"))
+            _setpar(stt, "netaddress", host)
+            _setpar(stt, "port", int(port))
+            _setpar(stt, "active", 1 if _p.get("active") else 0, warn=False)
+            report["stt_adapter"] = stt.path
+        elif _p.get("stt_mode") == "file_drop":
+            stt = _or_create(comp, "stt_file_drop", textDAT)
+            _place(stt, 520, 0)
+            stt.text = "Drop or reference audio files in audio_in; external STT adapter writes transcript_in."
+            report["stt_adapter"] = stt.path
 
         intent = _or_create(comp, "intent_json", textDAT)
         _place(intent, 260, -180)
@@ -160,7 +200,11 @@ try:
         dispatch.text = json.dumps({
             "dry_run": True,
             "target": _p.get("llm_target"),
-            "server_url": _p.get("server_url"),
+            "stt_mode": _p.get("stt_mode"),
+            "runtime_network": {
+                "server_url": _p.get("server_url"),
+                "active": bool(_p.get("active")),
+            },
             "active": bool(_p.get("active")),
             "note": "No raw DMX, arbitrary Python, lasers, fog, strobe, blackout, or PA dispatch.",
         }, indent=2)

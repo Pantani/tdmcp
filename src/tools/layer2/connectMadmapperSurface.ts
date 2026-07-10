@@ -38,7 +38,9 @@ export async function connectMadmapperSurfaceImpl(
   args: ConnectMadmapperSurfaceArgs,
 ) {
   const sourceNote = args.source_top_path
-    ? `Source TOP ${args.source_top_path}; publish manually via ${args.handoff_mode}.`
+    ? args.handoff_mode === "none"
+      ? `Source TOP ${args.source_top_path}; no live handoff selected.`
+      : `Source TOP ${args.source_top_path}; publish manually via ${args.handoff_mode}.`
     : "No source_top_path provided; use this scaffold for OSC control only.";
 
   return runExternalShowScaffold(

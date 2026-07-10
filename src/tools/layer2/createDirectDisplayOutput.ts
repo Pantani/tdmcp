@@ -2,18 +2,23 @@ import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { runExternalShowScaffold } from "./externalShowBridgeScaffold.js";
 
-export const createDirectDisplayOutputSchema = z.object({
-  parent_path: z
-    .string()
-    .default("/project1")
-    .describe("Parent COMP for the Direct Display output scaffold."),
-  name: z.string().default("direct_display_output").describe("Generated baseCOMP name."),
-  display_index: z.coerce.number().int().min(0).max(16).default(0),
-  output_count: z.coerce.number().int().min(1).max(3).default(1),
-  resolution_width: z.coerce.number().int().min(320).max(16384).default(1920),
-  resolution_height: z.coerce.number().int().min(240).max(16384).default(1080),
-  active: z.boolean().default(false),
-});
+export const createDirectDisplayOutputSchema = z
+  .object({
+    parent_path: z
+      .string()
+      .default("/project1")
+      .describe("Parent COMP for the Direct Display output scaffold."),
+    name: z.string().default("direct_display_output").describe("Generated baseCOMP name."),
+    display_index: z.coerce.number().int().min(0).max(16).default(0),
+    output_count: z.coerce.number().int().min(1).max(3).default(1),
+    resolution_width: z.coerce.number().int().min(320).max(16384).default(1920),
+    resolution_height: z.coerce.number().int().min(240).max(16384).default(1080),
+    active: z.boolean().default(false),
+  })
+  .refine((value) => value.display_index + value.output_count - 1 <= 16, {
+    path: ["output_count"],
+    message: "display_index + output_count - 1 must be less than or equal to 16.",
+  });
 
 type CreateDirectDisplayOutputArgs = z.infer<typeof createDirectDisplayOutputSchema>;
 

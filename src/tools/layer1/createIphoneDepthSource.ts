@@ -46,7 +46,7 @@ interface IphoneDepthSourceReport {
   receiver?: string;
   outputs?: {
     color?: string;
-    depth?: string;
+    depth_preview?: string;
     sensors?: string;
   };
   nodes: Array<{
@@ -179,12 +179,12 @@ try:
         _color = _create(_comp, _optype("nullTOP"), "color_out", 260, 0)
         _connect(_color, _video)
 
-        _depth_level = _create(_comp, _optype("levelTOP"), "depth_level", 0, -180)
+        _depth_level = _create(_comp, _optype("levelTOP"), "depth_preview_level", 0, -180)
         _connect(_depth_level, _video)
-        _depth_mono = _create(_comp, _optype("monochromeTOP"), "depth_mono", 260, -180)
+        _depth_mono = _create(_comp, _optype("monochromeTOP"), "depth_preview_mono", 260, -180)
         _connect(_depth_mono, _depth_level)
-        _depth_out = _create(_comp, _optype("nullTOP"), "depth_out", 520, -180)
-        _connect(_depth_out, _depth_mono)
+        _depth_preview = _create(_comp, _optype("nullTOP"), "depth_preview", 520, -180)
+        _connect(_depth_preview, _depth_mono)
 
         _sensors_in = _create(_comp, _optype("oscinCHOP"), "sensors_in", 0, -380)
         _setpar(_sensors_in, "port", _p["osc_port"])
@@ -202,21 +202,22 @@ try:
             "video source: " + str(_p.get("video_source_name") or _p.get("movie_file") or "(set in operator)"),
             "OSC port: " + str(_p["osc_port"]),
             "sensor prefix: " + str(_p["sensor_prefix"]),
-            "Outputs: color_out TOP, depth_out TOP, sensors_out CHOP.",
-            "Point-cloud reconstruction depends on the sender/app depth format and should be validated live.",
+            "Outputs: color_out TOP, depth_preview TOP, sensors_out CHOP.",
+            "depth_preview is a grayscale preview, not decoded metric depth data.",
+            "Point-cloud reconstruction depends on sender-specific depth decoding and should be validated live.",
         ])
 
         if bool(_p.get("create_pointcloud_stub")):
             _stub = _create(_comp, _optype("textDAT"), "pointcloud_stub", 260, -600)
             _stub.text = "\\n".join([
                 "Placeholder for point-cloud reconstruction.",
-                "Use color_out + depth_out + sender-specific intrinsics once the live app format is confirmed.",
+                "Use color_out + decoded metric depth + sender-specific intrinsics once the live app format is confirmed.",
                 "Record3D, TDLidar, and generic NDI/OSC senders do not expose identical depth packing.",
             ])
 
         report["outputs"] = {
             "color": _color.path,
-            "depth": _depth_out.path,
+            "depth_preview": _depth_preview.path,
             "sensors": _sensors_out.path,
         }
 except Exception:
@@ -257,7 +258,7 @@ export async function createIphoneDepthSourceImpl(
       }
       const warnings = report.warnings.length ? ` (${report.warnings.length} warning(s))` : "";
       return jsonResult(
-        `Created iPhone depth source ${report.comp} with color_out, depth_out, and sensors_out${warnings}.`,
+        `Created iPhone depth source ${report.comp} with color_out, depth_preview, and sensors_out${warnings}.`,
         report,
       );
     },
@@ -270,7 +271,7 @@ export const registerCreateIphoneDepthSource: ToolRegistrar = (server, ctx) => {
     {
       title: "Create iPhone depth source",
       description:
-        "Create a deterministic TouchDesigner scaffold for iPhone depth senders such as TDLidar, Record3D, or a generic NDI/OSC source. Builds live/video receiver TOPs, color_out, depth_out, OSC sensor input, sensors_out, setup hints, and an optional point-cloud placeholder. This is a scaffold and returns warnings where the sender format must be validated live.",
+        "Create a deterministic TouchDesigner scaffold for iPhone depth senders such as TDLidar, Record3D, or a generic NDI/OSC source. Builds live/video receiver TOPs, color_out, depth_preview, OSC sensor input, sensors_out, setup hints, and an optional point-cloud placeholder. This is a scaffold and returns warnings where sender-specific metric depth decoding must be validated live.",
       inputSchema: createIphoneDepthSourceSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

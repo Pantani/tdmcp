@@ -41,7 +41,7 @@ describe("createNcamCameraTrackingBusImpl", () => {
     expect(result.isError).toBeFalsy();
     expect(payload.metadata.include_video_top).toBe(false);
     expect(payload.nodes.find((node) => node.name === "ncam_chop")?.optype).toBe("ncamCHOP");
-    expect(payload.nodes.find((node) => node.name === "ncam_top")?.optype).toBe("ncamTOP");
+    expect(payload.nodes.find((node) => node.name === "ncam_top")).toBeUndefined();
     expect(payload.nodes.find((node) => node.name === "camera_map")?.table?.join(" ")).toContain(
       "camera_2",
     );

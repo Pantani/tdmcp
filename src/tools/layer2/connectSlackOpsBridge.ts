@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -12,6 +13,7 @@ export const connectSlackOpsBridgeSchema = z.object({
   channel_name: z.string().default("#show-ops"),
   adapter_mode: z.enum(["incoming_webhook", "socket_mode", "manual"]).default("incoming_webhook"),
   adapter_url: z.string().default("http://127.0.0.1:9064/slack"),
+  socket_url: z.string().default("ws://127.0.0.1:9064/slack"),
   alert_count: z.coerce.number().int().min(1).max(128).default(8),
   command_count: z.coerce.number().int().min(0).max(128).default(4),
   approval_required: z.boolean().default(true),
@@ -27,7 +29,7 @@ function sourceNode(args: ConnectSlackOpsBridgeArgs): ExternalShowNodeSpec {
       optype: "websocketDAT",
       x: 0,
       y: 120,
-      params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+      params: websocketDatParams(args.socket_url, args.active),
     };
   }
   if (args.adapter_mode === "manual") {
@@ -90,6 +92,7 @@ export async function connectSlackOpsBridgeImpl(ctx: ToolContext, args: ConnectS
         channel_name: args.channel_name,
         adapter_mode: args.adapter_mode,
         adapter_url: args.adapter_url,
+        socket_url: args.socket_url,
         alert_count: args.alert_count,
         command_count: args.command_count,
         approval_required: args.approval_required,
@@ -112,6 +115,7 @@ export async function connectSlackOpsBridgeImpl(ctx: ToolContext, args: ConnectS
             ["field", "value"],
             ["workspace_label", args.workspace_label],
             ["channel_name", args.channel_name],
+            ["socket_url", args.socket_url],
             ["approval_required", String(args.approval_required)],
           ],
         },

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -15,6 +16,7 @@ export const connectRvcVoiceConversionBusSchema = z.object({
   model_path: z.string().default("./models/rvc/voice.pth"),
   index_path: z.string().default("./models/rvc/voice.index"),
   server_url: z.string().default("ws://127.0.0.1:9040"),
+  request_url: z.string().default("http://127.0.0.1:9040/convert"),
   speaker_count: z.coerce.number().int().min(1).max(32).default(4),
   transpose_semitones: z.coerce.number().min(-24).max(24).default(0),
   active: z.boolean().default(false),
@@ -38,7 +40,7 @@ function sourceNode(args: ConnectRvcVoiceConversionBusArgs): ExternalShowNodeSpe
       optype: "websocketDAT",
       x: 0,
       y: 120,
-      params: { url: args.server_url, active: args.active ? 1 : 0 },
+      params: websocketDatParams(args.server_url, args.active),
     };
   }
   if (args.source_mode === "manual") {
@@ -88,6 +90,7 @@ export async function connectRvcVoiceConversionBusImpl(
         model_path: args.model_path,
         index_path: args.index_path,
         server_url: args.server_url,
+        request_url: args.request_url,
         speaker_count: args.speaker_count,
         transpose_semitones: args.transpose_semitones,
         active: args.active,
@@ -103,7 +106,7 @@ export async function connectRvcVoiceConversionBusImpl(
           optype: "webclientDAT",
           x: 300,
           y: 120,
-          params: { url: args.server_url, reqmethod: "POST", active: args.active ? 1 : 0 },
+          params: { url: args.request_url, reqmethod: "POST", active: args.active ? 1 : 0 },
         },
         { name: "speaker_map", optype: "tableDAT", x: 600, y: 120, table: speakerRows(args) },
         {

@@ -59,13 +59,17 @@ export async function createNcamCameraTrackingBusImpl(
           y: 120,
           params: { active: args.active ? 1 : 0, port: args.port },
         },
-        {
-          name: "ncam_top",
-          optype: "ncamTOP",
-          x: 0,
-          y: -40,
-          params: { active: args.include_video_top && args.active ? 1 : 0 },
-        },
+        ...(args.include_video_top
+          ? [
+              {
+                name: "ncam_top",
+                optype: "ncamTOP",
+                x: 0,
+                y: -40,
+                params: { active: args.active ? 1 : 0, chop: "ncam_chop" },
+              },
+            ]
+          : []),
         { name: "camera_map", optype: "tableDAT", x: 300, y: 120, table: cameraRows(args) },
         { name: "lens_map", optype: "tableDAT", x: 600, y: 120, table: lensRows(args) },
         {

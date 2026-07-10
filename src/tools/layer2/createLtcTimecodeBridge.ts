@@ -34,8 +34,14 @@ function timecodeRows(args: CreateLtcTimecodeBridgeArgs): string[][] {
 function cueRows(args: CreateLtcTimecodeBridgeArgs): string[][] {
   const rows = [["cue", "timecode", "action"]];
   for (let index = 0; index < args.cue_count; index += 1) {
-    const seconds = String(index * 10).padStart(2, "0");
-    rows.push([`cue_${index + 1}`, `01:00:${seconds}:00`, index === 0 ? "sync_start" : "trigger"]);
+    const totalSeconds = 3600 + index * 10;
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const timecode = [hours, minutes, seconds]
+      .map((part) => String(part).padStart(2, "0"))
+      .join(":");
+    rows.push([`cue_${index + 1}`, `${timecode}:00`, index === 0 ? "sync_start" : "trigger"]);
   }
   return rows;
 }
@@ -81,7 +87,7 @@ export async function createLtcTimecodeBridgeImpl(
           params: {
             active: outputActive ? 1 : 0,
             device: args.output_device,
-            rate: args.frame_rate,
+            framerate: args.frame_rate,
           },
         },
         {

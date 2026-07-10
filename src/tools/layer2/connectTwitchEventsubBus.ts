@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -10,7 +11,9 @@ export const connectTwitchEventsubBusSchema = z.object({
   name: z.string().default("twitch_eventsub_bus").describe("Generated baseCOMP name."),
   channel_login: z.string().default("show_channel"),
   adapter_mode: z.enum(["webhook_json", "websocket_json", "manual"]).default("websocket_json"),
-  adapter_url: z.string().default("ws://127.0.0.1:9077/twitch"),
+  netaddress: z.string().default("127.0.0.1"),
+  port: z.coerce.number().int().min(1).max(65535).default(9077),
+  webhook_url: z.string().default("http://127.0.0.1:9077/twitch"),
   event_count: z.coerce.number().int().min(1).max(512).default(12),
   reward_count: z.coerce.number().int().min(0).max(128).default(4),
   moderation_level: z.enum(["display_only", "filtered", "approval_required"]).default("filtered"),
@@ -19,6 +22,10 @@ export const connectTwitchEventsubBusSchema = z.object({
 
 type ConnectTwitchEventsubBusArgs = z.infer<typeof connectTwitchEventsubBusSchema>;
 
+function twitchSocketUrl(args: ConnectTwitchEventsubBusArgs): string {
+  return `ws://${args.netaddress}:${args.port}/twitch`;
+}
+
 function sourceNode(args: ConnectTwitchEventsubBusArgs): ExternalShowNodeSpec {
   if (args.adapter_mode === "webhook_json") {
     return {
@@ -26,7 +33,7 @@ function sourceNode(args: ConnectTwitchEventsubBusArgs): ExternalShowNodeSpec {
       optype: "webclientDAT",
       x: 0,
       y: 120,
-      params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+      params: { url: args.webhook_url, active: args.active ? 1 : 0 },
     };
   }
   if (args.adapter_mode === "manual") {
@@ -43,7 +50,7 @@ function sourceNode(args: ConnectTwitchEventsubBusArgs): ExternalShowNodeSpec {
     optype: "websocketDAT",
     x: 0,
     y: 120,
-    params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+    params: websocketDatParams(twitchSocketUrl(args), args.active),
   };
 }
 
@@ -86,7 +93,9 @@ export async function connectTwitchEventsubBusImpl(
       metadata: {
         channel_login: args.channel_login,
         adapter_mode: args.adapter_mode,
-        adapter_url: args.adapter_url,
+        netaddress: args.netaddress,
+        port: args.port,
+        webhook_url: args.webhook_url,
         event_count: args.event_count,
         reward_count: args.reward_count,
         moderation_level: args.moderation_level,
@@ -108,6 +117,9 @@ export async function connectTwitchEventsubBusImpl(
           table: [
             ["field", "value"],
             ["channel_login", args.channel_login],
+            ["netaddress", args.netaddress],
+            ["port", String(args.port)],
+            ["webhook_url", args.webhook_url],
             ["moderation_level", args.moderation_level],
           ],
         },

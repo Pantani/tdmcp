@@ -38,7 +38,7 @@ function sourceNode(args: ConnectMapTileOverlayArgs): ExternalShowNodeSpec {
     optype: "webclientDAT",
     x: 0,
     y: 120,
-    params: { url: args.tile_url_template, active: args.active ? 1 : 0 },
+    params: { url: args.tile_url_template, active: 0 },
   };
 }
 

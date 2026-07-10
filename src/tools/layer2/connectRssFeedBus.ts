@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -26,7 +27,7 @@ function sourceNode(args: ConnectRssFeedBusArgs): ExternalShowNodeSpec {
       optype: "websocketDAT",
       x: 0,
       y: 120,
-      params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+      params: websocketDatParams(args.adapter_url, args.active),
     };
   }
   if (args.adapter_mode === "manual") {

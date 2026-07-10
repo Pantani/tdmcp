@@ -65,7 +65,7 @@ export async function createMultitouchPanelBusImpl(
           optype: "containerCOMP",
           x: 0,
           y: -40,
-          params: { multitouch: 1 },
+          params: { multitouch: 0 },
         },
         { name: "panel_map", optype: "tableDAT", x: 300, y: 120, table: panelRows(args) },
         { name: "touch_map", optype: "tableDAT", x: 600, y: 120, table: touchRows(args) },

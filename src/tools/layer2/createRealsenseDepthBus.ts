@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowConnectionSpec,
   type ExternalShowNodeSpec,
@@ -26,13 +27,21 @@ export const createRealsenseDepthBusSchema = z.object({
 
 type CreateRealsenseDepthBusArgs = z.infer<typeof createRealsenseDepthBusSchema>;
 
-function resolutionRows(args: CreateRealsenseDepthBusArgs): string[][] {
+function resolutionSize(args: CreateRealsenseDepthBusArgs): { width: number; height: number } {
   const [width = "848", height = "480"] = args.resolution.split("x");
+  return {
+    width: Number.parseInt(width, 10) || 848,
+    height: Number.parseInt(height, 10) || 480,
+  };
+}
+
+function resolutionRows(args: CreateRealsenseDepthBusArgs): string[][] {
+  const { width, height } = resolutionSize(args);
   return [
     ["field", "value"],
     ["source_mode", args.source_mode],
-    ["width", width],
-    ["height", height],
+    ["width", String(width)],
+    ["height", String(height)],
     ["include_color", String(args.include_color)],
     ["include_pointcloud", String(args.include_pointcloud)],
   ];
@@ -51,13 +60,14 @@ function channelRows(args: CreateRealsenseDepthBusArgs): string[][] {
 }
 
 function sourceNode(args: CreateRealsenseDepthBusArgs): ExternalShowNodeSpec {
+  const { width, height } = resolutionSize(args);
   if (args.source_mode === "ndi_depth") {
     return {
       name: "depth_source",
       optype: "ndiinTOP",
       x: 0,
       y: 120,
-      params: { sourcename: args.ndi_source, active: args.active ? 1 : 0 },
+      params: { name: args.ndi_source, active: args.active ? 1 : 0 },
     };
   }
   if (args.source_mode === "websocket_json") {
@@ -66,7 +76,7 @@ function sourceNode(args: CreateRealsenseDepthBusArgs): ExternalShowNodeSpec {
       optype: "websocketDAT",
       x: 0,
       y: 120,
-      params: { url: args.server_url, active: args.active ? 1 : 0 },
+      params: websocketDatParams(args.server_url, args.active),
     };
   }
   if (args.source_mode === "sample") {
@@ -75,7 +85,7 @@ function sourceNode(args: CreateRealsenseDepthBusArgs): ExternalShowNodeSpec {
       optype: "noiseTOP",
       x: 0,
       y: 120,
-      params: { outputresolution: "custom", resolutionw: 848, resolutionh: 480 },
+      params: { outputresolution: "custom", resolutionw: width, resolutionh: height },
     };
   }
   return {
@@ -85,8 +95,11 @@ function sourceNode(args: CreateRealsenseDepthBusArgs): ExternalShowNodeSpec {
     y: 120,
     params: {
       active: args.active ? 1 : 0,
+      image: "depth",
       serialnumber: args.serial_number,
       outputresolution: "custom",
+      resolutionw: width,
+      resolutionh: height,
     },
   };
 }

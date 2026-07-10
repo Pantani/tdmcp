@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { requestPulse, websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -29,6 +30,7 @@ function sourceNode(args: ConnectPeopleCountingBusArgs): ExternalShowNodeSpec {
       x: 0,
       y: 120,
       params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+      pulses: requestPulse(args.active),
     };
   }
   if (args.adapter_mode === "manual") {
@@ -45,7 +47,7 @@ function sourceNode(args: ConnectPeopleCountingBusArgs): ExternalShowNodeSpec {
     optype: "websocketDAT",
     x: 0,
     y: 120,
-    params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+    params: websocketDatParams(args.adapter_url, args.active),
   };
 }
 

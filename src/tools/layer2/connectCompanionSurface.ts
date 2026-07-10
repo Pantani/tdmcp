@@ -122,7 +122,7 @@ function normalizeButtons(
 }
 
 const COMPANION_SURFACE_SCRIPT = `
-import json, base64, traceback
+import json, base64, re, traceback
 import td
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"parent": _p["parent"], "buttons": [], "warnings": []}
@@ -177,6 +177,20 @@ def _set_first_par(_node, _pairs, _label):
     report["warnings"].append("%s: none of %s could be set." % (_label, ", ".join([p[0] for p in _pairs])))
     return False
 
+def _set_expr_par(_node, _name, _expr, _label):
+    try:
+        _par = getattr(_node.par, _name, None)
+        if _par is None:
+            report["warnings"].append("%s: parameter '%s' not found." % (_label, _name))
+            return False
+        _PM = type(_par.mode)
+        _par.expr = _expr
+        _par.mode = _PM.EXPRESSION
+        return True
+    except Exception as _e:
+        report["warnings"].append("%s: could not set expression '%s': %s" % (_label, _name, str(_e)))
+        return False
+
 def _make(_parent, _optype, _name, _x, _y):
     _node = _parent.op(_name)
     if _node is None:
@@ -193,6 +207,49 @@ def _target_expr(_mode, _null_path, _chan):
     if _mode == "value":
         return "float(%s or 0)" % _read
     return "1 if (%s or 0) > 0.5 else 0" % _read
+
+def _target_value_expr(_target, _fallback_null_path, _fallback_chan):
+    if _target:
+        _dot = str(_target).rfind(".")
+        if _dot > 0:
+            _node_path = _target[:_dot]
+            _par_name = _target[_dot + 1:]
+            return "float(getattr(op(%r).par, %r).eval()) if op(%r) is not None and getattr(op(%r).par, %r, None) is not None else 0" % (
+                _node_path,
+                _par_name,
+                _node_path,
+                _node_path,
+                _par_name,
+            )
+    return "float(op(%r)[%r] or 0) if op(%r) is not None else 0" % (_fallback_null_path, _fallback_chan, _fallback_null_path)
+
+def _clear_previous_run(_surface):
+    for _target in list(_surface.fetch("tdmcp_companion_targets", [])):
+        try:
+            _dot = str(_target).rfind(".")
+            if _dot <= 0:
+                continue
+            _node = op(str(_target)[:_dot])
+            if _node is None:
+                continue
+            _par = getattr(_node.par, str(_target)[_dot + 1:], None)
+            if _par is not None and _surface.path in str(getattr(_par, "expr", "")):
+                _PM = type(_par.mode)
+                _par.expr = ""
+                _par.mode = _PM.CONSTANT
+        except Exception:
+            continue
+    for _child in list(_surface.children):
+        try:
+            _name = str(_child.name)
+            if (
+                re.match(r"button_\\d+$", _name)
+                or re.match(r"button_\\d+_select$", _name)
+                or _name in ("feedback_controls", "feedback_stub")
+            ):
+                _child.destroy()
+        except Exception:
+            continue
 
 def _bind_target(_button, _null, _chan):
     _target = _button.get("target")
@@ -237,6 +294,7 @@ try:
         else:
             _surface = _existing
         report["container"] = _surface.path
+        _clear_previous_run(_surface)
 
         _osc_in = _make(_surface, td.oscinCHOP, "osc_in", -520, 160)
         _setpar(_osc_in, "port", int(_p["listen_port"]), "osc_in")
@@ -272,6 +330,7 @@ try:
                 report["warnings"].append("Could not populate button_mappings table.")
 
         _feedback_channels = []
+        _bound_targets = []
         for _i, _button in enumerate(_buttons):
             _row_y = 160 - (_i * 120)
             _label = str(_button.get("label", "button_%02d" % (_i + 1)))
@@ -287,9 +346,11 @@ try:
             except Exception:
                 report["warnings"].append("Could not wire button_%02d_select to button_%02d." % (_i + 1, _i + 1))
             _bound = _bind_target(_button, _null, _chan)
+            if _bound and _button.get("target"):
+                _bound_targets.append(str(_button.get("target")))
             _feedback = _button.get("feedback_channel")
             if _feedback:
-                _feedback_channels.append(_channel_name(_feedback))
+                _feedback_channels.append((_channel_name(_feedback), _button.get("target"), _null.path, _chan))
             report["buttons"].append({
                 "label": _label,
                 "address": _address,
@@ -303,9 +364,14 @@ try:
 
         if _feedback_channels:
             _feedback_src = _make(_surface, td.constantCHOP, "feedback_controls", -520, -260)
-            for _i, _chan in enumerate(_feedback_channels):
+            for _i, (_chan, _target, _null_path, _button_chan) in enumerate(_feedback_channels):
                 _setpar(_feedback_src, "name%d" % _i, _chan, "feedback_controls")
-                _setpar(_feedback_src, "value%d" % _i, 0.0, "feedback_controls")
+                _set_expr_par(
+                    _feedback_src,
+                    "value%d" % _i,
+                    _target_value_expr(_target, _null_path, _button_chan),
+                    "feedback_controls",
+                )
             try:
                 _osc_out.inputConnectors[0].connect(_feedback_src)
                 report["feedback_source"] = _feedback_src.path
@@ -320,6 +386,7 @@ try:
                 report["feedback_source"] = _feedback_src.path
             except Exception:
                 report["warnings"].append("Could not wire feedback_stub to osc_feedback.")
+        _surface.store("tdmcp_companion_targets", _bound_targets)
 except Exception:
     report["fatal"] = traceback.format_exc().splitlines()[-1]
 

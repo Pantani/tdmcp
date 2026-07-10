@@ -25,6 +25,7 @@ export interface ConnectTouchengineNotchReport {
   container_path?: string;
   mode?: ConnectTouchengineNotchArgs["mode"];
   host_op?: string;
+  asset_path_applied?: boolean;
   output_top?: string;
   controls_in?: string;
   status_dat?: string;
@@ -100,6 +101,13 @@ def _setpar(node, par_name, value, warn=True):
             _warn("Could not set %s on %s: %s" % (par_name, getattr(node, "path", node), exc))
         return False
 
+def _set_first_par(node, par_names, value, label):
+    for par_name in par_names:
+        if _setpar(node, par_name, value, warn=False):
+            return True
+    _warn("Could not apply %s to %s; no compatible parameter found." % (label, getattr(node, "path", node)))
+    return False
+
 def _connect(src, dst, input_index=0):
     try:
         dst.inputConnectors[input_index].connect(src)
@@ -143,6 +151,25 @@ try:
         if input_select is not None:
             _connect(input_select, host)
         _setpar(host, "active", 1 if _p.get("active") else 0, warn=False)
+        asset_path = _p.get("tox_or_block_path")
+        if asset_path:
+            if mode == "touchengine":
+                report["asset_path_applied"] = _set_first_par(
+                    host,
+                    ("tox", "toxfile", "file", "project", "path"),
+                    asset_path,
+                    "TouchEngine TOX path",
+                )
+            elif mode == "notch_top":
+                report["asset_path_applied"] = _set_first_par(
+                    host,
+                    ("block", "blockfile", "file", "project", "path"),
+                    asset_path,
+                    "Notch block path",
+                )
+            else:
+                report["asset_path_applied"] = False
+                _warn("tox_or_block_path is only applied in touchengine or notch_top mode.")
 
         controls = _or_create(comp, "controls_in", constantCHOP)
         _place(controls, 0, -220)

@@ -20,6 +20,23 @@ export const connectGeojsonFeatureBusSchema = z.object({
 
 type ConnectGeojsonFeatureBusArgs = z.infer<typeof connectGeojsonFeatureBusSchema>;
 
+const normalizedGeometries = ["point", "line", "polygon"] as const;
+type NormalizedGeometry = (typeof normalizedGeometries)[number];
+
+function normalizedGeometry(
+  mode: ConnectGeojsonFeatureBusArgs["geometry_mode"],
+  index: number,
+): NormalizedGeometry {
+  if (mode === "mixed") return normalizedGeometries[index % normalizedGeometries.length] ?? "point";
+  return (
+    {
+      points: "point",
+      lines: "line",
+      polygons: "polygon",
+    } as const
+  )[mode];
+}
+
 function sourceNode(args: ConnectGeojsonFeatureBusArgs): ExternalShowNodeSpec {
   if (args.adapter_mode === "file_watch") {
     return {
@@ -50,16 +67,11 @@ function sourceNode(args: ConnectGeojsonFeatureBusArgs): ExternalShowNodeSpec {
 
 function featureRows(args: ConnectGeojsonFeatureBusArgs): string[][] {
   const rows = [["feature_id", "source", "geometry", "label", "style"]];
-  const geometries = args.geometry_mode === "mixed" ? ["Point", "LineString", "Polygon"] : [];
   for (let index = 1; index <= args.feature_count; index += 1) {
-    const geometry =
-      args.geometry_mode === "mixed"
-        ? (geometries[(index - 1) % geometries.length] ?? "Point")
-        : args.geometry_mode.slice(0, -1);
     rows.push([
       `feature_${index}`,
       args.source_label,
-      geometry,
+      normalizedGeometry(args.geometry_mode, index - 1),
       `Feature ${index}`,
       `style_${((index - 1) % args.style_rule_count) + 1}`,
     ]);
@@ -78,7 +90,11 @@ function propertyRows(args: ConnectGeojsonFeatureBusArgs): string[][] {
 function styleRows(args: ConnectGeojsonFeatureBusArgs): string[][] {
   const rows = [["style", "geometry", "binding"]];
   for (let index = 1; index <= args.style_rule_count; index += 1) {
-    rows.push([`style_${index}`, args.geometry_mode, `geo_style_${index}`]);
+    rows.push([
+      `style_${index}`,
+      normalizedGeometry(args.geometry_mode, index - 1),
+      `geo_style_${index}`,
+    ]);
   }
   return rows;
 }

@@ -2,15 +2,21 @@ import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { runExternalShowScaffold } from "./externalShowBridgeScaffold.js";
 
-export const createZedDepthBusSchema = z.object({
-  parent_path: z.string().default("/project1").describe("Parent COMP for the ZED scaffold."),
-  name: z.string().default("zed_depth_bus").describe("Generated baseCOMP name."),
-  camera_index: z.coerce.number().int().min(0).max(16).default(0),
-  stream_count: z.coerce.number().int().min(1).max(16).default(3),
-  body_count: z.coerce.number().int().min(0).max(32).default(1),
-  include_pointcloud: z.boolean().default(true),
-  active: z.boolean().default(false),
-});
+export const createZedDepthBusSchema = z
+  .object({
+    parent_path: z.string().default("/project1").describe("Parent COMP for the ZED scaffold."),
+    name: z.string().default("zed_depth_bus").describe("Generated baseCOMP name."),
+    camera_index: z.coerce.number().int().min(0).max(16).default(0),
+    stream_count: z.coerce.number().int().min(1).max(16).default(3),
+    body_count: z.coerce.number().int().min(0).max(32).default(1),
+    include_pointcloud: z.boolean().default(true),
+    active: z.boolean().default(false),
+  })
+  .refine((value) => value.stream_count >= (value.include_pointcloud ? 3 : 2), {
+    path: ["stream_count"],
+    message:
+      "stream_count must include the generated color/depth streams and pointcloud when enabled.",
+  });
 
 type CreateZedDepthBusArgs = z.infer<typeof createZedDepthBusSchema>;
 
@@ -66,13 +72,17 @@ export async function createZedDepthBusImpl(ctx: ToolContext, args: CreateZedDep
           y: 0,
           params: { active: args.active ? 1 : 0, camera: args.camera_index },
         },
-        {
-          name: "zed_sop",
-          optype: "zedSOP",
-          x: 0,
-          y: -160,
-          params: { active: args.include_pointcloud && args.active ? 1 : 0 },
-        },
+        ...(args.include_pointcloud
+          ? [
+              {
+                name: "zed_sop",
+                optype: "zedSOP",
+                x: 0,
+                y: -160,
+                params: { active: args.active ? 1 : 0 },
+              },
+            ]
+          : []),
         { name: "stream_map", optype: "tableDAT", x: 300, y: 120, table: streamRows(args) },
         { name: "body_map", optype: "tableDAT", x: 600, y: 120, table: bodyRows(args) },
         {

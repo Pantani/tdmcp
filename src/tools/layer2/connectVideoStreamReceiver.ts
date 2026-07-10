@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { noEmbeddedCredentials, redactUrlCredentials } from "./externalShowBridgeHelpers.js";
 import { runExternalShowScaffold } from "./externalShowBridgeScaffold.js";
 
 export const connectVideoStreamReceiverSchema = z.object({
@@ -8,7 +9,10 @@ export const connectVideoStreamReceiverSchema = z.object({
     .default("/project1")
     .describe("Parent COMP for the Video Stream In scaffold."),
   name: z.string().default("video_stream_receiver").describe("Generated baseCOMP name."),
-  url: z.string().default("rtsp://127.0.0.1:8554/live"),
+  url: z
+    .string()
+    .default("rtsp://127.0.0.1:8554/live")
+    .refine(noEmbeddedCredentials, "url must not include embedded credentials."),
   mode: z.enum(["rtsp", "hls", "srt", "webrtc"]).default("rtsp"),
   latency_ms: z.coerce.number().int().min(0).max(10000).default(250),
   active: z.boolean().default(false),
@@ -16,20 +20,31 @@ export const connectVideoStreamReceiverSchema = z.object({
 
 type ConnectVideoStreamReceiverArgs = z.infer<typeof connectVideoStreamReceiverSchema>;
 
-function streamRows(args: ConnectVideoStreamReceiverArgs): string[][] {
+function streamRows(args: ConnectVideoStreamReceiverArgs, safeUrl: string): string[][] {
   return [
     ["field", "value"],
     ["mode", args.mode],
-    ["url", args.url],
+    ["url", safeUrl],
     ["latency_ms", String(args.latency_ms)],
     ["target_top", "stream_out"],
   ];
+}
+
+function streamParams(
+  args: ConnectVideoStreamReceiverArgs,
+  safeUrl: string,
+): Record<string, string | number | boolean | null> {
+  if (args.mode === "webrtc") {
+    return { active: args.active ? 1 : 0, webrtc: "webrtc_signaling" };
+  }
+  return { active: args.active ? 1 : 0, server: safeUrl, mode: args.mode };
 }
 
 export async function connectVideoStreamReceiverImpl(
   ctx: ToolContext,
   args: ConnectVideoStreamReceiverArgs,
 ) {
+  const safeUrl = redactUrlCredentials(args.url);
   return runExternalShowScaffold(
     ctx,
     {
@@ -37,7 +52,7 @@ export async function connectVideoStreamReceiverImpl(
       parent_path: args.parent_path,
       name: args.name,
       metadata: {
-        url: args.url,
+        url: safeUrl,
         mode: args.mode,
         latency_ms: args.latency_ms,
         active: args.active,
@@ -52,10 +67,27 @@ export async function connectVideoStreamReceiverImpl(
           optype: "videostreaminTOP",
           x: 0,
           y: 120,
-          params: { active: args.active ? 1 : 0, url: args.url, mode: args.mode },
+          params: streamParams(args, safeUrl),
         },
+        ...(args.mode === "webrtc"
+          ? [
+              {
+                name: "webrtc_signaling",
+                optype: "webrtcDAT",
+                x: 0,
+                y: -40,
+                params: { active: args.active ? 1 : 0, signaling: safeUrl },
+              },
+            ]
+          : []),
         { name: "stream_out", optype: "nullTOP", x: 300, y: 120 },
-        { name: "stream_map", optype: "tableDAT", x: 300, y: -40, table: streamRows(args) },
+        {
+          name: "stream_map",
+          optype: "tableDAT",
+          x: 300,
+          y: -40,
+          table: streamRows(args, safeUrl),
+        },
         {
           name: "status",
           optype: "tableDAT",
@@ -80,7 +112,7 @@ export async function connectVideoStreamReceiverImpl(
     },
     "connect_video_stream_receiver failed",
     (report) =>
-      `Created video stream receiver ${report.container_path}; mode ${args.mode}; url ${args.url}.`,
+      `Created video stream receiver ${report.container_path}; mode ${args.mode}; url ${safeUrl}.`,
   );
 }
 

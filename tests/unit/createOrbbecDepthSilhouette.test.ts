@@ -99,8 +99,9 @@ describe("create_orbbec_depth_silhouette", () => {
     );
 
     expect(result.isError).toBeFalsy();
-    expect(textOf(result)).toContain("silhouette_out");
-    expect(textOf(result)).toContain("depth_preview");
+    const resultText = textOf(result);
+    expect(resultText).toContain("/project1/orbbec_depth_silhouette/silhouette_out");
+    expect(resultText).toContain("/project1/orbbec_depth_silhouette/depth_preview");
     expect(capturedScript).toContain("orbbecTOP");
     expect(capturedScript).toContain("nodeY");
     expect(decodePayload(capturedScript).smooth).toBe(3);

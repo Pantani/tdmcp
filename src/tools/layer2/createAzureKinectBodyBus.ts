@@ -26,12 +26,11 @@ function bodyRows(args: CreateAzureKinectBodyBusArgs): string[][] {
 }
 
 function streamRows(args: CreateAzureKinectBodyBusArgs): string[][] {
-  return [
-    ["stream", "operator", "enabled"],
-    ["skeleton", "kinectazureCHOP", "true"],
-    ["depth", "kinectazureTOP", String(args.include_depth_top)],
-    ["color", "kinectazureTOP", String(args.include_color_top)],
-  ];
+  const rows = [["stream", "operator", "enabled"]];
+  rows.push(["skeleton", "kinectazureCHOP", String(args.active)]);
+  if (args.include_depth_top) rows.push(["depth", "kinectazureTOP", String(args.active)]);
+  if (args.include_color_top) rows.push(["color", "kinectazureTOP", String(args.active)]);
+  return rows;
 }
 
 export async function createAzureKinectBodyBusImpl(
@@ -63,13 +62,28 @@ export async function createAzureKinectBodyBusImpl(
           y: 120,
           params: { active: args.active ? 1 : 0, device: args.device_index },
         },
-        {
-          name: "kinect_top",
-          optype: "kinectazureTOP",
-          x: 0,
-          y: -40,
-          params: { active: args.active ? 1 : 0, device: args.device_index },
-        },
+        ...(args.include_depth_top
+          ? [
+              {
+                name: "kinect_depth_top",
+                optype: "kinectazureTOP",
+                x: 0,
+                y: -40,
+                params: { active: args.active ? 1 : 0, device: args.device_index, image: "depth" },
+              },
+            ]
+          : []),
+        ...(args.include_color_top
+          ? [
+              {
+                name: "kinect_color_top",
+                optype: "kinectazureTOP",
+                x: 0,
+                y: -200,
+                params: { active: args.active ? 1 : 0, device: args.device_index, image: "color" },
+              },
+            ]
+          : []),
         { name: "body_map", optype: "tableDAT", x: 300, y: 120, table: bodyRows(args) },
         { name: "stream_map", optype: "tableDAT", x: 600, y: 120, table: streamRows(args) },
         {

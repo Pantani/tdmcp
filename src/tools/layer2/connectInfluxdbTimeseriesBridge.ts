@@ -1,11 +1,22 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { runExternalShowScaffold } from "./externalShowBridgeScaffold.js";
+import {
+  noEmbeddedCredentials,
+  redactUrlCredentials,
+  websocketDatParams,
+} from "./externalShowBridgeHelpers.js";
+import {
+  type ExternalShowNodeSpec,
+  runExternalShowScaffold,
+} from "./externalShowBridgeScaffold.js";
 
 export const connectInfluxdbTimeseriesBridgeSchema = z.object({
   parent_path: z.string().default("/project1").describe("Parent COMP for the InfluxDB scaffold."),
   name: z.string().default("influxdb_timeseries_bridge").describe("Generated baseCOMP name."),
-  endpoint_url: z.string().default("http://127.0.0.1:8086"),
+  endpoint_url: z
+    .string()
+    .default("http://127.0.0.1:8086")
+    .refine(noEmbeddedCredentials, "endpoint_url must not include embedded credentials."),
   bucket: z.string().default("show"),
   org: z.string().default("tdmcp"),
   adapter_mode: z.enum(["webclient_json", "websocket_json", "manual"]).default("webclient_json"),
@@ -33,11 +44,56 @@ function fieldRows(args: ConnectInfluxdbTimeseriesBridgeArgs): string[][] {
   return rows;
 }
 
+function manualInputRows(): string[][] {
+  return [
+    ["timestamp", "measurement", "field", "value"],
+    ["", "measurement_1", "field_1", "0.0"],
+  ];
+}
+
+function adapterNode(
+  args: ConnectInfluxdbTimeseriesBridgeArgs,
+  safeEndpointUrl: string,
+): ExternalShowNodeSpec {
+  if (args.adapter_mode === "manual") {
+    return {
+      name: "influx_adapter",
+      optype: "textDAT",
+      x: 0,
+      y: 120,
+      text: "Manual mode selected. Paste Flux/line-protocol adapter results into manual_input.",
+    };
+  }
+  return {
+    name: "influx_adapter",
+    optype: args.adapter_mode === "websocket_json" ? "websocketDAT" : "webclientDAT",
+    x: 0,
+    y: 120,
+    params:
+      args.adapter_mode === "websocket_json"
+        ? websocketDatParams(safeEndpointUrl, args.active)
+        : { url: safeEndpointUrl, active: args.active ? 1 : 0 },
+  };
+}
+
+function manualInputNode(args: ConnectInfluxdbTimeseriesBridgeArgs): ExternalShowNodeSpec[] {
+  if (args.adapter_mode !== "manual") return [];
+  return [
+    {
+      name: "manual_input",
+      optype: "tableDAT",
+      x: 900,
+      y: 120,
+      table: manualInputRows(),
+    },
+  ];
+}
+
 export async function connectInfluxdbTimeseriesBridgeImpl(
   ctx: ToolContext,
   args: ConnectInfluxdbTimeseriesBridgeArgs,
 ) {
-  const clientType = args.adapter_mode === "websocket_json" ? "websocketDAT" : "webclientDAT";
+  const safeEndpointUrl = redactUrlCredentials(args.endpoint_url);
   return runExternalShowScaffold(
     ctx,
     {
@@ -45,7 +101,7 @@ export async function connectInfluxdbTimeseriesBridgeImpl(
       parent_path: args.parent_path,
       name: args.name,
       metadata: {
-        endpoint_url: args.endpoint_url,
+        endpoint_url: safeEndpointUrl,
         bucket: args.bucket,
         org: args.org,
         adapter_mode: args.adapter_mode,
@@ -59,20 +115,7 @@ export async function connectInfluxdbTimeseriesBridgeImpl(
         "Retention policy, query cost, and live write safety must be validated in the external adapter.",
       ],
       nodes: [
-        {
-          name: "influx_adapter",
-          optype: args.adapter_mode === "manual" ? "textDAT" : clientType,
-          x: 0,
-          y: 120,
-          params:
-            args.adapter_mode === "manual"
-              ? undefined
-              : { url: args.endpoint_url, active: args.active ? 1 : 0 },
-          text:
-            args.adapter_mode === "manual"
-              ? "Manual mode selected. Paste Flux/line-protocol adapter results into field_map."
-              : undefined,
-        },
+        adapterNode(args, safeEndpointUrl),
         {
           name: "measurement_map",
           optype: "tableDAT",
@@ -81,6 +124,7 @@ export async function connectInfluxdbTimeseriesBridgeImpl(
           table: measurementRows(args),
         },
         { name: "field_map", optype: "tableDAT", x: 600, y: 120, table: fieldRows(args) },
+        ...manualInputNode(args),
         {
           name: "status",
           optype: "tableDAT",
@@ -88,7 +132,7 @@ export async function connectInfluxdbTimeseriesBridgeImpl(
           y: -40,
           table: [
             ["field", "value"],
-            ["endpoint_url", args.endpoint_url],
+            ["endpoint_url", safeEndpointUrl],
             ["bucket", args.bucket],
             ["org", args.org],
             ["poll_seconds", String(args.poll_seconds)],

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -30,7 +31,7 @@ function sourceNode(args: ConnectGoogleSheetsCueTableArgs): ExternalShowNodeSpec
       optype: "websocketDAT",
       x: 0,
       y: 120,
-      params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+      params: websocketDatParams(args.adapter_url, args.active),
     };
   }
   if (args.adapter_mode === "manual") {
@@ -52,7 +53,10 @@ function sourceNode(args: ConnectGoogleSheetsCueTableArgs): ExternalShowNodeSpec
 }
 
 function cueRows(args: ConnectGoogleSheetsCueTableArgs): string[][] {
-  const headers = ["cue_id", "label", "timecode", "look", "media_asset", "notes"];
+  const headers = ["cue_id", "label", "timecode", "look", "media_asset", "notes"].slice(
+    0,
+    args.column_count,
+  );
   for (let index = headers.length + 1; index <= args.column_count; index += 1) {
     headers.push(`custom_${index}`);
   }
@@ -65,7 +69,7 @@ function cueRows(args: ConnectGoogleSheetsCueTableArgs): string[][] {
       `look_${index}`,
       `asset_${index}`,
       "adapter supplied",
-    ];
+    ].slice(0, headers.length);
     while (row.length < headers.length) {
       row.push("");
     }

@@ -1,6 +1,9 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
-import { runExternalShowScaffold } from "./externalShowBridgeScaffold.js";
+import {
+  type ExternalShowNodeSpec,
+  runExternalShowScaffold,
+} from "./externalShowBridgeScaffold.js";
 
 export const createDepthaiOakPipelineSchema = z.object({
   parent_path: z.string().default("/project1").describe("Parent COMP for the OAK scaffold."),
@@ -14,25 +17,67 @@ export const createDepthaiOakPipelineSchema = z.object({
 
 type CreateDepthaiOakPipelineArgs = z.infer<typeof createDepthaiOakPipelineSchema>;
 
-function streamRows(args: CreateDepthaiOakPipelineArgs): string[][] {
-  const rows = [["stream", "operator", "purpose"]];
-  rows.push(["rgb", "oakselectTOP", "camera texture"]);
+interface DepthaiStreamSpec {
+  name: string;
+  operator: "oakselectTOP" | "oakselectCHOP";
+  purpose: string;
+  outputIndex: number;
+}
+
+function streamSpecs(args: CreateDepthaiOakPipelineArgs): DepthaiStreamSpec[] {
+  const streams: DepthaiStreamSpec[] = [
+    { name: "rgb", operator: "oakselectTOP", purpose: "camera texture", outputIndex: 0 },
+  ];
   if (args.include_depth) {
-    rows.push(["depth", "oakselectTOP", "depth texture"]);
+    streams.push({
+      name: "depth",
+      operator: "oakselectTOP",
+      purpose: "depth texture",
+      outputIndex: streams.length,
+    });
   }
   if (args.include_tracking) {
-    rows.push(["tracking", "oakselectCHOP", "detections / landmarks"]);
+    streams.push({
+      name: "tracking",
+      operator: "oakselectCHOP",
+      purpose: "detections / landmarks",
+      outputIndex: streams.length,
+    });
   }
-  for (let index = rows.length; index <= args.stream_count; index += 1) {
-    rows.push([`aux_${index}`, "oakselectCHOP", "custom DepthAI stream"]);
+  const totalStreams = Math.max(args.stream_count, streams.length);
+  while (streams.length < totalStreams) {
+    const outputIndex = streams.length;
+    streams.push({
+      name: `aux_${outputIndex + 1}`,
+      operator: "oakselectCHOP",
+      purpose: "custom DepthAI stream",
+      outputIndex,
+    });
   }
+  return streams;
+}
+
+function streamRows(args: CreateDepthaiOakPipelineArgs): string[][] {
+  const rows = [["stream", "operator", "purpose"]];
+  for (const spec of streamSpecs(args)) rows.push([spec.name, spec.operator, spec.purpose]);
   return rows;
+}
+
+function streamNodes(args: CreateDepthaiOakPipelineArgs): ExternalShowNodeSpec[] {
+  return streamSpecs(args).map((spec, index) => ({
+    name: `${spec.name}_${spec.operator === "oakselectTOP" ? "top" : "chop"}`,
+    optype: spec.operator,
+    x: 300,
+    y: 180 - index * 140,
+    params: { chop: "oak_device", outputindex: spec.outputIndex },
+  }));
 }
 
 export async function createDepthaiOakPipelineImpl(
   ctx: ToolContext,
   args: CreateDepthaiOakPipelineArgs,
 ) {
+  const generatedStreamCount = streamSpecs(args).length;
   return runExternalShowScaffold(
     ctx,
     {
@@ -42,6 +87,7 @@ export async function createDepthaiOakPipelineImpl(
       metadata: {
         device_name: args.device_name,
         stream_count: args.stream_count,
+        generated_stream_count: generatedStreamCount,
         include_depth: args.include_depth,
         include_tracking: args.include_tracking,
         active: args.active,
@@ -58,27 +104,7 @@ export async function createDepthaiOakPipelineImpl(
           y: 120,
           params: { active: args.active ? 1 : 0, sensor: args.device_name },
         },
-        {
-          name: "rgb_top",
-          optype: "oakselectTOP",
-          x: 300,
-          y: 180,
-          params: { chop: "oak_device", outputindex: 0 },
-        },
-        {
-          name: "depth_top",
-          optype: "oakselectTOP",
-          x: 300,
-          y: 20,
-          params: { chop: "oak_device", outputindex: args.include_depth ? 1 : 0 },
-        },
-        {
-          name: "tracking_chop",
-          optype: "oakselectCHOP",
-          x: 300,
-          y: -140,
-          params: { chop: "oak_device", outputindex: args.include_tracking ? 2 : 0 },
-        },
+        ...streamNodes(args),
         { name: "stream_map", optype: "tableDAT", x: 600, y: 120, table: streamRows(args) },
         {
           name: "status",
@@ -88,7 +114,8 @@ export async function createDepthaiOakPipelineImpl(
           table: [
             ["field", "value"],
             ["device_name", args.device_name],
-            ["stream_count", String(args.stream_count)],
+            ["requested_stream_count", String(args.stream_count)],
+            ["generated_stream_count", String(generatedStreamCount)],
             ["include_depth", String(args.include_depth)],
             ["include_tracking", String(args.include_tracking)],
             ["active", String(args.active)],

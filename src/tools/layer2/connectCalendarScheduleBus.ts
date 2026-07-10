@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -27,7 +28,7 @@ function sourceNode(args: ConnectCalendarScheduleBusArgs): ExternalShowNodeSpec 
       optype: "websocketDAT",
       x: 0,
       y: 120,
-      params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+      params: websocketDatParams(args.adapter_url, args.active),
     };
   }
   if (args.adapter_mode === "manual") {
@@ -69,7 +70,12 @@ function reminderRows(args: ConnectCalendarScheduleBusArgs): string[][] {
     return rows;
   }
   for (let index = 1; index <= args.reminder_count; index += 1) {
-    rows.push([`reminder_${index}`, String(index * 5), `event_${String(index).padStart(3, "0")}`]);
+    const eventIndex = ((index - 1) % args.event_count) + 1;
+    rows.push([
+      `reminder_${index}`,
+      String(index * 5),
+      `event_${String(eventIndex).padStart(3, "0")}`,
+    ]);
   }
   return rows;
 }

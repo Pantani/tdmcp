@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
@@ -9,6 +10,9 @@ export const connectOpcuaIndustrialBusSchema = z.object({
   parent_path: z.string().default("/project1").describe("Parent COMP for the OPC UA scaffold."),
   name: z.string().default("opcua_industrial_bus").describe("Generated baseCOMP name."),
   endpoint_url: z.string().default("opc.tcp://127.0.0.1:4840"),
+  adapter_http_url: z.string().default("http://127.0.0.1:9084/opcua"),
+  adapter_ws_url: z.string().default("ws://127.0.0.1:9084/opcua"),
+  adapter_udp_port: z.coerce.number().int().min(1).max(65535).default(9084),
   namespace_index: z.coerce.number().int().min(0).max(999).default(2),
   node_count: z.coerce.number().int().min(1).max(256).default(12),
   poll_ms: z.coerce.number().int().min(50).max(60000).default(250),
@@ -30,7 +34,7 @@ function sourceNode(args: ConnectOpcuaIndustrialBusArgs): ExternalShowNodeSpec {
       optype: "webclientDAT",
       x: 0,
       y: 120,
-      params: { url: args.endpoint_url, active: args.active ? 1 : 0 },
+      params: { url: args.adapter_http_url, active: args.active ? 1 : 0 },
     };
   }
   if (args.adapter_mode === "websocket_json") {
@@ -39,7 +43,7 @@ function sourceNode(args: ConnectOpcuaIndustrialBusArgs): ExternalShowNodeSpec {
       optype: "websocketDAT",
       x: 0,
       y: 120,
-      params: { url: args.endpoint_url, active: args.active ? 1 : 0 },
+      params: websocketDatParams(args.adapter_ws_url, args.active),
     };
   }
   if (args.adapter_mode === "udp_json") {
@@ -48,7 +52,7 @@ function sourceNode(args: ConnectOpcuaIndustrialBusArgs): ExternalShowNodeSpec {
       optype: "udpinDAT",
       x: 0,
       y: 120,
-      params: { port: 4840, active: args.active ? 1 : 0 },
+      params: { port: args.adapter_udp_port, active: args.active ? 1 : 0 },
     };
   }
   return {
@@ -85,6 +89,9 @@ export async function connectOpcuaIndustrialBusImpl(
       name: args.name,
       metadata: {
         endpoint_url: args.endpoint_url,
+        adapter_http_url: args.adapter_http_url,
+        adapter_ws_url: args.adapter_ws_url,
+        adapter_udp_port: args.adapter_udp_port,
         namespace_index: args.namespace_index,
         node_count: args.node_count,
         poll_ms: args.poll_ms,
@@ -107,6 +114,9 @@ export async function connectOpcuaIndustrialBusImpl(
           table: [
             ["field", "value"],
             ["endpoint_url", args.endpoint_url],
+            ["adapter_http_url", args.adapter_http_url],
+            ["adapter_ws_url", args.adapter_ws_url],
+            ["adapter_udp_port", String(args.adapter_udp_port)],
             ["namespace_index", String(args.namespace_index)],
             ["node_count", String(args.node_count)],
             ["poll_ms", String(args.poll_ms)],

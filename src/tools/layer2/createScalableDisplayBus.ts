@@ -21,7 +21,9 @@ function tileRows(args: CreateScalableDisplayBusArgs): string[][] {
   const rows = [["display", "tile_x", "tile_width"]];
   const tileWidth = Math.floor(args.canvas_width / args.display_count);
   for (let index = 0; index < args.display_count; index += 1) {
-    rows.push([`display_${index + 1}`, String(index * tileWidth), String(tileWidth)]);
+    const tileX = index * tileWidth;
+    const width = index === args.display_count - 1 ? args.canvas_width - tileX : tileWidth;
+    rows.push([`display_${index + 1}`, String(tileX), String(width)]);
   }
   return rows;
 }

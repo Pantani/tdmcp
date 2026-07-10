@@ -2,18 +2,23 @@ import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { runExternalShowScaffold } from "./externalShowBridgeScaffold.js";
 
-export const createHokuyoLidarBusSchema = z.object({
-  parent_path: z.string().default("/project1").describe("Parent COMP for the Hokuyo scaffold."),
-  name: z.string().default("hokuyo_lidar_bus").describe("Generated baseCOMP name."),
-  interface_mode: z.enum(["network", "serial"]).default("network"),
-  net_address: z.string().default("192.168.0.10"),
-  serial_port: z.string().default("COM3"),
-  scan_zones: z.coerce.number().int().min(1).max(128).default(8),
-  start_step: z.coerce.number().int().min(0).max(4096).default(0),
-  end_step: z.coerce.number().int().min(1).max(4096).default(1080),
-  high_sensitivity: z.boolean().default(false),
-  active: z.boolean().default(false),
-});
+export const createHokuyoLidarBusSchema = z
+  .object({
+    parent_path: z.string().default("/project1").describe("Parent COMP for the Hokuyo scaffold."),
+    name: z.string().default("hokuyo_lidar_bus").describe("Generated baseCOMP name."),
+    interface_mode: z.enum(["network", "serial"]).default("network"),
+    net_address: z.string().default("192.168.0.10"),
+    serial_port: z.string().default("COM3"),
+    scan_zones: z.coerce.number().int().min(1).max(128).default(8),
+    start_step: z.coerce.number().int().min(0).max(4096).default(0),
+    end_step: z.coerce.number().int().min(1).max(4096).default(1080),
+    high_sensitivity: z.boolean().default(false),
+    active: z.boolean().default(false),
+  })
+  .refine((value) => value.start_step <= value.end_step, {
+    path: ["start_step"],
+    message: "start_step must be less than or equal to end_step.",
+  });
 
 type CreateHokuyoLidarBusArgs = z.infer<typeof createHokuyoLidarBusSchema>;
 
@@ -31,6 +36,7 @@ function zoneRows(args: CreateHokuyoLidarBusArgs): string[][] {
 }
 
 export async function createHokuyoLidarBusImpl(ctx: ToolContext, args: CreateHokuyoLidarBusArgs) {
+  const chopInterface = args.interface_mode === "network" ? "ethernet" : "serial";
   return runExternalShowScaffold(
     ctx,
     {
@@ -59,7 +65,7 @@ export async function createHokuyoLidarBusImpl(ctx: ToolContext, args: CreateHok
           y: 120,
           params: {
             active: args.active ? 1 : 0,
-            interface: args.interface_mode,
+            interface: chopInterface,
             netaddress: args.net_address,
             port: args.serial_port,
             startstep: args.start_step,

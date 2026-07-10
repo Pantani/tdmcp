@@ -1,22 +1,40 @@
 import { z } from "zod";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { websocketDatParams } from "./externalShowBridgeHelpers.js";
 import {
   type ExternalShowNodeSpec,
   runExternalShowScaffold,
 } from "./externalShowBridgeScaffold.js";
 
-export const connectBleBeaconBusSchema = z.object({
-  parent_path: z.string().default("/project1").describe("Parent COMP for the BLE scaffold."),
-  name: z.string().default("ble_beacon_bus").describe("Generated baseCOMP name."),
-  site_label: z.string().default("gallery_floor"),
-  adapter_mode: z.enum(["websocket_json", "http_json", "manual"]).default("websocket_json"),
-  adapter_url: z.string().default("ws://127.0.0.1:9085/ble"),
-  scanner_count: z.coerce.number().int().min(1).max(128).default(4),
-  beacon_count: z.coerce.number().int().min(1).max(2048).default(16),
-  zone_count: z.coerce.number().int().min(1).max(256).default(6),
-  smoothing_window_sec: z.coerce.number().int().min(1).max(3600).default(15),
-  active: z.boolean().default(false),
-});
+export const connectBleBeaconBusSchema = z
+  .object({
+    parent_path: z.string().default("/project1").describe("Parent COMP for the BLE scaffold."),
+    name: z.string().default("ble_beacon_bus").describe("Generated baseCOMP name."),
+    site_label: z.string().default("gallery_floor"),
+    adapter_mode: z.enum(["websocket_json", "http_json", "manual"]).default("websocket_json"),
+    adapter_url: z.string().default("ws://127.0.0.1:9085/ble"),
+    scanner_count: z.coerce.number().int().min(1).max(128).default(4),
+    beacon_count: z.coerce.number().int().min(1).max(2048).default(16),
+    zone_count: z.coerce.number().int().min(1).max(256).default(6),
+    smoothing_window_sec: z.coerce.number().int().min(1).max(3600).default(15),
+    active: z.boolean().default(false),
+  })
+  .superRefine((value, ctx) => {
+    if (value.adapter_mode === "websocket_json" && !/^wss?:\/\//i.test(value.adapter_url)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["adapter_url"],
+        message: "adapter_url must start with ws:// or wss:// when adapter_mode is websocket_json.",
+      });
+    }
+    if (value.adapter_mode === "http_json" && !/^https?:\/\//i.test(value.adapter_url)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["adapter_url"],
+        message: "adapter_url must start with http:// or https:// when adapter_mode is http_json.",
+      });
+    }
+  });
 
 type ConnectBleBeaconBusArgs = z.infer<typeof connectBleBeaconBusSchema>;
 
@@ -44,7 +62,7 @@ function sourceNode(args: ConnectBleBeaconBusArgs): ExternalShowNodeSpec {
     optype: "websocketDAT",
     x: 0,
     y: 120,
-    params: { url: args.adapter_url, active: args.active ? 1 : 0 },
+    params: websocketDatParams(args.adapter_url, args.active),
   };
 }
 
