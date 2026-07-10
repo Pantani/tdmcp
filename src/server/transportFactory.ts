@@ -30,6 +30,15 @@ function createEventStream(
   onEvent: (event: TdEvent) => void,
 ): TdEventStream | undefined {
   if (config.events !== "on") return undefined;
+  // The platform WebSocket constructor cannot set an Authorization header and
+  // the TouchDesigner callback has no authenticated handshake hook. Do not
+  // open an unauthenticated event channel while REST auth is enabled.
+  if (config.bridgeToken) {
+    logger.warn(
+      "TDMCP_EVENTS disabled because the bridge token cannot be sent securely over WebSocket",
+    );
+    return undefined;
+  }
   const url = `${tdBaseUrl(config).replace(/^http/, "ws")}/`;
   const stream = new TdEventStream({ url, logger, onEvent });
   stream.start();
@@ -73,6 +82,35 @@ export function isCrossOriginRejected(origin: string | undefined): boolean {
   } catch {
     return true;
   }
+}
+
+/** Host-header protection options for specific versus explicitly wildcard HTTP binds. */
+export function httpHostProtectionOptions(
+  httpHost: string,
+  httpPort: number,
+): {
+  enableDnsRebindingProtection: boolean;
+  allowedHosts: string[];
+} {
+  const isWildcard = httpHost === "0.0.0.0" || httpHost === "::";
+  const configuredHost =
+    httpHost.includes(":") && !httpHost.startsWith("[") ? `[${httpHost}]` : httpHost;
+  const allowedHosts = new Set([
+    `127.0.0.1:${httpPort}`,
+    `localhost:${httpPort}`,
+    `[::1]:${httpPort}`,
+    `${configuredHost}:${httpPort}`,
+  ]);
+  if (httpPort === 80) {
+    allowedHosts.add("127.0.0.1");
+    allowedHosts.add("localhost");
+    allowedHosts.add("[::1]");
+    allowedHosts.add(configuredHost);
+  }
+  return {
+    enableDnsRebindingProtection: !isWildcard,
+    allowedHosts: isWildcard ? [] : [...allowedHosts],
+  };
 }
 
 /**
@@ -177,6 +215,8 @@ async function startHttp(
   config: TdmcpConfig,
   logger: Logger,
 ): Promise<TransportHandle> {
+  const httpHost = config.httpHost ?? "127.0.0.1";
+  const hostProtection = httpHostProtectionOptions(httpHost, config.httpPort);
   const transports = new Map<string, StreamableHTTPServerTransport>();
   const servers = new Map<string, McpServer>();
   const events = createEventStream(config, logger, (event) => {
@@ -220,9 +260,10 @@ async function startHttp(
             transports.set(id, created);
             servers.set(id, sessionServer);
           },
-          // Reject Host headers other than loopback to block DNS-rebinding attacks.
-          enableDnsRebindingProtection: true,
-          allowedHosts: [`127.0.0.1:${config.httpPort}`, `localhost:${config.httpPort}`],
+          // Loopback binds reject non-loopback Host headers. Explicit wildcard
+          // container binds accept the address used by the remote client; the
+          // Origin check above still rejects cross-site browser requests.
+          ...hostProtection,
         });
         created.onclose = () => {
           if (created.sessionId) {
@@ -261,7 +302,9 @@ async function startHttp(
     sendJson(res, 405, { error: "Method not allowed." });
   }
 
-  // Bind to loopback by default so HTTP isn't unexpectedly exposed.
+  // Bind to loopback by default so HTTP isn't unexpectedly exposed. Containers
+  // opt into 0.0.0.0 explicitly through TDMCP_HTTP_HOST; Host/Origin checks and
+  // optional bearer auth remain enforced by the request path above.
   // Wrap listen() in a Promise so EADDRINUSE (port already bound) surfaces as a
   // clean rejection at startup instead of an unhandled 'error' event that would
   // crash the whole server process the moment listen reports back.
@@ -274,6 +317,7 @@ async function startHttp(
       const onListening = (): void => {
         httpServer.removeListener("error", onListenError);
         logger.info("tdmcp listening over Streamable HTTP", {
+          host: httpHost,
           port: config.httpPort,
           path: MCP_PATH,
         });
@@ -281,7 +325,7 @@ async function startHttp(
       };
       httpServer.once("error", onListenError);
       httpServer.once("listening", onListening);
-      httpServer.listen(config.httpPort, "127.0.0.1");
+      httpServer.listen(config.httpPort, httpHost);
     });
   } catch (err) {
     // The event stream was started above (before we knew whether the HTTP port

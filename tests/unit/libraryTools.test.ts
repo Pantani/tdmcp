@@ -274,6 +274,12 @@ describe("library and packaging tools", () => {
         include_all: false,
       });
       expect(exported.isError).toBeFalsy();
+      expect(exported.structuredContent).toMatchObject({
+        kind: "tdmcp-recipe-bundle",
+        version: 1,
+        recipes: [expect.objectContaining({ id: "pulse" })],
+        missing: [],
+      });
 
       const importedDir = join(dir, "imported");
       const imported = await importRecipeBundleImpl(makeCtx(), {

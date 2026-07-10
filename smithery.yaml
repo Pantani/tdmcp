@@ -33,6 +33,14 @@ startCommand:
         description: >-
           Set "off" to hide the raw-Python escape-hatch tools
           (execute_python_script, exec_node_method) for restricted setups.
+      toolProfile:
+        type: string
+        enum: ["full", "safe", "directory"]
+        default: "full"
+        description: >-
+          Tool exposure profile. Local Smithery installs default to the complete
+          runtime; use safe for autonomous clients or directory only for compact
+          registry inspection.
       vaultPath:
         type: string
         description: >-
@@ -49,6 +57,7 @@ startCommand:
         ...(config.tdHost && { TDMCP_TD_HOST: config.tdHost }),
         ...(config.tdPort && { TDMCP_TD_PORT: String(config.tdPort) }),
         ...(config.rawPython && { TDMCP_RAW_PYTHON: config.rawPython }),
+        ...(config.toolProfile && { TDMCP_TOOL_PROFILE: config.toolProfile }),
         ...(config.bridgeToken && { TDMCP_BRIDGE_TOKEN: config.bridgeToken }),
         ...(config.vaultPath && { TDMCP_VAULT_PATH: config.vaultPath })
       }
@@ -57,3 +66,4 @@ startCommand:
     tdHost: "127.0.0.1"
     tdPort: 9980
     rawPython: "on"
+    toolProfile: "full"

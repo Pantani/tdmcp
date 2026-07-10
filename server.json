@@ -17,14 +17,15 @@
       "environmentVariables": [
         {
           "name": "TDMCP_TOOL_PROFILE",
-          "default": "full",
+          "default": "directory",
           "choices": ["full", "safe", "directory"],
-          "description": "Tool exposure profile. Use full for the installed runtime, safe to hide destructive/raw-code tools, or directory only for compact hosted directory scans."
+          "description": "Tool exposure profile. Glama and MCP directory scanners use directory for a compact build/inspect surface; choose full for the complete installed runtime or safe to hide destructive/raw-code tools."
         },
         {
           "name": "TDMCP_RAW_PYTHON",
-          "value": "off",
-          "description": "Hide raw client-authored Python escape-hatch tools in registry scans."
+          "default": "off",
+          "choices": ["on", "off"],
+          "description": "Keep client-authored Python escape-hatch tools hidden by default in registry scans; choose on only for a trusted local runtime."
         }
       ],
       "transport": {

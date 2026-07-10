@@ -4917,6 +4917,7 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   transport: "TDMCP_TRANSPORT",
   logLevel: "TDMCP_LOG_LEVEL",
   requestTimeoutMs: "TDMCP_REQUEST_TIMEOUT_MS",
+  httpHost: "TDMCP_HTTP_HOST",
   httpPort: "TDMCP_HTTP_PORT",
   events: "TDMCP_EVENTS",
   rawPython: "TDMCP_RAW_PYTHON",
@@ -4987,7 +4988,17 @@ function envExportLines(config: TdmcpConfig): string[] {
     const value = config[key];
     if (value === undefined) continue;
     if (SECRET_ENV.has(key)) lines.push(`# export ${name}=<set manually>`);
-    else lines.push(`export ${name}=${JSON.stringify(String(value))}`);
+    else if (key === "projectRagScoreWeights" && value && typeof value === "object") {
+      const weights = value as {
+        technical: number;
+        license: number;
+        freshness: number;
+        reliability: number;
+      };
+      lines.push(
+        `export ${name}=${JSON.stringify(`${weights.technical}:${weights.license}:${weights.freshness}:${weights.reliability}`)}`,
+      );
+    } else lines.push(`export ${name}=${JSON.stringify(String(value))}`);
   }
   return lines;
 }

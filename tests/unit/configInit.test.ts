@@ -26,6 +26,7 @@ describe("renderStarterConfig", () => {
       "TDMCP_TRANSPORT",
       "TDMCP_LOG_LEVEL",
       "TDMCP_REQUEST_TIMEOUT_MS",
+      "TDMCP_HTTP_HOST",
       "TDMCP_HTTP_PORT",
       "TDMCP_EVENTS",
       "TDMCP_RAW_PYTHON",

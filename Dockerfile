@@ -26,7 +26,14 @@ RUN npm run build
 # ---- Stage 2: runtime -------------------------------------------------------
 FROM node:20-slim AS runtime
 WORKDIR /app
-ENV NODE_ENV=production
+
+# Registry scanners (including Glama) build this image to introspect the MCP
+# surface. Keep that hosted/default surface compact and non-destructive. The
+# local docker-compose flow explicitly overrides these values to expose the
+# complete installed runtime.
+ENV NODE_ENV=production \
+    TDMCP_TOOL_PROFILE=directory \
+    TDMCP_RAW_PYTHON=off
 
 # Production-only dependencies (no dev toolchain in the final image).
 COPY package.json package-lock.json ./
@@ -40,6 +47,7 @@ COPY --from=build /app/td ./td
 # Container defaults: HTTP transport (stdio won't cross the container boundary)
 # and reach the host-resident TouchDesigner bridge via host.docker.internal.
 ENV TDMCP_TRANSPORT=http \
+    TDMCP_HTTP_HOST=0.0.0.0 \
     TDMCP_HTTP_PORT=3939 \
     TDMCP_TD_HOST=host.docker.internal
 

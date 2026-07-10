@@ -413,9 +413,17 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
   };
 
   if (!headless) writeStdout("\n");
-  await ensureOllama(client, config.llmBaseUrl, opts.autoStartOllama, log);
+  const llmReady = await ensureOllama(client, config.llmBaseUrl, opts.autoStartOllama, log);
 
   if (headless) {
+    if (!llmReady) {
+      writeStderr(
+        `tdmcp llm-run: LLM endpoint is not reachable at ${config.llmBaseUrl}. ` +
+          "Start Ollama with `ollama serve`, pull the configured model, or check TDMCP_LLM_BASE_URL.\n",
+      );
+      process.exitCode = 3;
+      return;
+    }
     await runHeadlessChat(
       { ctx, client, config, opts, sessionPath, resumedMessages },
       { log, writeStdout, writeStderr },
