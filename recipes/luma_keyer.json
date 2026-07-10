@@ -40,8 +40,22 @@
     { "from": "matte1", "to": "out1" }
   ],
   "controls": [
-    { "name": "Threshold", "type": "float", "min": 0, "max": 4, "default": 2.0, "bind_to": ["key_luma.contrast"] },
-    { "name": "Softness", "type": "float", "min": 0.1, "max": 2, "default": 0.8, "bind_to": ["key_luma.gamma1"] }
+    {
+      "name": "Threshold",
+      "type": "float",
+      "min": 0,
+      "max": 4,
+      "default": 2.0,
+      "bind_to": ["key_luma.contrast"]
+    },
+    {
+      "name": "Softness",
+      "type": "float",
+      "min": 0.1,
+      "max": 2,
+      "default": 0.8,
+      "bind_to": ["key_luma.gamma1"]
+    }
   ],
   "preview_description": "A horizontal ramp keyed by its own brightness — the bright half reveals the source while the dark half lets a noise background show through, a luma key with threshold and softness knobs."
 }

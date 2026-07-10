@@ -15,7 +15,14 @@
     {
       "name": "strobe_lfo",
       "type": "lfoCHOP",
-      "parameters": { "wavetype": "square", "frequency": 8, "amp": 1, "offset": 0, "bias": 0, "channelname": "chan1" },
+      "parameters": {
+        "wavetype": "square",
+        "frequency": 8,
+        "amp": 1,
+        "offset": 0,
+        "bias": 0,
+        "channelname": "chan1"
+      },
       "comment": "Square wave that gates the flash. frequency = strobe rate in Hz; bias = duty cycle."
     },
     {
@@ -26,10 +33,7 @@
     },
     { "name": "out1", "type": "nullTOP", "comment": "Final strobe output." }
   ],
-  "connections": [
-    { "from": "flash", "to": "blink" },
-    { "from": "blink", "to": "out1" }
-  ],
+  "connections": [{ "from": "flash", "to": "blink" }, { "from": "blink", "to": "out1" }],
   "parameters": [
     {
       "name": "strobe_gate",
@@ -40,8 +44,22 @@
     }
   ],
   "controls": [
-    { "name": "Rate", "type": "float", "min": 0, "max": 30, "default": 8, "bind_to": ["strobe_lfo.frequency"] },
-    { "name": "Duty", "type": "float", "min": -1, "max": 1, "default": 0, "bind_to": ["strobe_lfo.bias"] }
+    {
+      "name": "Rate",
+      "type": "float",
+      "min": 0,
+      "max": 30,
+      "default": 8,
+      "bind_to": ["strobe_lfo.frequency"]
+    },
+    {
+      "name": "Duty",
+      "type": "float",
+      "min": -1,
+      "max": 1,
+      "default": 0,
+      "bind_to": ["strobe_lfo.bias"]
+    }
   ],
   "preview_description": "A full-frame white flash switching hard on and off eight times a second — a beat-synced strobe with rate and duty on live knobs (use with photosensitivity caution)."
 }

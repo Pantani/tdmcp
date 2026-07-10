@@ -48,7 +48,14 @@
     }
   ],
   "controls": [
-    { "name": "Amount", "type": "float", "min": 0, "max": 1, "default": 0.15, "bind_to": ["displace.uvweight"] }
+    {
+      "name": "Amount",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.15,
+      "bind_to": ["displace.uvweight"]
+    }
   ],
   "preview_description": "A horizontal color ramp rippling and flowing as an animated noise field pushes its pixels around — a smooth UV displacement warp with a single Amount knob."
 }
