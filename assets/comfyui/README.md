@@ -62,20 +62,40 @@ with the uploaded filename) and feed it through an `LTXVImgToVideo` conditioning
 place of `EmptyLTXVLatentVideo`. Keep the `text` / `seed` / `steps` / `cfg` / `length`
 keys exposed so injection still lands. Export via **Save (API Format)**.
 
-## 5. Smoke test (no TouchDesigner needed)
+## 5. Test it
 
-With ComfyUI running, verify the REST round-trip the provider uses:
+The tools run through the **agent CLI** (`src/cli/agent.ts`, bin `tdmcp-agent`), NOT the
+server entry (`src/index.ts`). Args are one JSON object via `--params`.
+
+**Step A — offline sanity (no ComfyUI, no TouchDesigner).** Confirms the command,
+schema, and defaults resolve:
 
 ```bash
-# Health + that VHS_VideoCombine is installed
-curl -s http://127.0.0.1:8188/object_info/VHS_VideoCombine | head -c 80
-
-# Full generate via the tdmcp CLI (writes an mp4 to the cache dir, prints its path)
-npm run dev -- create-ai-video --prompt "a slow neon bloom unfurling in the dark"
+npx tsx src/cli/agent.ts create-ai-video \
+  --params '{"prompt":"a slow neon bloom unfurling in the dark"}' --dry-run
 ```
 
-A cached `.mp4` path in the output means the local lane works end to end. Then run the
-same tool against a live TouchDesigner bridge to confirm the `moviefileinTOP` plays it.
+**Step B — ComfyUI reachable + custom node installed:**
+
+```bash
+curl -s http://127.0.0.1:8188/object_info/VHS_VideoCombine | head -c 80   # non-empty = installed
+```
+
+**Step C — real local generation (ComfyUI running, LTX weights loaded).** With the env
+from §2 exported (`TDMCP_VIDEO_GEN_PROVIDER=comfyui`, `TDMCP_COMFYUI_VIDEO_WORKFLOW=…`),
+run for real — this generates the clip AND creates the TD node, so a **TouchDesigner
+bridge must also be up** (`127.0.0.1:9980`):
+
+```bash
+npx tsx src/cli/agent.ts create-ai-video \
+  --params '{"prompt":"a slow neon bloom unfurling in the dark","duration_seconds":5}'
+```
+
+The JSON result includes the cached `.mp4` path and the created `moviefileinTOP` — proof
+the local lane works end to end. The wired backdrop variant is `create-ai-video-backdrop`.
+
+> Provider is chosen by `TDMCP_VIDEO_GEN_PROVIDER` (config), not a CLI arg — export it
+> before running. Override the bridge for one call with `--td-host` / `--td-port`.
 
 ## Probe-first (verify on first real run)
 
