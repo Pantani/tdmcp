@@ -600,7 +600,8 @@ export const AGENT_COMMAND_CATALOG = [
   },
   {
     command: "create-ai-texture",
-    summary: "Generate an image from a prompt (fal.ai) and drop it as a Movie File In TOP.",
+    summary:
+      "Generate an image (or a texture pack via num_images) from a prompt (fal.ai/replicate) and drop it as Movie File In TOP(s).",
     mutates: true,
     unsafe: false,
     source: "tool",

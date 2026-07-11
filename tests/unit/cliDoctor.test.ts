@@ -37,6 +37,7 @@ const baseConfig = (overrides: Partial<TdmcpConfig> = {}): TdmcpConfig =>
     eventsEnabled: false,
     eventsAllowHighFrequency: false,
     bridgeAllowExec: true,
+    imageGenProvider: "none",
     ...overrides,
   }) as unknown as TdmcpConfig;
 

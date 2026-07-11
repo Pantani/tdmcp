@@ -1998,7 +1998,7 @@ const COMMANDS: Record<string, Command> = {
   "create-ai-texture": r(
     createAiTextureSchema,
     createAiTextureImpl,
-    "Generate an image from a prompt (fal.ai) and drop it as a Movie File In TOP.",
+    "Generate an image (or a texture pack via num_images) from a prompt (fal.ai/replicate) and drop it as Movie File In TOP(s).",
     { mutates: true },
   ),
   "create-ai-backdrop": r(

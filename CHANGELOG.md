@@ -29,6 +29,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `doctor --json`. Live TD cook + fal contract validation is pending (bridge
     offline + no fal key at release time); all offline gates and safety checks
     pass.
+- **AI texture lane — P1 hardening** (builds on the P0 asset lane above; live
+  TD cook + hosted-provider validation still pending — bridge offline and no
+  fal/replicate key at release time; all offline gates and safety checks pass):
+  - `create_ai_texture` (CLI `create-ai-texture`) **texture-pack mode** — when
+    `num_images` > 1, generate N images (a distinct seed per image = base seed
+    + i) as N Movie File In TOPs in a new base COMP, tiled into a Layout TOP grid
+    that feeds a Null output (a contact sheet). `num_images: 1` (the default) is
+    unchanged — a single Movie File In TOP, no wrapper COMP.
+  - **Replicate as a second hosted image-generation provider** — set
+    `TDMCP_IMAGE_GEN_PROVIDER=replicate` + `TDMCP_REPLICATE_KEY` (Bearer auth,
+    poll-based) to render `create_ai_texture` / `create_ai_backdrop` through
+    Replicate instead of fal.ai. No tool changes — the provider sits behind the
+    existing `src/services/imageGen/` seam.
+  - **`doctor` `image_gen` check** — reports the configured image-gen provider,
+    key presence (a boolean only — never the key value), and the resolved model
+    and cache dir. Config-only by default; a paid hosted API is never called from
+    a diagnostic.
 
 ### Fixed
 

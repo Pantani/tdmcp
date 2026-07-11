@@ -109,6 +109,14 @@ export interface RunDoctorOptions {
   runInstallBridge?: (port: number) => Promise<InstallBridgeResult>;
   /** Overridable Textport auto-install runner for tests; defaults to a bounded macOS AppleScript. */
   runTextportInstall?: (command: string) => Promise<{ ok: boolean; detail: string }>;
+  /**
+   * Optional AI-texture reachability probe. OFF by default and in tests: a paid hosted
+   * image API must never spend or hang inside a diagnostic, so the shipped default is
+   * config-only (no network). A caller MAY wire a free, non-generative check here (e.g.
+   * Replicate's `GET /v1/account`, which validates the token and bills nothing) once
+   * validated live; fal has no free health endpoint and stays config-only.
+   */
+  imageGenProbe?: (config: TdmcpConfig) => Promise<{ reachable: boolean; detail: string }>;
 }
 
 const ICON: Record<CheckStatus, string> = { pass: "✔", warn: "!", fail: "✖" };
@@ -415,6 +423,76 @@ function checkTools(config: TdmcpConfig): DoctorCheck {
       : `full surface (profile ${config.toolProfile}, raw-Python ${config.rawPython}).`,
     data: { rawPython: config.rawPython, toolProfile: config.toolProfile },
   };
+}
+
+/**
+ * Provider default model slugs, shown in the report when TDMCP_IMAGE_GEN_MODEL is unset.
+ * Duplicated (not imported) to keep this diagnostic decoupled from the imageGen provider
+ * module graph; these mirror DEFAULT_FAL_MODEL (falProvider.ts) and DEFAULT_REPLICATE_MODEL
+ * (replicateProvider.ts).
+ */
+const IMAGE_GEN_DEFAULT_MODEL: Record<"fal" | "replicate", string> = {
+  fal: "fal-ai/flux/schnell",
+  replicate: "black-forest-labs/flux-schnell",
+};
+
+/**
+ * Hosted AI-texture provider (fal / Replicate) configuration. Optional lane, so this
+ * NEVER marks the doctor as failed: an unset provider is a pass-with-note, and a
+ * selected-provider-with-missing-key is a warn.
+ *
+ * Reachability is config-only by default (no network) — a paid hosted image API must
+ * never spend or hang inside a diagnostic. The optional injected `probe` (OFF by default
+ * and in tests) may enrich the detail with a free, non-generative reachability result.
+ * The reported `data` never carries the key value (falKey/replicateKey are SECRET_KEYS)
+ * — only a `keyPresent` boolean.
+ */
+async function checkImageGen(
+  config: TdmcpConfig,
+  probe?: (config: TdmcpConfig) => Promise<{ reachable: boolean; detail: string }>,
+): Promise<DoctorCheck> {
+  const base = {
+    id: "image_gen",
+    title: "AI texture provider (optional)",
+    critical: false,
+  } as const;
+  const provider = config.imageGenProvider;
+
+  if (provider === "none") {
+    return {
+      ...base,
+      status: "pass",
+      detail:
+        "not configured (TDMCP_IMAGE_GEN_PROVIDER=none) — AI texture tools are disabled, which is fine.",
+      data: { provider, keyPresent: false, model: null, cacheDir: config.imageCacheDir },
+    };
+  }
+
+  const keyPresent = provider === "fal" ? !!config.falKey : !!config.replicateKey;
+  const envVar = provider === "fal" ? "TDMCP_FAL_KEY" : "TDMCP_REPLICATE_KEY";
+  const model = config.imageGenModel ?? IMAGE_GEN_DEFAULT_MODEL[provider];
+  const data = { provider, keyPresent, model, cacheDir: config.imageCacheDir };
+
+  if (!keyPresent) {
+    return {
+      ...base,
+      status: "warn",
+      detail: `TDMCP_IMAGE_GEN_PROVIDER=${provider} but ${envVar} is not set — AI texture tools return a friendly error and build nothing until the key is set.`,
+      data,
+    };
+  }
+
+  const configured = `provider '${provider}' configured, ${envVar} present, model ${model}`;
+  if (!probe) {
+    return {
+      ...base,
+      status: "pass",
+      detail: `${configured} — create_ai_texture / create_ai_backdrop enabled.`,
+      data,
+    };
+  }
+  const result = await probe(config);
+  return { ...base, status: "pass", detail: `${configured} — ${result.detail}`, data };
 }
 
 /** Check whether a TDMCP_BRIDGE_TOKEN is configured. Never critical. */
@@ -793,6 +871,7 @@ export async function runDoctor(opts: RunDoctorOptions = {}): Promise<DoctorResu
     await checkBridge(ctx),
     checkConfig(config),
     checkTools(config),
+    await checkImageGen(config, opts.imageGenProbe),
     await checkLlm(config, makeLlmClient),
     checkVault(config, vaultProbe),
     checkBridgeToken(config),

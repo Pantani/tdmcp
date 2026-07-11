@@ -154,10 +154,10 @@ describe("tdmcp doctor", () => {
     server.use(llmModels("qwen2.5:3b"));
     const r = await runDoctor({ config: makeConfig(), makeCtx });
     expect(r.stdout).toContain("tdmcp-agent doctor");
-    // one line per check (bridge, config, tools, llm, vault, bridge_token, profile_dir,
-    // plus Creative RAG: rag_ollama, rag_embedding_model, rag_data_dir,
+    // one line per check (bridge, config, tools, image_gen, llm, vault, bridge_token,
+    // profile_dir, plus Creative RAG: rag_ollama, rag_embedding_model, rag_data_dir,
     // plus Project RAG: project_rag)
-    expect(r.report.checks).toHaveLength(11);
+    expect(r.report.checks).toHaveLength(12);
     for (const c of r.report.checks) expect(r.stdout).toContain(c.title);
   });
 
@@ -275,6 +275,92 @@ describe("tdmcp doctor", () => {
       expect(detail).not.toContain("undefined");
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // --- AI texture provider (image_gen) probe — spec §3.5 ---
+
+  /** A stub LLM client so the image-gen tests never touch the LLM network. */
+  const stubLlm = () => ({
+    health: async () => ({ ok: true, modelReady: true, detail: "stub" }),
+  });
+
+  it("reports image_gen as pass when the provider is 'none' (unconfigured)", async () => {
+    const r = await runDoctor({
+      config: makeConfig({ imageGenProvider: "none" }),
+      makeCtx,
+      makeLlmClient: stubLlm,
+    });
+    expect(r.code).toBe(0);
+    const imageGen = r.report.checks.find((c) => c.id === "image_gen");
+    expect(imageGen?.status).toBe("pass");
+    expect(imageGen?.critical).toBe(false);
+    expect(imageGen?.data?.provider).toBe("none");
+    expect(imageGen?.detail).toContain("not configured");
+  });
+
+  it("passes for fal + key set and never leaks the key value into the report", async () => {
+    const fakeKey = "fal-secret-should-never-leak-abc123";
+    const r = await runDoctor({
+      config: makeConfig({ imageGenProvider: "fal", falKey: fakeKey }),
+      makeCtx,
+      makeLlmClient: stubLlm,
+    });
+    expect(r.code).toBe(0);
+    const imageGen = r.report.checks.find((c) => c.id === "image_gen");
+    expect(imageGen?.status).toBe("pass");
+    expect(imageGen?.data?.keyPresent).toBe(true);
+    expect(imageGen?.data?.provider).toBe("fal");
+    // SECRET_KEYS guard: the fake key must not appear anywhere in the serialized report or stdout.
+    expect(JSON.stringify(r.report)).not.toContain(fakeKey);
+    expect(r.stdout).not.toContain(fakeKey);
+  });
+
+  it("warns (not critical) for fal selected but the key unset, naming TDMCP_FAL_KEY", async () => {
+    const r = await runDoctor({
+      config: makeConfig({ imageGenProvider: "fal", falKey: undefined }),
+      makeCtx,
+      makeLlmClient: stubLlm,
+    });
+    expect(r.code).toBe(0); // optional lane → warn, never fails the doctor
+    expect(r.report.ok).toBe(true);
+    const imageGen = r.report.checks.find((c) => c.id === "image_gen");
+    expect(imageGen?.status).toBe("warn");
+    expect(imageGen?.critical).toBe(false);
+    expect(imageGen?.data?.keyPresent).toBe(false);
+    expect(imageGen?.detail).toContain("TDMCP_FAL_KEY");
+  });
+
+  it("enriches the detail via an injected replicate probe, but makes zero network calls by default", async () => {
+    // (a) With an injected probe, the detail reports the reachability result.
+    const withProbe = await runDoctor({
+      config: makeConfig({ imageGenProvider: "replicate", replicateKey: "rep-key" }),
+      makeCtx,
+      makeLlmClient: stubLlm,
+      imageGenProbe: async () => ({ reachable: true, detail: "reachable, token valid" }),
+    });
+    const probed = withProbe.report.checks.find((c) => c.id === "image_gen");
+    expect(probed?.status).toBe("pass");
+    expect(probed?.detail).toContain("token valid");
+
+    // (b) The default (no probe) path must make NO call to any image-gen host.
+    let imageGenRequests = 0;
+    const onRequest = ({ request }: { request: Request }) => {
+      if (/api\.replicate\.com|fal\.run|fal\.ai/.test(request.url)) imageGenRequests += 1;
+    };
+    server.events.on("request:start", onRequest);
+    try {
+      const noProbe = await runDoctor({
+        config: makeConfig({ imageGenProvider: "replicate", replicateKey: "rep-key" }),
+        makeCtx,
+        makeLlmClient: stubLlm,
+      });
+      const check = noProbe.report.checks.find((c) => c.id === "image_gen");
+      expect(check?.status).toBe("pass");
+      expect(check?.data?.keyPresent).toBe(true);
+      expect(imageGenRequests).toBe(0);
+    } finally {
+      server.events.removeAllListeners("request:start");
     }
   });
 });

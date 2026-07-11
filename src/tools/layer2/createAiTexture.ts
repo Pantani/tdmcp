@@ -10,6 +10,7 @@ import {
 import { friendlyTdError } from "../../td-client/types.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
+import { createSystemContainer, finalize } from "./orchestration.js";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -60,6 +61,18 @@ export const createAiTextureSchema = z.object({
     .string()
     .default("/project1")
     .describe("Path of the COMP the Movie File In TOP is dropped inside."),
+  num_images: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(16)
+    .default(1)
+    .describe(
+      "How many images to generate. 1 (default) = a single Movie File In TOP (unchanged). " +
+        ">1 builds a texture pack: N Movie File In TOPs in a new baseCOMP, tiled into a Layout TOP " +
+        "grid → Null output. Each image uses a distinct seed (base seed + i) so they differ and " +
+        "cache separately.",
+    ),
 });
 
 export type CreateAiTextureArgs = z.infer<typeof createAiTextureSchema>;
@@ -165,6 +178,7 @@ export async function createAiTextureImpl(
   ctx: ToolContext,
   args: CreateAiTextureArgs,
 ): Promise<CallToolResult> {
+  if (args.num_images > 1) return createTexturePackImpl(ctx, args);
   const gen = await generateTextureToCache(ctx, {
     prompt: args.prompt,
     negativePrompt: args.negative_prompt,
@@ -219,6 +233,141 @@ export async function createAiTextureImpl(
       { cache_path: cachePath, provider: image.provider, model: image.model },
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Texture-pack mode (num_images > 1) — N sources tiled into one Layout grid
+// ---------------------------------------------------------------------------
+
+/**
+ * A concrete 32-bit base seed for a pack when the caller omits `seed`. Each image
+ * then uses `baseSeed + i`, giving N distinct cache keys (so the pack does NOT
+ * collapse to N identical cached textures) while staying reproducible when a seed
+ * is passed.
+ */
+function randomBaseSeed(): number {
+  return (Math.random() * 2 ** 31) | 0;
+}
+
+/**
+ * The human-readable message of a CallToolResult, minus any appended JSON code
+ * fence — so citing it as a "Cause" does not embed a nested ```json block that
+ * would shadow this result's own structured fence.
+ */
+function messageOf(result: CallToolResult): string {
+  const text = result.content
+    .filter((c): c is { type: "text"; text: string } => c.type === "text")
+    .map((c) => c.text)
+    .join("\n");
+  const fence = text.indexOf("\n\n```json");
+  return fence === -1 ? text : text.slice(0, fence);
+}
+
+/**
+ * Generates + caches the N pack images sequentially via the shared, unforked
+ * `generateTextureToCache`. The first failure aborts with NO TD build attempted,
+ * citing the images already on disk so nothing generated is lost.
+ */
+async function generatePackImages(
+  ctx: ToolContext,
+  args: CreateAiTextureArgs,
+  packSeed: number,
+): Promise<{ ok: true; value: TextureGeneration[] } | { ok: false; error: CallToolResult }> {
+  const generated: TextureGeneration[] = [];
+  for (let i = 0; i < args.num_images; i++) {
+    const gen = await generateTextureToCache(ctx, {
+      prompt: args.prompt,
+      negativePrompt: args.negative_prompt,
+      width: args.width,
+      height: args.height,
+      seed: packSeed + i,
+      model: args.model,
+    });
+    if (!gen.ok) {
+      const cached = generated.map((g) => g.cachePath);
+      return {
+        ok: false,
+        error: errorResult(
+          `Texture pack aborted at image ${i + 1}/${args.num_images}. ` +
+            `${cached.length} image(s) already cached: ${cached.join(", ")}. ` +
+            `Cause: ${messageOf(gen.error)}`,
+          { cached_so_far: cached },
+        ),
+      };
+    }
+    generated.push(gen.value);
+  }
+  return { ok: true, value: generated };
+}
+
+/**
+ * Builds the cache-aware pack network: N Movie File In TOPs in a fresh baseCOMP,
+ * tiled into a Layout TOP grid → Null output, then finalized (auto-layout, error
+ * check, preview). A hard bridge failure after generation still cites every cache
+ * path so the on-disk assets are never lost.
+ */
+async function buildTexturePack(
+  ctx: ToolContext,
+  args: CreateAiTextureArgs,
+  generated: TextureGeneration[],
+  packSeed: number,
+): Promise<CallToolResult> {
+  const cachePaths = generated.map((g) => g.cachePath);
+  const first = generated[0];
+  try {
+    const builder = await createSystemContainer(ctx, args.parent_path, args.name);
+    const cols = Math.ceil(Math.sqrt(args.num_images));
+    const srcPaths: string[] = [];
+    for (const [i, gen] of generated.entries()) {
+      srcPaths.push(
+        await builder.add("moviefileinTOP", `${args.name}_${i + 1}`, {
+          file: gen.cachePath,
+          play: args.play ? 1 : 0,
+        }),
+      );
+    }
+    // `layoutTOP` `maxcols` token is PROBE-FIRST / UNVERIFIED-live (spec risk L): if the
+    // token is wrong, the bridge folds it into a NetworkBuilder warning and the pack still
+    // delivers with the default layout — it never aborts the build.
+    const grid = await builder.add("layoutTOP", "grid", { maxcols: cols });
+    for (const [i, src] of srcPaths.entries()) {
+      await builder.connect(src, grid, 0, i);
+    }
+    const out = await builder.add("nullTOP", "out1");
+    await builder.connect(grid, out);
+
+    return await finalize(ctx, {
+      summary: `AI texture pack of ${args.num_images} images → ${out} (${cols}-wide Layout grid).`,
+      builder,
+      outputPath: out,
+      extra: {
+        pack: srcPaths,
+        cache_paths: cachePaths,
+        provider: first?.image.provider,
+        model: first?.image.model,
+        count: args.num_images,
+        base_seed: packSeed,
+        prompt: args.prompt,
+      },
+    });
+  } catch (err) {
+    return errorResult(
+      `All ${args.num_images} images generated and cached, but building the pack network failed: ` +
+        `${friendlyTdError(err)}. Images on disk: ${cachePaths.join(", ")}.`,
+      { cache_paths: cachePaths },
+    );
+  }
+}
+
+/** Batch/texture-pack branch of `create_ai_texture` (num_images > 1). */
+async function createTexturePackImpl(
+  ctx: ToolContext,
+  args: CreateAiTextureArgs,
+): Promise<CallToolResult> {
+  const packSeed = args.seed ?? randomBaseSeed();
+  const images = await generatePackImages(ctx, args, packSeed);
+  if (!images.ok) return images.error;
+  return buildTexturePack(ctx, args, images.value, packSeed);
 }
 
 // ---------------------------------------------------------------------------
