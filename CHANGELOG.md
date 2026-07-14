@@ -46,6 +46,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     key presence (a boolean only — never the key value), and the resolved model
     and cache dir. Config-only by default; a paid hosted API is never called from
     a diagnostic.
+- **Bridge endpoint `POST /api/top/write`** — push raw image pixels from the
+  server straight into a TouchDesigner Script TOP via `copyNumpyArray`, with no
+  file on disk. Ships as a full vertical slice: the bridge endpoint, a typed
+  `TouchDesignerClient.writeTopPixels()`, its Zod response envelope, and an
+  automatic `/api/exec` fallback for bridges that predate the endpoint.
+  - Wire format is **base64-in-JSON** (+33% transfer overhead, accepted). An
+    **8 MiB decoded-payload cap** (`TDMCP_TOP_WRITE_MAX_BYTES`, new env) is
+    enforced from the *declared* geometry **before** the base64 decode, so an
+    oversized payload is never decoded into a pixel buffer or a numpy array. An
+    over-cap or mis-sized frame is a hard error — the endpoint **never truncates
+    or downscales**. Chunked/streamed transfer is out of scope for this slice.
+  - Works with `TDMCP_BRIDGE_ALLOW_EXEC=0`: it is a typed endpoint, not an exec
+    path.
+  - **This is the delivery backbone for non-colocated setups** (server and
+    TouchDesigner on different machines). **No tool uses it yet** —
+    `create_ai_texture` / `create_ai_backdrop` still deliver via the local cache
+    file → Movie File In TOP, which remains the correct path when server and TD
+    are colocated.
+  - TouchDesigner-runtime behavior is **UNVERIFIED-live** (the bridge was offline
+    at build time); all offline gates, the Python bridge suite, and the security
+    checks pass.
 
 ### Fixed
 

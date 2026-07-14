@@ -32,6 +32,7 @@ from mcp.services import (
     project_load_service,
     save_service,
     system_service,
+    top_write_service,
     transport_service,
     watch_service,
 )
@@ -537,8 +538,35 @@ def _route_post_root_project(rest, body):
     return None
 
 
+def _route_post_root_top(rest, body):
+    if rest == ["top", "write"]:
+        # Raw pixel push into a Script TOP (numpy -> texture, no file on disk).
+        # Deliberately NOT exec-gated: it is a TYPED endpoint, so it must survive
+        # TDMCP_BRIDGE_ALLOW_EXEC=0. It is not a new arbitrary-code path either —
+        # the only caller-controlled data is a geometry tuple plus an opaque pixel
+        # buffer, and the Script TOP's callbacks DAT is a fixed module constant with
+        # no request field interpolated into it.
+        _require(body, "path", "width", "height", "pixels_b64")
+        return top_write_service.write(
+            body["path"],
+            body["width"],
+            body["height"],
+            body["pixels_b64"],
+            channels=body.get("channels", 4),
+            pixel_format=body.get("format", "uint8"),
+            origin=body.get("origin", "top_left"),
+            create=_as_bool(body.get("create", True), "create"),
+        )
+    return None
+
+
 def _route_post_root(rest, body):
-    for router in (_route_post_root_core, _route_post_root_controls, _route_post_root_project):
+    for router in (
+        _route_post_root_core,
+        _route_post_root_controls,
+        _route_post_root_project,
+        _route_post_root_top,
+    ):
         routed = router(rest, body)
         if routed is not None:
             return routed

@@ -58,7 +58,9 @@ import {
   type TdProjectLoad,
   type TdSaveNode,
   type TdSystemInfo,
+  type TdTopWrite,
   TopologySchema,
+  TopWriteSchema,
   TransportStateSchema,
 } from "./validators.js";
 
@@ -302,6 +304,215 @@ except Exception:
     pass
 print(json.dumps({"optypes": _all, "families": _families, "count": len(_all), **_info}))
 `;
+
+/** Exec fallback for `writeTopPixels` on older bridges (no `/api/top/write`).
+ * Mirrors `top_write_service.write`: resolve/create the Script TOP, stash the pixel
+ * buffer in its storage, match the output resolution, **widen the texture pixel format
+ * for a uint16/float32 push** (the same `_PIXEL_FORMATS` map as
+ * `top_write_service._apply_pixel_format` — without it this path would silently quantize
+ * a 16-bit/float frame to 8-bit), wire a self-contained callbacks DAT that copies it into
+ * the texture with `copyNumpyArray`, force-cook, and print the same report. Both the
+ * resolution and the format are applied fail-forward: a parameter TD rejects becomes a
+ * `warnings` entry, never a throw.
+ *
+ * INJECTION SAFETY: this template literal contains ZERO `${}` interpolation — caller data
+ * enters only through the `__META_B64__` / `__PIXELS_B64__` base64 substitutions below.
+ * Keep it that way.
+ *
+ * The callbacks DAT written here is self-contained (it does NOT import
+ * `mcp.services.top_write_service`) precisely because an older bridge does not ship
+ * that module. A current bridge rewrites the DAT to its own shim on the next write,
+ * so the network self-heals once the operator updates. */
+const TOP_WRITE_EXEC_SCRIPT = `
+import base64, json
+_m = json.loads(base64.b64decode("__META_B64__").decode("utf-8"))
+_data = base64.b64decode("__PIXELS_B64__")
+_CB = """# tdmcp bridge — Script TOP pixel writer (POST /api/top/write, exec fallback).
+import numpy
+
+
+def onSetupParameters(scriptOp):
+    return
+
+
+def onCook(scriptOp):
+    p = scriptOp.fetch("tdmcp_pixels", None, search=False)
+    if not p:
+        return
+    a = numpy.frombuffer(p["data"], dtype=p["dtype"])
+    a = a.reshape((p["height"], p["width"], p["channels"]))
+    if p.get("flip"):
+        a = a[::-1]
+    scriptOp.copyNumpyArray(numpy.ascontiguousarray(a))
+    return
+"""
+_w = int(_m["width"]); _h = int(_m["height"]); _c = int(_m["channels"])
+_expected = _w * _h * _c * int(_m["itemsize"])
+_warn = []
+_report = None
+_node = op(_m["path"])
+_created = False
+if len(_data) != _expected:
+    _report = {"fatal": "top/write: pixel buffer is %d bytes but the declared geometry needs exactly %d." % (len(_data), _expected)}
+elif _node is None and not _m.get("create", True):
+    _report = {"fatal": "top/write: node not found: " + _m["path"]}
+elif _node is None:
+    _pp, _, _nm = _m["path"].rpartition("/")
+    _parent = op(_pp or "/")
+    if _parent is None:
+        _report = {"fatal": "top/write: parent not found: " + (_pp or "/")}
+    else:
+        _node = _parent.create("scriptTOP", _nm)
+        _created = True
+if _report is None and not hasattr(_node, "copyNumpyArray"):
+    _report = {"fatal": "top/write: %s is not a Script TOP (no copyNumpyArray)." % _m["path"]}
+if _report is None:
+    _node.store("tdmcp_pixels", {"data": _data, "dtype": _m["format"], "width": _w, "height": _h, "channels": _c, "flip": bool(_m.get("flip"))})
+    try:
+        _node.par.outputresolution = "custom"
+        _node.par.resolutionw = _w
+        _node.par.resolutionh = _h
+    except Exception as _e:
+        _warn.append("Could not set %s resolution: %s" % (_node.path, _e))
+    _pfmt = {"uint16": "rgba16fixed", "float32": "rgba32float"}.get(_m["format"])
+    if _pfmt is not None:
+        try:
+            _node.par.format = _pfmt
+        except Exception as _e:
+            _warn.append("Could not set %s pixel format to %r for a %s buffer: %s. The texture may be quantized to 8-bit." % (_node.path, _pfmt, _m["format"], _e))
+    _cbname = _node.name + "_tdmcp_write"
+    _cbpath = None
+    try:
+        _cur = str(_node.par.callbacks.eval() or "").strip()
+        if _cur and _cur != _cbname:
+            _warn.append("Script TOP %s already uses callbacks DAT %r — left untouched." % (_node.path, _cur))
+            _cbpath = _cur
+        else:
+            _dat = _node.parent().op(_cbname)
+            if _dat is None:
+                _dat = _node.parent().create("textDAT", _cbname)
+            _dat.text = _CB
+            _node.par.callbacks = _cbname
+            _cbpath = _dat.path
+    except Exception as _e:
+        _warn.append("Could not wire the callbacks DAT on %s: %s" % (_node.path, _e))
+    _cooked = True
+    try:
+        _node.cook(force=True)
+    except Exception as _e:
+        _cooked = False
+        _warn.append("Could not force-cook %s: %s" % (_node.path, _e))
+    _report = {"path": _node.path, "width": _w, "height": _h, "channels": _c,
+               "format": _m["format"], "bytes": len(_data), "origin": _m["origin"],
+               "flip": bool(_m.get("flip")), "created": _created, "callbacks_path": _cbpath,
+               "storage_key": "tdmcp_pixels", "cooked": _cooked,
+               "max_bytes": int(_m["max_bytes"]), "warnings": _warn}
+print(json.dumps(_report))
+`;
+
+/** Pixel dtypes `scriptTOP.copyNumpyArray()` accepts, and their bytes-per-sample.
+ * Verbatim from docs.derivative.ca/ScriptTOP_Class: "The data type must be uint8,
+ * uint16 or float32." */
+const TOP_PIXEL_ITEMSIZE = { uint8: 1, uint16: 2, float32: 4 } as const;
+export type TopPixelFormat = keyof typeof TOP_PIXEL_ITEMSIZE;
+
+/** Row order of the incoming buffer. A decoded PNG/JPEG is `top_left`; TD's textures
+ * are bottom-left origin, so `top_left` (the default) makes the bridge reverse the
+ * rows. Reported back as `flip` — never a silent transform. */
+export type TopPixelOrigin = "top_left" | "bottom_left";
+
+/**
+ * Default cap on the DECODED pixel bytes of one `writeTopPixels` call, mirroring the
+ * bridge's own `TDMCP_TOP_WRITE_MAX_BYTES` default. 8 MiB: one 1080p RGBA uint8 frame
+ * (1920×1080×4 = 8,294,400 B) fits; a 4K RGBA frame (33,177,600 B) does not.
+ *
+ * This is a **pre-flight guard only** — the bridge is the authority and enforces its
+ * own (possibly reconfigured) cap. It exists so a non-colocated setup does not push
+ * tens of megabytes over the network just to be rejected. Raise `maxBytes` on the call
+ * if the bridge's env var was raised. An oversized frame is always REFUSED; the client
+ * never downscales or truncates.
+ */
+export const TOP_WRITE_MAX_BYTES = 8 * 1024 * 1024;
+
+export interface WriteTopPixelsInput {
+  /** Absolute path of the destination Script TOP (e.g. `/project1/ai_tex`). */
+  path: string;
+  width: number;
+  height: number;
+  /** Raw, tightly packed pixels: `height × width × channels × sizeof(format)` bytes. */
+  pixels: Uint8Array;
+  /** 1–4 (`numComponents` in copyNumpyArray's `shape(h, w, numComponents)`). Default 4. */
+  channels?: number;
+  /** Default `uint8`. */
+  format?: TopPixelFormat;
+  /** Default `top_left` (a decoded image buffer). */
+  origin?: TopPixelOrigin;
+  /** Create the Script TOP (and its callbacks DAT) when absent. Default true. */
+  create?: boolean;
+  /** Pre-flight cap override; see {@link TOP_WRITE_MAX_BYTES}. */
+  maxBytes?: number;
+}
+
+/** Resolve + check the geometry of a pixel push. Throws `TdApiError` on any
+ * disagreement — the buffer is never padded, truncated or downscaled to fit. */
+function topWriteGeometry(input: WriteTopPixelsInput): {
+  channels: number;
+  format: TopPixelFormat;
+  itemsize: number;
+  expected: number;
+} {
+  const format = input.format ?? "uint8";
+  const itemsize = TOP_PIXEL_ITEMSIZE[format];
+  if (itemsize === undefined) {
+    throw new TdApiError(
+      `writeTopPixels: format must be uint8, uint16 or float32 (scriptTOP.copyNumpyArray accepts no other dtype); got ${String(format)}.`,
+    );
+  }
+  const channels = input.channels ?? 4;
+  if (!Number.isInteger(channels) || channels < 1 || channels > 4) {
+    throw new TdApiError(
+      `writeTopPixels: channels must be 1, 2, 3 or 4; got ${String(input.channels)}.`,
+    );
+  }
+  if (
+    !Number.isInteger(input.width) ||
+    !Number.isInteger(input.height) ||
+    input.width <= 0 ||
+    input.height <= 0
+  ) {
+    throw new TdApiError(
+      `writeTopPixels: width and height must be positive integers; got ${input.width}x${input.height}.`,
+    );
+  }
+  const expected = input.width * input.height * channels * itemsize;
+  if (input.pixels.length !== expected) {
+    throw new TdApiError(
+      `writeTopPixels: pixel buffer is ${input.pixels.length} bytes but ${input.width}x${input.height} x ${channels} channels x ${format} needs exactly ${expected}. The buffer is never padded or truncated — fix the geometry or the buffer.`,
+    );
+  }
+  const cap = input.maxBytes ?? TOP_WRITE_MAX_BYTES;
+  if (expected > cap) {
+    throw new TdApiError(
+      `writeTopPixels: ${input.width}x${input.height} x ${channels} channels x ${format} = ${expected} bytes, over the ${cap}-byte cap. The frame is refused, not downscaled. Chunked uploads are out of scope for /api/top/write — push a smaller frame, raise TDMCP_TOP_WRITE_MAX_BYTES on the bridge (and maxBytes here), or deliver the image as a file through a Movie File In TOP.`,
+    );
+  }
+  return { channels, format, itemsize, expected };
+}
+
+/** JSON body for `POST /api/top/write` (and the meta the exec fallback replays). */
+function buildTopWriteBody(input: WriteTopPixelsInput) {
+  const { channels, format } = topWriteGeometry(input);
+  return {
+    path: input.path,
+    width: input.width,
+    height: input.height,
+    channels,
+    format,
+    origin: input.origin ?? "top_left",
+    create: input.create ?? true,
+    pixels_b64: Buffer.from(input.pixels).toString("base64"),
+  };
+}
 
 /**
  * HTTP client for the TouchDesigner REST bridge. Every method maps to one of the
@@ -929,6 +1140,79 @@ export class TouchDesignerClient {
     const parsed = OpTypesSchema.safeParse(report);
     if (!parsed.success) {
       throw new TdApiError(`Unexpected getOpTypes report shape: ${parsed.error.message}`);
+    }
+    return parsed.data;
+  }
+
+  // --- Raw pixel push into a Script TOP (survives TDMCP_BRIDGE_ALLOW_EXEC=0) ---
+  /** Push raw pixel bytes straight into a Script TOP's texture — no file on disk.
+   *
+   * `POST /api/top/write`. The bridge stores the buffer on the target Script TOP and
+   * force-cooks it; the TOP's managed callbacks DAT copies it into the texture with
+   * `scriptTOP.copyNumpyArray()`. Pixels must be tightly packed,
+   * `height × width × channels × sizeof(format)` bytes, in row order given by `origin`.
+   *
+   * **Wire format:** the buffer is base64-encoded into the JSON body, which costs +33%
+   * on the wire (a 1080p RGBA frame: 8.29 MB → 11.06 MB). That is a deliberate,
+   * honest trade — the bridge's HTTP dispatch is JSON-only and decodes the body with
+   * `utf-8/ignore`, which would SILENTLY CORRUPT a raw binary body. Base64 is 7-bit
+   * safe through the existing path; a binary body would need a second dispatch
+   * mechanism inside TouchDesigner's WebServer DAT.
+   *
+   * **Payload cap:** an oversized frame is REFUSED (see {@link TOP_WRITE_MAX_BYTES}) —
+   * never downscaled, never truncated. Chunked/streamed uploads are out of scope.
+   *
+   * **Durability:** the pixels live in the Script TOP's storage, which is session
+   * state. For a durable, re-openable, cacheable asset prefer the local-file →
+   * `moviefileinTOP` route; this endpoint exists for the non-colocated case (server
+   * and TD on different machines) and for future per-frame streaming.
+   *
+   * On a 404 (an older bridge without the route) this falls back to a single
+   * `/api/exec` pass that performs the same write — which of course needs
+   * `TDMCP_BRIDGE_ALLOW_EXEC` enabled on that older bridge. The endpoint itself does
+   * not, which is the point of promoting it.
+   */
+  async writeTopPixels(input: WriteTopPixelsInput): Promise<TdTopWrite> {
+    const body = buildTopWriteBody(input);
+    return tryEndpoint(
+      () => this.request("POST", "/api/top/write", TopWriteSchema, body),
+      () => this.writeTopPixelsViaExec(input, body),
+    );
+  }
+
+  /** Exec-path fallback for {@link writeTopPixels} — replays the same write inside
+   * TD and recovers the same report from stdout. The pixel buffer rides inside the
+   * script body, so this path is as large on the wire as the endpoint's JSON. */
+  private async writeTopPixelsViaExec(
+    input: WriteTopPixelsInput,
+    body: ReturnType<typeof buildTopWriteBody>,
+  ): Promise<TdTopWrite> {
+    const { itemsize } = topWriteGeometry(input);
+    const meta = {
+      path: body.path,
+      width: body.width,
+      height: body.height,
+      channels: body.channels,
+      format: body.format,
+      itemsize,
+      origin: body.origin,
+      flip: body.origin === "top_left",
+      create: body.create,
+      max_bytes: input.maxBytes ?? TOP_WRITE_MAX_BYTES,
+    };
+    const metaB64 = Buffer.from(JSON.stringify(meta), "utf8").toString("base64");
+    const script = TOP_WRITE_EXEC_SCRIPT.replace("__META_B64__", metaB64).replace(
+      "__PIXELS_B64__",
+      body.pixels_b64,
+    );
+    const exec = await this.executePythonScript(script, true);
+    const report = parseStdoutJson(exec.stdout);
+    if (report && typeof report === "object" && "fatal" in report) {
+      throw new TdApiError(String((report as { fatal: unknown }).fatal));
+    }
+    const parsed = TopWriteSchema.safeParse(report);
+    if (!parsed.success) {
+      throw new TdApiError(`Unexpected writeTopPixels report shape: ${parsed.error.message}`);
     }
     return parsed.data;
   }

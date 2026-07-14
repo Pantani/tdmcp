@@ -572,3 +572,29 @@ export const CustomParamsSchema = z.object({
   fatal: z.string().optional(),
 });
 export type TdCustomParams = z.infer<typeof CustomParamsSchema>;
+
+// --- Raw pixel push into a Script TOP (POST /api/top/write) — survives ALLOW_EXEC=0 ---
+// The bridge stores the buffer on the target Script TOP and force-cooks it; the TOP's
+// managed callbacks DAT copies it into the texture via `scriptTOP.copyNumpyArray()`
+// (shape (h, w, numComponents), dtype uint8/uint16/float32 — docs.derivative.ca).
+// `flip` reports whether the rows were reversed (a top-left-origin image buffer into
+// TD's bottom-left-origin texture). Wiring problems (an artist-owned callbacks DAT, a
+// parameter the TD build doesn't expose) arrive as fail-forward `warnings`, so a
+// partial write still reports what happened.
+export const TopWriteSchema = z.object({
+  path: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+  channels: z.number().int(),
+  format: z.string(),
+  bytes: z.number().int(),
+  origin: z.string(),
+  flip: z.boolean().default(false),
+  created: z.boolean().default(false),
+  callbacks_path: z.string().nullable().optional(),
+  storage_key: z.string().optional(),
+  cooked: z.boolean().default(false),
+  max_bytes: z.number().int().optional(),
+  warnings: z.array(z.string()).default([]),
+});
+export type TdTopWrite = z.infer<typeof TopWriteSchema>;

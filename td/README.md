@@ -216,9 +216,38 @@ it is safe to leave the Execute DAT in place permanently.
 | GET | `/api/network/{path}/errors` | recursive errors |
 | GET | `/api/network/{path}/topology` | nodes + connections |
 | GET | `/api/network/{path}/performance` | cook times |
+| POST | `/api/top/write` | push raw pixels into a Script TOP `{path,width,height,pixels_b64,channels?,format?,origin?,create?}` |
 
 All responses use the envelope `{ "ok": true, "data": … }` or
 `{ "ok": false, "error": { "message": … } }`.
+
+### `POST /api/top/write` — numpy → TOP byte push
+
+Writes an image straight into a Script TOP's texture with **no file on disk**, via
+`scriptTOP.copyNumpyArray()`. Typed endpoint: it keeps working under
+`TDMCP_BRIDGE_ALLOW_EXEC=0`, and it is not a new arbitrary-code path (the only
+caller-controlled data is a geometry tuple plus an opaque pixel buffer; the Script
+TOP's callbacks DAT is a fixed module constant).
+
+- **Pixels** are base64 in the JSON body, tightly packed, exactly
+  `height × width × channels × sizeof(format)` bytes. `format` must be `uint8`,
+  `uint16` or `float32` and `channels` 1–4 — the only shapes `copyNumpyArray` accepts.
+- **`origin`** (`top_left`, default, or `bottom_left`) says which row comes first. A
+  decoded PNG/JPEG is top-left; TD's textures are bottom-left, so `top_left` makes the
+  bridge reverse the rows. The flip is reported back, never silent.
+- **Cap:** the decoded buffer may not exceed `TDMCP_TOP_WRITE_MAX_BYTES` (default
+  8 MiB — one 1080p RGBA frame is 8,294,400 B and fits; a 4K RGBA frame is 33,177,600 B
+  and is **refused**). The bridge never downscales or truncates. Chunked/streamed
+  uploads are **out of scope**; use a Movie File In TOP for larger images.
+  The cap is checked against the *declared geometry* **before** the base64 decode, so an
+  oversized payload is never decoded into a pixel buffer or a numpy array. It does **not**
+  stop the body from being received: like every bridge endpoint, the JSON body is read and
+  parsed by the request dispatcher before any route runs (the bridge has no pre-parse
+  body-size limit), which only an already-authenticated loopback caller can reach.
+- **Durability:** the buffer lives in the Script TOP's storage, i.e. session state.
+  For durable, re-openable, cacheable assets prefer the local-file → `moviefileinTOP`
+  route. This endpoint is for the **non-colocated** case (server and TD on different
+  machines) and for future per-frame streaming.
 
 ## Notes / known limitations
 
