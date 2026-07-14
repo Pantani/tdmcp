@@ -116,6 +116,7 @@ All responses use the envelope `{ "ok": true, "data": … }` or
 | GET | `/api/nodes/{path}/text` | read a DAT's text |
 | PUT | `/api/nodes/{path}/text` | replace a DAT's text `{text}` |
 | GET | `/api/logs` | recent bridge/cook errors from the in-bridge Error DAT (`severity?`, `max_lines?`, `scope?`) |
+| POST | `/api/top/write` | push raw pixels into a Script TOP via `copyNumpyArray` `{path,width,height,channels,format,pixels(base64),origin?}` — **optional, non-colocated only; no tool uses it today** |
 
 The `/api/exec` and node-`method` endpoints are disabled bridge-side by default
 unless `TDMCP_BRIDGE_TOKEN` is configured or `TDMCP_BRIDGE_ALLOW_EXEC=1` is set
@@ -124,6 +125,25 @@ structured endpoints added in 0.6.0 — `/api/connect`, `/api/disconnect`,
 `/api/logs`, the `?modes=true` parameter reads, `…/params/{param}/mode` and the
 DAT `…/text` reads/writes — are **not** behind the exec gate, so they keep
 working while arbitrary exec is closed.
+
+### `POST /api/top/write` — optional non-colocated pixel push
+
+`POST /api/top/write` is an **optional, non-colocated delivery path**. It pushes
+raw image pixels straight into a **Script TOP** via `scriptTOP.copyNumpyArray` —
+no file on disk. The pixels arrive **base64-in-JSON**, with an **8 MiB decoded
+cap** (`TDMCP_TOP_WRITE_MAX_BYTES`) enforced from the *declared* geometry
+**before** the base64 decode; an over-cap or mis-sized frame is a hard error,
+never truncated or downscaled (chunked/streamed transfer is out of scope). Like
+the other structured endpoints it is **typed, not exec**, so it keeps working
+with `TDMCP_BRIDGE_ALLOW_EXEC=0`.
+
+**No tdmcp tool calls it today.** The shipped AI-texture tools
+(`create_ai_texture` / `create_ai_backdrop`) deliver via a local cache file →
+Movie File In TOP, which is the correct path when the server and TouchDesigner
+are **colocated on one machine**. Reaching for this endpoint means running the
+server and TD on **different machines**, which requires `TDMCP_BRIDGE_ALLOW_LAN=1`
++ `TDMCP_BRIDGE_TOKEN` and lifts the "three programs on one machine" assumption in
+the project overview.
 
 ## Developing the bridge
 

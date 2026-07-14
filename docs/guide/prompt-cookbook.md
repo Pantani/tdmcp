@@ -872,6 +872,53 @@ clips, and one composites keyed footage over a background. Camera, NDI,
 Syphon/Spout and streams remain platform/permission gated, so the prompt should
 ask for warnings and stable `out1` paths before wiring the show mix.*
 
+## AI-generated textures & backdrops
+
+The text→image asset lane: a hosted provider renders a still from your prompt,
+tdmcp caches it locally, and drops it into TouchDesigner as a Movie File In TOP.
+It is the *pre-generated asset* sibling of the realtime `create_ai_mirror` — the
+image is baked once, not diffused live every frame.
+
+::: warning Requires a hosted provider key
+These tools call a hosted API, so you must set `TDMCP_IMAGE_GEN_PROVIDER=fal` (or
+`replicate`) **and** the matching `TDMCP_FAL_KEY` (or `TDMCP_REPLICATE_KEY`).
+Without a key the tools return a friendly error and **build nothing**. fal.ai is
+the default and renders with Flux-schnell (fast); select WAN 2.5 or another slug
+with `TDMCP_IMAGE_GEN_MODEL`. The key stays Node-side and never reaches the bridge —
+run `tdmcp doctor` to check the `image_gen` status. Runtime output for this lane is
+not yet live-validated, so treat the described results as expected behavior, not a
+captured render.
+:::
+
+> *"Generate a seamless weathered-concrete texture, cool grey with faint rust
+> streaks, 2048×2048, and drop it in as a Movie File In TOP I can wire by hand."*
+
+*`create_ai_texture` renders one still from the prompt, caches it to a local dir and
+delivers it as an absolute file path on a single Movie File In TOP (`name` defaults
+to `ai_texture`). Same prompt + seed + dimensions reuses the cached file with no API
+call. Width and height are independent — never square-locked — so ask for the exact
+pixel map you need. CLI form: `tdmcp-agent create-ai-texture --params '{"prompt":"weathered concrete, cool grey, rust streaks","width":2048,"height":2048}'`.*
+
+> *"Turn 'a vast bioluminescent cave, deep teal water, volumetric god-rays' into a
+> full 1080p backdrop system with Brightness, Blur and Scale knobs I can perform."*
+
+*`create_ai_backdrop` generates the still, then wires a complete `ai_backdrop`
+baseCOMP: Movie File In → Level → Transform → Blur → Null, with live Brightness
+(Level `brightness1`), Blur (Blur `size`) and Scale (Transform `sx`/`sy`) controls
+exposed on arrival. Defaults to 1920×1080. If generation succeeds but the TD build
+fails, the cached file path is reported so the render is never lost. CLI form:
+`tdmcp-agent create-ai-backdrop --params '{"prompt":"bioluminescent cave, teal water, god-rays"}'`.*
+
+> *"Generate a 6-tile pack of matching hex-panel textures from one prompt and lay
+> them out as a grid I can slice into an LED pixel-map."*
+
+*`create_ai_texture` with `num_images` > 1 builds a texture pack: N Movie File In
+TOPs in a new baseCOMP tiled into a Layout TOP grid → Null output. Each image uses a
+distinct seed (base seed + i) so the tiles differ from one another and cache
+separately, while `num_images: 1` stays a single unwrapped TOP. Reach for it when a
+projection surface or LED pixel-map wall needs a set of related-but-varied panels in
+one pass. CLI form: `tdmcp-agent create-ai-texture --params '{"prompt":"hex panel texture, brushed steel","num_images":6}'`.*
+
 ## Text & titles
 
 > *"Build an alpha-safe lyric hit: flash the word 'DROP' huge on the beat, then

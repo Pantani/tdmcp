@@ -103,6 +103,45 @@ release is published:
 > prompt-cookbook entries (20/20 each) and the new CLI-parity subcommands are
 > documented in `docs/reference/cli.md`. See G5 below.
 
+### Hosted text→image asset lane (unreleased) — AI textures & backdrops
+
+A **new, distinct** generative-AI lane that sits alongside — not inside — the
+realtime img2img bridge wave of Milestone 4. Where Milestone 4
+(`drive_streamdiffusion`, `connect_comfyui`, `connect_daydream_cloud`,
+`create_ai_mirror`; ✅ v0.9.0) streams live frames through a diffusion component
+the user installs, this lane **pre-generates a still image from a text prompt via
+a hosted API** and delivers it as a cached asset. Source-tree work on this
+branch, committed **without a tag** (`[Unreleased]`); TouchDesigner-runtime
+behavior is **UNVERIFIED-live** (built with the bridge offline and no provider
+key — only the offline gates and safety checks are green).
+
+- **`create_ai_texture` (Layer 2, CLI `create-ai-texture`)** — prompt → a hosted
+  render dropped into a Movie File In TOP pointing at the local cache file.
+- **`create_ai_backdrop` (Layer 1, CLI `create-ai-backdrop`)** — prompt → a fully
+  wired backdrop (Movie File In → Level → Transform → Blur → Null) with
+  Brightness / Blur / Scale live controls.
+- **Texture-pack mode (`num_images` > 1)** — N distinct-seed Movie File In TOPs
+  in a base COMP, tiled into a Layout TOP contact-sheet grid; `num_images: 1`
+  (default) stays a single TOP with no wrapper COMP.
+- **Provider seam (`src/services/imageGen/`)** — fal.ai (default; Flux-schnell,
+  WAN 2.5 selectable) or Replicate, chosen by `TDMCP_IMAGE_GEN_PROVIDER`. Keys
+  (`TDMCP_FAL_KEY` / `TDMCP_REPLICATE_KEY`) are **Node-only, never sent to the
+  bridge**, and redacted in `doctor`.
+- **`doctor image_gen` check** — reports provider, key presence (a boolean, never
+  the value), resolved model and cache dir; never calls the paid API.
+- **`POST /api/top/write` delivery backbone** — a typed bridge endpoint that
+  pushes pixels straight into a Script TOP (survives `TDMCP_BRIDGE_ALLOW_EXEC=0`).
+  Shipped as a vertical slice **with zero tool callers today** — the two tools
+  above still deliver via the local cache file → Movie File In TOP.
+
+**Deferred / not in this lane yet:**
+
+- **Upscale / tiling for 4K–8K output** — not built.
+- **Tool adoption of `POST /api/top/write`** — the tools do not use it yet; it
+  stays a future non-colocated delivery path, pending live validation. Adopting
+  it would lift CLAUDE.md's "three programs on one machine" invariant and require
+  `TDMCP_BRIDGE_ALLOW_LAN=1` + `TDMCP_BRIDGE_TOKEN`.
+
 ### v0.12.0 — safe mutations, previews and bridge hardening
 
 Published on **2026-07-04** (npm + GitHub release + `v0.12.0` tag). The 0.12

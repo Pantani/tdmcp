@@ -25,6 +25,11 @@ config stay simple. Every variable is optional and has a sensible default.
 | `TDMCP_CONFIG_FILE` | _(unset)_ | Optional JSON config file. Keys match the internal config names (`tdHost`, `tdPort`, `requestTimeoutMs`, etc.). |
 | `TDMCP_PROFILE` | _(unset)_ | Optional profile name inside the selected config file (`profiles.<name>`), whether that file is set with `TDMCP_CONFIG_FILE` or found through the default search paths. File base values load first, profile values override them, env vars override both. |
 | `TDMCP_VAULT_PATH` | _(unset)_ | Absolute path to an Obsidian vault (a folder of Markdown notes). Enables the [vault tools](/reference/tools#obsidian-vault); a leading `~/` is expanded. Leave unset to disable them. |
+| `TDMCP_IMAGE_GEN_PROVIDER` | `none` | Hosted image-generation provider for the AI-texture asset lane (`create_ai_texture` / `create_ai_backdrop`): `fal`, `replicate`, or `none` (disabled). |
+| `TDMCP_FAL_KEY` | _(unset)_ | fal.ai API key, used when the provider is `fal`. **Node-only — never sent to the TouchDesigner bridge**; redacted in `doctor` / `doctor --json` output. |
+| `TDMCP_REPLICATE_KEY` | _(unset)_ | Replicate API token, used when the provider is `replicate`. **Node-only — never sent to the bridge**; redacted in `doctor` / `doctor --json` output. |
+| `TDMCP_IMAGE_GEN_MODEL` | _(provider default)_ | Override the hosted model id (e.g. WAN 2.5). Defaults to the provider's default model (fal.ai: Flux-schnell). |
+| `TDMCP_IMAGE_CACHE_DIR` | `.tdmcp/image-gen` | Local directory where generated images are cached before delivery to a Movie File In TOP. |
 
 ## Local copilot (`tdmcp chat`)
 
@@ -97,6 +102,7 @@ depth — they are enforced bridge-side, even for direct network callers. See
 | `TDMCP_BRIDGE_ALLOW_LAN` | _(unset)_ | Bridge address scope. The bridge is loopback-only by default and refuses off-host (non-loopback) peers immediately (HTTP `403`), before routing/auth. Set to `1`/`true`/`yes`/`on` in TouchDesigner's environment to allow LAN peers; pair it with `TDMCP_BRIDGE_TOKEN`. |
 | `TDMCP_BRIDGE_ALLOW_EXEC` | _(unset)_ | Optional bridge-side opt-in. Set to `1`/`true`/`on` in TouchDesigner's environment to allow arbitrary-code endpoints (`/api/exec`, node `method`) when no bridge token is configured. Leave unset for the safer default; structured endpoints keep working. |
 | `TDMCP_BRIDGE_TOKEN` | _(unset)_ | Shared bearer token; must match the server's value to authorize requests. |
+| `TDMCP_TOP_WRITE_MAX_BYTES` | `8388608` (8 MiB) | Bridge-side cap on the decoded pixel bytes of one `POST /api/top/write` call, enforced from the declared geometry **before** the base64 decode. An over-cap or mis-sized frame is a hard error — the endpoint never truncates or downscales. See [`POST /api/top/write`](/reference/bridge-api). |
 
 ## Example: MCP client config
 
