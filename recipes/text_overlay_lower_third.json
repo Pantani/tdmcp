@@ -9,7 +9,12 @@
     {
       "name": "bg",
       "type": "rampTOP",
-      "parameters": { "type": "radial", "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "type": "radial",
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Synthetic background — swap for a selectTOP to caption your real feed."
     },
     {

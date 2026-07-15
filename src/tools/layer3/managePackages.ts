@@ -55,6 +55,21 @@ function requirePackageId(args: ManagePackagesArgs): string | undefined {
   return args.package_id?.trim() || undefined;
 }
 
+// Best-effort live TD build detection so version-gated packages (e.g. RayTK, which needs the
+// 2025.30770 experimental build) warn against the running build. Returns undefined when the
+// bridge is unreachable, which the doctor treats as an offline gate warning.
+// Return `build` (the YYYY.NNNNN number the gate compares against, e.g. "2025.32820") only. The
+// `td_version` field is the product series (e.g. "099"), not a build number, so it must NOT drive
+// the numeric gate — when `build` is absent the doctor treats it as the offline/unknown case.
+async function detectLiveBuild(ctx: ToolContext): Promise<string | undefined> {
+  try {
+    const info = await ctx.client.getInfo();
+    return info.build ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function managePackagesImpl(ctx: ToolContext, args: ManagePackagesArgs) {
   try {
     if (args.action === "search") {
@@ -83,7 +98,7 @@ export async function managePackagesImpl(ctx: ToolContext, args: ManagePackagesA
     if (args.action === "doctor") {
       const id = requirePackageId(args);
       if (!id) return errorResult("A `package_id` is required for package doctor.");
-      const report = doctorPackage(id);
+      const report = doctorPackage(id, { liveBuild: await detectLiveBuild(ctx) });
       return structuredResult(`Package doctor: ${report.status}.`, { report });
     }
 

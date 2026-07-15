@@ -52,7 +52,7 @@ function wireBridge(opts: { surfaceError?: boolean; midiError?: boolean } = {}):
             stdout: JSON.stringify({
               comp: payload.comp,
               surface: `${payload.comp}/surface`,
-              faders: (payload.faders as unknown[]).map((f, i) => ({
+              faders: (payload.faders as unknown[]).map((_f, i) => ({
                 slider: `s${i}`,
                 param: "p",
               })),

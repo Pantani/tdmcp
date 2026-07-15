@@ -10,6 +10,9 @@ interface Payload {
   file: string | null;
   fps: number;
   seconds: number | null;
+  video_codec?: string | null;
+  video_codec_type?: string | null;
+  movie_pixel_format?: string | null;
   hook: string;
 }
 
@@ -78,6 +81,30 @@ describe("recordMovieImpl", () => {
     const payload = decodePayload(scriptArg(exec));
     expect(payload.file).toBe("/tmp/out.mov");
     expect(payload.seconds).toBeNull();
+  });
+
+  it("forwards optional codec settings and surfaces recorder warnings", async () => {
+    const exec = vi.fn(async () => ({
+      stdout: JSON.stringify({
+        action: "start",
+        recording: "/tmp/out.mov",
+        warnings: ["Could not apply video codec=hap on /project1/tdmcp_record."],
+      }),
+    }));
+    const result = await recordMovieImpl(fakeCtx(exec), {
+      action: "start",
+      node_path: "/project1/render1",
+      file: "/tmp/out.mov",
+      fps: 60,
+      video_codec: "hap",
+      video_codec_type: "hap",
+      movie_pixel_format: "rgba",
+    });
+    expect(textOf(result)).toContain("Could not apply video codec=hap");
+    const payload = decodePayload(scriptArg(exec));
+    expect(payload.video_codec).toBe("hap");
+    expect(payload.video_codec_type).toBe("hap");
+    expect(payload.movie_pixel_format).toBe("rgba");
   });
 
   it("notes the auto-stop duration when seconds is provided", async () => {

@@ -69,6 +69,24 @@ export const UninstallStrategySchema = z.object({
 });
 export type UninstallStrategy = z.infer<typeof UninstallStrategySchema>;
 
+/**
+ * A hard TouchDesigner build gate for packages whose current release only runs on a
+ * specific TD build (e.g. RayTK 0.46 requires the 2025.30770 experimental build and is
+ * NOT compatible with 2023.x). `minBuild` is a TD build string like "2025.30770"; doctor
+ * compares the live `app.version` against it and warns when the running build predates the
+ * gate, offering `fallback` (e.g. pin an older package release for older TD builds).
+ */
+export const VersionGateSchema = z.object({
+  // TouchDesigner build identifier in `YYYY.NNNNN` form (e.g. "2025.30770"); doctor.ts compares
+  // it numerically, so reject malformed gate values before they drive a misleading check.
+  minBuild: z
+    .string()
+    .regex(/^\d{4}\.\d+$/, "minBuild must be a TouchDesigner build like '2025.30770'"),
+  reason: z.string().min(1),
+  fallback: z.string().min(1).optional(),
+});
+export type VersionGate = z.infer<typeof VersionGateSchema>;
+
 export const PackageManifestSchema = z.object({
   id: z.string().min(1),
   aliases: z.array(z.string()).default([]),
@@ -82,6 +100,7 @@ export const PackageManifestSchema = z.object({
   supportLevel: SupportLevelSchema,
   platforms: z.array(z.string()).default(["macos", "windows"]),
   tdVersionRange: z.string().optional(),
+  versionGate: VersionGateSchema.optional(),
   requiresTouchDesignerBridge: z.boolean().default(false),
   externalDependencies: z.array(ExternalDependencySchema).default([]),
   installStrategy: InstallStrategySchema,

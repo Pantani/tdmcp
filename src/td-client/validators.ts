@@ -83,6 +83,21 @@ export const HealthSchema = z.object({
       stale_after_seconds: z.number().optional(),
     })
     .optional(),
+  performance: z
+    .object({
+      available: z.boolean().default(false),
+      cook_time_ms: z.number().nullable().optional(),
+      cook_count: z.number().int().nullable().optional(),
+      cook_frame: z.number().int().nullable().optional(),
+      dropped_frames: z.number().int().nullable().optional(),
+      fps: z.number().nullable().optional(),
+      gpu_memory_mb: z.number().nullable().optional(),
+      gpu_memory_total_mb: z.number().nullable().optional(),
+      gpu_memory_free_mb: z.number().nullable().optional(),
+    })
+    .optional(),
+  degraded_signals: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
   touchdesigner: InfoSchema.optional(),
 });
 export type TdHealth = z.infer<typeof HealthSchema>;

@@ -1,7 +1,7 @@
 {
   "id": "mediapipe_face_overlay",
   "name": "MediaPipe Face Overlay",
-  "description": "Manual-wire template for the MediaPipe face-landmark look (face mesh dots drawn over a live video source). Mirrors the topology that setup_face_tracking (v0.8.1) builds at the tool level: a video background, an adapter Script CHOP fed by the MediaPipe engine's face JSON DAT, instanced dots from the 468 landmarks composited on top, then a final tint. Point 'facein' Select CHOP at the adapter CHOP from `tdmcp install mediapipe-touchdesigner` + setup_face_tracking. Offline-validated against RecipeSchema; live cook-check UNVERIFIED pending TD run.",
+  "description": "Self-contained rehearsal twin for the MediaPipe face-landmark look: a dimmed video background plus a Script SOP face mesh seeded from a built-in landmark table, composited with Over TOP and finished through a tint pass. Replace the `landmarks` Table DAT or the Script SOP source with the 468-landmark CHOP/DAT produced by setup_face_tracking when the MediaPipe plugin is available. Offline-validated against RecipeSchema; live-cook-validated on TD 099 build 2025.32820.",
   "tags": ["mediapipe", "face", "face-mesh", "overlay", "camera", "body-tracking"],
   "difficulty": "intermediate",
   "td_version_min": "2022",
@@ -9,34 +9,44 @@
     {
       "name": "videoin",
       "type": "videodeviceinTOP",
-      "comment": "Webcam background. macOS will prompt for camera permission on first cook."
+      "comment": "Webcam background. macOS will prompt for camera permission on first cook; the mesh still previews if the camera is unavailable."
     },
     {
       "name": "bg_level",
       "type": "levelTOP",
-      "parameters": { "brightness1": 0.6 },
-      "comment": "Dim the camera so the landmark dots read on top."
+      "parameters": { "brightness1": 0.38, "gamma1": 1.08 },
+      "comment": "Dim the camera so the landmark mesh reads on top."
     },
     {
-      "name": "facein",
-      "type": "selectCHOP",
-      "comment": "Set 'chops' to /project1/mp_face_adapter/face (the adapter CHOP setup_face_tracking builds). 468 samples × tx/ty/tz/confidence."
+      "name": "landmarks",
+      "type": "tableDAT",
+      "comment": "Built-in rehearsal landmarks: name, x, y, z. Replace with live MediaPipe face data later."
     },
     { "name": "geo", "type": "geometryCOMP" },
     {
-      "name": "dot",
-      "type": "circleSOP",
+      "name": "face_mesh",
+      "type": "scriptSOP",
       "parent": "geo",
       "render": true,
-      "parameters": { "radx": 0.005, "rady": 0.005 },
-      "comment": "Single dot SOP — copied per landmark via instancing on the geometryCOMP."
+      "comment": "Script SOP callbacks draw face contours, eyes, nose, mouth and sample mesh rows from landmarks."
     },
     {
-      "name": "dot_mat",
-      "type": "constantMAT",
-      "parameters": { "colorr": 0.2, "colorg": 1.0, "colorb": 0.9, "alpha": 0.9 }
+      "name": "face_cb",
+      "type": "textDAT",
+      "parent": "geo",
+      "comment": "Script SOP callbacks for the rehearsal face mesh."
     },
-    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 2.0 } },
+    {
+      "name": "mesh_mat",
+      "type": "lineMAT",
+      "parameters": {
+        "linenearcolorr": 0.2,
+        "linenearcolorg": 1.0,
+        "linenearcolorb": 0.9,
+        "widthnear": 2
+      }
+    },
+    { "name": "cam", "type": "cameraCOMP", "parameters": { "tz": 2.8 } },
     {
       "name": "render",
       "type": "renderTOP",
@@ -44,82 +54,89 @@
         "outputresolution": "custom",
         "resolutionw": 1280,
         "resolutionh": 720,
-        "antialias": "3",
-        "alphabackground": 0
+        "bgcolora": 0
       },
-      "comment": "Transparent background so the dot cloud composites over videoin."
+      "comment": "Transparent face mesh render so it composites over the dimmed webcam."
     },
     {
       "name": "overlay",
-      "type": "compositeTOP",
-      "parameters": { "operand": "over" },
-      "comment": "Face mesh dots composited over the dimmed webcam."
+      "type": "overTOP",
+      "comment": "Face mesh over the dimmed webcam background."
     },
     {
       "name": "tint",
       "type": "levelTOP",
-      "parameters": { "gamma1": 1.1 },
+      "parameters": { "gamma1": 1.08 },
       "comment": "Final tint/curve pass."
     },
     { "name": "out1", "type": "nullTOP" }
   ],
   "connections": [
     { "from": "videoin", "to": "bg_level" },
-    { "from": "bg_level", "to": "overlay", "to_input": 1 },
     { "from": "render", "to": "overlay", "to_input": 0 },
+    { "from": "bg_level", "to": "overlay", "to_input": 1 },
     { "from": "overlay", "to": "tint" },
     { "from": "tint", "to": "out1" }
   ],
   "parameters": [
-    { "name": "material", "node": "geo", "param": "material", "value": "dot_mat" },
-    { "name": "instancing", "node": "geo", "param": "instanceop", "value": "facein" },
-    { "name": "instance_tx", "node": "geo", "param": "instancetx", "value": "tx" },
-    { "name": "instance_ty", "node": "geo", "param": "instancety", "value": "ty" },
-    { "name": "instance_tz", "node": "geo", "param": "instancetz", "value": "tz" },
+    { "name": "callbacks", "node": "face_mesh", "param": "callbacks", "value": "face_cb" },
+    { "name": "material", "node": "geo", "param": "material", "value": "mesh_mat" },
     { "name": "geometry", "node": "render", "param": "geometry", "value": "geo" },
     { "name": "camera", "node": "render", "param": "camera", "value": "cam" }
   ],
+  "python_code": {
+    "landmarks": "name\tx\ty\tz\nchin0\t-0.74\t-0.64\t0\nchin1\t-0.58\t-0.86\t0\nchin2\t-0.32\t-0.98\t0\nchin3\t0\t-1.02\t0\nchin4\t0.32\t-0.98\t0\nchin5\t0.58\t-0.86\t0\nchin6\t0.74\t-0.64\t0\njawL\t-0.82\t-0.18\t0\njawR\t0.82\t-0.18\t0\ntempleL\t-0.62\t0.62\t0\ntempleR\t0.62\t0.62\t0\nforehead\t0\t0.92\t0\nbrowL0\t-0.54\t0.34\t0\nbrowL1\t-0.36\t0.42\t0\nbrowL2\t-0.18\t0.37\t0\nbrowR0\t0.18\t0.37\t0\nbrowR1\t0.36\t0.42\t0\nbrowR2\t0.54\t0.34\t0\neyeL0\t-0.5\t0.16\t0\neyeL1\t-0.36\t0.23\t0\neyeL2\t-0.22\t0.16\t0\neyeL3\t-0.36\t0.1\t0\neyeR0\t0.22\t0.16\t0\neyeR1\t0.36\t0.23\t0\neyeR2\t0.5\t0.16\t0\neyeR3\t0.36\t0.1\t0\nnose0\t0\t0.24\t0\nnose1\t-0.08\t0.02\t0\nnose2\t0.06\t-0.18\t0\nnoseL\t-0.18\t-0.34\t0\nnoseC\t0\t-0.39\t0\nnoseR\t0.18\t-0.34\t0\nmouthL\t-0.32\t-0.58\t0\nmouthT\t0\t-0.51\t0\nmouthR\t0.32\t-0.58\t0\nmouthB\t0\t-0.68\t0\nmeshL0\t-0.46\t0.02\t0\nmeshL1\t-0.42\t-0.22\t0\nmeshL2\t-0.34\t-0.46\t0\nmeshR0\t0.46\t0.02\t0\nmeshR1\t0.42\t-0.22\t0\nmeshR2\t0.34\t-0.46\t0\n",
+    "face_cb": "EDGES = [\n    ['chin0','chin1'], ['chin1','chin2'], ['chin2','chin3'], ['chin3','chin4'], ['chin4','chin5'], ['chin5','chin6'],\n    ['chin0','jawL'], ['jawL','templeL'], ['templeL','forehead'], ['forehead','templeR'], ['templeR','jawR'], ['jawR','chin6'],\n    ['browL0','browL1'], ['browL1','browL2'], ['browR0','browR1'], ['browR1','browR2'],\n    ['eyeL0','eyeL1'], ['eyeL1','eyeL2'], ['eyeL2','eyeL3'], ['eyeL3','eyeL0'],\n    ['eyeR0','eyeR1'], ['eyeR1','eyeR2'], ['eyeR2','eyeR3'], ['eyeR3','eyeR0'],\n    ['nose0','nose1'], ['nose1','nose2'], ['nose2','noseL'], ['nose2','noseC'], ['nose2','noseR'],\n    ['mouthL','mouthT'], ['mouthT','mouthR'], ['mouthR','mouthB'], ['mouthB','mouthL'],\n    ['browL2','nose0'], ['browR0','nose0'], ['eyeL3','meshL0'], ['eyeR3','meshR0'],\n    ['meshL0','meshL1'], ['meshL1','meshL2'], ['meshR0','meshR1'], ['meshR1','meshR2'],\n    ['meshL2','mouthL'], ['meshR2','mouthR'], ['noseL','mouthL'], ['noseR','mouthR'],\n]\nDOT_SIZE = 0.012\n\ndef _add_line(scriptOp, pts, a, b):\n    if a not in pts or b not in pts:\n        return\n    poly = scriptOp.appendPoly(2, closed=False, addPoints=False)\n    poly[0].point = pts[a]\n    poly[1].point = pts[b]\n\ndef _add_dot(scriptOp, point):\n    x, y, z = point.x, point.y, point.z\n    p0 = scriptOp.appendPoint(); p0.x = x - DOT_SIZE; p0.y = y; p0.z = z\n    p1 = scriptOp.appendPoint(); p1.x = x + DOT_SIZE; p1.y = y; p1.z = z\n    p2 = scriptOp.appendPoint(); p2.x = x; p2.y = y - DOT_SIZE; p2.z = z\n    p3 = scriptOp.appendPoint(); p3.x = x; p3.y = y + DOT_SIZE; p3.z = z\n    h = scriptOp.appendPoly(2, closed=False, addPoints=False); h[0].point = p0; h[1].point = p1\n    v = scriptOp.appendPoly(2, closed=False, addPoints=False); v[0].point = p2; v[1].point = p3\n\ndef onCook(scriptOp):\n    scriptOp.clear()\n    src = op('../landmarks')\n    if src is None or src.numRows < 2:\n        return\n    pts = {}\n    for r in range(1, src.numRows):\n        name = src[r, 0].val\n        try:\n            x = float(src[r, 1].val)\n            y = float(src[r, 2].val)\n            z = float(src[r, 3].val)\n        except Exception:\n            continue\n        p = scriptOp.appendPoint()\n        p.x = x; p.y = y; p.z = z\n        pts[name] = p\n    for a, b in EDGES:\n        _add_line(scriptOp, pts, a, b)\n    for p in list(pts.values()):\n        _add_dot(scriptOp, p)\n    return\n"
+  },
   "controls": [
     {
       "name": "Background",
       "type": "float",
       "min": 0,
       "max": 1,
-      "default": 0.6,
+      "default": 0.38,
       "bind_to": ["bg_level.brightness1"]
     },
     {
-      "name": "Dot Color R",
+      "name": "MeshWidth",
+      "type": "float",
+      "min": 0,
+      "max": 10,
+      "default": 2,
+      "bind_to": ["mesh_mat.widthnear"]
+    },
+    {
+      "name": "Mesh Color R",
       "type": "float",
       "min": 0,
       "max": 1,
       "default": 0.2,
-      "bind_to": ["dot_mat.colorr"]
+      "bind_to": ["mesh_mat.linenearcolorr"]
     },
     {
-      "name": "Dot Color G",
+      "name": "Mesh Color G",
       "type": "float",
       "min": 0,
       "max": 1,
       "default": 1.0,
-      "bind_to": ["dot_mat.colorg"]
+      "bind_to": ["mesh_mat.linenearcolorg"]
     },
     {
-      "name": "Dot Color B",
+      "name": "Mesh Color B",
       "type": "float",
       "min": 0,
       "max": 1,
       "default": 0.9,
-      "bind_to": ["dot_mat.colorb"]
+      "bind_to": ["mesh_mat.linenearcolorb"]
     },
     {
       "name": "Final Gamma",
       "type": "float",
       "min": 0.2,
       "max": 3.0,
-      "default": 1.1,
+      "default": 1.08,
       "bind_to": ["tint.gamma1"]
     }
   ],
-  "preview_description": "A dimmed webcam frame of a face with a cyan-green dot cloud (one dot per MediaPipe face landmark) tracking the eyes, brows, nose and mouth contours in real time."
+  "preview_description": "A dimmed webcam frame with a cyan-green face mesh overlay: jaw contour, eyes, brows, nose, mouth, cheek rows and small landmark ticks. The built-in landmark table makes the recipe preview offline; replace it with live MediaPipe face data for a real performer."
 }

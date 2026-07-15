@@ -9,49 +9,93 @@
     {
       "name": "sel_1",
       "type": "noiseTOP",
-      "parameters": { "mono": 0, "period": 4, "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "mono": 0,
+        "period": 4,
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Layer 1 (base) placeholder — swap for a selectTOP to your real layer."
     },
     {
       "name": "lvl_1",
       "type": "levelTOP",
-      "parameters": { "opacity": 1.0, "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "opacity": 1.0,
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Base opacity."
     },
     {
       "name": "sel_2",
       "type": "rampTOP",
-      "parameters": { "type": "radial", "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "type": "radial",
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Layer 2 placeholder."
     },
     {
       "name": "lvl_2",
       "type": "levelTOP",
-      "parameters": { "opacity": 0.6, "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "opacity": 0.6,
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Layer 2 opacity."
     },
     {
       "name": "comp_2",
       "type": "compositeTOP",
-      "parameters": { "operand": "add", "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "operand": "add",
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Blend layer 2 (input 1) over the base (input 0) with 'add'."
     },
     {
       "name": "sel_3",
       "type": "constantTOP",
-      "parameters": { "colorr": 0.8, "colorg": 0.2, "colorb": 0.5, "alpha": 1, "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "colorr": 0.8,
+        "colorg": 0.2,
+        "colorb": 0.5,
+        "alpha": 1,
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Layer 3 placeholder (magenta wash)."
     },
     {
       "name": "lvl_3",
       "type": "levelTOP",
-      "parameters": { "opacity": 0.4, "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "opacity": 0.4,
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Layer 3 opacity."
     },
     {
       "name": "comp_3",
       "type": "compositeTOP",
-      "parameters": { "operand": "screen", "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "operand": "screen",
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Blend layer 3 (input 1) over the stack (input 0) with 'screen'."
     },
     { "name": "out1", "type": "nullTOP", "comment": "Final composited stack." }
@@ -67,9 +111,30 @@
     { "from": "comp_3", "to": "out1" }
   ],
   "controls": [
-    { "name": "Opacity1", "type": "float", "min": 0, "max": 1, "default": 1.0, "bind_to": ["lvl_1.opacity"] },
-    { "name": "Opacity2", "type": "float", "min": 0, "max": 1, "default": 0.6, "bind_to": ["lvl_2.opacity"] },
-    { "name": "Opacity3", "type": "float", "min": 0, "max": 1, "default": 0.4, "bind_to": ["lvl_3.opacity"] }
+    {
+      "name": "Opacity1",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 1.0,
+      "bind_to": ["lvl_1.opacity"]
+    },
+    {
+      "name": "Opacity2",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.6,
+      "bind_to": ["lvl_2.opacity"]
+    },
+    {
+      "name": "Opacity3",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.4,
+      "bind_to": ["lvl_3.opacity"]
+    }
   ],
   "preview_description": "A noise base with a radial ramp added on top and a magenta screen wash — three layers composited with per-layer opacity faders and add/screen blend modes."
 }

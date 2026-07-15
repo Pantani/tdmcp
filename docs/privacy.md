@@ -77,9 +77,8 @@ you asked for — see [Network activity](#network-activity).
 The TouchDesigner bridge executes Python inside your own TouchDesigner process and
 listens on `127.0.0.1:9980`. You stay in control of access:
 
-- keep arbitrary code-execution endpoints closed by default unless you configure
-  `TDMCP_BRIDGE_TOKEN` or explicitly set `TDMCP_BRIDGE_ALLOW_EXEC=1` inside
-  TouchDesigner, and
+- keep arbitrary code-execution endpoints closed by default unless you explicitly
+  set `TDMCP_BRIDGE_ALLOW_EXEC=1` inside TouchDesigner, and
 - require a bearer token by setting `TDMCP_BRIDGE_TOKEN` on both the server and
   TouchDesigner when the bridge is reachable beyond a trusted local machine.
 

@@ -26,7 +26,12 @@
     {
       "name": "decay1",
       "type": "levelTOP",
-      "parameters": { "brightness1": 0.9, "outputresolution": "custom", "resolutionw": 1280, "resolutionh": 720 },
+      "parameters": {
+        "brightness1": 0.9,
+        "outputresolution": "custom",
+        "resolutionw": 1280,
+        "resolutionh": 720
+      },
       "comment": "Decay multiplier (brightness1) — sets how long the echo trails persist."
     },
     { "name": "out1", "type": "nullTOP", "comment": "Final moshed output." }
@@ -48,7 +53,14 @@
     }
   ],
   "controls": [
-    { "name": "Decay", "type": "float", "min": 0, "max": 1, "default": 0.9, "bind_to": ["decay1.brightness1"] }
+    {
+      "name": "Decay",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.9,
+      "bind_to": ["decay1.brightness1"]
+    }
   ],
   "preview_description": "An animated noise field that smears into itself frame after frame, leaving bright motion echoes that fade by the decay amount — a datamosh feedback trail."
 }

@@ -45,6 +45,13 @@ def _event_hooks_source(modules_dir=None):
             "    sys.path.insert(0, %r)\n\n" % (modules_dir, modules_dir)
         )
     return header + (
+        "_api_service = None\n\n"
+        "def _mark_heartbeat():\n"
+        "    global _api_service\n"
+        "    if _api_service is None:\n"
+        "        from mcp.services import api_service\n"
+        "        _api_service = api_service\n"
+        "    _api_service.mark_heartbeat()\n\n"
         "def _broadcast(event, data):\n"
         "    try:\n"
         "        from mcp import events\n"
@@ -52,6 +59,10 @@ def _event_hooks_source(modules_dir=None):
         "    except Exception:\n"
         "        pass\n\n"
         "def onFrameEnd(frame):\n"
+        "    try:\n"
+        "        _mark_heartbeat()\n"
+        "    except Exception:\n"
+        "        pass\n"
         "    try:\n"
         "        f = int(frame)\n"
         "        if f % 30 == 0:\n"
@@ -115,7 +126,7 @@ def _event_hooks_source(modules_dir=None):
 DEFAULT_PACKAGE_NAME = "tdmcp_bridge_package"
 DEFAULT_PACKAGE_TOX_NAME = DEFAULT_PACKAGE_NAME + ".tox"
 DEFAULT_PACKAGE_PALETTE_FOLDER = "tdmcp"
-DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.13.0.zip"
+DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.13.1.zip"
 DEFAULT_PACKAGE_BOOTSTRAP_DEST = "~/tdmcp-bridge"
 
 RUNTIME_BRIDGE_LAYOUT = {
@@ -347,9 +358,6 @@ def package_callbacks_source(
         "    if allow_exec:\n"
         "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '1'\n"
         "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=1; arbitrary exec endpoints enabled')\n"
-        "    elif token:\n"
-        "        os.environ.pop('TDMCP_BRIDGE_ALLOW_EXEC', None)\n"
-        "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC unset; token-authenticated exec endpoints enabled')\n"
         "    else:\n"
         "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '0'\n"
         "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=0; arbitrary exec endpoints disabled')\n"
@@ -682,7 +690,7 @@ def run(
     print(
         "[tdmcp] SECURITY: the Web Server DAT listens on ALL network interfaces and, by "
         "default, refuses arbitrary Python endpoints (/api/exec and node-method) unless "
-        "TDMCP_BRIDGE_TOKEN or TDMCP_BRIDGE_ALLOW_EXEC=1 is set. On a shared/untrusted "
+        "TDMCP_BRIDGE_ALLOW_EXEC=1 is set; a token authenticates but does not authorize exec. On a shared/untrusted "
         "network, keep exec disabled, set TDMCP_BRIDGE_TOKEN for authenticated use, "
         "and/or firewall port %d to localhost." % port
     )

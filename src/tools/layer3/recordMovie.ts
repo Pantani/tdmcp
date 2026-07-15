@@ -26,11 +26,20 @@ export const recordMovieSchema = z.object({
 });
 type RecordMovieArgs = z.infer<typeof recordMovieSchema>;
 
+interface MovieCodecSettings {
+  video_codec?: string;
+  video_codec_type?: string;
+  movie_pixel_format?: string;
+}
+
+type RecordMovieImplArgs = RecordMovieArgs & MovieCodecSettings;
+
 interface RecordReport {
   action: string;
   recording?: string;
   stopped?: string;
   auto_stop_seconds?: number;
+  codec_settings?: MovieCodecSettings;
   warnings: string[];
   fatal?: string;
 }
@@ -63,6 +72,22 @@ import json, base64, traceback
 import td
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"action": _p["action"], "warnings": []}
+
+def _set_first(node, names, value, label):
+    if value is None:
+        return False
+    for name in names:
+        try:
+            par = getattr(node.par, name, None)
+            if par is None:
+                continue
+            par.val = value
+            return True
+        except Exception:
+            continue
+    report["warnings"].append("Could not apply %s=%s on %s." % (label, value, getattr(node, "path", node)))
+    return False
+
 try:
     _src = op(_p["node"])
     if _src is None:
@@ -92,6 +117,16 @@ try:
                     _mov.par.fps = _p["fps"]
                 except Exception:
                     pass
+                codec_settings = {
+                    "video_codec": _p.get("video_codec"),
+                    "video_codec_type": _p.get("video_codec_type"),
+                    "movie_pixel_format": _p.get("movie_pixel_format"),
+                }
+                _set_first(_mov, ["type"], "movie", "record type")
+                _set_first(_mov, ["videocodec", "codec"], codec_settings.get("video_codec"), "video codec")
+                _set_first(_mov, ["videocodectype"], codec_settings.get("video_codec_type"), "video codec type")
+                _set_first(_mov, ["moviepixelformat", "pixelformat"], codec_settings.get("movie_pixel_format"), "movie pixel format")
+                report["codec_settings"] = {k: v for k, v in codec_settings.items() if v is not None}
                 try:
                     _mov.inputConnectors[0].connect(_src)
                 except Exception:
@@ -116,7 +151,7 @@ export function buildRecordScript(payload: object): string {
   return buildPayloadScript(REC_SCRIPT, payload);
 }
 
-export async function recordMovieImpl(ctx: ToolContext, args: RecordMovieArgs) {
+export async function recordMovieImpl(ctx: ToolContext, args: RecordMovieImplArgs) {
   return guardTd(
     async () => {
       const script = buildRecordScript({
@@ -125,6 +160,9 @@ export async function recordMovieImpl(ctx: ToolContext, args: RecordMovieArgs) {
         file: args.file ?? null,
         fps: args.fps,
         seconds: args.seconds ?? null,
+        video_codec: args.video_codec ?? null,
+        video_codec_type: args.video_codec_type ?? null,
+        movie_pixel_format: args.movie_pixel_format ?? null,
         hook: REC_HOOK,
       });
       const exec = await ctx.client.executePythonScript(script, true);
@@ -142,7 +180,11 @@ export async function recordMovieImpl(ctx: ToolContext, args: RecordMovieArgs) {
       const auto = report.auto_stop_seconds
         ? ` (auto-stops after ${report.auto_stop_seconds}s)`
         : " (call stop to finish)";
-      return jsonResult(`Recording ${args.node_path} → ${report.recording}${auto}.`, report);
+      const warningSuffix = report.warnings.length ? ` Warning: ${report.warnings.join(" ")}` : "";
+      return jsonResult(
+        `Recording ${args.node_path} → ${report.recording}${auto}.${warningSuffix}`,
+        report,
+      );
     },
   );
 }
