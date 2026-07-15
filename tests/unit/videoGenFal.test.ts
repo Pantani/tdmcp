@@ -25,8 +25,15 @@ function baseReq(over: Partial<VideoGenRequest> = {}): VideoGenRequest {
   return { prompt: "a slow bloom", model: "ltx-video", durationSeconds: 5, ...over };
 }
 
+interface FalResultBody {
+  video?: { url?: string; content_type?: string };
+  videos?: Array<{ url?: string; content_type?: string }>;
+  seed?: number;
+  metrics?: { cost?: number };
+}
+
 /** Mock submit → status COMPLETED → result → clip download. `result` shapes the response JSON. */
-function mockQueue(result: unknown, capturedSlug?: { slug?: string; input?: unknown }): void {
+function mockQueue(result: FalResultBody, capturedSlug?: { slug?: string; input?: unknown }): void {
   server.use(
     http.post(`${QUEUE}/:owner/:model/*`, async ({ request }) => {
       if (capturedSlug) {
