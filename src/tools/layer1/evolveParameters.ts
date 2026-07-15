@@ -219,6 +219,34 @@ async function rebuildWinner(
   });
 }
 
+/** Build, cook and score every candidate in one generation (kept separate to bound nesting). */
+async function scoreGeneration(
+  ctx: ToolContext,
+  args: EvolveParametersArgs,
+  recipe: Recipe,
+  scratchPath: string,
+  population: Genome[],
+  gen: number,
+  warnings: string[],
+): Promise<Scored[]> {
+  const scored: Scored[] = [];
+  for (let i = 0; i < population.length; i++) {
+    const genome = population[i];
+    if (!genome) continue;
+    const fitness = await evaluateCandidate(
+      ctx,
+      args,
+      recipe,
+      scratchPath,
+      genome,
+      `c_${gen}_${i}`,
+      warnings,
+    );
+    scored.push({ genome, fitness });
+  }
+  return scored;
+}
+
 async function runEvolution(
   ctx: ToolContext,
   args: EvolveParametersArgs,
@@ -242,23 +270,17 @@ async function runEvolution(
   try {
     let population = initPopulation(args.genes, args.population, rng);
     for (let gen = 0; gen < args.generations; gen++) {
-      const scored: Scored[] = [];
-      for (let i = 0; i < population.length; i++) {
-        const genome = population[i];
-        if (!genome) continue;
-        const fitness = await evaluateCandidate(
-          ctx,
-          args,
-          recipe,
-          scratch.path,
-          genome,
-          `c_${gen}_${i}`,
-          warnings,
-        );
-        evaluated++;
-        scored.push({ genome, fitness });
-        if (!best || fitness > best.fitness) best = { genome, fitness };
-      }
+      const scored = await scoreGeneration(
+        ctx,
+        args,
+        recipe,
+        scratch.path,
+        population,
+        gen,
+        warnings,
+      );
+      evaluated += scored.length;
+      for (const s of scored) if (!best || s.fitness > best.fitness) best = s;
       population = nextGeneration(scored, args.genes, opts, rng);
     }
     if (!best) {

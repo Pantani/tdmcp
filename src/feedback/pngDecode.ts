@@ -59,6 +59,27 @@ function reconstruct(filter: number, value: number, left: number, up: number, ul
   }
 }
 
+/** Un-filter one scanline in place (kept separate to bound nesting depth). */
+function unfilterRow(
+  out: Buffer,
+  raw: Buffer,
+  rawStart: number,
+  outRow: number,
+  prevRow: number,
+  filter: number,
+  stride: number,
+  bpp: number,
+  hasPrev: boolean,
+): void {
+  for (let x = 0; x < stride; x++) {
+    const value = raw[rawStart + x] ?? 0;
+    const left = x >= bpp ? (out[outRow + x - bpp] ?? 0) : 0;
+    const up = hasPrev ? (out[prevRow + x] ?? 0) : 0;
+    const ul = hasPrev && x >= bpp ? (out[prevRow + x - bpp] ?? 0) : 0;
+    out[outRow + x] = reconstruct(filter, value, left, up, ul) & 0xff;
+  }
+}
+
 /** Reverse the per-scanline PNG filters, returning the unfiltered pixel bytes. */
 export function unfilter(raw: Buffer, width: number, height: number, bpp: number): Buffer {
   const stride = width * bpp;
@@ -67,14 +88,8 @@ export function unfilter(raw: Buffer, width: number, height: number, bpp: number
   for (let y = 0; y < height; y++) {
     const filter = raw[rawPos++] ?? 0;
     const outRow = y * stride;
-    const prevRow = outRow - stride;
-    for (let x = 0; x < stride; x++) {
-      const value = raw[rawPos++] ?? 0;
-      const left = x >= bpp ? (out[outRow + x - bpp] ?? 0) : 0;
-      const up = y > 0 ? (out[prevRow + x] ?? 0) : 0;
-      const ul = y > 0 && x >= bpp ? (out[prevRow + x - bpp] ?? 0) : 0;
-      out[outRow + x] = reconstruct(filter, value, left, up, ul) & 0xff;
-    }
+    unfilterRow(out, raw, rawPos, outRow, outRow - stride, filter, stride, bpp, y > 0);
+    rawPos += stride;
   }
   return out;
 }
