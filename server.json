@@ -3,7 +3,7 @@
   "name": "io.github.Pantani/tdmcp",
   "title": "tdmcp — TouchDesigner MCP server",
   "description": "Build real visual systems in TouchDesigner from plain language with Claude, Cursor or Codex.",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "repository": {
     "url": "https://github.com/Pantani/tdmcp",
     "source": "github"
@@ -13,7 +13,21 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@dpantani/tdmcp",
-      "version": "0.13.0",
+      "version": "0.13.1",
+      "environmentVariables": [
+        {
+          "name": "TDMCP_TOOL_PROFILE",
+          "default": "directory",
+          "choices": ["full", "safe", "directory"],
+          "description": "Tool exposure profile. Glama and MCP directory scanners use directory for a compact build/inspect surface; choose full for the complete installed runtime or safe to hide destructive/raw-code tools."
+        },
+        {
+          "name": "TDMCP_RAW_PYTHON",
+          "default": "off",
+          "choices": ["on", "off"],
+          "description": "Keep client-authored Python escape-hatch tools hidden by default in registry scans; choose on only for a trusted local runtime."
+        }
+      ],
       "transport": {
         "type": "stdio"
       }

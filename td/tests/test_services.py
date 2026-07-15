@@ -518,6 +518,7 @@ class _MissingAttrs:
 
 class HealthTests(unittest.TestCase):
     def test_health_reports_uptime_heartbeat_and_optional_performance(self):
+        api_service.mark_heartbeat()
         with mock.patch.object(api_service, "app", _HealthApp()), mock.patch.object(
             api_service, "project", _HealthProject()
         ):
@@ -541,6 +542,7 @@ class HealthTests(unittest.TestCase):
         self.assertEqual(result["performance"]["gpu_memory_total_mb"], 8192)
 
     def test_health_degrades_when_td_attrs_are_missing(self):
+        api_service.mark_heartbeat()
         with mock.patch.object(api_service, "app", _MissingAttrs()), mock.patch.object(
             api_service, "project", _MissingAttrs()
         ):
@@ -556,13 +558,15 @@ class HealthTests(unittest.TestCase):
         self.assertIsNone(result["performance"]["gpu_memory_mb"])
         self.assertFalse(result["heartbeat"]["stale"])
 
-    def test_health_marks_stale_when_last_health_is_old(self):
+    def test_health_marks_stale_when_frame_heartbeat_is_old(self):
         old = datetime.now(timezone.utc) - timedelta(
             seconds=api_service._HEARTBEAT_STALE_AFTER_SECONDS + 5
         )
-        with mock.patch.object(api_service, "_LAST_HEALTH_AT", old):
+        with mock.patch.object(api_service, "_LAST_HEARTBEAT_AT", old):
             result = api_service.get_health(_HealthWebServer())
 
+        self.assertEqual(result["state"], "degraded")
+        self.assertIn("heartbeat", result["degraded_signals"])
         self.assertTrue(result["heartbeat"]["stale"])
         self.assertGreater(
             result["heartbeat"]["age_seconds"], api_service._HEARTBEAT_STALE_AFTER_SECONDS

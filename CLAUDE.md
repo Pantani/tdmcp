@@ -422,8 +422,27 @@ architecture, refresh an ACE-Step claim after a release) — use the
 the **exploration** harness — it produces a study to decide from; it does **not**
 build. Once the path is chosen, hand the P0 slice to `tdmcp-pipeline`. Simple
 questions can be answered directly. Note: sub-agents (no `TeamCreate`).
+## Harness: RayTK integration
+
+**Goal:** integrate the external **RayTK** (t3kt/raytk) raymarching/SDF toolkit into
+tdmcp beyond the existing package-manager staging — driving RayTK's ROP operators as an
+AI-buildable, editable **node graph** (SDF → combine → material → camera → render TOP),
+plus a RayTK operator knowledge catalog and RayTK-native scene tool/recipes. Complements
+(never overwrites) tdmcp's own GLSL `createRaymarchScene`/`createSdfField`.
+
+**Trigger:** for planning or implementing RayTK support — build/plan/design/implement/
+continue/fix/QA/ship RayTK ROPs, a RayTK operator catalog, a `create_raytk_scene` tool,
+RayTK recipes, or the RayTK setup/doctor flow, and follow-ups (re-run, refresh after a
+new RayTK release, re-QA, docs) — use the `tdmcp-raytk-integration` skill (a
+`raytk-cartographer` map → `raytk-integration-lead` plan/single-writer integration →
+reuse of `td-architect`/`td-builder`/`tdmcp-bridge-engineer`/`td-qa`/`td-releaser`).
+This owns RayTK specifically; use it before the generic `tdmcp-pipeline` for this
+feature. Generic package installs stay with `manage_packages`. Simple RayTK questions
+can be answered directly. Note: sub-agents (no `TeamCreate`).
 
 **Change log:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-07-07 | Initial harness | 2 agents (`acestep-explorer`, `acestep-study-synthesizer`) + 3 skills (`acestep-explore`, `acestep-synthesize`, `tdmcp-acestep-study`) | study how to integrate the ACE-Step music-gen model into tdmcp: 5-axis fan-out → 1 synthesized STUDY.md with a recommended architecture + phased plan; feeds `tdmcp-pipeline`. Exploration only, no build |
+| 2026-07-08 | Initial harness | 2 agents (`raytk-cartographer`, `raytk-integration-lead`) + 1 skill (`tdmcp-raytk-integration`); reuses `td-architect`/`td-builder`/`tdmcp-bridge-engineer`/`td-qa`/`td-releaser` | RayTK already staged via package registry but not driven as native operators; map→plan→build→integrate→QA harness for the node-graph integration gap, version-gate + async-shader aware |
+| 2026-07-08 | Built W1–W4 (offline) | registry version-gate drift fix + doctor honesty; `tdmcp://raytk/operators` catalog resource; `create_raytk_op` (L3) + `create_raytk_scene` (L1) via live-probed `COMP.copy(master)`; 2 CLI verbs (`raytk-op`/`raytk-scene`) | node-graph-native RayTK. Gates green offline (typecheck/build/biome/5129 tests). Live UNVERIFIED — needs TD 2025.30770+ with the RayTK .tox loaded. No RayTK recipe (ROPs are runtime-copied masters, not RecipeSchema-native types). No tag/push per no-premature-tag |

@@ -45,7 +45,7 @@ bridge. Advanced exports can use `--palette-dir <path>` and
 (`Dialogs → Textport and DATs`):
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.0/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.1/td/bootstrap.py").read().decode())
 ```
 
 Downloads the bridge to `~/tdmcp-bridge/modules` and starts it on port 9980.
@@ -118,8 +118,9 @@ All responses use the envelope `{ "ok": true, "data": … }` or
 | GET | `/api/logs` | recent bridge/cook errors from the in-bridge Error DAT (`severity?`, `max_lines?`, `scope?`) |
 
 The `/api/exec` and node-`method` endpoints are disabled bridge-side by default
-unless `TDMCP_BRIDGE_TOKEN` is configured or `TDMCP_BRIDGE_ALLOW_EXEC=1` is set
-inside TouchDesigner — see [Security](/reference/architecture#security). The
+unless `TDMCP_BRIDGE_ALLOW_EXEC=1` is set inside TouchDesigner. If
+`TDMCP_BRIDGE_TOKEN` is configured, it authenticates requests but does not
+enable arbitrary exec by itself — see [Security](/reference/architecture#security). The
 structured endpoints added in 0.6.0 — `/api/connect`, `/api/disconnect`,
 `/api/logs`, the `?modes=true` parameter reads, `…/params/{param}/mode` and the
 DAT `…/text` reads/writes — are **not** behind the exec gate, so they keep

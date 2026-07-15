@@ -31,10 +31,11 @@ export interface ToolContext {
    */
   yolo?: boolean;
   /**
-   * Tool exposure profile. `"safe"` hides destructive/raw-code tools.
+   * Tool exposure profile. `"safe"` hides destructive/raw-code tools; `"directory"`
+   * exposes a small registry-facing build/inspect surface.
    * Undefined means `"full"` (the default).
    */
-  toolProfile?: "full" | "safe";
+  toolProfile?: "full" | "safe" | "directory";
   /**
    * Best-effort LLM backend for tools that need vision/captioning/text completion
    * (e.g. caption_top, auto_tag_library_asset). Routed via `resolveLlmClient`:

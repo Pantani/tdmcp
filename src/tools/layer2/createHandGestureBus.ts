@@ -705,26 +705,121 @@ print(json.dumps(report))
 `;
 
 const createHandGestureBusInputSchema = z.object({
-  source: z.enum(["synthetic", "mediapipe", "existing_chop"]).default("synthetic"),
-  parent_path: z.string().default("/project1"),
-  comp_name: z.string().default("hand_gesture_bus"),
-  hand_chop_path: z.string().optional(),
-  tox_path: z.string().optional(),
-  adapter_name: z.string().default("mp_hand_adapter"),
-  max_hands: z.coerce.number().int().min(1).max(2).default(2),
-  coordinate_space: z.enum(["world", "image"]).default("world"),
-  mirror: z.boolean().default(true),
-  smoothing: z.coerce.number().min(0).max(0.95).default(0.46),
-  fast_smoothing: z.coerce.number().min(0).max(0.95).default(0.82),
-  hold_seconds: z.coerce.number().min(0).max(1).default(0.16),
-  pinch_arm_seconds: z.coerce.number().min(0).max(1).default(0.11),
-  pinch_close_dist: z.coerce.number().positive().default(0.052),
-  pinch_open_dist: z.coerce.number().positive().default(0.125),
-  pinch_radius: z.coerce.number().positive().default(0.155),
-  pinch_radius_scale: z.coerce.number().positive().default(2.25),
-  pinch_threshold: z.coerce.number().min(0).max(1).default(0.38),
-  active_hand_lock: z.boolean().default(true),
-  expose_controls: z.boolean().default(true),
+  source: z
+    .enum(["synthetic", "mediapipe", "existing_chop"])
+    .default("synthetic")
+    .describe(
+      "Input source: synthetic preview data, a new MediaPipe adapter, or an existing hand CHOP.",
+    ),
+  parent_path: z
+    .string()
+    .default("/project1")
+    .describe("Parent COMP where the gesture-bus component and helper nodes are created."),
+  comp_name: z
+    .string()
+    .default("hand_gesture_bus")
+    .describe("Name for the created gesture-bus Base COMP under parent_path."),
+  hand_chop_path: z
+    .string()
+    .optional()
+    .describe(
+      "Required only when source='existing_chop'; path to a CHOP with hand landmark channels.",
+    ),
+  tox_path: z
+    .string()
+    .optional()
+    .describe("Optional MediaPipe adapter .tox path passed through when source='mediapipe'."),
+  adapter_name: z
+    .string()
+    .default("mp_hand_adapter")
+    .describe("Name for the setup_hand_tracking adapter when source='mediapipe'."),
+  max_hands: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(2)
+    .default(2)
+    .describe("Number of hands to track or synthesize; the gesture bus supports one or two hands."),
+  coordinate_space: z
+    .enum(["world", "image"])
+    .default("world")
+    .describe(
+      "Coordinate family expected from the hand source: normalized image space or world space.",
+    ),
+  mirror: z
+    .boolean()
+    .default(true)
+    .describe("Mirror X coordinates for front-facing camera interaction and synthetic previews."),
+  smoothing: z.coerce
+    .number()
+    .min(0)
+    .max(0.95)
+    .default(0.46)
+    .describe(
+      "Slow smoothing factor for stable palm/float channels; higher values move more slowly.",
+    ),
+  fast_smoothing: z.coerce
+    .number()
+    .min(0)
+    .max(0.95)
+    .default(0.82)
+    .describe(
+      "Fast smoothing factor for responsive pinch/power channels; higher values move more slowly.",
+    ),
+  hold_seconds: z.coerce
+    .number()
+    .min(0)
+    .max(1)
+    .default(0.16)
+    .describe("Seconds a disappearing/open palm is held before channels fall back."),
+  pinch_arm_seconds: z.coerce
+    .number()
+    .min(0)
+    .max(1)
+    .default(0.11)
+    .describe("Seconds pinch_active must remain close before it is considered armed."),
+  pinch_close_dist: z.coerce
+    .number()
+    .positive()
+    .default(0.052)
+    .describe(
+      "Thumb-index distance at or below which a pinch closes; must be less than pinch_open_dist.",
+    ),
+  pinch_open_dist: z.coerce
+    .number()
+    .positive()
+    .default(0.125)
+    .describe(
+      "Thumb-index distance at or above which a pinch opens; must be greater than pinch_close_dist.",
+    ),
+  pinch_radius: z.coerce
+    .number()
+    .positive()
+    .default(0.155)
+    .describe("Palm-local radius around the pinch point used to estimate pinch_power."),
+  pinch_radius_scale: z.coerce
+    .number()
+    .positive()
+    .default(2.25)
+    .describe("Multiplier applied to pinch_radius when converting distance into pinch_power."),
+  pinch_threshold: z.coerce
+    .number()
+    .min(0)
+    .max(1)
+    .default(0.38)
+    .describe("Normalized pinch_power threshold used to expose binary pinch_active channels."),
+  active_hand_lock: z
+    .boolean()
+    .default(true)
+    .describe(
+      "Keep the first active hand as the control hand until it is lost, reducing hand switching.",
+    ),
+  expose_controls: z
+    .boolean()
+    .default(true)
+    .describe(
+      "Create custom parameters on the component for tuning smoothing, pinch, and lock behavior.",
+    ),
 });
 
 export const createHandGestureBusSchema = createHandGestureBusInputSchema.refine(
@@ -829,7 +924,7 @@ export const registerCreateHandGestureBus: ToolRegistrar = (server, ctx) =>
     {
       title: "Create hand gesture bus",
       description:
-        "Build a stable MediaPipe-hands gesture bus for palm holograms, lasers, audio controls, and other hand-reactive visuals. Outputs a Null CHOP with debounced palm and pinch channels: palm_open, float_x/y, palm_size, pinch_active, pinch_power, scale_target, light_gain, and audio_level. Defaults to a synthetic two-hand source so it previews without a camera; source='mediapipe' uses setup_hand_tracking.",
+        "Create a TouchDesigner Base COMP that converts hand landmarks into a stable gesture-control Null CHOP for palm holograms, lasers, audio controls, and other hand-reactive visuals. It creates helper nodes under parent_path, returns the component/output paths and created-node report, and exposes debounced channels such as palm_open, float_x/y, palm_size, pinch_active, pinch_power, scale_target, light_gain, and audio_level. Use source='synthetic' for camera-free previews, source='mediapipe' to build/use setup_hand_tracking, or source='existing_chop' with hand_chop_path when a hand landmark CHOP already exists.",
       inputSchema: createHandGestureBusInputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

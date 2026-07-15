@@ -44,7 +44,7 @@ optional dependency is absent.
 | `logger` | yes | `Logger` — structured logging. |
 | `vault?` | no | `Vault` — Obsidian vault, set via `TDMCP_VAULT_PATH`; `undefined` when unconfigured. |
 | `allowRawPython?` | no | Whether raw-Python escape-hatch tools may register. `undefined` means allowed (default); only an explicit `false` locks them out. |
-| `toolProfile?` | no | Tool-exposure profile; `"safe"` hides destructive/raw-code tools, `undefined` means `"full"` (default). |
+| `toolProfile?` | no | Tool-exposure profile; `"safe"` hides destructive/raw-code tools, `"directory"` exposes a compact registry-facing tool set, and `undefined` means `"full"` (default). |
 | `llm?` | no | Best-effort LLM backend (vision/captioning/text). Tools must degrade when it is `undefined` or unreachable. |
 | `server?` | no | The live `McpServer`, assigned before registration so a few tools can introspect the registry. |
 | `creativeRag?` | no | Optional local Creative RAG service (`TDMCP_RAG_ENABLED=1`); backs read-only `tdmcp://creative/*` resources only. |

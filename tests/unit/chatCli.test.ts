@@ -110,6 +110,31 @@ describe("tdmcp chat CLI flags", () => {
     expect(seen.tools).not.toContain("create_feedback_network");
   });
 
+  it("fails llm-run when the LLM endpoint is unavailable", async () => {
+    const previousExitCode = process.exitCode;
+    let stderr = "";
+    process.exitCode = undefined;
+    try {
+      await runChat(["--prompt", "hello", "--no-ollama"], {
+        loadConfig: () => loadConfig({}),
+        createLogger: () => silentLogger,
+        buildToolContext: () => makeCtx(),
+        createClient: () =>
+          ({
+            health: vi.fn(async () => ({ ok: false, detail: "fetch failed" })),
+          }) as unknown as LlmClient,
+        ensureOllamaUp: vi.fn(async () => false),
+        writeStderr: (chunk) => {
+          stderr += chunk;
+        },
+      });
+      expect(process.exitCode).toBe(3);
+      expect(stderr).toContain("LLM endpoint is not reachable");
+    } finally {
+      process.exitCode = previousExitCode;
+    }
+  });
+
   it("loads config files and profiles before a headless prompt", async () => {
     const seen: { tools?: string[]; messages?: ChatMessage[] } = {};
     const seenLoadOptions: unknown[] = [];

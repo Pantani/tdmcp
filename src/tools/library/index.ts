@@ -40,6 +40,7 @@ import { registerExportExternalizedTree } from "./exportExternalizedTree.js";
 import { registerExportPaletteComponent } from "./exportPaletteComponent.js";
 import { registerGenerativeClassicsPack } from "./generativeClassicsPack.js";
 import { registerImportRecipeFromUrl } from "./importRecipeFromUrl.js";
+import { registerMarketplaceIndexSeed } from "./marketplaceIndexSeed.js";
 import { registerProvenanceStamp } from "./provenanceStamp.js";
 
 const ComponentManifestSchema = z
@@ -286,10 +287,22 @@ export async function inspectComponentManifestImpl(
 }
 
 export const makePortableToxSchema = z.object({
-  comp_path: z.string(),
-  out_dir: z.string(),
-  name: z.string().optional(),
-  docs: z.array(z.string()).default([]),
+  comp_path: z
+    .string()
+    .describe("Absolute TouchDesigner COMP path to save, for example /project1/my_component."),
+  out_dir: z
+    .string()
+    .describe("Local output directory that will receive the .tox, manifest, README, and docs."),
+  name: z
+    .string()
+    .optional()
+    .describe("Optional filesystem-safe package stem; defaults to the COMP name from comp_path."),
+  docs: z
+    .array(z.string())
+    .default([])
+    .describe(
+      "Optional local documentation files to copy into out_dir/docs and reference in the manifest.",
+    ),
   include_readme: z
     .boolean()
     .default(true)
@@ -393,11 +406,27 @@ export async function makePortableToxImpl(ctx: ToolContext, args: MakePortableTo
 }
 
 export const exportRecipeBundleSchema = z.object({
-  out_file: z.string(),
-  recipe_ids: z.array(z.string()).default([]),
-  include_all: z.boolean().default(false),
+  out_file: z.string().describe("Destination path for the portable recipe-bundle JSON file."),
+  recipe_ids: z
+    .array(z.string())
+    .default([])
+    .describe("Recipe IDs to export when include_all=false; unknown IDs are listed in missing."),
+  include_all: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Export the complete local recipe library when true; otherwise export recipe_ids only.",
+    ),
 });
 type ExportRecipeBundleArgs = z.infer<typeof exportRecipeBundleSchema>;
+
+export const exportRecipeBundleOutputSchema = z.object({
+  kind: z.literal("tdmcp-recipe-bundle"),
+  version: z.number(),
+  exported_at: z.string(),
+  recipes: z.array(z.unknown()),
+  missing: z.array(z.string()),
+});
 
 export async function exportRecipeBundleImpl(ctx: ToolContext, args: ExportRecipeBundleArgs) {
   try {
@@ -413,7 +442,7 @@ export async function exportRecipeBundleImpl(ctx: ToolContext, args: ExportRecip
       missing,
     };
     writeJson(args.out_file, bundle);
-    return jsonResult(`Exported ${recipes.length} recipe(s) to ${args.out_file}.`, bundle);
+    return structuredResult(`Exported ${recipes.length} recipe(s) to ${args.out_file}.`, bundle);
   } catch (err) {
     return errorResult(err instanceof Error ? err.message : String(err));
   }
@@ -447,12 +476,35 @@ async function fileChecksumEntry(
 }
 
 export const publishRecipeBundleSchema = z.object({
-  out_dir: z.string(),
-  name: z.string().default("recipe-bundle"),
-  version: z.string().default("0.1.0"),
-  recipe_ids: z.array(z.string()).default([]),
-  include_all: z.boolean().default(false),
-  overwrite: z.boolean().default(false),
+  out_dir: z
+    .string()
+    .describe(
+      "Local directory where the bundle JSON, publish manifest, and checksum manifest are written.",
+    ),
+  name: z
+    .string()
+    .default("recipe-bundle")
+    .describe("Filesystem-safe bundle name; becomes <name>.recipes.json after sanitization."),
+  version: z
+    .string()
+    .default("0.1.0")
+    .describe("Semantic version recorded in the tdmcp-recipe-publish manifest."),
+  recipe_ids: z
+    .array(z.string())
+    .default([])
+    .describe(
+      "Recipe ids to include when include_all is false; missing ids are reported in the bundle.",
+    ),
+  include_all: z
+    .boolean()
+    .default(false)
+    .describe(
+      "When true, publish every recipe in the loaded recipe library and ignore recipe_ids.",
+    ),
+  overwrite: z
+    .boolean()
+    .default(false)
+    .describe("When false, fail if any output artifact already exists; set true to replace them."),
 });
 type PublishRecipeBundleArgs = z.input<typeof publishRecipeBundleSchema>;
 
@@ -809,9 +861,31 @@ export async function componentLinkHealthImpl(ctx: ToolContext, args: ComponentL
 }
 
 export const refreshAssetPreviewsSchema = z.object({
-  targets: z.array(z.object({ node_path: z.string(), file_path: z.string() })).min(1),
-  width: z.coerce.number().int().positive().default(640),
-  height: z.coerce.number().int().positive().default(360),
+  targets: z
+    .array(
+      z.object({
+        node_path: z
+          .string()
+          .describe("Live TOP node path to capture through the TouchDesigner bridge."),
+        file_path: z
+          .string()
+          .describe("Local PNG file path to create or overwrite with the captured preview."),
+      }),
+    )
+    .min(1)
+    .describe("Preview capture jobs; each target maps one live TOP node to one local PNG file."),
+  width: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(640)
+    .describe("Preview width in pixels requested from the bridge capture helper."),
+  height: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(360)
+    .describe("Preview height in pixels requested from the bridge capture helper."),
 });
 type RefreshAssetPreviewsArgs = z.infer<typeof refreshAssetPreviewsSchema>;
 
@@ -844,8 +918,17 @@ export async function refreshAssetPreviewsImpl(ctx: ToolContext, args: RefreshAs
 
 export const installLibraryPackageSchema = z.object({
   source: z.string().describe("Local package folder, .zip, .tox, or manifest file."),
-  dest_dir: z.string(),
-  overwrite: z.boolean().default(false),
+  dest_dir: z
+    .string()
+    .describe(
+      "Local tdmcp package library directory; the package is installed under dest_dir/<packageName>.",
+    ),
+  overwrite: z
+    .boolean()
+    .default(false)
+    .describe(
+      "When false, fail if the destination package already exists; set true to replace it.",
+    ),
 });
 type InstallLibraryPackageArgs = z.infer<typeof installLibraryPackageSchema>;
 
@@ -912,7 +995,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Make portable tox",
         description:
-          "Save a COMP as a .tox package, write a tdmcp-component manifest beside it, and by default include a README.md documenting node inventory, custom parameters, inputs/outputs and external file references.",
+          "Save one live TouchDesigner COMP as a portable .tox package on disk, then write a tdmcp-component manifest beside it and optionally copy docs/README files. Use this for packaging a finished component; use bundle_dependencies instead when external media must be collected and relinked. Requires a running bridge and writes/overwrites local files in out_dir; returns the saved .tox path, manifest path, README path, and warnings.",
         inputSchema: makePortableToxSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -924,8 +1007,13 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Export recipe bundle",
         description:
-          "Write selected recipes to a portable JSON bundle on disk. Use it to hand recipes to another machine or to CI; re-import the bundle with import_recipe_bundle, or produce a signed/versioned artifact with publish_recipe_bundle. Writes a file (destructive).",
+          "Write a portable JSON recipe bundle to out_file. When include_all=false, recipe_ids selects the entries; " +
+          "when include_all=true, the full local library is exported and recipe_ids is ignored. Unknown IDs are " +
+          "reported in missing rather than silently substituted. Use import_recipe_bundle to restore the bundle on " +
+          "another machine or publish_recipe_bundle when you need checksums/versioned handoff artifacts. This writes " +
+          "a local file and returns the bundle kind, version, timestamp, exported recipes, and missing IDs.",
         inputSchema: exportRecipeBundleSchema.shape,
+        outputSchema: exportRecipeBundleOutputSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
       (args) => exportRecipeBundleImpl(ctx, args),
@@ -936,7 +1024,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Publish recipe bundle",
         description:
-          "Write a local, versioned recipe-bundle publish artifact: the recipe bundle JSON, a tdmcp-recipe-publish manifest, and a SHA-256 checksum manifest for repeatable handoff or CI upload.",
+          "Write a local, versioned recipe-bundle publish artifact for CI upload or handoff: <name>.recipes.json, tdmcp-recipe-publish.json, and tdmcp-checksums.json. Use recipe_ids for selected recipes or include_all=true for the whole library; overwrite=false protects existing artifacts. This is a filesystem write tool and returns artifact paths, checksum entries, included recipe count, and missing ids.",
         inputSchema: publishRecipeBundleSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -1020,7 +1108,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Refresh asset previews",
         description:
-          "Capture fresh preview PNG assets from one or more live TOP nodes and write them to disk. Use it to regenerate stale thumbnails for library/package assets after a network changes; requires a running TouchDesigner bridge and writes image files (destructive).",
+          "Capture fresh preview PNG assets from one or more live TOP nodes and write each target to its file_path. Use it to regenerate stale thumbnails after a network changes; pass targets as {node_path,file_path} plus optional width/height. Requires a running TouchDesigner bridge, overwrites image files, and returns written previews plus per-target warnings.",
         inputSchema: refreshAssetPreviewsSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -1032,7 +1120,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
       {
         title: "Install library package",
         description:
-          "Install a local package folder, zip, tox, or manifest into a local tdmcp package directory.",
+          "Install a local tdmcp component package folder, .zip, .tox, or manifest into dest_dir/<packageName>. Use inspect_component_manifest first when validating an unknown package; use browse_library after install to discover it. This copies or extracts files on disk, refuses to replace an existing package unless overwrite=true, rejects symlinked directory trees, and returns the resolved source and destination paths.",
         inputSchema: installLibraryPackageSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
       },
@@ -1043,6 +1131,7 @@ export const libraryRegistrars: ToolRegistrar[] = [
   registerExportExternalizedTree,
   registerImportRecipeFromUrl,
   registerExportPaletteComponent,
+  registerMarketplaceIndexSeed,
   // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
   registerProvenanceStamp,
   registerChecksumAndVerifyPack,

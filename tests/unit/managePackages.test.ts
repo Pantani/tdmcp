@@ -75,6 +75,35 @@ describe("manage_packages MCP tool", () => {
     }
   });
 
+  it("doctor version-gate uses the live TD build number, not the product series", async () => {
+    // Regression: getInfo() returns { td_version: "099", build: "2025.32820" }. The version gate
+    // must compare the numeric build ("2025.32820"), NOT the "099" series — otherwise a compatible
+    // build is falsely reported as predating the 2025.30770 gate.
+    const infoCtx: ToolContext = {
+      client: new TouchDesignerClient({
+        baseUrl: "http://127.0.0.1:1",
+        timeoutMs: 50,
+        fetchImpl: (async () =>
+          new Response(
+            JSON.stringify({ ok: true, data: { td_version: "099", build: "2025.32820" } }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          )) as unknown as typeof fetch,
+      }),
+      knowledge: new KnowledgeBase(),
+      recipes: new RecipeLibrary(),
+      logger: silentLogger,
+    };
+    const result = await managePackagesImpl(
+      infoCtx,
+      managePackagesSchema.parse({ action: "doctor", package_id: "raytk" }),
+    );
+    expect(result.isError).toBeUndefined();
+    const gate = (
+      result.structuredContent?.report as { checks: { id: string; status: string }[] }
+    ).checks.find((c) => c.id === "version-gate");
+    expect(gate?.status).toBe("ok");
+  });
+
   it("surfaces doctor-only packages without throwing", async () => {
     const result = await managePackagesImpl(
       makeCtx(),

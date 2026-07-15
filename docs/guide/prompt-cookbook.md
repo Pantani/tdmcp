@@ -20,8 +20,10 @@ tunnel" works better than naming operators. The AI picks the operators.
 Media on this page is reserved for the visual result or performable surface a
 prompt creates. If a prompt produces a report, config, README or health check, it
 stays text-only instead of showing a decorative command illustration.
+Do not attach a clip until it has been captured from the TouchDesigner output that
+the prompt produced through tdmcp.
 
-## Recipe starters (v0.8.2)
+## Recipe starters (validated first-party recipes)
 
 Use these when you want a validated first-party recipe first, then a creative pass.
 They are good workshop and rehearsal prompts because they start from schema-checked
@@ -168,6 +170,86 @@ oscillator curve with show-safe controls.*
 
 *A text-only kinetic type recipe for lower-friction title cards, countdowns and
 cue labels when audio reactivity is not needed yet.*
+
+The v0.13 recipe twins mirror newer orchestrator tools with schema-checked,
+live-cook-validated networks. They stay text-only here until each video is captured
+from the actual `out1` result after running the prompt through tdmcp.
+
+> *"Apply `color_grade_basic` to a clean test ramp, make it feel like a late-night
+> teal-and-amber grade, and expose Brightness, Gamma, Contrast, Saturation and Hue
+> so I can swap in venue footage later."*
+
+*A horizontal ramp feeds Level and HSV Adjust stages, ending in a stable `out1`.
+The recipe exposes grading controls that can be rehearsed offline, then swapped to
+a real source via Select TOP. It is the validated recipe twin of
+`create_color_grade`, useful when you need a colorist chain before the real clip is
+ready.*
+
+> *"Apply `transition_dissolve`, make source A and B obviously different, and leave
+> one Progress control so I can rehearse the crossfade before wiring real decks."*
+
+*Two built-in sources blend through a Cross TOP with a single 0..1 Progress knob.
+This is the smallest safe A/B transition rehearsal: enough to practice the fader,
+then replace the test sources with real deck Select TOPs.*
+
+> *"Apply `text_overlay_lower_third`, write a readable vocalist lower third over the
+> demo background, and keep the text layer easy to replace with the program feed."*
+
+*A Text TOP composites over a synthetic background and ends at `out1`. Text and
+font parameters stay visible for live titling or later binding, so the overlay can
+move from a demo lower third to real program output without changing the recipe
+shape.*
+
+> *"Apply `layer_stack_blend`, make three rehearsal layers with different colors and
+> blend modes, and expose each opacity so I can practice a small live mix."*
+
+*Noise, ramp and constant sources stack bottom-up through Level and Composite
+stages. Per-layer opacity is exposed, making the recipe a readable miniature layer
+desk before the show uses real inputs.*
+
+> *"Apply `strobe_flash` with a moderate rehearsal rate, keep Rate and Duty visible,
+> and warn me before I raise it into unsafe photosensitive territory."*
+
+*A Constant TOP flashes through a Level TOP gated by an LFO expression. Rate and
+Duty stay performable, and the safety note matters because this is a real flashing
+output, not a decorative preview.*
+
+> *"Apply `test_pattern_grid`, make an eight-division projector alignment grid, and
+> label it clearly enough that the crew can identify the output from across the
+> room."*
+
+*A self-contained GLSL TOP draws a calibration grid ending at `out1`. Use it for
+focus, mapping alignment and quick output checks before the artwork goes live.*
+
+> *"Apply `datamosh_feedback_echo`, let the recursive smear build for a few frames,
+> and expose Decay so I can ride the broken-codec trail live."*
+
+*Animated noise feeds a bounded Feedback / Composite / Level loop. The recursive
+look develops over several cooked frames, so ask for a delayed preview when you
+capture the result.*
+
+> *"Apply `chrome_blobs`, make the liquid metal move slowly on a dark studio
+> background, and tell me which `uTime` binding I need after import for moving
+> reflections."*
+
+*Noise becomes softened metaballs and a GLSL chrome pass. The recipe is valid
+offline, with a manual `uTime` binding note for animated reflections: a reproducible
+Y2K logo-bumper look, not a one-off shader paste.*
+
+> *"Apply `displacement_warp_noise`, use the animated noise modulator to make the
+> ramp ripple like heat haze, and leave Amount and Speed ready for a real clip
+> later."*
+
+*A ramp source is UV-warped by drifting noise through a Displace TOP. It is a safe
+offline rehearsal path for liquid warps over real footage, with the live controls
+ready before the source arrives.*
+
+> *"Apply `luma_keyer`, use the ramp as a visible luminance matte over a moving noise
+> background, and expose Threshold and Softness so I can tune a real source later."*
+
+*A ramp source, noise background, Level matte and Matte TOP make the key visible
+without external footage. It is the luma-key rehearsal twin before a real camera or
+movie source enters the chain.*
 
 ## Generative & abstract
 
@@ -330,6 +412,94 @@ where one `disorder` knob morphs it from a perfect grid (0) into full tumbling c
 (1) — per-cell position, rotation and scale jitter, each hashed from the cell index
 so the scatter is stable and reproducible. Georg Nees' 1968 "Schotter" as one
 automatable parameter, entirely procedural.*
+
+## RayTK toolkit (node-graph SDF)
+
+RayTK ([t3kt/raytk](https://github.com/t3kt/raytk)) is the community raymarching /
+signed-distance-field toolkit. These prompts build an **editable RayTK node graph**
+(SDF primitives → combine → material → camera → renderer) from RayTK's real operator
+(ROP) masters — the node-graph-native complement to the self-contained GLSL
+`create_raymarch_scene` above. RayTK is an external package: the tools require it
+**staged + loaded** first, and RayTK 0.46 needs **TouchDesigner 2025.30770+** (pin
+`build-045` for 2023.x builds). The videos below were captured from a live
+TouchDesigner 2025.32820 graph with RayTK 0.46 loaded; for a fresh local build,
+anything you have not live-cooked yet should still be treated as
+**UNVERIFIED-pending-td**. With the toolkit absent, the tools fail forward with a
+"stage & load RayTK first" message instead of a false render.
+
+> *"Check whether my TouchDesigner build can run the latest RayTK, then stage the
+> toolkit so I can use its operators."*
+
+```bash
+tdmcp-agent manage_packages --params '{"action":"doctor","package_id":"raytk"}'
+tdmcp-agent manage_packages --params '{"action":"install","package_id":"raytk","dry_run":false,"yes":true}'
+```
+
+*`manage_packages doctor raytk` reads the live TD build and reports the version gate
+(`ok` on 2025.30770+, a `warning` naming the required build otherwise), then `install`
+stages the `.tox` under `~/.tdmcp/packages`. It never runs third-party scripts — load
+the staged `.tox` in TouchDesigner before building a scene.*
+
+> *"Build me a real RayTK raymarch scene — a sphere unioned with a box, give it a
+> material, and add a light — as a node graph I can keep editing."*
+
+```bash
+tdmcp-agent raytk-scene --params '{"sdf_primitive":"sphereSdf","union_with":"boxSdf","material":true,"add_camera":true,"add_light":true}'
+```
+
+<video :src="withBase('/examples/raytk-sphere-box-nodegraph.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_raytk_scene` copies RayTK's actual ROP masters (`sphereSdf`, `boxSdf`,
+`simpleUnion`, `basicMat`, `pointLight`, `raymarchRender3D`) and wires the minimal
+renderable chain, terminating in a Null TOP. Because these are live operators, you
+can keep tweaking the network by hand afterward — unlike the monolithic GLSL path.
+The renderer compiles its shader on a background thread, so the first preview may be
+pre-compile; do a live cook-wait before trusting the frame.*
+
+> *"Make a second RayTK node-graph study with a torus SDF unioned into a box-frame
+> SDF, magenta material and a light, so I can inspect the ROP chain and keep
+> editing the operators."*
+
+```bash
+tdmcp-agent raytk-scene --params '{"sdf_primitive":"torusSdf","union_with":"boxFrameSdf","material":true,"add_camera":true,"add_light":true}'
+```
+
+<video :src="withBase('/examples/raytk-torus-frame-nodegraph.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*This is still a RayTK graph, not a standalone shader: `torusSdf`, `boxFrameSdf`,
+`simpleUnion`, `basicMat`, `lookAtCamera`, `pointLight` and `raymarchRender3D`
+are copied from the loaded RayTK package, then the final TOP is captured after a
+live cook-wait.*
+
+> *"Add a smooth-union combine to my RayTK scene and pull the existing sphere into
+> it, so I can start blending in more shapes."*
+
+```bash
+tdmcp-agent raytk-op --params '{"op_type":"simpleUnion","category":"combine","parent_path":"/project1/raytk_scene_sphereSdf","connect_from":"/project1/raytk_scene_sphereSdf/sdf_primary","input_index":0}'
+```
+
+*`create_raytk_op` instances any single RayTK ROP by name and wires an **existing**
+op into one of the **new** op's 0-based typed inputs (source → new op) — here the
+scene's sphere becomes `simpleUnion` input 0. The install-dependent master path is
+probed live, never hardcoded, and repeated calls auto-place to the right of existing
+siblings. (Cameras and lights are wired straight into the renderer by
+`create_raytk_scene`'s `add_camera` / `add_light` flags — that direction is
+new-op → renderer, not covered by this source → new-op wire.) Browse the full
+operator taxonomy via the `tdmcp://raytk/operators` catalog resource.*
+
+> *"Build a RayTK expression graph study: sphere plus box into a union, material,
+> camera and light, laid out as editable ROP nodes so I can keep expanding the SDF
+> tree by hand."*
+
+```bash
+tdmcp-agent raytk-expr-graph --params '{"preset":"sphere_union_box","add_material":true,"add_camera":true,"add_light":true}'
+```
+
+*`raytk_expr_graph_builder` is the larger graph-builder surface: it accepts presets
+or explicit `nodes` / `edges`, copies needed RayTK masters live, wires typed connector
+indices, places copied ROPs deterministically and exposes the selected renderer
+through `out1`. Treat the first local render as `UNVERIFIED-raytk-render` until the
+RayTK `.tox` is loaded and the shader has cooked in TouchDesigner.*
 
 ## Artist studies & installations
 
@@ -1434,6 +1604,51 @@ the addresses are pre-filled: synesthesia targets `/syn` on port 6448, unreal ta
 `/unreal` on port 8000. A Constant CHOP carries one channel per control named to the
 exact OSC address, wired into an OSC-Out CHOP at host:port — bind your analysis to the
 source channels and it pushes straight into the other app's scenes, no manual typing.*
+
+> *"Before doors, give me a pre-show report for `/project1/show`: bridge status,
+> node errors, topology, performance budget and display readiness, then build a
+> companion surface for the hero controls if the report is clean."*
+
+*`show_preflight_report` stays read-only and returns PASS/UNVERIFIED/WARN/FAIL instead of a
+visual. `create_companion_surface` then wraps a chosen COMP with generated controls,
+fader/cue affordances and the same preflight context, so the operator gets a playable
+surface plus the checks that explain whether it is safe to use.*
+
+> *"Build the control room routing: one OSC matrix for Resolume and VDMX, a QLab
+> cue bridge, ATEM cut/auto controls through Companion, and OBS scene/recording
+> buttons, but keep every external app credential and live dispatch explicit."*
+
+*`osc_router_matrix`, `resolume_vdmx_output_chain`, `qlab_osc_bridge`,
+`atem_switcher_control` and `obs_stream_control` create the control lanes and notes.
+They are scaffolds for real external software: validate host/port/auth against the
+room before treating any button as live.*
+
+> *"Set up clip playback and output handoff: a movie/audio transport with Play,
+> Loop and Speed controls, a shader edit loop for last-minute GLSL fixes, and a
+> ProRes review export preset when the look is approved."*
+
+*`clip_audio_transport` builds the rehearsal-safe player, `edit_shader_live_loop`
+edits a GLSL/Text DAT then immediately inspects errors and optional preview, and
+`export_render_preset` wraps `record_movie` with named delivery presets for review,
+HAP, ProRes and NotchLC-style handoff.*
+
+> *"Prepare the venue calibration scaffolds: two projector lanes with corner-pin
+> and level controls, plus a synthetic LiDAR floor tracker so I can rehearse zones
+> before the real sensor arrives."*
+
+*`projector_calibration_wizard` and `lidar_floor_tracker` intentionally separate
+offline scaffolding from physical truth. The graph can be built and inspected now;
+projector alignment and real sensor tracking remain `UNVERIFIED` until validated on
+the actual outputs/hardware.*
+
+> *"Import this Blender scene into a PBR render scaffold, and add a guarded Notch /
+> TouchEngine bridge container beside it so I can test both asset and real-time
+> engine paths in one rehearsal project."*
+
+*`blender_scene_import` creates a TD-side PBR scaffold around a `.blend`-adjacent
+asset path or fallback primitive. `notch_touchengine_bridge` adds the guarded Notch
+TOP / Engine COMP placeholder and notes; license/runtime validation remains a live
+operator step, not something the cookbook can fake.*
 
 **What you'll get:** stage-prep tools for displays, GPU capability, DMX / Art-Net,
 shared-memory IPC and multi-agent fanout. These are infrastructure surfaces, so the

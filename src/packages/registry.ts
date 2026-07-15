@@ -93,14 +93,26 @@ export const PACKAGE_MANIFESTS: PackageManifest[] = [
     packageType: "toolkit",
     supportLevel: "full",
     platforms: ["macos", "windows"],
-    tdVersionRange: "2022+",
+    // RayTK 0.46 (build-046, 2025-08-26) requires the TD 2025.30770 experimental build and
+    // is NOT compatible with the 2023.x releases; users on 2023.x must pin RayTK <=0.45.
+    tdVersionRange: "2025.30770+",
+    versionGate: {
+      minBuild: "2025.30770",
+      reason:
+        "RayTK 0.46 (build-046) requires the TouchDesigner 2025.30770 experimental build and is NOT compatible with the 2023.x releases.",
+      fallback:
+        "On a 2023.x TouchDesigner build, pin RayTK <=0.45 (e.g. `manage_packages install raytk --pin build-045`) instead of the latest release.",
+    },
     requiresTouchDesignerBridge: false,
     externalDependencies: [],
     installStrategy: {
       mode: "tox-import",
       preferReleaseAsset: true,
       importableExtensions: [".tox", ".toe"],
-      manualSteps: ["Stage RayTK and import the package/tox files that match your TD version."],
+      manualSteps: [
+        "Confirm your TouchDesigner build satisfies the RayTK version gate (2025.30770+ for 0.46; pin <=0.45 for 2023.x) before staging.",
+        "Stage RayTK and import the package/tox files that match your TD version.",
+      ],
     },
     healthChecks: [
       {

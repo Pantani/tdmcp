@@ -4,6 +4,7 @@ import { registerApplyCreativeCard } from "./applyCreativeCard.js";
 import { registerApplyPostProcessing } from "./applyPostProcessing.js";
 import { registerApplyRecipe } from "./applyRecipe.js";
 import { registerAudioFingerprintToVisual } from "./audioFingerprintToVisual.js";
+import { registerBlenderSceneImport } from "./blenderSceneImport.js";
 import { registerComposeCueList } from "./composeCueList.js";
 import { registerControlledDisorderGrid } from "./controlledDisorderGrid.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
@@ -56,6 +57,7 @@ import { registerCreateHistogramScope } from "./createHistogramScope.js";
 import { registerCreateImageToParticles } from "./createImageToParticles.js";
 import { registerCreateInteractionZones } from "./createInteractionZones.js";
 import { registerCreateInteractiveProjectionMapping } from "./createInteractiveProjectionMapping.js";
+import { registerCreateIphoneDepthSource } from "./createIphoneDepthSource.js";
 import { registerCreateJfaVoronoi } from "./createJfaVoronoi.js";
 import { registerCreateKaleidoscope } from "./createKaleidoscope.js";
 import { registerCreateKeyer } from "./createKeyer.js";
@@ -71,7 +73,9 @@ import { registerCreateMidiNoteReactive } from "./createMidiNoteReactive.js";
 import { registerCreateMotionReactive } from "./createMotionReactive.js";
 import { registerCreateMultiOutput } from "./createMultiOutput.js";
 import { registerMultipass3dDepth } from "./createMultipass3dDepth.js";
+import { registerCreateNuitrackBodyBus } from "./createNuitrackBodyBus.js";
 import { registerCreateOpticalFlow } from "./createOpticalFlow.js";
+import { registerCreateOrbbecDepthSilhouette } from "./createOrbbecDepthSilhouette.js";
 import { registerCreateParticleFlock } from "./createParticleFlock.js";
 import { registerCreateParticleSystem } from "./createParticleSystem.js";
 import { registerCreatePbrScene } from "./createPbrScene.js";
@@ -92,8 +96,11 @@ import { registerCreatePoseTracking } from "./createPoseTracking.js";
 import { registerCreateProbSequencer } from "./createProbSequencer.js";
 import { registerCreateProjectionMapping } from "./createProjectionMapping.js";
 import { registerCreateRaymarchScene } from "./createRaymarchScene.js";
+import { registerCreateRaytkScene } from "./createRaytkScene.js";
+import { registerCreateRaytkSdfGraph } from "./createRaytkSdfGraph.js";
 import { registerCreateReactionDiffusion } from "./createReactionDiffusion.js";
 import { registerCreateSafetyBlackoutChain } from "./createSafetyBlackoutChain.js";
+import { registerCreateSam2SegmentationBridge } from "./createSam2SegmentationBridge.js";
 import { registerCreateSdfField } from "./createSdfField.js";
 import { registerCreateSdfText } from "./createSdfText.js";
 import { registerCreateSetlistRunner } from "./createSetlistRunner.js";
@@ -128,6 +135,7 @@ import { registerCreateVisualSystem } from "./createVisualSystem.js";
 import { registerCreateVolumetricField } from "./createVolumetricField.js";
 import { registerCreateVoxelStack } from "./createVoxelStack.js";
 import { registerCreateWaveform } from "./createWaveform.js";
+import { registerCreateYoloOnnxTracker } from "./createYoloOnnxTracker.js";
 import { registerDescribeProject } from "./describeProject.js";
 import { registerDetectOnsets } from "./detectOnsets.js";
 import { registerDetectPitch } from "./detectPitch.js";
@@ -140,8 +148,11 @@ import { registerGetPreview } from "./getPreview.js";
 import { registerImportIsfShader } from "./importIsfShader.js";
 import { registerImportModel } from "./importModel.js";
 import { registerImportShadertoy } from "./importShadertoy.js";
+import { registerLidarFloorTracker } from "./lidarFloorTracker.js";
 import { registerListRecipes } from "./listRecipes.js";
 import { registerMoodboardToSystem } from "./moodboardToSystem.js";
+import { registerProjectorCalibrationWizard } from "./projectorCalibrationWizard.js";
+import { registerRaytkExprGraphBuilder } from "./raytkExprGraphBuilder.js";
 import { registerScaffoldGenre } from "./scaffoldGenre.js";
 import { registerScaffoldShow } from "./scaffoldShow.js";
 import { registerSetupBodyTracking } from "./setupBodyTracking.js";
@@ -173,6 +184,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVideoPlayer,
   registerCreate3dScene,
   registerCreateProjectionMapping,
+  registerProjectorCalibrationWizard,
   registerCreateKeyframeAnimation,
   registerCreateSimulation,
   registerListRecipes,
@@ -187,6 +199,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateColorGrade,
   registerCreateColorWheels,
   registerImportModel,
+  registerBlenderSceneImport,
   registerCreateShaderLib,
   registerCreateShaderPark,
   registerCreateVideoSynth,
@@ -205,6 +218,18 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateGpuParticleField,
   // Post-0.3.0 parallel build — wave 1:
   registerCreateRaymarchScene,
+  // RayTK integration (Wave W4) — native RayTK node-graph scene (complement to the GLSL one):
+  registerCreateRaytkScene,
+  // External-integration Wave 1 (2026-07-09): deeper RayTK graph, iPhone depth, AI masks.
+  registerCreateRaytkSdfGraph,
+  registerCreateIphoneDepthSource,
+  registerCreateSam2SegmentationBridge,
+  // External-integration Wave 2 (2026-07-09): vision and depth sensor scaffolds.
+  registerCreateYoloOnnxTracker,
+  registerCreateNuitrackBodyBus,
+  registerCreateOrbbecDepthSilhouette,
+  // Tool-integration Wave 7 — RayTK expression graph builder:
+  registerRaytkExprGraphBuilder,
   registerDetectTempo,
   // Post-0.3.0 parallel build — wave 2:
   registerCreatePbrScene,
@@ -313,6 +338,7 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateStepRepeat,
   registerCreatePointerReactive,
   registerCreateInteractionZones,
+  registerLidarFloorTracker,
   // Roadmap-to-1.0 Wave 4 (2026-07-06) — stock-TD generators:
   registerCreateTerrain,
   registerCreateAsemicWriting,

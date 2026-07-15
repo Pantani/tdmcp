@@ -23,8 +23,10 @@ A mídia desta página fica reservada para o resultado visual ou a superfície
 performável que o prompt cria. Se o prompt gera relatório, config, README ou
 health check, ele fica só em texto em vez de mostrar uma ilustração decorativa do
 comando.
+Não anexe um clipe até ele ter sido capturado da saída do TouchDesigner que o
+prompt produziu via tdmcp.
 
-## Starters de receita (v0.8.2)
+## Starters de receita (receitas first-party validadas)
 
 Use estes quando quiser começar por uma receita first-party validada e só depois
 pedir uma passada criativa. São bons para workshop e ensaio porque partem de redes
@@ -173,6 +175,91 @@ de oscilador brilhante com controles seguros para show.*
 
 *Uma receita de kinetic type sem áudio para title cards, contagens regressivas e
 labels de cue quando audio-reactivity ainda não é necessária.*
+
+As receitas twin do v0.13 espelham ferramentas de orquestração mais novas com
+redes checadas por schema e validadas por live cook. Elas ficam só em texto aqui
+até cada vídeo ser capturado do `out1` real depois de rodar o prompt pelo tdmcp.
+
+> *"Aplique `color_grade_basic` em uma rampa de teste limpa, deixe com cara de grade
+> teal e âmbar de madrugada, e exponha Brightness, Gamma, Contrast, Saturation e Hue
+> para eu trocar por footage do venue depois."*
+
+*Uma rampa horizontal alimenta estágios Level e HSV Adjust, terminando em um `out1`
+estável. A receita expõe controles de grade que você pode ensaiar offline e depois
+trocar por uma fonte real via Select TOP. É a twin validada de `create_color_grade`,
+útil quando você precisa de uma cadeia de colorista antes do clip real estar
+pronto.*
+
+> *"Aplique `transition_dissolve`, deixe as fontes A e B obviamente diferentes, e
+> mantenha um controle Progress para eu ensaiar o crossfade antes de ligar decks
+> reais."*
+
+*Duas fontes internas se misturam por um Cross TOP com um único knob Progress de
+0..1. É o menor ensaio seguro de transição A/B: suficiente para praticar o fader e
+depois substituir as fontes de teste por Select TOPs dos decks reais.*
+
+> *"Aplique `text_overlay_lower_third`, escreva um lower third legível para a
+> vocalista sobre o fundo de demo, e deixe a camada de texto fácil de trocar para o
+> program feed."*
+
+*Um Text TOP é composto sobre um fundo sintético e termina em `out1`. Parâmetros de
+texto e fonte ficam visíveis para titulação ao vivo ou binding posterior, então o
+overlay pode sair do lower third de demo para o program output real sem mudar a
+forma da receita.*
+
+> *"Aplique `layer_stack_blend`, crie três camadas de ensaio com cores e blend modes
+> diferentes, e exponha a opacidade de cada uma para eu praticar uma mixagem ao vivo
+> pequena."*
+
+*Fontes de noise, rampa e constant empilham de baixo para cima por estágios Level e
+Composite. A opacidade por camada fica exposta, fazendo da receita uma mini mesa de
+camadas legível antes de o show usar entradas reais.*
+
+> *"Aplique `strobe_flash` com uma taxa moderada de ensaio, mantenha Rate e Duty
+> visíveis, e me avise antes de eu subir para uma faixa insegura para
+> fotossensibilidade."*
+
+*Um Constant TOP pisca por um Level TOP guiado por expressão de LFO. Rate e Duty
+ficam performáveis, e o aviso de segurança importa porque isso é uma saída piscante
+real, não um preview decorativo.*
+
+> *"Aplique `test_pattern_grid`, faça uma grade de alinhamento de projetor com oito
+> divisões, e rotule de um jeito claro para a equipe identificar o output de longe."*
+
+*Um GLSL TOP autossuficiente desenha uma grade de calibração terminando em `out1`.
+Use para foco, alinhamento de mapping e checagens rápidas de output antes da arte
+entrar ao vivo.*
+
+> *"Aplique `datamosh_feedback_echo`, deixe o smear recursivo crescer por alguns
+> frames, e exponha Decay para eu tocar a trilha de codec quebrado ao vivo."*
+
+*Noise animado alimenta um loop limitado de Feedback / Composite / Level. O visual
+recursivo se desenvolve ao longo de vários frames processados pelo cook, então peça
+um preview com atraso quando for capturar o resultado.*
+
+> *"Aplique `chrome_blobs`, faça o metal líquido se mover devagar sobre um fundo
+> escuro de estúdio, e me diga qual binding de `uTime` eu preciso depois do import
+> para reflexos em movimento."*
+
+*Noise vira metaballs suavizadas e um passe GLSL de chrome. A receita é válida
+offline, com uma nota de binding manual de `uTime` para reflexos animados: um look
+reprodutível de bumper Y2K, não um shader colado uma vez.*
+
+> *"Aplique `displacement_warp_noise`, use o modulador de noise animado para fazer a
+> rampa ondular como miragem de calor, e deixe Amount e Speed prontos para um clip
+> real depois."*
+
+*Uma rampa é distorcida em UV por noise em movimento através de um Displace TOP. É
+um caminho seguro de ensaio offline para warps líquidos sobre footage real, com os
+controles ao vivo prontos antes da fonte chegar.*
+
+> *"Aplique `luma_keyer`, use a rampa como matte de luminância visível sobre um fundo
+> de noise em movimento, e exponha Threshold e Softness para eu ajustar uma fonte
+> real depois."*
+
+*Uma fonte de rampa, fundo de noise, matte por Level e Matte TOP tornam a key
+visível sem footage externo. É a twin de ensaio do luma key antes de uma câmera ou
+movie source real entrar na cadeia.*
 
 ## Generativo & abstrato
 
@@ -343,6 +430,94 @@ TOP, onde um botão `disorder` (0 = grade perfeita → 1 = caos total) escala ji
 posição, rotação e escala por célula, cada um hasheado do índice da célula para ficar
 estável e reproduzível. É o "Schotter" de Georg Nees (1968) como um parâmetro ao vivo
 automatizável, inteiramente procedural.*
+
+## Toolkit RayTK (SDF por node-graph)
+
+O RayTK ([t3kt/raytk](https://github.com/t3kt/raytk)) é o toolkit de raymarching /
+signed-distance-field da comunidade. Estes prompts constroem um **node-graph RayTK
+editável** (primitivas SDF → combine → material → câmera → renderer) a partir dos
+masters de operador (ROP) reais do RayTK — o complemento node-graph-native ao
+`create_raymarch_scene` em GLSL autossuficiente acima. RayTK é um pacote externo: as
+ferramentas exigem ele **staged + carregado** antes, e o RayTK 0.46 precisa do
+**TouchDesigner 2025.30770+** (fixe `build-045` para builds 2023.x). Os vídeos abaixo
+foram capturados de um graph vivo no TouchDesigner 2025.32820 com RayTK 0.46
+carregado; num build local novo, qualquer coisa que você ainda não cozinhou ao vivo
+deve continuar como **UNVERIFIED-pending-td**. Sem o toolkit, as ferramentas fazem
+fail-forward com a mensagem "stage & load RayTK first" em vez de um render falso.
+
+> *"Verifique se meu build do TouchDesigner roda o RayTK mais recente, depois faça o
+> stage do toolkit para eu usar os operadores dele."*
+
+```bash
+tdmcp-agent manage_packages --params '{"action":"doctor","package_id":"raytk"}'
+tdmcp-agent manage_packages --params '{"action":"install","package_id":"raytk","dry_run":false,"yes":true}'
+```
+
+*`manage_packages doctor raytk` lê o build ao vivo do TD e reporta o version gate
+(`ok` no 2025.30770+, um `warning` nomeando o build necessário caso contrário), depois
+`install` faz o stage do `.tox` em `~/.tdmcp/packages`. Ele nunca roda scripts de
+terceiros — carregue o `.tox` staged no TouchDesigner antes de construir uma cena.*
+
+> *"Construa uma cena de raymarch RayTK de verdade — uma esfera unida a um box, com
+> material e uma luz — como um node graph que eu posso continuar editando."*
+
+```bash
+tdmcp-agent raytk-scene --params '{"sdf_primitive":"sphereSdf","union_with":"boxSdf","material":true,"add_camera":true,"add_light":true}'
+```
+
+<video :src="withBase('/examples/raytk-sphere-box-nodegraph.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*`create_raytk_scene` copia os masters de ROP reais do RayTK (`sphereSdf`, `boxSdf`,
+`simpleUnion`, `basicMat`, `pointLight`, `raymarchRender3D`) e conecta a cadeia
+renderizável mínima, terminando num Null TOP. Como são operadores ao vivo, você pode
+continuar ajustando a rede à mão depois — diferente do caminho GLSL monolítico. O
+renderer compila o shader numa thread em segundo plano, então o primeiro preview pode
+ser pré-compilação; faça um cook-wait ao vivo antes de confiar no frame.*
+
+> *"Faça um segundo estudo RayTK por node graph com um torus SDF unido a um
+> box-frame SDF, material magenta e uma luz, para eu inspecionar a cadeia ROP e
+> continuar editando os operadores."*
+
+```bash
+tdmcp-agent raytk-scene --params '{"sdf_primitive":"torusSdf","union_with":"boxFrameSdf","material":true,"add_camera":true,"add_light":true}'
+```
+
+<video :src="withBase('/examples/raytk-torus-frame-nodegraph.mp4')" autoplay loop muted playsinline style="width:100%;max-width:480px;border-radius:8px;display:block"></video>
+
+*Isto ainda é um graph RayTK, não um shader standalone: `torusSdf`,
+`boxFrameSdf`, `simpleUnion`, `basicMat`, `lookAtCamera`, `pointLight` e
+`raymarchRender3D` são copiados do pacote RayTK carregado, e o TOP final é
+capturado depois de um cook-wait ao vivo.*
+
+> *"Adicione um combine de smooth-union à minha cena RayTK e puxe a esfera existente
+> para dentro dele, para eu começar a mesclar mais formas."*
+
+```bash
+tdmcp-agent raytk-op --params '{"op_type":"simpleUnion","category":"combine","parent_path":"/project1/raytk_scene_sphereSdf","connect_from":"/project1/raytk_scene_sphereSdf/sdf_primary","input_index":0}'
+```
+
+*`create_raytk_op` instancia qualquer ROP RayTK isolado pelo nome e conecta um op
+**existente** numa das entradas tipadas 0-based do op **novo** (origem → op novo) —
+aqui a esfera da cena vira a entrada 0 do `simpleUnion`. O master path, dependente da
+instalação, é probado ao vivo, nunca hardcoded, e chamadas repetidas se auto-posicionam
+à direita dos irmãos existentes. (Câmeras e luzes são ligadas direto no renderer pelos
+flags `add_camera` / `add_light` do `create_raytk_scene` — essa direção é op-novo →
+renderer, não coberta por este wire origem → op-novo.) Explore a taxonomia completa de
+operadores pelo recurso de catálogo `tdmcp://raytk/operators`.*
+
+> *"Construa um estudo RayTK de expression graph: esfera mais box entrando num union,
+> material, câmera e luz, tudo disposto como ROPs editáveis para eu continuar
+> expandindo a árvore SDF à mão."*
+
+```bash
+tdmcp-agent raytk-expr-graph --params '{"preset":"sphere_union_box","add_material":true,"add_camera":true,"add_light":true}'
+```
+
+*`raytk_expr_graph_builder` é a superfície de graph maior: aceita presets ou `nodes` /
+`edges` explícitos, copia os masters RayTK necessários ao vivo, conecta índices de entrada
+tipados, posiciona os ROPs copiados de forma determinística e expõe o renderer
+selecionado por `out1`. Trate o primeiro render local como `UNVERIFIED-raytk-render`
+até o `.tox` do RayTK estar carregado e o shader ter cozinhado no TouchDesigner.*
 
 ## Estudos artísticos & instalações
 
@@ -1484,6 +1659,51 @@ porta 6448; unreal → `/unreal`, porta 8000): um Constant CHOP com um canal por
 já nomeado com o endereço OSC exato, ligado num OSC-Out CHOP em host:porta. Basta ligar
 sua análise nos canais de origem — o controle cross-app "simplesmente funciona" porque
 os templates de endereço já vêm preenchidos, sem digitar endereço à mão.*
+
+> *"Antes de abrir a casa, me dê um relatório pre-show de `/project1/show`: status
+> da bridge, erros de nós, topologia, orçamento de performance e prontidão de
+> displays; se estiver limpo, monte uma companion surface para os controles do hero."*
+
+*`show_preflight_report` fica read-only e devolve PASS/UNVERIFIED/WARN/FAIL em vez de um visual.
+`create_companion_surface` então embrulha um COMP escolhido com controles gerados,
+faders/cues e o mesmo contexto de preflight, para o operador receber uma superfície
+tocável mais os checks que explicam se ela está pronta para uso.*
+
+> *"Monte o roteamento da sala de controle: uma matriz OSC para Resolume e VDMX,
+> uma bridge de cues para QLab, controles de cut/auto do ATEM via Companion e botões
+> de cena/gravação do OBS, mas deixe credencial e disparo ao vivo sempre explícitos."*
+
+*`osc_router_matrix`, `resolume_vdmx_output_chain`, `qlab_osc_bridge`,
+`atem_switcher_control` e `obs_stream_control` criam lanes de controle e notas. São
+scaffolds para softwares externos reais: valide host/porta/auth na sala antes de
+tratar qualquer botão como live.*
+
+> *"Prepare playback e handoff de saída: um transport de movie/audio com Play, Loop
+> e Speed, um loop de edição de shader para correções GLSL de última hora e um preset
+> ProRes de review quando o look for aprovado."*
+
+*`clip_audio_transport` constrói o player seguro para ensaio, `edit_shader_live_loop`
+edita um GLSL/Text DAT e logo inspeciona erros e preview opcional, e
+`export_render_preset` envolve `record_movie` com presets nomeados para review, HAP,
+ProRes e handoff estilo NotchLC.*
+
+> *"Prepare os scaffolds de calibração do venue: dois lanes de projetor com corner-pin
+> e level, mais um tracker LiDAR sintético de chão para eu ensaiar zonas antes do
+> sensor real chegar."*
+
+*`projector_calibration_wizard` e `lidar_floor_tracker` separam de propósito scaffold
+offline de verdade física. O graph pode ser construído e inspecionado agora; alinhamento
+de projetor e tracking de sensor real continuam `UNVERIFIED` até validação nas saídas
+e hardwares reais.*
+
+> *"Importe esta cena Blender para um scaffold de render PBR e coloque ao lado uma
+> bridge guardada de Notch / TouchEngine, para eu testar asset e engine em tempo real
+> no mesmo projeto de ensaio."*
+
+*`blender_scene_import` cria um scaffold PBR no TD ao redor de um caminho de asset
+adjacente ao `.blend`, ou uma primitiva fallback. `notch_touchengine_bridge` adiciona
+o placeholder guardado de Notch TOP / Engine COMP e notas; licença/runtime continuam
+passo ao vivo do operador, não algo que o cookbook possa fingir.*
 
 ## Consertar & entender
 

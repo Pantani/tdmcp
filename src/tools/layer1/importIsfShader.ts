@@ -37,7 +37,10 @@ export const importIsfShaderSchema = z.object({
     .tuple([z.number().int().min(2).max(16384), z.number().int().min(2).max(16384)])
     .default([1280, 720])
     .describe("GLSL TOP output resolution [width, height]."),
-  pixel_format: z.enum(["rgba8", "rgba16", "rgba32"]).default("rgba8"),
+  pixel_format: z
+    .enum(["rgba8", "rgba16", "rgba32"])
+    .default("rgba8")
+    .describe("Pixel format for the generated GLSL TOP."),
   channel_overrides: z
     .array(channelOverrideSchema)
     .default([])
@@ -46,9 +49,25 @@ export const importIsfShaderSchema = z.object({
     .record(z.string(), z.unknown())
     .default({})
     .describe("Override the ISF DEFAULT for any input at build time."),
-  expose_controls: z.boolean().default(true),
-  capture_preview: z.boolean().default(true),
-  fetch_timeout_ms: z.number().int().min(100).max(120000).default(8000),
+  expose_controls: z
+    .boolean()
+    .default(true)
+    .describe("Expose ISF inputs as live custom controls on the generated system container."),
+  capture_preview: z
+    .boolean()
+    .default(true)
+    .describe(
+      "Capture an inline preview after the shader is built; disable for faster headless runs.",
+    ),
+  fetch_timeout_ms: z
+    .number()
+    .int()
+    .min(100)
+    .max(120000)
+    .default(8000)
+    .describe(
+      "Timeout in milliseconds for URL sources; local files and raw source do not need network access.",
+    ),
 });
 
 type Args = z.infer<typeof importIsfShaderSchema>;
@@ -468,7 +487,11 @@ export const registerImportIsfShader: ToolRegistrar = (server, ctx) => {
     {
       title: "Import ISF shader",
       description:
-        "Import an ISF (.fs) shader into TouchDesigner as a GLSL TOP with auto-generated controls. Accepts raw source, a local file path, or an http(s) URL.",
+        "Create a new TouchDesigner system container containing an ISF (.fs) shader as a GLSL TOP, companion DATs, " +
+        "and optional live controls. Accepts raw source, a local file path, or an http(s) URL; URL fetches are " +
+        "bounded by fetch_timeout_ms. Returns the container/GLSL/output paths, generated controls, provenance, " +
+        "warnings for inputs that need manual wiring, and an inline preview when capture_preview=true. Use " +
+        "create_glsl_shader for hand-written GLSL or import_shadertoy for Shadertoy sources.",
       inputSchema: importIsfShaderSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

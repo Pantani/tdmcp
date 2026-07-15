@@ -601,10 +601,12 @@ export const registerLearnConventions: ToolRegistrar = (server, ctx) => {
     {
       title: "Learn the artist's house conventions from a live TD subtree",
       description:
-        "Walks a TouchDesigner subtree under `scope_path` (read-only), extracts naming/" +
-        "colour/topology/parameter conventions, and writes the findings to the shared " +
-        "Memory/conventions.md note (and, when confident, merges naming/layout into " +
-        "Memory/style.md). Pure observation: no TD mutations. Requires TDMCP_VAULT_PATH.",
+        "Read a TouchDesigner subtree under scope_path without changing TD, infer naming/colour/topology/parameter " +
+        "conventions, and write the result to the configured Obsidian vault. This is read-only on the TD side but " +
+        "mutates vault files: by default it writes Memory/conventions.md and may merge confident naming/layout " +
+        "signals into Memory/style.md. Set dry_run=true to inspect the extract without disk writes. Use " +
+        "learn_from_my_corpus when the source is already in the vault and load_session_profile when you only need " +
+        "to consume cached preferences. Requires TDMCP_VAULT_PATH and returns sampled conventions plus write flags.",
       inputSchema: learnConventionsSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
