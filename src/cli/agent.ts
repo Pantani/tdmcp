@@ -83,7 +83,12 @@ import {
   create3dAudioReactiveSchema,
 } from "../tools/layer1/create3dAudioReactive.js";
 import { create3dSceneImpl, create3dSceneSchema } from "../tools/layer1/create3dScene.js";
+import { createAiBackdropImpl, createAiBackdropSchema } from "../tools/layer1/createAiBackdrop.js";
 import { createAiMirrorImpl, createAiMirrorSchema } from "../tools/layer1/createAiMirror.js";
+import {
+  createAiVideoBackdropImpl,
+  createAiVideoBackdropSchema,
+} from "../tools/layer1/createAiVideoBackdrop.js";
 import {
   createAsciiRenderImpl,
   createAsciiRenderSchema,
@@ -473,6 +478,7 @@ import {
   driveStreamdiffusionSchema,
 } from "../tools/layer1/driveStreamdiffusion.js";
 import { enhanceBuildImpl, enhanceBuildSchema } from "../tools/layer1/enhanceBuild.js";
+import { evolveParametersImpl, evolveParametersSchema } from "../tools/layer1/evolveParameters.js";
 import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
@@ -880,6 +886,8 @@ import {
   connectYoutubeLiveChatBusImpl,
   connectYoutubeLiveChatBusSchema,
 } from "../tools/layer2/connectYoutubeLiveChatBus.js";
+import { createAiTextureImpl, createAiTextureSchema } from "../tools/layer2/createAiTexture.js";
+import { createAiVideoImpl, createAiVideoSchema } from "../tools/layer2/createAiVideo.js";
 import {
   createArtnetDiscoveryPanelImpl,
   createArtnetDiscoveryPanelSchema,
@@ -3331,6 +3339,36 @@ const COMMANDS: Record<string, Command> = {
     "Live AI-mirror combo: camera → StreamDiffusion (+ optional pose/depth controls) → preview.",
     { mutates: true },
   ),
+  "create-ai-texture": r(
+    createAiTextureSchema,
+    createAiTextureImpl,
+    "Generate an image from a prompt (fal.ai) and drop it as a Movie File In TOP.",
+    { mutates: true },
+  ),
+  "create-ai-backdrop": r(
+    createAiBackdropSchema,
+    createAiBackdropImpl,
+    "Prompt → a fully wired AI-generated backdrop system (level/transform/blur + controls).",
+    { mutates: true },
+  ),
+  "create-ai-video": r(
+    createAiVideoSchema,
+    createAiVideoImpl,
+    "Prompt (+ optional init image) → a short clip (fal or comfyui) dropped as a Movie File In TOP.",
+    { mutates: true },
+  ),
+  "create-ai-video-backdrop": r(
+    createAiVideoBackdropSchema,
+    createAiVideoBackdropImpl,
+    "Prompt → a fully wired AI-generated video-backdrop system (movie/level/transform + Play/Speed/Brightness/Scale).",
+    { mutates: true },
+  ),
+  "evolve-parameters": r(
+    evolveParametersSchema,
+    evolveParametersImpl,
+    "EXPERIMENTAL, OFFLINE: genetic-algorithm search over a recipe's categorical parameter genome, scored by a tdmcp-measurable fitness; rebuilds only the winning genome. Minutes-long, mutates a scratch graph — not a real-time controller.",
+    { mutates: true },
+  ),
   "connect-comfyui": r(
     connectComfyuiSchema,
     connectComfyuiImpl,
@@ -4968,6 +5006,17 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   projectRagAnalyzeTimeoutMs: "TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS",
   projectRagLicenseAllowlist: "TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST",
   projectRagScoreWeights: "TDMCP_PROJECT_RAG_SCORE_WEIGHTS",
+  imageGenProvider: "TDMCP_IMAGE_GEN_PROVIDER",
+  falKey: "TDMCP_FAL_KEY",
+  replicateKey: "TDMCP_REPLICATE_KEY",
+  imageGenModel: "TDMCP_IMAGE_GEN_MODEL",
+  imageCacheDir: "TDMCP_IMAGE_CACHE_DIR",
+  videoGenProvider: "TDMCP_VIDEO_GEN_PROVIDER",
+  videoGenModel: "TDMCP_VIDEO_GEN_MODEL",
+  videoCacheDir: "TDMCP_VIDEO_CACHE_DIR",
+  comfyuiUrl: "TDMCP_COMFYUI_URL",
+  comfyuiVideoWorkflow: "TDMCP_COMFYUI_VIDEO_WORKFLOW",
+  videoGenTimeoutMs: "TDMCP_VIDEO_GEN_TIMEOUT_MS",
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",

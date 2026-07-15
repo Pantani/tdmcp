@@ -1,6 +1,6 @@
-import zlib from "node:zlib";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { decodePngPixels, type PngDecodeFailure } from "../../feedback/pngDecode.js";
 import { capturePreview } from "../../feedback/previewCapture.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -89,73 +89,23 @@ interface DecodedStats {
 // `decoded: false` + a warning, so a caller is never lied to.
 // ---------------------------------------------------------------------------
 
-const PNG_SIGNATURE = "89504e470d0a1a0a";
 const NEAR_BLACK_LUMA = 0.06;
 
-function channelsForColorType(colorType: number): number | null {
-  // 0 grayscale, 2 truecolor, 3 indexed, 4 grayscale+alpha, 6 truecolor+alpha
-  switch (colorType) {
-    case 0:
-      return 1;
-    case 2:
-      return 3;
-    case 4:
-      return 2;
-    case 6:
-      return 4;
+/** Map a decode failure to the exact human warning captionTop has always emitted. */
+function decodeFailureWarning(failure: PngDecodeFailure): string {
+  const tail = "stats are an approximate byte-histogram.";
+  switch (failure.reason) {
+    case "not-png":
+      return `preview was not a PNG; ${tail}`;
+    case "unsupported-bit-depth":
+      return `PNG bit depth ${failure.bitDepth} unsupported; ${tail}`;
+    case "unsupported-color-type":
+      return `PNG colour type ${failure.colorType} (palette) unsupported; ${tail}`;
+    case "no-image-data":
+      return `PNG had no decodable image data; ${tail}`;
     default:
-      return null; // indexed (palette) needs the PLTE chunk — not handled here
+      return `PNG decode failed (${failure.detail}); ${tail}`;
   }
-}
-
-function paeth(a: number, b: number, c: number): number {
-  const p = a + b - c;
-  const pa = Math.abs(p - a);
-  const pb = Math.abs(p - b);
-  const pc = Math.abs(p - c);
-  if (pa <= pb && pa <= pc) return a;
-  if (pb <= pc) return b;
-  return c;
-}
-
-/** Reverse the per-scanline PNG filters, returning the unfiltered pixel bytes. */
-function unfilter(raw: Buffer, width: number, height: number, bpp: number): Buffer {
-  const stride = width * bpp;
-  const out = Buffer.alloc(height * stride);
-  let rawPos = 0;
-  for (let y = 0; y < height; y++) {
-    const filter = raw[rawPos++] ?? 0;
-    const outRow = y * stride;
-    const prevRow = outRow - stride;
-    for (let x = 0; x < stride; x++) {
-      const value = raw[rawPos++] ?? 0;
-      const left = x >= bpp ? (out[outRow + x - bpp] ?? 0) : 0;
-      const up = y > 0 ? (out[prevRow + x] ?? 0) : 0;
-      const upLeft = y > 0 && x >= bpp ? (out[prevRow + x - bpp] ?? 0) : 0;
-      let recon: number;
-      switch (filter) {
-        case 0:
-          recon = value;
-          break;
-        case 1:
-          recon = value + left;
-          break;
-        case 2:
-          recon = value + up;
-          break;
-        case 3:
-          recon = value + ((left + up) >> 1);
-          break;
-        case 4:
-          recon = value + paeth(left, up, upLeft);
-          break;
-        default:
-          recon = value; // unknown filter — best effort
-      }
-      out[outRow + x] = recon & 0xff;
-    }
-  }
-  return out;
 }
 
 function classify(meanLuma: number, nearBlackFraction: number, saturation: number): string {
@@ -197,110 +147,57 @@ function computeStats(png: Buffer, warnings: string[]): DecodedStats {
     };
   };
 
-  try {
-    if (png.length < 8 || png.subarray(0, 8).toString("hex") !== PNG_SIGNATURE) {
-      return approximate("preview was not a PNG; stats are an approximate byte-histogram.");
-    }
-    let off = 8;
-    let width = 0;
-    let height = 0;
-    let bitDepth = 0;
-    let colorType = 0;
-    const idat: Buffer[] = [];
-    while (off + 8 <= png.length) {
-      const len = png.readUInt32BE(off);
-      const type = png.toString("ascii", off + 4, off + 8);
-      const dataStart = off + 8;
-      const dataEnd = dataStart + len;
-      if (dataEnd > png.length) break;
-      const data = png.subarray(dataStart, dataEnd);
-      if (type === "IHDR") {
-        width = data.readUInt32BE(0);
-        height = data.readUInt32BE(4);
-        bitDepth = data[8] ?? 0;
-        colorType = data[9] ?? 0;
-      } else if (type === "IDAT") {
-        idat.push(Buffer.from(data));
-      } else if (type === "IEND") {
-        break;
-      }
-      off = dataEnd + 4; // skip the 4-byte CRC
-    }
+  const decoded = decodePngPixels(png);
+  if (!decoded.ok) return approximate(decodeFailureWarning(decoded));
+  const { pixels, width, height, channels } = decoded;
 
-    if (bitDepth !== 8) {
-      return approximate(
-        `PNG bit depth ${bitDepth} unsupported; stats are an approximate byte-histogram.`,
-      );
+  let sumR = 0;
+  let sumG = 0;
+  let sumB = 0;
+  let sumLuma = 0;
+  let nearBlack = 0;
+  const total = width * height;
+  for (let i = 0; i < total; i++) {
+    const base = i * channels;
+    let r: number;
+    let g: number;
+    let b: number;
+    if (channels >= 3) {
+      r = pixels[base] ?? 0;
+      g = pixels[base + 1] ?? 0;
+      b = pixels[base + 2] ?? 0;
+    } else {
+      // grayscale (channels 1 or 2): single luminance sample
+      const lum = pixels[base] ?? 0;
+      r = lum;
+      g = lum;
+      b = lum;
     }
-    const channels = channelsForColorType(colorType);
-    if (channels === null) {
-      return approximate(
-        `PNG colour type ${colorType} (palette) unsupported; stats are an approximate byte-histogram.`,
-      );
-    }
-    if (width <= 0 || height <= 0 || idat.length === 0) {
-      return approximate(
-        "PNG had no decodable image data; stats are an approximate byte-histogram.",
-      );
-    }
-
-    const raw = zlib.inflateSync(Buffer.concat(idat));
-    const pixels = unfilter(raw, width, height, channels);
-
-    let sumR = 0;
-    let sumG = 0;
-    let sumB = 0;
-    let sumLuma = 0;
-    let nearBlack = 0;
-    const total = width * height;
-    for (let i = 0; i < total; i++) {
-      const base = i * channels;
-      let r: number;
-      let g: number;
-      let b: number;
-      if (channels >= 3) {
-        r = pixels[base] ?? 0;
-        g = pixels[base + 1] ?? 0;
-        b = pixels[base + 2] ?? 0;
-      } else {
-        // grayscale (channels 1 or 2): single luminance sample
-        const lum = pixels[base] ?? 0;
-        r = lum;
-        g = lum;
-        b = lum;
-      }
-      const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      sumR += r;
-      sumG += g;
-      sumB += b;
-      sumLuma += luma;
-      if (luma / 255 < NEAR_BLACK_LUMA) nearBlack++;
-    }
-    const denom = total || 1;
-    const meanR = sumR / denom / 255;
-    const meanG = sumG / denom / 255;
-    const meanB = sumB / denom / 255;
-    const meanLuma = sumLuma / denom / 255;
-    const saturation = Math.max(meanR, meanG, meanB) - Math.min(meanR, meanG, meanB);
-    const nearBlackFraction = nearBlack / denom;
-    return {
-      mean_luma: meanLuma,
-      mean_r: meanR,
-      mean_g: meanG,
-      mean_b: meanB,
-      near_black_fraction: nearBlackFraction,
-      saturation,
-      pixels_sampled: total,
-      classification: classify(meanLuma, nearBlackFraction, saturation),
-      decoded: true,
-    };
-  } catch (err) {
-    return approximate(
-      `PNG decode failed (${
-        err instanceof Error ? err.message : String(err)
-      }); stats are an approximate byte-histogram.`,
-    );
+    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    sumR += r;
+    sumG += g;
+    sumB += b;
+    sumLuma += luma;
+    if (luma / 255 < NEAR_BLACK_LUMA) nearBlack++;
   }
+  const denom = total || 1;
+  const meanR = sumR / denom / 255;
+  const meanG = sumG / denom / 255;
+  const meanB = sumB / denom / 255;
+  const meanLuma = sumLuma / denom / 255;
+  const saturation = Math.max(meanR, meanG, meanB) - Math.min(meanR, meanG, meanB);
+  const nearBlackFraction = nearBlack / denom;
+  return {
+    mean_luma: meanLuma,
+    mean_r: meanR,
+    mean_g: meanG,
+    mean_b: meanB,
+    near_black_fraction: nearBlackFraction,
+    saturation,
+    pixels_sampled: total,
+    classification: classify(meanLuma, nearBlackFraction, saturation),
+    decoded: true,
+  };
 }
 
 function dominantColorPhrase(stats: DecodedStats): string {

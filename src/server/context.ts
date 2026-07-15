@@ -10,6 +10,10 @@ import {
   toProjectRagConfig,
 } from "../projectRag/index.js";
 import { RecipeLibrary } from "../recipes/loader.js";
+import { resolveImageProvider } from "../services/imageGen/resolve.js";
+import type { ImageProvider } from "../services/imageGen/types.js";
+import { resolveVideoProvider } from "../services/videoGen/resolve.js";
+import type { VideoGenProvider } from "../services/videoGen/types.js";
 import type { ToolContext } from "../tools/types.js";
 import type { TdmcpConfig } from "../utils/config.js";
 import { createLogger, type Logger } from "../utils/logger.js";
@@ -26,6 +30,10 @@ export interface ToolContextOverrides {
   creativeRag?: CreativeRagService;
   /** Override the Project RAG service (tests inject a fake; undefined keeps the config-driven wiring). */
   projectRag?: ProjectRagService;
+  /** Override the hosted image-gen provider (tests inject a fake; undefined keeps config-driven wiring). */
+  imageGen?: ImageProvider;
+  /** Override the video-gen provider (tests inject a fake; undefined keeps config-driven wiring). */
+  videoGen?: VideoGenProvider;
   /** Override fetch (used by the fixture-recorder CLI to wrap bridge calls). */
   fetchImpl?: typeof fetch;
 }
@@ -57,6 +65,12 @@ export function buildToolContext(
     (projectRagConfig.enabled
       ? createProjectRagService({ config: projectRagConfig, logger })
       : undefined);
+  const imageGen =
+    overrides.imageGen ??
+    (config.imageGenProvider !== "none" ? resolveImageProvider(config, logger) : undefined);
+  const videoGen =
+    overrides.videoGen ??
+    (config.videoGenProvider !== "none" ? resolveVideoProvider(config, logger) : undefined);
   return {
     client: connection.client,
     knowledge,
@@ -68,5 +82,9 @@ export function buildToolContext(
     toolProfile: config.toolProfile,
     creativeRag,
     projectRag,
+    imageGen,
+    imageCacheDir: config.imageCacheDir,
+    videoGen,
+    videoCacheDir: config.videoCacheDir,
   };
 }

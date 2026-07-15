@@ -723,9 +723,40 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "create-ai-backdrop",
+    summary:
+      "Prompt → a fully wired AI-generated backdrop system (level/transform/blur + controls).",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "create-ai-mirror",
     summary:
       "Live AI-mirror combo: camera → StreamDiffusion (+ optional pose/depth controls) → preview.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create-ai-texture",
+    summary: "Generate an image from a prompt (fal.ai) and drop it as a Movie File In TOP.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create-ai-video",
+    summary:
+      "Prompt (+ optional init image) → a short clip (fal or comfyui) dropped as a Movie File In TOP.",
+    mutates: true,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "create-ai-video-backdrop",
+    summary:
+      "Prompt → a fully wired AI-generated video-backdrop system (movie/level/transform + Play/Speed/Brightness/Scale).",
     mutates: true,
     unsafe: false,
     source: "tool",
@@ -1174,6 +1205,14 @@ export const AGENT_COMMAND_CATALOG = [
     command: "errors summarize",
     summary: "Cluster network errors by cause.",
     mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
+    command: "evolve-parameters",
+    summary:
+      "EXPERIMENTAL, OFFLINE: genetic-algorithm search over a recipe's categorical parameter genome, scored by a tdmcp-measurable fitness; rebuilds only the winning genome. Minutes-long, mutates a scratch graph — not a real-time controller.",
+    mutates: true,
     unsafe: false,
     source: "tool",
   },
