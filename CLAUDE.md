@@ -401,3 +401,29 @@ this environment runs the team as sub-agents (no `TeamCreate`).
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-06-21 | Initial harness | `tdmcp-roadmap-campaign` skill + `_workspace/campaign_roadmap_v1/{ROADMAP_1.0_BACKLOG.md,ledger.json}` (no new agents — reuses backlog-planner + all specialists) | drive M4 + M5 + gates G1–G6 to completion. Policy (user-confirmed): commit+push **no-tag** ([Unreleased] only), blocked GPU/TD/external items **build-offline + quarantine**, **checkpoint after Wave 1** then autonomous. 21 executable items (19 offline, 2 needs-TD) across 6 waves + 5 quarantined (Ui24R bench, directory acceptance, tagged-minor, live validations) |
+
+## Harness: ACE-Step implementation study
+
+**Goal:** explore **all** the ways the ACE-Step music-generation model
+(`github.com/ace-step/ACE-Step` — Apache-2.0, text/tags/lyrics → WAV, GPU-bound)
+could be integrated into tdmcp, across five coupled axes (runtime/serving, async
+tool contract, TD audio integration, GPU/perf coexistence, tool/UX surface), and
+converge on one decision-grade `STUDY.md`: per-axis option matrix → recommended
+reference architecture → minimum-viable atomic slice → phased build plan +
+probe-first risk checklist.
+
+**Trigger:** when asked to study, explore, scope, or compare how to implement /
+integrate **ACE-Step** (or AI music generation) into tdmcp — "como implementar
+ACE-Step", "explorar todos os tipos de implementação", "começar o estudo" — and
+every follow-up (re-run, re-explore one axis, deepen a trade-off, re-decide the
+architecture, refresh an ACE-Step claim after a release) — use the
+`tdmcp-acestep-study` skill (fan-out of 5 `acestep-explorer`s → 1
+`acestep-study-synthesizer`, in `.claude/agents/` + `.claude/skills/`). This is
+the **exploration** harness — it produces a study to decide from; it does **not**
+build. Once the path is chosen, hand the P0 slice to `tdmcp-pipeline`. Simple
+questions can be answered directly. Note: sub-agents (no `TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-07-07 | Initial harness | 2 agents (`acestep-explorer`, `acestep-study-synthesizer`) + 3 skills (`acestep-explore`, `acestep-synthesize`, `tdmcp-acestep-study`) | study how to integrate the ACE-Step music-gen model into tdmcp: 5-axis fan-out → 1 synthesized STUDY.md with a recommended architecture + phased plan; feeds `tdmcp-pipeline`. Exploration only, no build |
