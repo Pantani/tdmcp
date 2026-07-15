@@ -155,13 +155,15 @@ the machine TD runs on:
   environment. The bridge then rejects any request without a matching
   `Authorization: Bearer <token>` (HTTP `401`). Unset (default) keeps the
   zero-config local flow.
-- `TDMCP_RAW_PYTHON=off` hides only the two **raw-Python MCP tools**
-  (`execute_python_script`, `exec_node_method`) where the *client* authors the
-  code. It is **not** a code-execution kill-switch: many higher-level tools still
-  send their own templated Python to the bridge. The bridge-side arbitrary-code
-  endpoints (`/api/exec`, node-`method`) are default-closed unless
-  `TDMCP_BRIDGE_TOKEN` is configured or `TDMCP_BRIDGE_ALLOW_EXEC=1` is explicitly
-  set in TouchDesigner's environment; structured endpoints keep working.
+- `TDMCP_RAW_PYTHON=off` hides client-authored Python tools, including
+  `execute_python_script`, `exec_node_method`, `create_python_script`, and
+  persistent Script callbacks from `author_script_operator`. It is **not** a
+  code-execution kill-switch: many higher-level tools still send their own
+  templated Python to the bridge. The bridge-side arbitrary-code endpoints
+  (`/api/exec`, node-`method`) are default-closed unless
+  `TDMCP_BRIDGE_ALLOW_EXEC=1` is explicitly set in TouchDesigner's environment;
+  `TDMCP_BRIDGE_TOKEN` authenticates requests but does not enable exec by itself.
+  Structured endpoints keep working.
 - The MCP server binds to loopback (`127.0.0.1`) for both transports and enables
   DNS-rebinding protection on HTTP.
 - **The bridge refuses browser cross-origin requests.** Any request carrying an

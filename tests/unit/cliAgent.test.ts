@@ -621,6 +621,8 @@ describe("tdmcp-agent CLI", () => {
       expect(r.stdout).toContain("TDMCP_LLM_TIER");
       expect(r.stdout).toContain("TDMCP_LLM_MAX_STEPS");
       expect(r.stdout).toContain("TDMCP_LLM_TEMPERATURE");
+      expect(r.stdout).toContain('export TDMCP_PROJECT_RAG_SCORE_WEIGHTS="0.45:0.25:0.15:0.15"');
+      expect(r.stdout).not.toContain("[object Object]");
       expect(r.stdout).toContain("# export TDMCP_TELEGRAM_ALLOWED_CHATS=<set manually>");
       expect(r.stdout).toContain("# export TDMCP_TELEGRAM_ALLOWED_USERS=<set manually>");
       expect(r.stdout).not.toContain("111,222");

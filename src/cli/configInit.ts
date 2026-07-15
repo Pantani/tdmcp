@@ -76,6 +76,8 @@ export function renderStarterConfig(opts: { bridgeToken?: string } = {}): string
     "# --- MCP server ------------------------------------------------------------",
     '# Transport: "stdio" (default, for local clients) or "http" (Streamable HTTP, loopback-only).',
     'TDMCP_TRANSPORT="stdio"',
+    "# HTTP bind host. Keep loopback locally; containers set 0.0.0.0 explicitly.",
+    'TDMCP_HTTP_HOST="127.0.0.1"',
     "# HTTP transport port (only used when TDMCP_TRANSPORT=http).",
     'TDMCP_HTTP_PORT="3939"',
     "# Log verbosity. One of: debug, info, warn, error, silent.",

@@ -74,7 +74,8 @@ export function isRawPythonTool(tool: string): boolean {
   return (
     tool === "execute_python_script" ||
     tool.endsWith("_python_script") ||
-    tool === "exec_node_method"
+    tool === "exec_node_method" ||
+    tool === "author_script_operator"
   );
 }
 

@@ -102,8 +102,9 @@ surface:
   writes, panic controls) — a strict superset of `RAW_PYTHON=off`. The launcher sets this for you. See
   [Environment variables](/reference/environment).
 - Bridge-side arbitrary exec is now closed by default unless
-  **`TDMCP_BRIDGE_TOKEN`** is configured or **`TDMCP_BRIDGE_ALLOW_EXEC=1`** is set
-  in *TouchDesigner's* own environment. Keep it closed for autonomous LOPs use.
+  **`TDMCP_BRIDGE_ALLOW_EXEC=1`** is explicitly set in *TouchDesigner's* own
+  environment. `TDMCP_BRIDGE_TOKEN` authenticates requests but does not enable
+  arbitrary exec. Keep it closed for autonomous LOPs use.
 
 ## How it works
 

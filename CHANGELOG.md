@@ -426,6 +426,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   object page `https://www.si.edu/object/{record_ID}` when `record_link` is
   absent, keeping `guid` (ARK) as a last-resort fallback, so every card yields a
   valid absolute URL.
+- Hardened Glama and hosted-registry introspection with a compact directory tool
+  profile, reachable container HTTP binding, accurate tool metadata, raw-Python
+  macro replay gating, and schema-backed structured recipe-bundle results.
 
 ## [0.13.1] - 2026-07-09
 

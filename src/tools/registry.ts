@@ -25,6 +25,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "execute_python_script", // raw client-authored code (also gated by rawPython)
   "exec_node_method", // raw client-authored code (also gated by rawPython)
   "create_python_script", // raw client-authored code stored in DATs (also gated by rawPython)
+  "author_script_operator", // raw client-authored Script callback code (also gated by rawPython)
   "delete_td_node", // removes nodes
   "rebuild_network", // can clear/recreate a parent's children
   "edit_dat_content", // destructive DAT rewrite, even though scoped/guarded
@@ -36,6 +37,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "manage_packages", // stages/uninstalls community package files
   "make_portable_tox", // writes/overwrites .tox packages on disk
   "export_recipe_bundle", // writes bundle files
+  "optimize_performance", // apply can resize live TOPs
   "publish_recipe_bundle", // writes bundle publish artifacts and checksum manifests
   "import_recipe_bundle", // writes recipe files
   "scaffold_recipe_template", // writes recipe files

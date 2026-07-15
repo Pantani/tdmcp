@@ -41,4 +41,37 @@ describe("MCPB manifest safety controls", () => {
       default: "full",
     });
   });
+
+  it("defaults the MCP directory manifest to the compact directory profile", () => {
+    const manifest = JSON.parse(readFileSync(join(root, "server.json"), "utf8")) as {
+      packages?: Array<{
+        environmentVariables?: Array<{
+          name?: string;
+          default?: string;
+          choices?: string[];
+        }>;
+      }>;
+    };
+    const variables = manifest.packages?.[0]?.environmentVariables ?? [];
+    const profile = variables.find((variable) => variable.name === "TDMCP_TOOL_PROFILE");
+    const rawPython = variables.find((variable) => variable.name === "TDMCP_RAW_PYTHON");
+
+    expect(profile).toMatchObject({
+      default: "directory",
+      choices: ["full", "safe", "directory"],
+    });
+    expect(rawPython).toMatchObject({ default: "off", choices: ["on", "off"] });
+  });
+
+  it("keeps registry container scans compact while local Docker stays complete", () => {
+    const dockerfile = readFileSync(join(root, "Dockerfile"), "utf8");
+    const compose = readFileSync(join(root, "docker-compose.yml"), "utf8");
+
+    expect(dockerfile).toMatch(/TDMCP_TOOL_PROFILE=directory/);
+    expect(dockerfile).toMatch(/TDMCP_RAW_PYTHON=off/);
+    expect(dockerfile).toMatch(/TDMCP_HTTP_HOST=0\.0\.0\.0/);
+    expect(compose).toMatch(/TDMCP_HTTP_HOST:\s*0\.0\.0\.0/);
+    expect(compose).toMatch(/TDMCP_TOOL_PROFILE:\s*full/);
+    expect(compose).toMatch(/TDMCP_RAW_PYTHON:\s*["']on["']/);
+  });
 });

@@ -174,11 +174,13 @@ export const ConfigSchema = z.object({
   requestTimeoutMs: z.coerce.number().int().positive().default(10000),
   /** HTTP transport port (only used when transport=http). */
   httpPort: z.coerce.number().int().positive().max(65535).default(3939),
+  /** HTTP bind host. Unset binds loopback; containers opt into 0.0.0.0 explicitly. */
+  httpHost: z.string().min(1).optional(),
   /** Subscribe to TD WebSocket events and forward them as MCP logging notifications. */
   events: z.enum(["on", "off"]).default("on"),
   /**
    * Raw Python escape-hatch tools (`execute_python_script`, `exec_node_method`,
-   * `create_python_script`).
+   * `create_python_script`, `author_script_operator`).
    * Set to "off" to lock them out for restricted setups; on by default.
    */
   rawPython: z.enum(["on", "off"]).default("on"),
@@ -476,6 +478,7 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     logLevel: env.TDMCP_LOG_LEVEL,
     requestTimeoutMs: env.TDMCP_REQUEST_TIMEOUT_MS,
     httpPort: env.TDMCP_HTTP_PORT,
+    httpHost: env.TDMCP_HTTP_HOST,
     events: env.TDMCP_EVENTS,
     rawPython: env.TDMCP_RAW_PYTHON,
     yolo: env.TDMCP_YOLO,

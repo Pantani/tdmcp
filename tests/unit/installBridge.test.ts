@@ -106,6 +106,18 @@ describe("install-bridge CLI", () => {
     expect(process.exitCode).toBeUndefined();
   });
 
+  it("rejects unknown options before copying or probing", async () => {
+    const fetchImpl = vi.fn();
+    vi.stubGlobal("fetch", fetchImpl);
+
+    await runInstallBridge(["--bogus"]);
+
+    expect(mocks.cpSync).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(erroredText()).toContain('Unknown install-bridge option or argument "--bogus"');
+    expect(process.exitCode).toBe(2);
+  });
+
   it("installs bridge modules without probing TouchDesigner by default", async () => {
     const fetchImpl = vi.fn();
     vi.stubGlobal("fetch", fetchImpl);
@@ -139,6 +151,28 @@ describe("install-bridge CLI", () => {
     expect(loggedText()).toContain("Bridge verified");
     expect(loggedText()).toContain("http://127.0.0.1:9980/api/info");
     expect(process.exitCode).toBeUndefined();
+  });
+
+  it("uses TDMCP_BRIDGE_TOKEN from the environment for verification without echoing it", async () => {
+    const previousToken = process.env.TDMCP_BRIDGE_TOKEN;
+    process.env.TDMCP_BRIDGE_TOKEN = "probe-token";
+    try {
+      const fetchImpl = vi.fn(async () => okInfoResponse());
+      vi.stubGlobal("fetch", fetchImpl);
+
+      const result = await runInstallBridge(["--verify"]);
+      const requestInit = (
+        fetchImpl.mock.calls[0] as [unknown, RequestInit | undefined] | undefined
+      )?.[1];
+
+      expect(requestInit?.headers).toEqual({ Authorization: "Bearer probe-token" });
+      expect(result).not.toHaveProperty("token");
+      expect(loggedText()).not.toContain("probe-token");
+      expect(process.exitCode).toBeUndefined();
+    } finally {
+      if (previousToken === undefined) delete process.env.TDMCP_BRIDGE_TOKEN;
+      else process.env.TDMCP_BRIDGE_TOKEN = previousToken;
+    }
   });
 
   it("uses --port for verification", async () => {

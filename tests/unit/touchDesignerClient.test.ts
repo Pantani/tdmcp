@@ -28,6 +28,9 @@ describe("TouchDesignerClient", () => {
             state: "ok",
             uptime_seconds: 12.5,
             heartbeat: { stale: false, age_seconds: 1.2 },
+            performance: { available: true, cook_time_ms: 0.4, fps: 60 },
+            degraded_signals: [],
+            warnings: [],
             touchdesigner: { td_version: "099", bridge_version: "0.12.0" },
           },
         }),
@@ -37,6 +40,8 @@ describe("TouchDesignerClient", () => {
     expect(health.state).toBe("ok");
     expect(health.uptime_seconds).toBe(12.5);
     expect(health.touchdesigner?.bridge_version).toBe("0.12.0");
+    expect(health.performance?.cook_time_ms).toBe(0.4);
+    expect(health.warnings).toEqual([]);
   });
 
   it("getHealth rejects with a typed TdError on an invalid envelope", async () => {

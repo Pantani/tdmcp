@@ -123,9 +123,12 @@ export const registerOptimizePerformance: ToolRegistrar = (server, ctx) => {
     {
       title: "Optimize performance",
       description:
-        "Scan a network for cook-time bottlenecks and (optionally) fix them. By default it reports the slowest nodes with a concrete suggestion each. With apply:true it lowers the resolution of the flagged TOPs by `scale` to claw back GPU time. Run get_td_performance first if you just want the numbers; use this to act on them.",
+        "Scan a network for cook-time bottlenecks and report the slowest nodes with concrete suggestions. By default " +
+        "this is a read-only measurement; with apply=true it mutates flagged TOP resolutions by scale and returns " +
+        "the before/after sizes. Run get_td_performance when you only need metrics; use this tool when you want the " +
+        "bounded resolution change, and leave apply=false for a plan-only pass.",
       inputSchema: optimizePerformanceSchema.shape,
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     (args) => optimizePerformanceImpl(ctx, args),
   );
