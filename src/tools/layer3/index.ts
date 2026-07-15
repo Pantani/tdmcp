@@ -1,6 +1,8 @@
+import { isAceFeatureFlagEnabled } from "../../utils/config.js";
 import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
 import { registerBundleDependencies } from "./bundleDependencies.js";
+import { registerCancelMusicJob } from "./cancelMusicJob.js";
 // Campaign Waves 4 & 6 (backlog 2026-05-29):
 import { registerCaptionTop } from "./captionTop.js";
 import { registerCheckOperatorAvailability } from "./checkOperatorAvailability.js";
@@ -26,11 +28,13 @@ import { registerExecutePythonScript } from "./executePythonScript.js";
 import { registerExportSopToSvg } from "./exportSopToSvg.js";
 import { registerExtractPalette } from "./extractPalette.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
+import { registerGenerateMusic } from "./generateMusic.js";
 import { registerGenerateReadme } from "./generateReadme.js";
 import { registerGetBridgeLogs } from "./getBridgeLogs.js";
 import { registerGetDatContent } from "./getDatContent.js";
 import { registerGetInlinePreview } from "./getInlinePreview.js";
 import { registerGetModuleHelp } from "./getModuleHelp.js";
+import { registerGetMusicJob } from "./getMusicJob.js";
 import { registerGetNodeStateRuntime } from "./getNodeStateRuntime.js";
 import { registerGetOperatorWorkflowGuide } from "./getOperatorWorkflowGuide.js";
 import { registerGetParameterMenu } from "./getParameterMenu.js";
@@ -67,6 +71,7 @@ import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
 import { registerSetParameterExpression } from "./setParameterExpression.js";
 import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
+import { registerSubmitMusicJob } from "./submitMusicJob.js";
 import { registerSuggestOperatorChain } from "./suggestOperatorChain.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerSwapOperator } from "./swapOperator.js";
@@ -169,3 +174,14 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerGetDatContent,
   registerGetParameterMenu,
 ];
+
+// ACE-Step P0 (2026-07-07) — music generation is opt-in behind TDMCP_ACE_ENABLED.
+// Registration runs before the parsed config exists, so gate on the raw env via
+// the shared `isAceFeatureFlagEnabled` helper (mirrors the Creative RAG pattern).
+if (isAceFeatureFlagEnabled(process.env.TDMCP_ACE_ENABLED)) {
+  layer3Registrars.push(registerGenerateMusic);
+  // ACE-Step P1 (2026-07-11) — async job lifecycle (submit/poll/cancel), same gate.
+  layer3Registrars.push(registerSubmitMusicJob);
+  layer3Registrars.push(registerGetMusicJob);
+  layer3Registrars.push(registerCancelMusicJob);
+}

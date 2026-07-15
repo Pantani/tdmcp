@@ -1,4 +1,4 @@
-import { isRagFeatureFlagEnabled } from "../../utils/config.js";
+import { isAceFeatureFlagEnabled, isRagFeatureFlagEnabled } from "../../utils/config.js";
 import type { ToolRegistrar } from "../types.js";
 import { registerApplyCreativeCard } from "./applyCreativeCard.js";
 import { registerApplyPostProcessing } from "./applyPostProcessing.js";
@@ -135,6 +135,7 @@ import { registerDetectTempo } from "./detectTempo.js";
 import { registerDriveStreamdiffusion } from "./driveStreamdiffusion.js";
 import { registerEnhanceBuild } from "./enhanceBuild.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
+import { registerGenerateMusicReactive } from "./generateMusicReactive.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportIsfShader } from "./importIsfShader.js";
 import { registerImportModel } from "./importModel.js";
@@ -329,4 +330,10 @@ export const layer1Registrars: ToolRegistrar[] = [
 // decision through the shared config helper to avoid drift.
 if (isRagFeatureFlagEnabled(process.env.TDMCP_RAG_APPLY_CARD)) {
   layer1Registrars.push(registerApplyCreativeCard);
+}
+
+// ACE-Step P1 (2026-07-11) — song->show flagship tool, opt-in behind TDMCP_ACE_ENABLED
+// (same raw-env gate layer3 uses for the P0 music tools; parsed config is not yet built here).
+if (isAceFeatureFlagEnabled(process.env.TDMCP_ACE_ENABLED)) {
+  layer1Registrars.push(registerGenerateMusicReactive);
 }

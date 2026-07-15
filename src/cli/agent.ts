@@ -447,6 +447,10 @@ import {
   extractAudioFeaturesImpl,
   extractAudioFeaturesSchema,
 } from "../tools/layer1/extractAudioFeatures.js";
+import {
+  generateMusicReactiveImpl,
+  generateMusicReactiveSchema,
+} from "../tools/layer1/generateMusicReactive.js";
 import { getPreviewImpl, getPreviewSchema } from "../tools/layer1/getPreview.js";
 import { importIsfShaderImpl, importIsfShaderSchema } from "../tools/layer1/importIsfShader.js";
 import { importModelImpl, importModelSchema } from "../tools/layer1/importModel.js";
@@ -673,6 +677,7 @@ import {
   bundleDependenciesImpl,
   bundleDependenciesSchema,
 } from "../tools/layer3/bundleDependencies.js";
+import { cancelMusicJobImpl, cancelMusicJobSchema } from "../tools/layer3/cancelMusicJob.js";
 import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
 import {
   checkOperatorAvailabilityImpl,
@@ -730,11 +735,13 @@ import {
 import { exportSopToSvgImpl, exportSopToSvgSchema } from "../tools/layer3/exportSopToSvg.js";
 import { extractPaletteImpl, extractPaletteSchema } from "../tools/layer3/extractPalette.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
+import { generateMusicImpl, generateMusicSchema } from "../tools/layer3/generateMusic.js";
 import { generateReadmeImpl, generateReadmeSchema } from "../tools/layer3/generateReadme.js";
 import { getBridgeLogsImpl, getBridgeLogsSchema } from "../tools/layer3/getBridgeLogs.js";
 import { getDatContentImpl, getDatContentSchema } from "../tools/layer3/getDatContent.js";
 import { getInlinePreviewImpl, getInlinePreviewSchema } from "../tools/layer3/getInlinePreview.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
+import { getMusicJobImpl, getMusicJobSchema } from "../tools/layer3/getMusicJob.js";
 import {
   getNodeStateRuntimeImpl,
   getNodeStateRuntimeSchema,
@@ -813,6 +820,7 @@ import {
   setParameterExpressionSchema,
 } from "../tools/layer3/setParameterExpression.js";
 import { snapshotTdGraphImpl, snapshotTdGraphSchema } from "../tools/layer3/snapshotTdGraph.js";
+import { submitMusicJobImpl, submitMusicJobSchema } from "../tools/layer3/submitMusicJob.js";
 import {
   suggestOperatorChainImpl,
   suggestOperatorChainSchema,
@@ -2806,6 +2814,39 @@ const COMMANDS: Record<string, Command> = {
     "Read a Creative RAG card and route to one of its whitelisted Layer 1 tdmcpAffordances with optional overrides (use `dry_run: true` to preview).",
     { mutates: true },
   ),
+  // ACE-Step P0 (2026-07-07) — offline music-bed generator (opt-in via TDMCP_ACE_ENABLED;
+  // the impl returns a friendly "enable it" error when the client is not wired):
+  "music generate": r(
+    generateMusicSchema,
+    generateMusicImpl,
+    "Generate a WAV from a text prompt (tags/genre) and optional lyrics via a local ACE-Step server. Requires TDMCP_ACE_ENABLED=1 and a running ace/ wrapper.",
+    { mutates: true },
+  ),
+  // ACE-Step P1 (2026-07-11) — song->show flagship + async job lifecycle (same TDMCP_ACE_ENABLED gate;
+  // impls return a friendly "enable it" error when the client is not wired):
+  "music reactive": r(
+    generateMusicReactiveSchema,
+    generateMusicReactiveImpl,
+    "Generate a music bed via ACE-Step and build an audio-reactive visual from it.",
+    { mutates: true },
+  ),
+  "music submit": r(
+    submitMusicJobSchema,
+    submitMusicJobImpl,
+    "Submit an async ACE-Step music generation job; returns a job id to poll.",
+    { mutates: true },
+  ),
+  "music job": r(
+    getMusicJobSchema,
+    getMusicJobImpl,
+    "Poll an ACE-Step music generation job by id.",
+  ),
+  "music cancel": r(
+    cancelMusicJobSchema,
+    cancelMusicJobImpl,
+    "Cancel an ACE-Step music generation job (kills the worker, frees VRAM).",
+    { mutates: true },
+  ),
   // CLI parity wave — expose every registered MCP tool as a same-named subcommand:
   get_preview: r(
     getPreviewSchema,
@@ -3606,6 +3647,17 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   projectRagAnalyzeTimeoutMs: "TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS",
   projectRagLicenseAllowlist: "TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST",
   projectRagScoreWeights: "TDMCP_PROJECT_RAG_SCORE_WEIGHTS",
+  aceEnabled: "TDMCP_ACE_ENABLED",
+  aceMode: "TDMCP_ACE_MODE",
+  aceHost: "TDMCP_ACE_HOST",
+  acePort: "TDMCP_ACE_PORT",
+  aceOutputDir: "TDMCP_ACE_OUTPUT_DIR",
+  aceToken: "TDMCP_ACE_TOKEN",
+  aceTimeoutMs: "TDMCP_ACE_TIMEOUT_MS",
+  aceDefaultSteps: "TDMCP_ACE_DEFAULT_STEPS",
+  aceSyncMaxSeconds: "TDMCP_ACE_SYNC_MAX_SECONDS",
+  aceRtf: "TDMCP_ACE_RTF",
+  acePollMs: "TDMCP_ACE_POLL_MS",
 };
 const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "bridgeToken",
@@ -3617,6 +3669,7 @@ const SECRET_ENV: ReadonlySet<keyof TdmcpConfig> = new Set([
   "ragSmithsonianKey",
   "ragEuropeanaKey",
   "projectRagGhToken",
+  "aceToken",
 ]);
 
 /** A paste-ready `export TDMCP_*=...` block; secrets are emitted commented-out (set manually). */

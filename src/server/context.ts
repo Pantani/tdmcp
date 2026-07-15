@@ -1,3 +1,4 @@
+import { AceStepClient } from "../ace-client/aceStepClient.js";
 import {
   type CreativeRagService,
   createCreativeRagService,
@@ -11,7 +12,7 @@ import {
 } from "../projectRag/index.js";
 import { RecipeLibrary } from "../recipes/loader.js";
 import type { ToolContext } from "../tools/types.js";
-import type { TdmcpConfig } from "../utils/config.js";
+import { aceBaseUrl, type TdmcpConfig } from "../utils/config.js";
 import { createLogger, type Logger } from "../utils/logger.js";
 import { Vault } from "../vault/index.js";
 import { ConnectionManager } from "./connectionManager.js";
@@ -26,6 +27,8 @@ export interface ToolContextOverrides {
   creativeRag?: CreativeRagService;
   /** Override the Project RAG service (tests inject a fake; undefined keeps the config-driven wiring). */
   projectRag?: ProjectRagService;
+  /** Override the ACE-Step client (tests inject a fake; undefined keeps the config-driven wiring). */
+  aceClient?: AceStepClient;
   /** Override fetch (used by the fixture-recorder CLI to wrap bridge calls). */
   fetchImpl?: typeof fetch;
 }
@@ -57,6 +60,22 @@ export function buildToolContext(
     (projectRagConfig.enabled
       ? createProjectRagService({ config: projectRagConfig, logger })
       : undefined);
+  const aceClient =
+    overrides.aceClient ??
+    (config.aceEnabled
+      ? new AceStepClient({
+          baseUrl: aceBaseUrl(config),
+          token: config.aceToken,
+          outputDir: config.aceOutputDir,
+          timeoutMs: config.aceTimeoutMs,
+          defaultSteps: config.aceDefaultSteps,
+          mode: config.aceMode,
+          syncMaxSeconds: config.aceSyncMaxSeconds,
+          rtf: config.aceRtf,
+          pollMs: config.acePollMs,
+          logger,
+        })
+      : undefined);
   return {
     client: connection.client,
     knowledge,
@@ -68,5 +87,6 @@ export function buildToolContext(
     toolProfile: config.toolProfile,
     creativeRag,
     projectRag,
+    aceClient,
   };
 }
