@@ -412,3 +412,74 @@ describe("setParameterExpressionImpl — endpoint-first", () => {
     expect(exec).toHaveBeenCalledOnce();
   });
 });
+
+describe("setParameterExpressionImpl — raw Python disabled", () => {
+  it.each(["expression", "bind"] as const)("rejects %s before any bridge request", async (mode) => {
+    const setParameterMode = vi.fn();
+    const executePythonScript = vi.fn();
+    const ctx = {
+      allowRawPython: false,
+      client: { setParameterMode, executePythonScript },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await setParameterExpressionImpl(ctx, {
+      path: "/project1/geo1",
+      assignments: [{ param: "tx", mode, expr: "me.time.seconds" }],
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(setParameterMode).not.toHaveBeenCalled();
+    expect(executePythonScript).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { mode: "constant" as const, value: 2 },
+    { mode: "reset" as const },
+    { mode: "unbind" as const },
+  ])("keeps $mode available through the structured endpoint", async (assignment) => {
+    const setParameterMode = vi.fn(async () => ({
+      path: "/project1/geo1",
+      param: "tx",
+      mode: assignment.mode,
+      readback_mode: "CONSTANT",
+      readback_expr: "",
+    }));
+    const executePythonScript = vi.fn();
+    const ctx = {
+      allowRawPython: false,
+      client: { setParameterMode, executePythonScript },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await setParameterExpressionImpl(ctx, {
+      path: "/project1/geo1",
+      assignments: [{ param: "tx", ...assignment }],
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(setParameterMode).toHaveBeenCalledOnce();
+    expect(executePythonScript).not.toHaveBeenCalled();
+  });
+
+  it("does not fall back to exec when the structured endpoint is missing", async () => {
+    const setParameterMode = vi.fn(async () => {
+      throw new TdApiError("not supported", { status: 404 });
+    });
+    const executePythonScript = vi.fn();
+    const ctx = {
+      allowRawPython: false,
+      client: { setParameterMode, executePythonScript },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await setParameterExpressionImpl(ctx, {
+      path: "/project1/geo1",
+      assignments: [{ param: "tx", mode: "constant", value: 1 }],
+    });
+
+    expect(result.isError).toBe(true);
+    expect(executePythonScript).not.toHaveBeenCalled();
+  });
+});

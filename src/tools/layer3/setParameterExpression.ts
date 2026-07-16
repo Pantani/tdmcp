@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isMissingEndpoint, TdApiError } from "../../td-client/types.js";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -286,14 +287,30 @@ export async function setParameterExpressionImpl(
   ctx: ToolContext,
   args: SetParameterExpressionArgs,
 ): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
+  const hasCallerCode = args.assignments.some(
+    (assignment) => assignment.mode === "expression" || assignment.mode === "bind",
+  );
+  if (!allowsCallerCode(ctx) && hasCallerCode) {
+    return callerCodeDenied("Parameter expression and bind assignment");
+  }
   return guardTd(
     async () => {
-      // reset/unbind are not yet accepted by the PATCH …/mode endpoint. On an
-      // un-upgraded bridge the endpoint would reject the unknown mode as a per-param
-      // validation warning while other params succeed — a half-applied batch across a
-      // version boundary. To stay correct, if ANY assignment uses reset/unbind, run the
-      // whole batch through the exec path (which always works when ALLOW_EXEC=1).
+      // Current bridges accept reset/unbind through PATCH …/mode. When raw code is
+      // allowed, retain the whole-batch exec path for compatibility with older bridges;
+      // restricted mode always uses the structured endpoint and never falls back to exec.
       const needsExec = args.assignments.some((a) => a.mode === "reset" || a.mode === "unbind");
+      if (!allowsCallerCode(ctx)) {
+        const restrictedReport = await runBatchViaEndpoint(ctx, args);
+        return (
+          restrictedReport ?? {
+            path: args.path,
+            applied: [],
+            warnings: [],
+            fatal:
+              "The structured parameter-mode endpoint is unavailable; restricted mode will not fall back to raw Python exec.",
+          }
+        );
+      }
       if (needsExec) return runBatchViaExec(ctx, args);
       // Prefer the per-param endpoint; a null return means the route is absent
       // (older bridge), so fall back to the whole-batch exec path.
@@ -321,7 +338,7 @@ export const registerSetParameterExpression: ToolRegistrar = (server, ctx) => {
     {
       title: "Set parameter expression / bind / constant",
       description:
-        "Set one or more parameters on a node to an expression, bind expression, or constant value without needing the raw-Python escape hatch. Supports five modes: 'expression' (par.expr = ...), 'bind' (par.bindExpr = ...), 'constant' (par.val = ...), 'reset' (restore the parameter default via par.reset()), and 'unbind' (freeze the current evaluated value as a constant, dropping the driver). Multiple assignments are applied fail-forward — per-item failures accumulate as warnings so a partial batch still returns useful results. Batches using reset/unbind run through the exec path and require TDMCP_BRIDGE_ALLOW_EXEC=1. Use this instead of execute_python_script when TDMCP_RAW_PYTHON is off.",
+        "Set one or more parameters on a node using five modes: 'expression' (par.expr = ...), 'bind' (par.bindExpr = ...), 'constant' (par.val = ...), 'reset' (restore the parameter default), and 'unbind' (freeze the current evaluated value as a constant). Caller-supplied expression/bind text requires TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1. In restricted mode, constant/reset/unbind use the structured endpoint and remain available on a current bridge. Multiple assignments are applied fail-forward — per-item failures accumulate as warnings so a partial batch still returns useful results.",
       inputSchema: setParameterExpressionSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

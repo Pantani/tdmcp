@@ -3,6 +3,9 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { buildToolContext } from "../../src/server/context.js";
 import { layer1Registrars } from "../../src/tools/layer1/index.js";
 import { layer2Registrars } from "../../src/tools/layer2/index.js";
+import { registerEditDatContent } from "../../src/tools/layer3/editDatContent.js";
+import { registerSetDatContent } from "../../src/tools/layer3/setDatContent.js";
+import { registerSetParameterExpression } from "../../src/tools/layer3/setParameterExpression.js";
 import { registerToolRegistrars } from "../../src/tools/registry.js";
 import type { ToolContext, ToolRegistrar } from "../../src/tools/types.js";
 import { loadConfig } from "../../src/utils/config.js";
@@ -59,6 +62,12 @@ const MUST_REGISTER = [
   "connect_nodes",
   "create_control_panel",
   "animate_parameter",
+] as const;
+
+const CODE_BEARING_STRUCTURED_REGISTRARS = [
+  registerSetParameterExpression,
+  registerSetDatContent,
+  registerEditDatContent,
 ] as const;
 
 /**
@@ -149,5 +158,19 @@ describe("smoke: Layer-1 + Layer-2 register with raw exec OFF", () => {
 
     const onlyWhenExecOn = [...on].filter((n) => !off.has(n)).sort();
     expect(onlyWhenExecOn).toEqual([...LAYER12_EXEC_ONLY].sort());
+  });
+});
+
+describe("smoke: code-bearing structured tools with raw exec OFF", () => {
+  it("keeps safe parameter modes available but hides DAT text mutation", () => {
+    const { names, failures } = registerAndCollect(
+      execOffContext(),
+      CODE_BEARING_STRUCTURED_REGISTRARS,
+    );
+
+    expect(failures).toEqual([]);
+    expect(names).toContain("set_parameter_expression");
+    expect(names).not.toContain("set_dat_content");
+    expect(names).not.toContain("edit_dat_content");
   });
 });

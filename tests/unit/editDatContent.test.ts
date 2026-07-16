@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
@@ -64,6 +64,33 @@ describe("edit_dat_content", () => {
         new_string: "bar",
       });
       expect(parsed.replace_all).toBe(false);
+    });
+  });
+
+  describe("raw Python disabled", () => {
+    it("rejects DAT text mutation before the read or write request", async () => {
+      const getDatText = vi.fn();
+      const putDatText = vi.fn();
+      const executePythonScript = vi.fn();
+      const ctx = {
+        allowRawPython: false,
+        client: { getDatText, putDatText, executePythonScript },
+        logger: silentLogger,
+      } as unknown as ToolContext;
+
+      const result = await editDatContentImpl(ctx, {
+        dat_path: "/project1/callbacks",
+        old_string: "pass",
+        new_string: "system('unsafe')",
+        replace_all: false,
+      });
+
+      expect(result.isError).toBe(true);
+      const text = result.content.find((item) => item.type === "text");
+      expect(text?.type === "text" ? text.text : "").toContain("raw Python is disabled");
+      expect(getDatText).not.toHaveBeenCalled();
+      expect(putDatText).not.toHaveBeenCalled();
+      expect(executePythonScript).not.toHaveBeenCalled();
     });
   });
 
