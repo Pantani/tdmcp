@@ -133,9 +133,11 @@ jobs:
               PR_CREDENTIALED="$PR_CREDENTIALED $ID"
             fi
           done
-          echo "ids=$(echo "$IDS" | xargs)" >> "$GITHUB_OUTPUT"
-          echo "public_ids=$(echo "$PR_PUBLIC" | xargs)" >> "$GITHUB_OUTPUT"
-          echo "credentialed_ids=$(echo "$PR_CREDENTIALED" | xargs)" >> "$GITHUB_OUTPUT"
+          {
+            echo "ids=$(echo "$IDS" | xargs)"
+            echo "public_ids=$(echo "$PR_PUBLIC" | xargs)"
+            echo "credentialed_ids=$(echo "$PR_CREDENTIALED" | xargs)"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Probe changed public sources (no secrets)
         if: steps.escape.outputs.skip != 'true' && steps.changed.outputs.public_ids != ''
