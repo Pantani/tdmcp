@@ -73,6 +73,7 @@ export function buildToolContext(
           syncMaxSeconds: config.aceSyncMaxSeconds,
           rtf: config.aceRtf,
           pollMs: config.acePollMs,
+          checkpointPath: config.aceCheckpointPath,
           logger,
         })
       : undefined);

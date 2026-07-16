@@ -53,6 +53,7 @@ export async function getMusicJobImpl(ctx: AceToolContext, rawArgs: unknown) {
 }
 
 export const registerGetMusicJob: ToolRegistrar = (server, ctx) => {
+  if (!ctx.aceClient) return;
   server.registerTool(
     "get_music_job",
     {

@@ -421,6 +421,13 @@ export const ConfigSchema = z.object({
   aceOutputDir: z.string().min(1).default(".tdmcp/ace-output"),
   /** Optional bearer token for the ACE-Step server (sent as `Authorization: Bearer <token>`). */
   aceToken: z.string().min(1).optional(),
+  /**
+   * Filesystem path to the ACE-Step checkpoint directory. Sent as the native
+   * `infer-api.py` `ACEStepInput.checkpoint_path` (required upstream, no default).
+   * Only consulted in `aceMode:"native"`; the `wrapper` mode loads the checkpoint
+   * from its own env. UNVERIFIED — native mode is a live probe.
+   */
+  aceCheckpointPath: z.string().min(1).optional(),
   /** Wall-clock timeout (ms) for a generation request; generation is slow, so default 10 min. */
   aceTimeoutMs: z.coerce.number().int().positive().default(600000),
   /** Diffusion steps injected when the caller omits `infer_step` (ACE-Step's own default is 60). */
@@ -544,6 +551,7 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     acePort: env.TDMCP_ACE_PORT || undefined,
     aceOutputDir: env.TDMCP_ACE_OUTPUT_DIR || undefined,
     aceToken: env.TDMCP_ACE_TOKEN || undefined,
+    aceCheckpointPath: env.TDMCP_ACE_CHECKPOINT_PATH || undefined,
     aceTimeoutMs: env.TDMCP_ACE_TIMEOUT_MS || undefined,
     aceDefaultSteps: env.TDMCP_ACE_DEFAULT_STEPS || undefined,
     aceSyncMaxSeconds: env.TDMCP_ACE_SYNC_MAX_SECONDS || undefined,

@@ -5015,6 +5015,7 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   acePort: "TDMCP_ACE_PORT",
   aceOutputDir: "TDMCP_ACE_OUTPUT_DIR",
   aceToken: "TDMCP_ACE_TOKEN",
+  aceCheckpointPath: "TDMCP_ACE_CHECKPOINT_PATH",
   aceTimeoutMs: "TDMCP_ACE_TIMEOUT_MS",
   aceDefaultSteps: "TDMCP_ACE_DEFAULT_STEPS",
   aceSyncMaxSeconds: "TDMCP_ACE_SYNC_MAX_SECONDS",

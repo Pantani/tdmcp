@@ -81,17 +81,23 @@ def _resolve_seed(kwargs: dict[str, Any], pipeline_result: Any) -> Optional[int]
     return None
 
 
-def generate(body: dict[str, Any]) -> dict[str, Any]:
+def generate(body: dict[str, Any], pipeline: Any = None) -> dict[str, Any]:
     """Run the pipeline and return ``{ wavPath, seconds, seed }``.
 
     Split from ``main`` so a test can call it directly with a fake pipeline.
-    """
-    from acestep.pipeline_ace_step import ACEStepPipeline  # type: ignore
 
-    pipeline = ACEStepPipeline(
-        checkpoint_dir=os.environ.get("ACE_CHECKPOINT_DIR"),
-        dtype=os.environ.get("TDMCP_ACE_DTYPE", "bfloat16"),
-    )
+    ``pipeline`` may be injected (the wrapper's warm in-process global for the
+    synchronous ``/generate`` path); when ``None`` a fresh cold pipeline is
+    constructed here — the cost the async killable-worker subprocess pays for
+    cancellability.
+    """
+    if pipeline is None:
+        from acestep.pipeline_ace_step import ACEStepPipeline  # type: ignore
+
+        pipeline = ACEStepPipeline(
+            checkpoint_dir=os.environ.get("ACE_CHECKPOINT_DIR"),
+            dtype=os.environ.get("TDMCP_ACE_DTYPE", "bfloat16"),
+        )
     kwargs = _build_kwargs(body)
     result = pipeline(**kwargs)
 

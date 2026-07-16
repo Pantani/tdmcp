@@ -29,12 +29,15 @@ function makeCtx(aceClient?: AceStepClient): AceToolContext {
   };
 }
 
+const CHECKPOINT_PATH = "/models/ace-step";
+
 function makeClient(mode: "wrapper" | "native" = "wrapper"): AceStepClient {
   return new AceStepClient({
     baseUrl: ACE_BASE,
     timeoutMs: 2000,
     defaultSteps: 27,
     outputDir: OUTPUT_DIR,
+    checkpointPath: CHECKPOINT_PATH,
     mode,
   });
 }
@@ -186,7 +189,7 @@ describe("cancel_music_job", () => {
 });
 
 describe("native generate mapping (F3)", () => {
-  it("posts actual_seeds + output_path and adapts ACEStepOutput to GenerateResult", async () => {
+  it("posts a COMPLETE ACEStepInput and adapts ACEStepOutput to GenerateResult", async () => {
     const bodies: Record<string, unknown>[] = [];
     server.use(
       http.post(`${ACE_BASE}/generate`, async ({ request }) => {
@@ -209,17 +212,41 @@ describe("native generate mapping (F3)", () => {
       seed: 7,
     });
     const body = bodies[0] ?? {};
-    expect(body.actual_seeds).toBe(7);
-    expect(body.output_path).toBe(OUTPUT_DIR);
+    // FIX 2: a complete, schema-valid ACEStepInput. actual_seeds/oss_steps are
+    // List[int]; every sampler field upstream requires (no default) is present.
+    expect(body).toEqual({
+      checkpoint_path: CHECKPOINT_PATH,
+      audio_duration: 45,
+      prompt: "ambient",
+      lyrics: "",
+      infer_step: 27,
+      guidance_scale: 15.0,
+      actual_seeds: [7],
+      oss_steps: [],
+      output_path: OUTPUT_DIR,
+      scheduler_type: "euler",
+      cfg_type: "apg",
+      omega_scale: 10.0,
+      guidance_interval: 0.5,
+      guidance_interval_decay: 0.0,
+      min_guidance_scale: 3.0,
+      use_erg_tag: true,
+      use_erg_lyric: true,
+      use_erg_diffusion: true,
+      guidance_scale_text: 0.0,
+      guidance_scale_lyric: 0.0,
+    });
     expect(body).not.toHaveProperty("manual_seeds");
     expect(body).not.toHaveProperty("save_path");
   });
 
-  it("auto duration + random seed -> synthesized seconds 0 / seed 0", async () => {
+  it("auto duration + random seed -> actual_seeds:[] and synthesized seconds 0 / seed 0", async () => {
+    const bodies: Record<string, unknown>[] = [];
     server.use(
-      http.post(`${ACE_BASE}/generate`, () =>
-        HttpResponse.json({ status: "ok", output_path: "/out/a.wav" }),
-      ),
+      http.post(`${ACE_BASE}/generate`, async ({ request }) => {
+        bodies.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ status: "ok", output_path: "/out/a.wav" });
+      }),
     );
     const result = await generateMusicImpl(makeCtx(makeClient("native")), { prompt: "x" });
     expect(structured(result)).toMatchObject({
@@ -228,5 +255,7 @@ describe("native generate mapping (F3)", () => {
       seconds: 0,
       seed: 0,
     });
+    // Unseeded -> empty list, ACE's "random" convention (empty -> set_seeds draws one).
+    expect(bodies[0]?.actual_seeds).toEqual([]);
   });
 });

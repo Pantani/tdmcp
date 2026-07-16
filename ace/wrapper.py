@@ -6,15 +6,21 @@ artifact, TD-global-free — there is no ``op``/``project`` here at all):
 * Hold ONE warm ``ACEStepPipeline`` in a module global so we do not cold-load
   the model per request (the native ``infer-api.py`` cold-loads inside
   ``/generate``; that is the P0 residual live probe).
-* ``POST /generate`` maps the request body to ``ACEStepPipeline.__call__``
-  kwargs, runs it in a killable worker subprocess (structuring P1's async/poll +
-  cancel-frees-VRAM without a rewrite), reads the ACTUAL written path back, and
-  returns ``{ wavPath, seconds, seed }``.
+* ``POST /generate`` runs the generation IN-PROCESS on the warm global pipeline
+  (via :func:`run_generation`) — reusing the loaded model, never spawning a
+  subprocess — reads the ACTUAL written path back, and returns
+  ``{ wavPath, seconds, seed }``.
+* The async ``/jobs`` routes (submit/poll/cancel) run each generation in a
+  KILLABLE worker subprocess: process death is ACE's only cancel lever (there is
+  no in-pipeline abort), so killing the child is what frees VRAM. Warmth and
+  killability cannot coexist on one process, so async jobs deliberately pay a
+  cold load as the price of cancellation.
 * ``GET /health`` reports whether the warm pipeline finished constructing.
 * Optional bearer auth when ``TDMCP_ACE_TOKEN`` is set.
 
 The generation itself is delegated to :mod:`ace.worker`, which is unit-testable
-offline by patching the pipeline import (no GPU needed).
+offline by patching the pipeline import (no GPU needed). The sync path injects the
+warm pipeline into ``worker.generate``; the subprocess path lets it cold-load.
 """
 
 from __future__ import annotations
@@ -213,24 +219,20 @@ def cancel_job(job_id: str) -> Optional[dict[str, Any]]:
 def run_generation(body: dict[str, Any]) -> dict[str, Any]:
     """Synchronous facade for ``POST /generate`` (P0/F2 depend on this shape).
 
-    Submits a worker, blocks on it, finalizes, and returns the terminal fields.
-    Expressed as submit-then-block so it shares one code path with the async
-    ``/jobs`` submit/poll/cancel routes (no drift).
-    """
-    job_id = submit_generation(body)
-    rec = _PROCS.get(job_id)
-    if rec is not None:
-        rec["proc"].wait()
-        _finalize_job(job_id)
+    Runs the generation IN-PROCESS on the warm ``load_pipeline()`` global — NOT
+    in a subprocess. This is the whole point of the warm wrapper: the sync path
+    reuses the already-loaded model instead of paying a cold load per request (or
+    doubling VRAM with a second pipeline in a child process).
 
-    job = JOBS.get(job_id, {})
-    if job.get("status") == "error":
-        raise RuntimeError(job.get("error") or "ACE worker failed.")
-    return {
-        "wavPath": job.get("wavPath"),
-        "seconds": job.get("seconds"),
-        "seed": job.get("seed"),
-    }
+    The killable worker subprocess is reserved for the async ``/jobs`` routes,
+    where killing the process to reclaim VRAM is the only cancel lever ACE offers.
+    Warmth and killability are mutually exclusive on one process, so the async
+    path deliberately pays a cold load as the cost of cancellation.
+    """
+    from ace import worker  # local import keeps module import light / py_compile-clean
+
+    pipeline = load_pipeline()
+    return worker.generate(body, pipeline=pipeline)
 
 
 # --- FastAPI app ----------------------------------------------------------

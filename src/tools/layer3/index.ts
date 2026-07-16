@@ -1,4 +1,3 @@
-import { isAceFeatureFlagEnabled } from "../../utils/config.js";
 import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
 import { registerBundleDependencies } from "./bundleDependencies.js";
@@ -182,15 +181,13 @@ export const layer3Registrars: ToolRegistrar[] = [
   // (patterns inspired by Derivative's official TouchDesigner TDMCP, Shared Use License):
   registerGetDatContent,
   registerGetParameterMenu,
+  // ACE-Step music generation (P0 2026-07-07 generate; P1 2026-07-11 job lifecycle).
+  // Opt-in and disabled-by-default: each registrar early-returns unless the BUILT
+  // context has `ctx.aceClient` (set when config.aceEnabled is true via env OR a
+  // config-file/profile). Gating on the context — not process.env at module load —
+  // is what makes the config-file path register these too.
+  registerGenerateMusic,
+  registerSubmitMusicJob,
+  registerGetMusicJob,
+  registerCancelMusicJob,
 ];
-
-// ACE-Step P0 (2026-07-07) — music generation is opt-in behind TDMCP_ACE_ENABLED.
-// Registration runs before the parsed config exists, so gate on the raw env via
-// the shared `isAceFeatureFlagEnabled` helper (mirrors the Creative RAG pattern).
-if (isAceFeatureFlagEnabled(process.env.TDMCP_ACE_ENABLED)) {
-  layer3Registrars.push(registerGenerateMusic);
-  // ACE-Step P1 (2026-07-11) — async job lifecycle (submit/poll/cancel), same gate.
-  layer3Registrars.push(registerSubmitMusicJob);
-  layer3Registrars.push(registerGetMusicJob);
-  layer3Registrars.push(registerCancelMusicJob);
-}

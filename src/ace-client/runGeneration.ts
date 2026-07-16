@@ -168,6 +168,35 @@ interface PollDeps {
   signal?: AbortSignal;
 }
 
+/** A job status row as returned by `getJob`. */
+type JobStatus = Awaited<ReturnType<AceStepClient["getJob"]>>;
+
+/**
+ * Maps a terminal job status to an outcome (or throws on error/cancelled).
+ * Returns `undefined` while the job is still running, so the poll loop keeps going.
+ */
+function terminalOutcome(
+  st: JobStatus,
+  req: AceGenerateRequest,
+  jobId: string,
+  elapsedSeconds: number,
+  defaultSteps: number,
+): RunGenerationOutcome | undefined {
+  if (st.status === "done") {
+    if (!st.wavPath) throw new AceApiError("ACE job finished without a wavPath.");
+    const seconds = st.seconds ?? 0;
+    return {
+      kind: "sync",
+      result: { wavPath: st.wavPath, seconds, seed: st.seed ?? 0 },
+      elapsedSeconds,
+      observedRtf: observedRtf(req, seconds, elapsedSeconds, defaultSteps),
+    };
+  }
+  if (st.status === "error") throw new AceApiError(st.error ?? "ACE job failed.");
+  if (st.status === "cancelled") throw new AceApiError(`Job ${jobId} was cancelled.`);
+  return undefined;
+}
+
 async function pollToCompletion(
   client: AceStepClient,
   req: AceGenerateRequest,
@@ -187,18 +216,8 @@ async function pollToCompletion(
     const st = await client.getJob(jobId);
     const elapsedSeconds = deps.elapsed();
     deps.reporter.emit(elapsedSeconds, `${st.status} — ${Math.round(elapsedSeconds)}s elapsed`);
-    if (st.status === "done") {
-      if (!st.wavPath) throw new AceApiError("ACE job finished without a wavPath.");
-      const seconds = st.seconds ?? 0;
-      return {
-        kind: "sync",
-        result: { wavPath: st.wavPath, seconds, seed: st.seed ?? 0 },
-        elapsedSeconds,
-        observedRtf: observedRtf(req, seconds, elapsedSeconds, opts.defaultSteps),
-      };
-    }
-    if (st.status === "error") throw new AceApiError(st.error ?? "ACE job failed.");
-    if (st.status === "cancelled") throw new AceApiError(`Job ${jobId} was cancelled.`);
+    const outcome = terminalOutcome(st, req, jobId, elapsedSeconds, opts.defaultSteps);
+    if (outcome) return outcome;
     await deps.sleep(opts.pollMs);
     cancelled();
   }

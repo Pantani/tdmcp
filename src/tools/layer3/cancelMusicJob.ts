@@ -50,6 +50,7 @@ export async function cancelMusicJobImpl(ctx: AceToolContext, rawArgs: unknown) 
 }
 
 export const registerCancelMusicJob: ToolRegistrar = (server, ctx) => {
+  if (!ctx.aceClient) return;
   server.registerTool(
     "cancel_music_job",
     {

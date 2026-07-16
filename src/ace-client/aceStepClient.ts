@@ -36,6 +36,12 @@ export interface AceStepClientOptions {
   rtf?: number;
   /** `TDMCP_ACE_POLL_MS` — job-poll + progress cadence. */
   pollMs?: number;
+  /**
+   * `TDMCP_ACE_CHECKPOINT_PATH` — filesystem path to the ACE-Step checkpoint dir,
+   * sent as the native `ACEStepInput.checkpoint_path` (which has NO upstream
+   * default and is required). Only consulted in `mode:"native"`.
+   */
+  checkpointPath?: string;
 }
 
 /** ACE upstream default; `defaultSteps` (27) is the tdmcp faster default. */
@@ -46,17 +52,60 @@ const DEFAULT_TIMEOUT_MS = 600000;
 const DEFAULT_SYNC_MAX_SECONDS = 120;
 const DEFAULT_POLL_MS = 2000;
 
-function extractErrorMessage(json: unknown): string | undefined {
-  if (json && typeof json === "object") {
-    const obj = json as Record<string, unknown>;
-    if (typeof obj.error === "string") return obj.error;
-    if (obj.error && typeof obj.error === "object") {
-      const inner = (obj.error as Record<string, unknown>).message;
-      if (typeof inner === "string") return inner;
-    }
-    if (typeof obj.message === "string") return obj.message;
+/**
+ * Native `ACEStepInput` sampler defaults, source-verified against
+ * `acestep/pipeline_ace_step.py __call__` (main): scheduler_type="euler",
+ * cfg_type="apg", omega_scale=10.0, guidance_interval=0.5,
+ * guidance_interval_decay=0.0, min_guidance_scale=3.0, use_erg_*=True,
+ * oss_steps=None (empty list on the wire → no forced steps). These fields have
+ * NO default in `ACEStepInput`, so tdmcp must supply every one or the request 422s.
+ */
+const NATIVE_SAMPLER_DEFAULTS = {
+  scheduler_type: "euler",
+  cfg_type: "apg",
+  omega_scale: 10.0,
+  guidance_interval: 0.5,
+  guidance_interval_decay: 0.0,
+  min_guidance_scale: 3.0,
+  use_erg_tag: true,
+  use_erg_lyric: true,
+  use_erg_diffusion: true,
+  guidance_scale_text: 0.0,
+  guidance_scale_lyric: 0.0,
+} as const;
+
+function stringField(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function nestedErrorMessage(error: unknown): string | undefined {
+  if (error && typeof error === "object") {
+    return stringField((error as Record<string, unknown>).message);
   }
   return undefined;
+}
+
+function extractErrorMessage(json: unknown): string | undefined {
+  if (!json || typeof json !== "object") return undefined;
+  const obj = json as Record<string, unknown>;
+  return stringField(obj.error) ?? nestedErrorMessage(obj.error) ?? stringField(obj.message);
+}
+
+/** True when the wrapper returned a `{ ok: false }` error envelope on a 2xx. */
+function isErrorEnvelope(json: unknown): boolean {
+  return (
+    Boolean(json) && typeof json === "object" && (json as Record<string, unknown>).ok === false
+  );
+}
+
+async function parseJsonBody(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -77,6 +126,7 @@ export class AceStepClient {
   private readonly syncMax: number;
   private readonly realTimeFactor: number | undefined;
   private readonly pollIntervalMs: number;
+  private readonly checkpointPath: string;
 
   constructor(options: AceStepClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
@@ -90,6 +140,7 @@ export class AceStepClient {
     this.syncMax = options.syncMaxSeconds ?? DEFAULT_SYNC_MAX_SECONDS;
     this.realTimeFactor = options.rtf;
     this.pollIntervalMs = options.pollMs ?? DEFAULT_POLL_MS;
+    this.checkpointPath = options.checkpointPath ?? "";
   }
 
   get endpoint(): string {
@@ -120,51 +171,45 @@ export class AceStepClient {
     return this.pollIntervalMs;
   }
 
-  private async request<T>(
-    method: string,
-    path: string,
-    schema: z.ZodType<T>,
-    body?: unknown,
-  ): Promise<T> {
+  private buildHeaders(body: unknown): Record<string, string> | undefined {
+    const headers: Record<string, string> = {};
+    if (body !== undefined) headers["content-type"] = "application/json";
+    if (this.token) headers.authorization = `Bearer ${this.token}`;
+    return Object.keys(headers).length > 0 ? headers : undefined;
+  }
+
+  private toTransportError(err: unknown, method: string, path: string): Error {
+    if (err instanceof Error && err.name === "AbortError") {
+      return new AceTimeoutError(
+        `ACE-Step request timed out after ${this.timeoutMs}ms (${method} ${path}).`,
+        { cause: err },
+      );
+    }
+    return new AceConnectionError(
+      `Cannot reach the ACE-Step wrapper at ${this.baseUrl}. Make sure the ace/ FastAPI server is running (python -m ace.wrapper).`,
+      { cause: err },
+    );
+  }
+
+  private async doFetch(method: string, path: string, body: unknown): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-    let response: Response;
     try {
       this.logger.debug(`ACE ${method} ${path}`);
-      const headers: Record<string, string> = {};
-      if (body !== undefined) headers["content-type"] = "application/json";
-      if (this.token) headers.authorization = `Bearer ${this.token}`;
-      response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+      return await this.fetchImpl(`${this.baseUrl}${path}`, {
         method,
         signal: controller.signal,
-        headers: Object.keys(headers).length > 0 ? headers : undefined,
+        headers: this.buildHeaders(body),
         body: body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        throw new AceTimeoutError(
-          `ACE-Step request timed out after ${this.timeoutMs}ms (${method} ${path}).`,
-          { cause: err },
-        );
-      }
-      throw new AceConnectionError(
-        `Cannot reach the ACE-Step wrapper at ${this.baseUrl}. Make sure the ace/ FastAPI server is running (python -m ace.wrapper).`,
-        { cause: err },
-      );
+      throw this.toTransportError(err, method, path);
     } finally {
       clearTimeout(timer);
     }
+  }
 
-    const text = await response.text();
-    let json: unknown;
-    if (text) {
-      try {
-        json = JSON.parse(text);
-      } catch {
-        json = undefined;
-      }
-    }
-
+  private assertOk(response: Response, json: unknown, method: string, path: string): void {
     if (!response.ok) {
       throw new AceApiError(
         extractErrorMessage(json) ??
@@ -172,12 +217,23 @@ export class AceStepClient {
         { status: response.status },
       );
     }
-    if (json && typeof json === "object" && (json as Record<string, unknown>).ok === false) {
+    if (isErrorEnvelope(json)) {
       throw new AceApiError(
         extractErrorMessage(json) ?? `ACE-Step wrapper reported an error for ${method} ${path}.`,
         { status: response.status },
       );
     }
+  }
+
+  private async request<T>(
+    method: string,
+    path: string,
+    schema: z.ZodType<T>,
+    body?: unknown,
+  ): Promise<T> {
+    const response = await this.doFetch(method, path, body);
+    const json = await parseJsonBody(response);
+    this.assertOk(response, json, method, path);
 
     const parsed = schema.safeParse(json);
     if (!parsed.success) {
@@ -206,6 +262,29 @@ export class AceStepClient {
     };
   }
 
+  /**
+   * The native `infer-api.py` `POST /generate` body — a COMPLETE `ACEStepInput`.
+   * Every field below is required upstream (no default in the pydantic model), so
+   * a partial body 422s. `actual_seeds` is a `List[int]`: `[seed]` when seeded, or
+   * `[]` when unseeded — ACE's own "random" convention (empty → `set_seeds` draws
+   * a random seed; source-verified against `pipeline_ace_step.py`). Sampler defaults
+   * come from `ACEStepPipeline.__call__` (see `NATIVE_SAMPLER_DEFAULTS`).
+   */
+  private buildNativeBody(req: AceGenerateRequest): Record<string, unknown> {
+    return {
+      checkpoint_path: this.checkpointPath,
+      audio_duration: req.audio_duration,
+      prompt: req.prompt,
+      lyrics: req.lyrics ?? "",
+      infer_step: req.infer_step ?? this.defaultSteps,
+      guidance_scale: req.guidance_scale ?? DEFAULT_GUIDANCE_SCALE,
+      actual_seeds: req.manual_seeds != null ? [req.manual_seeds] : [],
+      oss_steps: [],
+      output_path: this.outputDir,
+      ...NATIVE_SAMPLER_DEFAULTS,
+    };
+  }
+
   private nativeUnsupported(): never {
     throw new AceApiError(
       "Job control is not supported in native ACE mode (infer-api.py is synchronous " +
@@ -221,16 +300,12 @@ export class AceStepClient {
    */
   async generate(req: AceGenerateRequest) {
     if (this.serveMode === "native") {
-      const body = {
-        prompt: req.prompt,
-        lyrics: req.lyrics ?? "",
-        audio_duration: req.audio_duration,
-        infer_step: req.infer_step ?? this.defaultSteps,
-        guidance_scale: req.guidance_scale ?? DEFAULT_GUIDANCE_SCALE,
-        actual_seeds: req.manual_seeds ?? null,
-        output_path: this.outputDir,
-      };
-      const r = await this.request("POST", "/generate", NativeGenerateResultSchema, body);
+      const r = await this.request(
+        "POST",
+        "/generate",
+        NativeGenerateResultSchema,
+        this.buildNativeBody(req),
+      );
       if (!r.output_path) {
         throw new AceApiError(r.message || "Native ACE server returned no output_path.");
       }

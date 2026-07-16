@@ -112,6 +112,7 @@ export async function generateMusicReactiveImpl(
 }
 
 export const registerGenerateMusicReactive: ToolRegistrar = (server, ctx) => {
+  if (!ctx.aceClient) return;
   server.registerTool(
     "generate_music_reactive",
     {

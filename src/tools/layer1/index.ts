@@ -1,4 +1,4 @@
-import { isAceFeatureFlagEnabled, isRagFeatureFlagEnabled } from "../../utils/config.js";
+import { isRagFeatureFlagEnabled } from "../../utils/config.js";
 import type { ToolRegistrar } from "../types.js";
 import { registerApplyCreativeCard } from "./applyCreativeCard.js";
 import { registerApplyPostProcessing } from "./applyPostProcessing.js";
@@ -346,6 +346,10 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVertexDisplacementMat,
   registerControlledDisorderGrid,
   registerCreateBlobTrace,
+  // ACE-Step P1 (2026-07-11) — song->show flagship tool. Disabled-by-default: the
+  // registrar early-returns unless the built context has `ctx.aceClient` (env OR
+  // config-file). Gating on the context, not process.env, covers the config path.
+  registerGenerateMusicReactive,
 ];
 
 // v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).
@@ -356,10 +360,4 @@ export const layer1Registrars: ToolRegistrar[] = [
 // decision through the shared config helper to avoid drift.
 if (isRagFeatureFlagEnabled(process.env.TDMCP_RAG_APPLY_CARD)) {
   layer1Registrars.push(registerApplyCreativeCard);
-}
-
-// ACE-Step P1 (2026-07-11) — song->show flagship tool, opt-in behind TDMCP_ACE_ENABLED
-// (same raw-env gate layer3 uses for the P0 music tools; parsed config is not yet built here).
-if (isAceFeatureFlagEnabled(process.env.TDMCP_ACE_ENABLED)) {
-  layer1Registrars.push(registerGenerateMusicReactive);
 }

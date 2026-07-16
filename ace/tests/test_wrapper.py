@@ -88,6 +88,47 @@ class GenerateTest(unittest.TestCase):
             os.unlink(path)
 
 
+class RunGenerationSyncTest(unittest.TestCase):
+    """The sync ``/generate`` path must run IN-PROCESS on the warm pipeline.
+
+    It must NOT spawn a killable worker subprocess (that path is reserved for the
+    async /jobs routes). We assert both: the warm pipeline is used, and Popen is
+    never called.
+    """
+
+    def setUp(self):
+        wrapper.JOBS.clear()
+        wrapper._PROCS.clear()
+
+    def tearDown(self):
+        wrapper.JOBS.clear()
+        wrapper._PROCS.clear()
+
+    def test_sync_generate_uses_warm_pipeline_no_subprocess(self):
+        warm = FakePipeline()
+        with mock.patch.object(wrapper, "load_pipeline", return_value=warm), mock.patch.object(
+            wrapper.subprocess, "Popen"
+        ) as popen:
+            out = wrapper.run_generation(
+                {"prompt": "lofi", "manual_seeds": 5, "save_path": "/out", "audio_duration": -1}
+            )
+        popen.assert_not_called()  # in-process: no killable worker spawned
+        self.assertEqual(out["wavPath"], "/out/output_1.wav")
+        self.assertEqual(out["seed"], 5)
+        # No job bookkeeping is created for the sync path.
+        self.assertEqual(wrapper.JOBS, {})
+        self.assertEqual(wrapper._PROCS, {})
+
+    def test_sync_generate_surfaces_pipeline_errors(self):
+        class Boom(FakePipeline):
+            def __call__(self, **kwargs):
+                raise RuntimeError("kaboom")
+
+        with mock.patch.object(wrapper, "load_pipeline", return_value=Boom()):
+            with self.assertRaises(RuntimeError):
+                wrapper.run_generation({"prompt": "x"})
+
+
 class HealthReportTest(unittest.TestCase):
     def test_loading_when_no_pipeline(self):
         with mock.patch.object(wrapper, "_PIPELINE", None), mock.patch.object(

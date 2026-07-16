@@ -177,6 +177,10 @@ export async function generateMusicImpl(ctx: AceToolContext, rawArgs: unknown, e
 }
 
 export const registerGenerateMusic: ToolRegistrar = (server, ctx) => {
+  // Disabled-by-default gate: register ONLY when the built context has an ACE
+  // client (reflects config.aceEnabled from env OR config file). With ACE off the
+  // tool is not listed at all.
+  if (!ctx.aceClient) return;
   server.registerTool(
     "generate_music",
     {

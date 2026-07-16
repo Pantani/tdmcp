@@ -10,10 +10,19 @@ artifact, a one-line install/run note.
 
 The native `infer-api.py` is `:8000`, sync, no-auth, **cold-loads** the model
 inside `/generate`, and is text2music-only. This wrapper keeps the model **warm**
-in a module global (loaded once at startup), adds optional bearer auth, and runs
-each generation in a **killable worker subprocess** so a future P1 can SIGKILL a
-run to free VRAM (the only cancel lever ACE offers). The native server is the
-demoted `TDMCP_ACE_MODE=native` on-ramp (out of P0 scope).
+in a module global (loaded once at startup) and adds optional bearer auth.
+
+Two execution paths, by design:
+
+- **Sync `POST /generate`** runs the generation **in-process on the warm global
+  pipeline** — reusing the loaded model, no subprocess. This is what the warm
+  wrapper is for: no per-request cold load, no VRAM doubling.
+- **Async `/jobs` (submit/poll/cancel)** runs each generation in a **killable
+  worker subprocess** so `cancel` can SIGKILL it to free VRAM (ACE has no
+  in-pipeline abort). Warmth and killability can't coexist on one process, so an
+  async job deliberately pays a cold load as the cost of being cancellable.
+
+The native server is the demoted `TDMCP_ACE_MODE=native` on-ramp (out of P0 scope).
 
 ## Install & run
 
