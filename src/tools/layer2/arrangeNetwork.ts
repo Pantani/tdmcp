@@ -228,7 +228,9 @@ export const registerArrangeNetwork: ToolRegistrar = (server, ctx) => {
       title: "Arrange network layout",
       description:
         "Tidy an existing network into a readable left→right data-flow layout, or use layout_mode=explicit for one bounded, atomic exact-coordinate mutation with stale-context checks, readback and rollback. Annotation-aware automatic layout remains available, and omission of layout_mode preserves the legacy response. It never adds, deletes, or rewires nodes.",
-      inputSchema: arrangeNetworkSchema,
+      // Advertise the v1-compatible raw field map used across this repo. Keep
+      // the cross-field superRefine contract in arrangeNetworkImpl below.
+      inputSchema: arrangeNetworkBaseSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => arrangeNetworkImpl(ctx, args),

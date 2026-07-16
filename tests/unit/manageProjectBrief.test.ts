@@ -3,9 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ProjectBriefContent } from "../../src/llm/projectBrief.js";
+import { type ProjectBriefContent, ProjectBriefResultSchema } from "../../src/llm/projectBrief.js";
 import {
   manageProjectBriefImpl,
+  manageProjectBriefLlmSchema,
   manageProjectBriefSchema,
   registerManageProjectBrief,
 } from "../../src/tools/ai/manageProjectBrief.js";
@@ -164,5 +165,7 @@ describe("manage_project_brief implementation", () => {
         annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
       },
     });
+    expect(calls[0]?.options.inputSchema).toEqual(manageProjectBriefLlmSchema.shape);
+    expect(calls[0]?.options.outputSchema).toEqual(ProjectBriefResultSchema.shape);
   });
 });

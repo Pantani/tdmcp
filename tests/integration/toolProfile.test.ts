@@ -199,6 +199,29 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     expect(destructiveNames).toEqual([...SAFE_PROFILE_EXCLUDE].sort());
   });
 
+  it("advertises field-level schemas for refined and discriminated tools", async () => {
+    const tools = await toolList({ TDMCP_TOOL_PROFILE: "full" });
+    const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
+
+    expect(byName.arrange_network?.inputSchema.properties).toMatchObject({
+      path: expect.anything(),
+      layout_mode: expect.anything(),
+      positions: expect.anything(),
+    });
+    expect(byName.manage_artist_workspace?.inputSchema.properties).toMatchObject({
+      action: expect.anything(),
+      network_path: expect.anything(),
+      workspace_id: expect.anything(),
+    });
+    expect(byName.manage_artist_workspace?.outputSchema?.properties).toHaveProperty("status");
+    expect(byName.manage_project_brief?.inputSchema.properties).toMatchObject({
+      action: expect.anything(),
+      project_root: expect.anything(),
+      brief: expect.anything(),
+    });
+    expect(byName.manage_project_brief?.outputSchema?.properties).toHaveProperty("revision");
+  });
+
   it("safe ⊇ rawPython=off (composition): safe hides everything rawPython=off hides", async () => {
     const full = await toolNames({ TDMCP_TOOL_PROFILE: "full" });
     const rawOff = await toolNames({ TDMCP_RAW_PYTHON: "off" });

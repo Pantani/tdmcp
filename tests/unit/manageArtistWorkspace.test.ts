@@ -208,8 +208,13 @@ describe("manage_artist_workspace", () => {
       },
     ];
     expect(name).toBe("manage_artist_workspace");
-    expect(config.inputSchema).toBe(manageArtistWorkspaceSchema);
-    expect(config.outputSchema).toBe(artistWorkspaceReceiptSchema);
+    expect(config.inputSchema).not.toBe(manageArtistWorkspaceSchema);
+    expect(config.inputSchema).toMatchObject({
+      action: expect.anything(),
+      network_path: expect.anything(),
+      workspace_id: expect.anything(),
+    });
+    expect(config.outputSchema).toEqual(artistWorkspaceReceiptSchema.shape);
     expect(config.annotations).toEqual({
       readOnlyHint: false,
       destructiveHint: false,

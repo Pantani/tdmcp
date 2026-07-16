@@ -19,28 +19,32 @@ const workspaceId = z
   .max(128)
   .regex(/^[A-Za-z0-9_-]+$/, "workspace_id must be an opaque URL-safe id.");
 
+const networkPath = absolutePath.describe("Explicit COMP to show in the existing Network Editor.");
+const viewerPath = absolutePath.describe("Exact TOP output or panel-capable COMP to show.");
+const viewerMode = z
+  .enum(["top_output", "panel_controls"])
+  .describe("Use a bounded TOP Viewer or Panel pane; arbitrary pane types are not accepted.");
+const splitRatio = z
+  .number()
+  .finite()
+  .min(0.35)
+  .max(0.75)
+  .describe("Share of the existing Network Editor after the right-hand split.");
+const leaseSeconds = z
+  .number()
+  .int()
+  .min(30)
+  .max(900)
+  .describe("Bounded lease before compare-and-swap cleanup is attempted.");
+
 const openWorkspaceSchema = z
   .object({
     action: z.literal("open"),
-    network_path: absolutePath.describe("Explicit COMP to show in the existing Network Editor."),
-    viewer_path: absolutePath.describe("Exact TOP output or panel-capable COMP to show."),
-    viewer_mode: z
-      .enum(["top_output", "panel_controls"])
-      .describe("Use a bounded TOP Viewer or Panel pane; arbitrary pane types are not accepted."),
-    split_ratio: z
-      .number()
-      .finite()
-      .min(0.35)
-      .max(0.75)
-      .default(0.62)
-      .describe("Share of the existing Network Editor after the right-hand split."),
-    lease_seconds: z
-      .number()
-      .int()
-      .min(30)
-      .max(900)
-      .default(300)
-      .describe("Bounded lease before compare-and-swap cleanup is attempted."),
+    network_path: networkPath,
+    viewer_path: viewerPath,
+    viewer_mode: viewerMode,
+    split_ratio: splitRatio.default(0.62),
+    lease_seconds: leaseSeconds.default(300),
   })
   .strict();
 
@@ -60,6 +64,22 @@ export const manageArtistWorkspaceSchema = z.discriminatedUnion("action", [
   restoreWorkspaceSchema,
   cancelWorkspaceSchema,
 ]);
+
+// The MCP SDK's tools/list normalizer cannot turn a top-level discriminated
+// union into an object contract. Advertise a flat v1-compatible raw shape;
+// action-specific fields stay optional here so the handler's strict union
+// remains the authoritative validator.
+const manageArtistWorkspaceMcpSchema = z
+  .object({
+    action: z.enum(["open", "status", "restore", "cancel"]),
+    network_path: networkPath.optional(),
+    viewer_path: viewerPath.optional(),
+    viewer_mode: viewerMode.optional(),
+    split_ratio: splitRatio.optional(),
+    lease_seconds: leaseSeconds.optional(),
+    workspace_id: workspaceId.optional(),
+  })
+  .strict();
 
 export const artistWorkspaceReceiptSchema = ArtistWorkspaceReceiptSchema;
 
@@ -104,10 +124,7 @@ function receiptResult(receipt: ArtistWorkspaceReceipt) {
   return jsonStructuredResult(message, receipt);
 }
 
-export async function manageArtistWorkspaceImpl(
-  ctx: ToolContext,
-  rawArgs: ManageArtistWorkspaceRequest,
-) {
+export async function manageArtistWorkspaceImpl(ctx: ToolContext, rawArgs: unknown) {
   const args = manageArtistWorkspaceSchema.parse(rawArgs);
   const client = ctx.client as unknown as ArtistWorkspaceClient;
   return guardTd(
@@ -136,8 +153,8 @@ export const registerManageArtistWorkspace: ToolRegistrar = (server, ctx) => {
       title: "Manage a temporary artist workspace",
       description:
         "Open, inspect, restore, or cancel one bounded TouchDesigner editor workspace using an existing Network Editor plus one right-hand TOP Viewer or Panel split. The bridge schedules every UI access on the TD main thread, keeps only JSON job state, uses compare-and-swap restoration, and fails closed in Perform/headless/conflicted states. It never opens arbitrary UI, creates project operators, adds graph undo, or falls back to raw Python; the authenticated structured routes work with ALLOW_EXEC=0.",
-      inputSchema: manageArtistWorkspaceSchema,
-      outputSchema: artistWorkspaceReceiptSchema,
+      inputSchema: manageArtistWorkspaceMcpSchema.shape,
+      outputSchema: artistWorkspaceReceiptSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
     (args) => manageArtistWorkspaceImpl(ctx, args),
