@@ -82,6 +82,12 @@ describe("applyRecipeImpl", () => {
       label: "inline Python",
       extra: { python_code: { out1: "print('caller code')" } },
     },
+    {
+      label: "inline GLSL",
+      extra: {
+        glsl_code: { out1: "out vec4 fragColor; void main(){ fragColor=vec4(1.0); }" },
+      },
+    },
   ])("rejects recipe $label before creating any node when raw Python is disabled", async ({
     extra,
   }) => {
