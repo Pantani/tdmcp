@@ -48,7 +48,7 @@ describe("buildComponentScript", () => {
     expect(decodePayload(script)).toEqual(payload);
     expect(script).toContain("_parent.loadTox(_fp)"); // copy path
     expect(script).toContain("externaltox"); // live-linked path
-    expect(script).toContain("_c.save(_fp");
+    expect(script).not.toContain(".save(_fp");
   });
 });
 
@@ -90,5 +90,43 @@ describe("manageComponentImpl", () => {
     expect(payload.parent).toBe("/project1/lib");
     expect(payload.linked).toBe(true);
     expect(payload.name).toBe("myWidget");
+  });
+
+  it("saves only through the structured transactional export", async () => {
+    const exec = vi.fn();
+    const exportToxTransaction = vi.fn(async () => ({
+      operation_id: "opaque_export_operation",
+      status: "succeeded" as const,
+      verdict: "PASS" as const,
+      action_applied: true,
+      phases: [],
+      artifact: {
+        path: "/tmp/w.tox",
+        size_bytes: 42,
+        sha256: "a".repeat(64),
+      },
+    }));
+    const ctx = {
+      client: { executePythonScript: exec, exportToxTransaction },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await manageComponentImpl(ctx, {
+      action: "save",
+      comp_path: "/project1/w",
+      file_path: "/tmp/w.tox",
+      overwrite_policy: "ask",
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(exec).not.toHaveBeenCalled();
+    expect(exportToxTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source_path: "/project1/w",
+        target_path: "/tmp/w.tox",
+        mode: "as_is",
+        overwrite_policy: "ask",
+      }),
+    );
   });
 });

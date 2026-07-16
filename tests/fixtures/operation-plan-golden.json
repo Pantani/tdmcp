@@ -1,0 +1,569 @@
+{
+  "schema_version": 1,
+  "plan_cases": [
+    {
+      "id": "accept_unicode_create_edit",
+      "accept": true,
+      "plan": {
+        "schema_version": 1,
+        "label": "Café insert",
+        "owner_path": "/project1/show",
+        "expected_context": {
+          "owner_path": "/project1/show",
+          "current_path": "/project1/show/source1",
+          "selected_paths": ["/project1/show/source1"]
+        },
+        "intents": [
+          {
+            "kind": "create_operator",
+            "ref": "insert",
+            "type": "nullTOP",
+            "name": "insert1",
+            "parent": { "path": "/project1/show" },
+            "position": { "x": 200, "y": 100 },
+            "viewer": false
+          },
+          {
+            "kind": "set_constant_parameters",
+            "target": { "ref": "insert" },
+            "values": { "opacity": 0.5, "enabled": true, "title": "olá" }
+          },
+          {
+            "kind": "edit_metadata",
+            "target": { "ref": "insert" },
+            "position": { "x": 240, "y": 120 },
+            "color": [0.1, 0.2, 0.3],
+            "comment": "ação",
+            "viewer": true
+          }
+        ]
+      },
+      "canonical_utf8_hex": "7b2265787065637465645f636f6e74657874223a7b2263757272656e745f70617468223a222f70726f6a656374312f73686f772f736f7572636531222c226f776e65725f70617468223a222f70726f6a656374312f73686f77222c2273656c65637465645f7061746873223a5b222f70726f6a656374312f73686f772f736f7572636531225d7d2c22696e74656e7473223a5b7b226b696e64223a226372656174655f6f70657261746f72222c226e616d65223a22696e7365727431222c22706172656e74223a7b2270617468223a222f70726f6a656374312f73686f77227d2c22706f736974696f6e223a7b2278223a3230302c2279223a3130307d2c22726566223a22696e73657274222c2274797065223a226e756c6c544f50222c22766965776572223a66616c73657d2c7b226b696e64223a227365745f636f6e7374616e745f706172616d6574657273222c22746172676574223a7b22726566223a22696e73657274227d2c2276616c756573223a7b22656e61626c6564223a747275652c226f706163697479223a302e352c227469746c65223a226f6cc3a1227d7d2c7b22636f6c6f72223a5b302e312c302e322c302e335d2c22636f6d6d656e74223a2261c3a7c3a36f222c226b696e64223a22656469745f6d65746164617461222c22706f736974696f6e223a7b2278223a3234302c2279223a3132307d2c22746172676574223a7b22726566223a22696e73657274227d2c22766965776572223a747275657d5d2c226c6162656c223a22436166c3a920696e73657274222c226f776e65725f70617468223a222f70726f6a656374312f73686f77222c22736368656d615f76657273696f6e223a317d",
+      "plan_digest": "5b70548a802cacd59397b2433eb8a56e7a882c00bcb525b05929f5e944a16052",
+      "affected_paths": ["/project1/show/insert1"],
+      "counts": {
+        "intents": 3,
+        "creates": 1,
+        "parameter_writes": 3,
+        "metadata_writes": 4,
+        "connects": 0,
+        "disconnects": 0
+      }
+    },
+    {
+      "id": "accept_graph_and_annotation",
+      "accept": true,
+      "plan": {
+        "schema_version": 1,
+        "label": "Graph and note",
+        "owner_path": "/project1/show",
+        "intents": [
+          {
+            "kind": "create_operator",
+            "ref": "source",
+            "type": "constantTOP",
+            "name": "source1",
+            "parent": { "path": "/project1/show" },
+            "position": { "x": 0, "y": 0 }
+          },
+          {
+            "kind": "create_operator",
+            "ref": "output",
+            "type": "nullTOP",
+            "name": "output1",
+            "parent": { "path": "/project1/show" },
+            "position": { "x": 220, "y": 0 },
+            "viewer": true
+          },
+          {
+            "kind": "connect",
+            "source": { "ref": "source" },
+            "source_output": 0,
+            "target": { "ref": "output" },
+            "target_input": 0
+          },
+          {
+            "kind": "create_annotation",
+            "ref": "note",
+            "name": "note1",
+            "parent": { "path": "/project1/show" },
+            "bounds": { "x": -40, "y": -80, "w": 520, "h": 240 },
+            "title": "Signal path",
+            "body": "source to output",
+            "color": [0.2, 0.3, 0.4]
+          }
+        ]
+      },
+      "canonical_utf8_hex": "7b22696e74656e7473223a5b7b226b696e64223a226372656174655f6f70657261746f72222c226e616d65223a22736f7572636531222c22706172656e74223a7b2270617468223a222f70726f6a656374312f73686f77227d2c22706f736974696f6e223a7b2278223a302c2279223a307d2c22726566223a22736f75726365222c2274797065223a22636f6e7374616e74544f50227d2c7b226b696e64223a226372656174655f6f70657261746f72222c226e616d65223a226f757470757431222c22706172656e74223a7b2270617468223a222f70726f6a656374312f73686f77227d2c22706f736974696f6e223a7b2278223a3232302c2279223a307d2c22726566223a226f7574707574222c2274797065223a226e756c6c544f50222c22766965776572223a747275657d2c7b226b696e64223a22636f6e6e656374222c22736f75726365223a7b22726566223a22736f75726365227d2c22736f757263655f6f7574707574223a302c22746172676574223a7b22726566223a226f7574707574227d2c227461726765745f696e707574223a307d2c7b22626f6479223a22736f7572636520746f206f7574707574222c22626f756e6473223a7b2268223a3234302c2277223a3532302c2278223a2d34302c2279223a2d38307d2c22636f6c6f72223a5b302e322c302e332c302e345d2c226b696e64223a226372656174655f616e6e6f746174696f6e222c226e616d65223a226e6f746531222c22706172656e74223a7b2270617468223a222f70726f6a656374312f73686f77227d2c22726566223a226e6f7465222c227469746c65223a225369676e616c2070617468227d5d2c226c6162656c223a22477261706820616e64206e6f7465222c226f776e65725f70617468223a222f70726f6a656374312f73686f77222c22736368656d615f76657273696f6e223a317d",
+      "plan_digest": "e36b93966f60776987fb5dde1cf9b1a47e275339861ccfaac00ee04950f31156",
+      "affected_paths": [
+        "/project1/show/note1",
+        "/project1/show/output1",
+        "/project1/show/source1"
+      ],
+      "counts": {
+        "intents": 4,
+        "creates": 3,
+        "parameter_writes": 0,
+        "metadata_writes": 0,
+        "connects": 1,
+        "disconnects": 0
+      }
+    },
+    {
+      "id": "reject_unknown_field",
+      "accept": false,
+      "plan": {
+        "schema_version": 1,
+        "label": "Unknown field",
+        "owner_path": "/project1/show",
+        "intents": [
+          {
+            "kind": "create_operator",
+            "ref": "node",
+            "type": "nullTOP",
+            "name": "node1",
+            "parent": { "path": "/project1/show" },
+            "position": { "x": 0, "y": 0 }
+          }
+        ],
+        "python": "not allowed"
+      },
+      "error": { "class": "OperationPlanError", "code": "invalid_operation_plan" }
+    },
+    {
+      "id": "reject_unsupported_operator",
+      "accept": false,
+      "plan": {
+        "schema_version": 1,
+        "label": "Unsafe operator",
+        "owner_path": "/project1/show",
+        "intents": [
+          {
+            "kind": "create_operator",
+            "ref": "movie",
+            "type": "moviefileinTOP",
+            "name": "movie1",
+            "parent": { "path": "/project1/show" },
+            "position": { "x": 0, "y": 0 }
+          }
+        ]
+      },
+      "error": { "class": "OperationPlanError", "code": "unsupported_operator_type" }
+    },
+    {
+      "id": "reject_forward_alias",
+      "accept": false,
+      "plan": {
+        "schema_version": 1,
+        "label": "Forward alias",
+        "owner_path": "/project1/show",
+        "intents": [
+          {
+            "kind": "set_constant_parameters",
+            "target": { "ref": "later" },
+            "values": { "value": 1 }
+          },
+          {
+            "kind": "create_operator",
+            "ref": "later",
+            "type": "nullTOP",
+            "name": "later1",
+            "parent": { "path": "/project1/show" },
+            "position": { "x": 0, "y": 0 }
+          }
+        ]
+      },
+      "error": { "class": "OperationPlanError", "code": "invalid_operation_plan" }
+    },
+    {
+      "id": "reject_cross_owner_target",
+      "accept": false,
+      "plan": {
+        "schema_version": 1,
+        "label": "Cross owner",
+        "owner_path": "/project1/show",
+        "intents": [
+          {
+            "kind": "edit_metadata",
+            "target": { "path": "/project1/other/node1" },
+            "position": { "x": 1, "y": 2 }
+          }
+        ]
+      },
+      "error": { "class": "OperationPlanError", "code": "invalid_operation_plan" }
+    },
+    {
+      "id": "reject_boolean_schema_version",
+      "accept": false,
+      "plan": {
+        "schema_version": true,
+        "label": "Boolean version",
+        "owner_path": "/project1/show",
+        "intents": [
+          {
+            "kind": "create_operator",
+            "ref": "node",
+            "type": "nullTOP",
+            "name": "node1",
+            "parent": { "path": "/project1/show" },
+            "position": { "x": 0, "y": 0 }
+          }
+        ]
+      },
+      "error": { "class": "OperationPlanError", "code": "invalid_operation_plan" }
+    },
+    {
+      "id": "reject_duplicate_selection",
+      "accept": false,
+      "plan": {
+        "schema_version": 1,
+        "label": "Duplicate selection",
+        "owner_path": "/project1/show",
+        "expected_context": {
+          "owner_path": "/project1/show",
+          "current_path": "/project1/show/source1",
+          "selected_paths": ["/project1/show/source1", "/project1/show/source1"]
+        },
+        "intents": [
+          {
+            "kind": "edit_metadata",
+            "target": { "path": "/project1/show/source1" },
+            "position": { "x": 1, "y": 2 }
+          }
+        ]
+      },
+      "error": { "class": "OperationPlanError", "code": "invalid_operation_plan" }
+    },
+    {
+      "id": "reject_empty_intents_capacity",
+      "accept": false,
+      "plan": {
+        "schema_version": 1,
+        "label": "No intents",
+        "owner_path": "/project1/show",
+        "intents": []
+      },
+      "error": { "class": "OperationPlanError", "code": "operation_capacity" }
+    }
+  ],
+  "public_error_cases": [
+    { "code": "invalid_operation_plan", "accept": true },
+    { "code": "unsupported_intent", "accept": true },
+    { "code": "unsupported_operator_type", "accept": true },
+    { "code": "operation_capacity", "accept": true },
+    { "code": "preview_expired", "accept": true },
+    { "code": "preview_instance_mismatch", "accept": true },
+    { "code": "stale_plan", "accept": true },
+    { "code": "operation_busy", "accept": true },
+    { "code": "perform_mode", "accept": true },
+    { "code": "ui_unavailable", "accept": true },
+    { "code": "undo_unavailable", "accept": true },
+    { "code": "undo_busy", "accept": true },
+    { "code": "idempotency_conflict", "accept": true },
+    { "code": "apply_failed", "accept": true },
+    { "code": "verification_failed", "accept": true },
+    { "code": "rollback_failed", "accept": true },
+    { "code": "journal_registration_failed", "accept": true },
+    { "code": "outcome_unknown", "accept": true },
+    { "code": "unverified_live_boundary", "accept": true },
+    { "code": "operation_authority", "accept": true },
+    { "code": "receipt_unavailable", "accept": true },
+    { "code": "python_exception", "accept": false }
+  ],
+  "receipt_plan_case_id": "accept_unicode_create_edit",
+  "receipt_context": {
+    "operation_id": "operation-golden-0001",
+    "journal_label": "MCP operation golden corpus"
+  },
+  "terminal_receipt_cases": [
+    {
+      "id": "receipt_applied",
+      "accept": true,
+      "fragment": {
+        "status": "applied",
+        "results": [
+          {
+            "index": 0,
+            "kind": "create_operator",
+            "status": "applied",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 1,
+            "kind": "set_constant_parameters",
+            "status": "applied",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 2,
+            "kind": "edit_metadata",
+            "status": "applied",
+            "final_paths": ["/project1/show/insert1"]
+          }
+        ],
+        "verification": { "status": "PASS", "snapshot": "after" },
+        "rollback": { "attempted": false, "succeeded": true, "errors": [] },
+        "journal": {
+          "registered": true,
+          "operation_id": "operation-golden-0001",
+          "label": "MCP operation golden corpus",
+          "native_stack_delta": 1,
+          "observed_state": "applied"
+        },
+        "warnings": []
+      }
+    },
+    {
+      "id": "receipt_replayed",
+      "accept": true,
+      "fragment": {
+        "status": "replayed",
+        "results": [
+          {
+            "index": 0,
+            "kind": "create_operator",
+            "status": "applied",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 1,
+            "kind": "set_constant_parameters",
+            "status": "applied",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 2,
+            "kind": "edit_metadata",
+            "status": "applied",
+            "final_paths": ["/project1/show/insert1"]
+          }
+        ],
+        "verification": { "status": "PASS", "snapshot": "after" },
+        "rollback": { "attempted": false, "succeeded": true, "errors": [] },
+        "journal": {
+          "registered": true,
+          "operation_id": "operation-golden-0001",
+          "label": "MCP operation golden corpus",
+          "native_stack_delta": 1,
+          "observed_state": "applied"
+        },
+        "warnings": []
+      }
+    },
+    {
+      "id": "receipt_failed_rolled_back",
+      "accept": true,
+      "fragment": {
+        "status": "failed_rolled_back",
+        "results": [
+          {
+            "index": 0,
+            "kind": "create_operator",
+            "status": "rolled_back",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 1,
+            "kind": "set_constant_parameters",
+            "status": "rolled_back",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 2,
+            "kind": "edit_metadata",
+            "status": "rolled_back",
+            "final_paths": ["/project1/show/insert1"]
+          }
+        ],
+        "verification": { "status": "PASS", "snapshot": "before" },
+        "rollback": { "attempted": true, "succeeded": true, "errors": [] },
+        "journal": {
+          "registered": false,
+          "operation_id": null,
+          "label": null,
+          "native_stack_delta": 0,
+          "observed_state": "unknown"
+        },
+        "warnings": [],
+        "error": {
+          "code": "apply_failed",
+          "message": "Structured operation application failed."
+        }
+      }
+    },
+    {
+      "id": "receipt_failed_rollback",
+      "accept": true,
+      "fragment": {
+        "status": "failed_rollback",
+        "results": [
+          {
+            "index": 0,
+            "kind": "create_operator",
+            "status": "rolled_back",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 1,
+            "kind": "set_constant_parameters",
+            "status": "rollback_failed",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 2,
+            "kind": "edit_metadata",
+            "status": "rolled_back",
+            "final_paths": ["/project1/show/insert1"]
+          }
+        ],
+        "verification": { "status": "FAIL", "snapshot": "unknown" },
+        "rollback": {
+          "attempted": true,
+          "succeeded": false,
+          "errors": [
+            {
+              "index": 1,
+              "code": "rollback_failed",
+              "message": "Rollback step did not restore its expected state."
+            }
+          ]
+        },
+        "journal": {
+          "registered": false,
+          "operation_id": null,
+          "label": null,
+          "native_stack_delta": 0,
+          "observed_state": "unknown"
+        },
+        "warnings": [],
+        "error": {
+          "code": "rollback_failed",
+          "message": "Structured operation rollback did not restore the complete prior state."
+        }
+      }
+    },
+    {
+      "id": "receipt_outcome_unknown",
+      "accept": true,
+      "fragment": {
+        "status": "outcome_unknown",
+        "results": [],
+        "verification": { "status": "FAIL", "snapshot": "unknown" },
+        "rollback": { "attempted": false, "succeeded": false, "errors": [] },
+        "journal": {
+          "registered": false,
+          "operation_id": null,
+          "label": null,
+          "native_stack_delta": 0,
+          "observed_state": "unknown"
+        },
+        "warnings": ["Native transaction outcome could not be established."],
+        "error": {
+          "code": "outcome_unknown",
+          "message": "Structured operation outcome is unknown; inspect with its receipt capability."
+        }
+      }
+    },
+    {
+      "id": "reject_applied_without_journal",
+      "accept": false,
+      "fragment": {
+        "status": "applied",
+        "results": [
+          {
+            "index": 0,
+            "kind": "create_operator",
+            "status": "applied",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 1,
+            "kind": "set_constant_parameters",
+            "status": "applied",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 2,
+            "kind": "edit_metadata",
+            "status": "applied",
+            "final_paths": ["/project1/show/insert1"]
+          }
+        ],
+        "verification": { "status": "PASS", "snapshot": "after" },
+        "rollback": { "attempted": false, "succeeded": true, "errors": [] },
+        "journal": {
+          "registered": false,
+          "operation_id": null,
+          "label": null,
+          "native_stack_delta": 0,
+          "observed_state": "unknown"
+        },
+        "warnings": []
+      }
+    },
+    {
+      "id": "reject_failed_rollback_claiming_success",
+      "accept": false,
+      "fragment": {
+        "status": "failed_rollback",
+        "results": [
+          {
+            "index": 0,
+            "kind": "create_operator",
+            "status": "rolled_back",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 1,
+            "kind": "set_constant_parameters",
+            "status": "rollback_failed",
+            "final_paths": ["/project1/show/insert1"]
+          },
+          {
+            "index": 2,
+            "kind": "edit_metadata",
+            "status": "rolled_back",
+            "final_paths": ["/project1/show/insert1"]
+          }
+        ],
+        "verification": { "status": "FAIL", "snapshot": "unknown" },
+        "rollback": { "attempted": true, "succeeded": true, "errors": [] },
+        "journal": {
+          "registered": false,
+          "operation_id": null,
+          "label": null,
+          "native_stack_delta": 0,
+          "observed_state": "unknown"
+        },
+        "warnings": [],
+        "error": {
+          "code": "rollback_failed",
+          "message": "Structured operation rollback did not restore the complete prior state."
+        }
+      }
+    },
+    {
+      "id": "reject_unsupported_terminal_state",
+      "accept": false,
+      "fragment": {
+        "status": "cancelled",
+        "results": [],
+        "verification": { "status": "FAIL", "snapshot": "unknown" },
+        "rollback": { "attempted": false, "succeeded": false, "errors": [] },
+        "journal": {
+          "registered": false,
+          "operation_id": null,
+          "label": null,
+          "native_stack_delta": 0,
+          "observed_state": "unknown"
+        },
+        "warnings": [],
+        "error": {
+          "code": "outcome_unknown",
+          "message": "Structured operation did not establish a safe final state."
+        }
+      }
+    }
+  ]
+}

@@ -19,6 +19,28 @@ const runInstallBridgeMock = vi.fn(async (_args: string[]) => {});
 const runInstallClientMock = vi.fn(async (_args: string[]) => {});
 const runChatMock = vi.fn(async (_args: string[]) => {});
 const runTelegramMock = vi.fn(async (_args: string[]) => {});
+const runCopilotCalibrateMock = vi.fn(async (_args: string[]) => 0);
+const runManageSkillsCliMock = vi.fn((_args: string[]) => ({
+  stdout: "skills-out\n",
+  stderr: "",
+  code: 0,
+}));
+const runRuntimeStatusMock = vi.fn(async (_args: string[], _deps: unknown) => ({
+  stdout: "status-out\n",
+  stderr: "",
+  code: 3,
+}));
+const runShowModeMock = vi.fn(async (_args: string[]) => ({
+  stdout: "show-out\n",
+  stderr: "show-warning\n",
+  code: 4 as const,
+}));
+const runTopLevelDoctorMock = vi.fn(async (_args: string[]) => ({
+  stdout: "doctor-out\n",
+  stderr: "",
+  code: 1,
+}));
+const createRuntimeStatusDepsMock = vi.fn(() => ({ readConfig: vi.fn() }));
 const runDashboardMock = vi.fn(async (_args: string[]) => 0);
 const runPackageCliMock = vi.fn(async (_argv: string[]) => ({
   stdout: "pkg-out",
@@ -26,6 +48,7 @@ const runPackageCliMock = vi.fn(async (_argv: string[]) => ({
   code: 0,
 }));
 const isPackageCommandMock = vi.fn((cmd: string | undefined) => cmd === "pkg");
+const isKnownPackageDoctorTargetMock = vi.fn((_id: string | undefined) => false);
 const renderMainHelpMock = vi.fn(() => "MAIN-HELP");
 const resolveMainCompletionCommandMock = vi.fn((_shell: string | undefined) => ({
   stdout: "COMPLETE\n",
@@ -61,10 +84,29 @@ vi.mock("../../src/cli/chat.js", () => ({
 vi.mock("../../src/cli/telegram.js", () => ({
   runTelegram: runTelegramMock,
 }));
+vi.mock("../../src/cli/copilotCalibrate.js", () => ({
+  runCopilotCalibrate: runCopilotCalibrateMock,
+}));
+vi.mock("../../src/cli/manageSkills.js", () => ({
+  runManageSkillsCli: runManageSkillsCliMock,
+}));
+vi.mock("../../src/cli/runtimeStatus.js", () => ({
+  runRuntimeStatus: runRuntimeStatusMock,
+}));
+vi.mock("../../src/cli/runtimeStatusAdapters.js", () => ({
+  createRuntimeStatusDeps: createRuntimeStatusDepsMock,
+}));
+vi.mock("../../src/cli/showMode.js", () => ({
+  runShowMode: runShowModeMock,
+}));
+vi.mock("../../src/cli/topLevelDoctor.js", () => ({
+  runTopLevelDoctor: runTopLevelDoctorMock,
+}));
 vi.mock("../../src/cli/tui.js", () => ({
   runDashboard: runDashboardMock,
 }));
 vi.mock("../../src/packages/cli.js", () => ({
+  isKnownPackageDoctorTarget: isKnownPackageDoctorTargetMock,
   isPackageCommand: isPackageCommandMock,
   runPackageCli: runPackageCliMock,
 }));
@@ -130,6 +172,7 @@ beforeEach(() => {
   runDashboardMock.mockResolvedValue(0);
   runPackageCliMock.mockResolvedValue({ stdout: "pkg-out", stderr: "", code: 0 });
   isPackageCommandMock.mockImplementation((cmd: string | undefined) => cmd === "pkg");
+  isKnownPackageDoctorTargetMock.mockReturnValue(false);
   parseServeArgsMock.mockReturnValue({
     showHelp: false,
     error: undefined,
@@ -203,6 +246,57 @@ describe("src/index.ts dispatcher", () => {
     expect(runInstallClientMock).toHaveBeenCalledWith(["claude"]);
   });
 
+  it("delegates bounded local skill management", async () => {
+    setArgv(["skills", "status", "--host", "codex", "--scope", "project"]);
+    await importEntry();
+    expect(runManageSkillsCliMock).toHaveBeenCalledWith([
+      "status",
+      "--host",
+      "codex",
+      "--scope",
+      "project",
+    ]);
+    expect(stdoutChunks.join("")).toContain("skills-out");
+  });
+
+  it("delegates read-only runtime status and preserves its exit code", async () => {
+    setArgv(["status", "--json"]);
+    await importEntry();
+    expect(createRuntimeStatusDepsMock).toHaveBeenCalled();
+    expect(runRuntimeStatusMock).toHaveBeenCalledWith(
+      ["--json"],
+      expect.objectContaining({ readConfig: expect.any(Function) }),
+    );
+    expect(stdoutChunks.join("")).toContain("status-out");
+    expect(process.exitCode).toBe(3);
+  });
+
+  it("delegates fail-closed show mode and preserves its structured exit code", async () => {
+    setArgv(["show", "venue-a", "--dry-run", "--json"]);
+    await importEntry();
+    expect(runShowModeMock).toHaveBeenCalledWith(["venue-a", "--dry-run", "--json"]);
+    expect(stdoutChunks.join("")).toContain("show-out");
+    expect(stderrChunks.join("")).toContain("show-warning");
+    expect(process.exitCode).toBe(4);
+  });
+
+  it("routes bare doctor to environment diagnostics", async () => {
+    setArgv(["doctor", "--json"]);
+    await importEntry();
+    expect(runTopLevelDoctorMock).toHaveBeenCalledWith(["--json"]);
+    expect(stdoutChunks.join("")).toContain("doctor-out");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("preserves legacy known-package doctor with a deprecation warning", async () => {
+    isKnownPackageDoctorTargetMock.mockReturnValue(true);
+    setArgv(["doctor", "raytk", "--json"]);
+    await importEntry();
+    expect(runPackageCliMock).toHaveBeenCalledWith(["doctor", "raytk", "--json"]);
+    expect(stderrChunks.join("")).toContain("Deprecated");
+    expect(runTopLevelDoctorMock).not.toHaveBeenCalled();
+  });
+
   it("delegates chat subcommand", async () => {
     setArgv(["chat", "--profile", "x"]);
     await importEntry();
@@ -219,6 +313,14 @@ describe("src/index.ts dispatcher", () => {
     setArgv(["telegram", "--once"]);
     await importEntry();
     expect(runTelegramMock).toHaveBeenCalledWith(["--once"]);
+  });
+
+  it("delegates sandbox-only local model calibration and preserves its exit code", async () => {
+    runCopilotCalibrateMock.mockResolvedValue(3);
+    setArgv(["copilot-calibrate", "--json"]);
+    await importEntry();
+    expect(runCopilotCalibrateMock).toHaveBeenCalledWith(["--json"]);
+    expect(process.exitCode).toBe(3);
   });
 
   it("dashboard subcommand calls process.exit with runDashboard's exit code", async () => {

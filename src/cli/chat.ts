@@ -3,9 +3,11 @@ import { setTimeout as delay } from "node:timers/promises";
 import { parseArgs } from "node:util";
 import { runAgentTurn } from "../llm/agent.js";
 import { type ChatMessage, LlmClient } from "../llm/client.js";
+import { resolveRuntimeCalibration } from "../llm/runtimeCalibration.js";
 import { startChatServer } from "../llm/server.js";
 import { loadCopilotSession, resolveSessionPath, saveCopilotSession } from "../llm/sessionStore.js";
 import { resolveTools } from "../llm/tools.js";
+import { formatTurnReceiptSummary, type TurnReceiptV1 } from "../llm/turnReceipt.js";
 import { buildToolContext } from "../server/context.js";
 import type { ToolContext } from "../tools/types.js";
 import {
@@ -90,6 +92,7 @@ export interface ChatCliOptions {
   readOnly: boolean;
   creative: boolean;
   resume: boolean;
+  noReceiptPersist: boolean;
   prompt?: string;
   profile?: string;
   configPath?: string;
@@ -120,6 +123,8 @@ Flags:
   --prompt <text>   Run one headless prompt and print the answer; don't open the browser.
   --no-ollama       Don't auto-start Ollama; assume the endpoint is already running.
   --no-open         Don't open the browser automatically.
+  --no-receipt-persist
+                    Keep receipts in memory only for this process/headless turn.
   --profile <name>  Use a named profile from tdmcp.json / .tdmcprc.
   --config <path>   Use a specific config file instead of the search order.
   -h, --help        Show this help.
@@ -137,6 +142,7 @@ export function parseChatArgs(argv: string[] = []): ChatCliOptions {
       help: { type: "boolean", short: "h", default: false },
       "no-open": { type: "boolean", default: false },
       "no-ollama": { type: "boolean", default: false },
+      "no-receipt-persist": { type: "boolean", default: false },
       "read-only": { type: "boolean", default: false },
       creative: { type: "boolean", default: false },
       resume: { type: "boolean", default: false },
@@ -154,6 +160,7 @@ export function parseChatArgs(argv: string[] = []): ChatCliOptions {
     readOnly: values["read-only"] === true,
     creative: values.creative === true,
     resume: values.resume === true,
+    noReceiptPersist: values["no-receipt-persist"] === true,
     ...(typeof values.prompt === "string" ? { prompt: values.prompt } : {}),
     ...(typeof values.profile === "string" ? { profile: values.profile } : {}),
     ...(typeof values.config === "string" ? { configPath: values.config } : {}),
@@ -294,13 +301,29 @@ export async function runHeadlessPrompt(
   ctx: ToolContext,
   client: LlmClient,
   prompt: string,
-  config: Pick<LoadedTdmcpConfig, "llmTier" | "llmMaxSteps">,
+  config: Pick<
+    LoadedTdmcpConfig,
+    | "llmTier"
+    | "llmMaxSteps"
+    | "llmBaseUrl"
+    | "llmModel"
+    | "llmApiKey"
+    | "llmCalibrationMode"
+    | "llmCalibrationCachePath"
+    | "projectRoot"
+    | "copilotReceipts"
+    | "copilotReceiptsPath"
+  >,
   writeStdout: (chunk: string) => void = (chunk) => process.stdout.write(chunk),
   priorMessages: ChatMessage[] = [],
+  writeAudit: (chunk: string) => void = (chunk) => process.stderr.write(chunk),
+  noPersist = false,
 ): Promise<ChatMessage[]> {
   let answer: string | undefined;
   let error: string | undefined;
   let suggestion: string | undefined;
+  let receipt: TurnReceiptV1 | undefined;
+  const calibration = await resolveRuntimeCalibration(config, config.llmTier);
   const messages = await runAgentTurn(
     ctx,
     client,
@@ -309,10 +332,21 @@ export async function runHeadlessPrompt(
       if (event.type === "answer") answer = event.content;
       if (event.type === "error") error = event.message;
       if (event.type === "suggestion") suggestion = event.message;
+      if (event.type === "receipt") receipt = event.receipt;
     },
     {
-      tools: resolveTools(config.llmTier, { projectRag: ctx.projectRag !== undefined }),
+      tools: resolveTools(config.llmTier, {
+        projectRag: ctx.projectRag !== undefined,
+        calibration,
+        calibrationMode: config.llmCalibrationMode,
+      }),
       maxSteps: config.llmMaxSteps,
+      requestedTier: config.llmTier,
+      effectiveTier: calibration.effectiveTier,
+      projectRoot: config.projectRoot,
+      receiptPersistence: config.copilotReceipts,
+      receiptStorePath: config.copilotReceiptsPath,
+      noPersist,
     },
   );
 
@@ -325,6 +359,7 @@ export async function runHeadlessPrompt(
   if (output) writeStdout(`${output.trimEnd()}\n`);
   // A non-intrusive nudge printed after the answer when the copilot hit a dead-end.
   if (suggestion) writeStdout(`\nℹ️  ${suggestion}\n`);
+  if (receipt) writeAudit(`${formatTurnReceiptSummary(receipt)}\n`);
   return messages;
 }
 
@@ -356,6 +391,8 @@ async function runHeadlessChat(state: HeadlessChatState, io: HeadlessChatIo): Pr
     config,
     io.writeStdout,
     resumedMessages,
+    io.writeStderr,
+    opts.noReceiptPersist,
   );
   if (opts.resume) persistResumeTurn(sessionPath, config, finalMessages, io.writeStderr);
 }
@@ -395,6 +432,7 @@ export async function runChat(argv: string[] = [], deps: ChatRuntimeDeps = {}): 
     configPath: opts.configPath,
   });
   let config = applyChatFlagOverrides(loaded, opts);
+  if (opts.noReceiptPersist) config = { ...config, copilotReceipts: "off" };
 
   const sessionPath = resolveSessionPath(opts.sessionPath);
   let resumedMessages: ChatMessage[] = [];

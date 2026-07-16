@@ -84,6 +84,14 @@ Ambas são somente-leitura e sempre carregam URL de origem, licença e notas de
 direitos em cada resultado. Estão documentadas por completo nas suas próprias
 páginas; este guia cobre o caminho sempre-ligado do perfil de sessão.
 
+## Perfil versus brief do projeto
+
+O perfil de sessão é o gosto do usuário compartilhado entre projetos. O brief é a
+intenção pertencente a um projeto, dentro do diretório `.tdmcp` dele, e exige uma
+revisão otimista para ser substituído. O copiloto local pode usar os dois como
+evidência não confiável, mas nenhum pode sobrepor o pedido atual ou a política de
+segurança. Veja [Contexto por projeto & recibos de turno](/pt/guide/project-context-receipts).
+
 ## Veja também
 
 - [Trabalhando a partir das suas notas (vault Obsidian)](/pt/guide/prompt-cookbook#trabalhando-a-partir-das-suas-notas-vault-obsidian)

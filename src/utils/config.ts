@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync } from "node:fs";
+import { isIP } from "node:net";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
@@ -11,6 +12,8 @@ export const DEFAULT_LLM_TIER: LlmTier = "standard";
 export const DEFAULT_TELEGRAM_LLM_TIER: LlmTier = "safe";
 export const DEFAULT_LLM_MAX_STEPS = 8;
 export const DEFAULT_LLM_TEMPERATURE = 0.4;
+export const DEFAULT_LLM_CALIBRATION_MODE = "recommend" as const;
+export const DEFAULT_LLM_CALIBRATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const MAX_LLM_MAX_STEPS = 32;
 const MAX_LLM_TEMPERATURE = 2;
 
@@ -53,6 +56,33 @@ const LlmTemperatureSchema = z.preprocess(
   z.number().min(0).max(MAX_LLM_TEMPERATURE).default(DEFAULT_LLM_TEMPERATURE),
 );
 
+const LlmCalibrationModeSchema = z.preprocess(
+  (value) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (typeof value !== "string") return DEFAULT_LLM_CALIBRATION_MODE;
+    const normalized = value.trim().toLowerCase();
+    return normalized === "enforce" ? "enforce" : DEFAULT_LLM_CALIBRATION_MODE;
+  },
+  z.enum(["recommend", "enforce"]).default(DEFAULT_LLM_CALIBRATION_MODE),
+);
+
+const LlmCalibrationTtlSchema = z.preprocess(
+  (value) =>
+    sanitizeBoundedNumber(value, DEFAULT_LLM_CALIBRATION_TTL_MS, 1, 30 * 24 * 60 * 60 * 1000, true),
+  z
+    .number()
+    .int()
+    .min(1)
+    .max(30 * 24 * 60 * 60 * 1000)
+    .default(DEFAULT_LLM_CALIBRATION_TTL_MS),
+);
+
+const CopilotReceiptsSchema = z.preprocess(
+  (value) =>
+    typeof value === "string" && value.trim().toLowerCase() === "persist" ? "persist" : undefined,
+  z.enum(["off", "persist"]).default("off"),
+);
+
 function csvList(value: unknown): string[] | undefined {
   if (value === undefined || value === null) return undefined;
   if (Array.isArray(value))
@@ -70,6 +100,58 @@ function csvList(value: unknown): string[] | undefined {
 }
 
 const CsvListSchema = z.preprocess(csvList, z.array(z.string()).default([]));
+
+const MAX_OAUTH_TRUSTED_PROXY_HOPS = 8;
+
+function oauthTrustedProxyHops(value: unknown): string[] | undefined {
+  return csvList(value)?.map((raw) => {
+    const normalized = raw.startsWith("::ffff:") ? raw.slice("::ffff:".length) : raw;
+    return normalized.toLowerCase();
+  });
+}
+
+const OAuthTrustedProxyHopsSchema = z.preprocess(
+  oauthTrustedProxyHops,
+  z
+    .array(
+      z.string().refine((value) => isIP(value) !== 0, {
+        message: "OAuth trusted proxy hops must be numeric IP addresses",
+      }),
+    )
+    .max(MAX_OAUTH_TRUSTED_PROXY_HOPS)
+    .refine((values) => new Set(values).size === values.length, {
+      message: "OAuth trusted proxy hops must be unique",
+    })
+    .default([]),
+);
+
+const HttpAuthModeSchema = z.preprocess(
+  (value) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    return typeof value === "string" ? value.trim().toLowerCase() : value;
+  },
+  z.enum(["auto", "none", "static", "oauth", "hybrid"]).default("auto"),
+);
+
+const HttpBodyMaxBytesSchema = z.preprocess(
+  (value) => sanitizeBoundedNumber(value, 1_048_576, 1_024, 4_194_304, true),
+  z.number().int().min(1_024).max(4_194_304).default(1_048_576),
+);
+
+const OAuthAccessTtlSchema = z.preprocess(
+  (value) => sanitizeBoundedNumber(value, 900, 60, 3_600, true),
+  z.number().int().min(60).max(3_600).default(900),
+);
+
+const OAuthRefreshTtlSchema = z.preprocess(
+  (value) => sanitizeBoundedNumber(value, 2_592_000, 3_600, 7_776_000, true),
+  z.number().int().min(3_600).max(7_776_000).default(2_592_000),
+);
+
+const OAuthConsentTtlSchema = z.preprocess(
+  (value) => sanitizeBoundedNumber(value, 60, 5, 120, true),
+  z.number().int().min(5).max(120).default(60),
+);
 
 /** Coerces an env/file boolean-ish value: "1"/"true" (any case) → true, else → false. */
 function ragEnabledFlag(value: unknown): boolean | undefined {
@@ -176,6 +258,10 @@ export const ConfigSchema = z.object({
   httpPort: z.coerce.number().int().positive().max(65535).default(3939),
   /** HTTP bind host. Unset binds loopback; containers opt into 0.0.0.0 explicitly. */
   httpHost: z.string().min(1).optional(),
+  /** Explicit HTTP authorization policy. `auto` preserves the legacy static-token behavior. */
+  httpAuthMode: HttpAuthModeSchema,
+  /** Maximum accepted Streamable HTTP JSON body size. */
+  httpBodyMaxBytes: HttpBodyMaxBytesSchema,
   /** Subscribe to TD WebSocket events and forward them as MCP logging notifications. */
   events: z.enum(["on", "off"]).default("on"),
   /**
@@ -207,14 +293,31 @@ export const ConfigSchema = z.object({
    */
   bridgeToken: z.string().min(1).optional(),
   /**
-   * Optional bearer token that the Streamable HTTP transport requires on every
-   * request (`Authorization: Bearer <token>`). Acts as the enforcement half of an
-   * MCP OAuth2 Resource Server: when set, missing/invalid credentials get a 401 with
-   * a `WWW-Authenticate: Bearer` challenge. Unset (default) keeps the zero-config
-   * local flow open. The HTTP transport binds loopback only, so this matters when
-   * the server is fronted by a proxy or bound to a LAN interface.
+   * Legacy pre-shared bearer for Streamable HTTP `static` or explicit `hybrid`
+   * authentication. This is not OAuth. Pure OAuth mode refuses it instead of
+   * silently downgrading; unset keeps the compatibility `auto` mode open locally.
    */
   httpAuthToken: z.string().min(1).optional(),
+  /** Canonical externally visible origin for the opt-in OAuth AS/RS. */
+  publicBaseUrl: z.string().min(1).optional(),
+  /** Development-only permission for a numeric-loopback HTTP OAuth origin. */
+  oauthAllowInsecureLoopback: z.preprocess(ragEnabledFlag, z.boolean().default(false)),
+  /** Exact HTTPS origins allowed for non-loopback OAuth redirect URIs. */
+  oauthRedirectOrigins: CsvListSchema,
+  /**
+   * Exact numeric addresses of trusted reverse-proxy hops, nearest hop included.
+   * Empty by default: forwarding headers then fail closed instead of becoming
+   * source identity. Bounded to eight unique entries.
+   */
+  oauthTrustedProxyHops: OAuthTrustedProxyHopsSchema,
+  /** Owner-private OAuth persistence directory outside TouchDesigner projects. */
+  oauthStateDir: z.string().min(1).optional(),
+  /** Lifetime of newly issued OAuth access tokens. */
+  oauthAccessTtlSeconds: OAuthAccessTtlSchema,
+  /** Lifetime of newly issued rotating OAuth refresh-token families. */
+  oauthRefreshTtlSeconds: OAuthRefreshTtlSchema,
+  /** Lifetime of one TD-native OAuth consent transaction. */
+  oauthConsentTtlSeconds: OAuthConsentTtlSchema,
   /**
    * Base URL of an OpenAI-compatible chat endpoint used by `tdmcp chat` (the local
    * LLM copilot). Defaults to Ollama's local server. Point it at LM Studio, a cloud
@@ -240,6 +343,18 @@ export const ConfigSchema = z.object({
   llmMaxSteps: LlmMaxStepsSchema,
   /** Sampling temperature for the local copilot's streaming chat calls. */
   llmTemperature: LlmTemperatureSchema,
+  /** Calibration is advisory by default; enforce clamps unverified model builds to safe. */
+  llmCalibrationMode: LlmCalibrationModeSchema,
+  /** Optional owner-controlled calibration cache path outside project data. */
+  llmCalibrationCachePath: z.string().min(1).optional(),
+  /** Maximum age of a reusable calibration manifest (bounded to 30 days). */
+  llmCalibrationTtlMs: LlmCalibrationTtlSchema,
+  /** Explicit project root used for project-owned local-copilot context. */
+  projectRoot: z.string().min(1).optional(),
+  /** Opt-in persistence for bounded local-copilot turn receipts. */
+  copilotReceipts: CopilotReceiptsSchema,
+  /** Optional absolute path for the private bounded receipt store. */
+  copilotReceiptsPath: z.string().min(1).optional(),
   /** Loopback port the `tdmcp chat` web UI binds to. */
   chatPort: z.coerce.number().int().positive().max(65535).default(4141),
   /** Telegram Bot API token for `tdmcp telegram`. Keep in env/config, never CLI args. */
@@ -392,6 +507,15 @@ export type LlmRuntimeConfig = Pick<ParsedConfig, "llmTier" | "llmMaxSteps" | "l
 
 export type TdmcpConfig = ParsedConfig;
 export type LoadedTdmcpConfig = ParsedConfig;
+export type HttpAuthMode = "none" | "static" | "oauth" | "hybrid";
+
+/** Resolve the explicit HTTP auth policy while preserving the legacy token default. */
+export function resolveHttpAuthMode(
+  config: Pick<TdmcpConfig, "httpAuthMode" | "httpAuthToken">,
+): HttpAuthMode {
+  if (config.httpAuthMode !== "auto") return config.httpAuthMode;
+  return config.httpAuthToken ? "static" : "none";
+}
 
 /** Options for {@link loadConfig}. File loading is opt-in (entry points pass `useFiles`). */
 export interface LoadConfigOptions {
@@ -424,6 +548,19 @@ interface ConfigFile {
   source?: string;
 }
 
+export type RuntimeConfigInspection =
+  | {
+      state: "available";
+      config: LoadedTdmcpConfig;
+      profile: string | null;
+      sourceKind: "explicit" | "workspace" | "user" | "defaults";
+    }
+  | {
+      state: "unavailable";
+      reason: "config_invalid" | "config_missing_explicit" | "profile_missing";
+      profile: string | null;
+    };
+
 /** Maps env vars to config keys (values may be undefined; pruned before merge). */
 function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
   return {
@@ -434,18 +571,34 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     requestTimeoutMs: env.TDMCP_REQUEST_TIMEOUT_MS,
     httpPort: env.TDMCP_HTTP_PORT,
     httpHost: env.TDMCP_HTTP_HOST,
+    httpAuthMode: env.TDMCP_HTTP_AUTH_MODE,
+    httpBodyMaxBytes: env.TDMCP_HTTP_MAX_BODY_BYTES,
     events: env.TDMCP_EVENTS,
     rawPython: env.TDMCP_RAW_PYTHON,
     yolo: env.TDMCP_YOLO,
     toolProfile: env.TDMCP_TOOL_PROFILE,
     bridgeToken: env.TDMCP_BRIDGE_TOKEN || undefined,
     httpAuthToken: env.TDMCP_HTTP_AUTH_TOKEN || undefined,
+    publicBaseUrl: env.TDMCP_PUBLIC_BASE_URL || undefined,
+    oauthAllowInsecureLoopback: env.TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK,
+    oauthRedirectOrigins: env.TDMCP_OAUTH_REDIRECT_ORIGINS,
+    oauthTrustedProxyHops: env.TDMCP_OAUTH_TRUSTED_PROXY_HOPS,
+    oauthStateDir: env.TDMCP_OAUTH_STATE_DIR || undefined,
+    oauthAccessTtlSeconds: env.TDMCP_OAUTH_ACCESS_TTL_SECONDS,
+    oauthRefreshTtlSeconds: env.TDMCP_OAUTH_REFRESH_TTL_SECONDS,
+    oauthConsentTtlSeconds: env.TDMCP_OAUTH_CONSENT_TTL_SECONDS,
     llmBaseUrl: env.TDMCP_LLM_BASE_URL,
     llmModel: env.TDMCP_LLM_MODEL,
     llmApiKey: env.TDMCP_LLM_API_KEY || undefined,
     llmTier: env.TDMCP_LLM_TIER || undefined,
     llmMaxSteps: env.TDMCP_LLM_MAX_STEPS || undefined,
     llmTemperature: env.TDMCP_LLM_TEMPERATURE || undefined,
+    llmCalibrationMode: env.TDMCP_LLM_CALIBRATION_MODE || undefined,
+    llmCalibrationCachePath: env.TDMCP_LLM_CALIBRATION_CACHE || undefined,
+    llmCalibrationTtlMs: env.TDMCP_LLM_CALIBRATION_TTL_MS || undefined,
+    projectRoot: env.TDMCP_PROJECT_ROOT || undefined,
+    copilotReceipts: env.TDMCP_COPILOT_RECEIPTS || undefined,
+    copilotReceiptsPath: env.TDMCP_COPILOT_RECEIPTS_PATH || undefined,
     chatPort: env.TDMCP_CHAT_PORT,
     telegramBotToken: env.TDMCP_TELEGRAM_BOT_TOKEN || undefined,
     telegramAllowedChats: env.TDMCP_TELEGRAM_ALLOWED_CHATS || undefined,
@@ -497,6 +650,98 @@ function configSearchPaths(env: NodeJS.ProcessEnv, cwd: string): string[] {
   if (explicit) return [explicit];
   const globalDir = env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
   return [join(cwd, "tdmcp.json"), join(cwd, ".tdmcprc"), join(globalDir, "tdmcp", "config.json")];
+}
+
+interface RuntimeConfigCandidate {
+  path: string;
+  kind: "explicit" | "workspace" | "user";
+}
+
+type RuntimeConfigFileRead =
+  | {
+      ok: true;
+      base: Record<string, unknown>;
+      profiles: Record<string, Record<string, unknown>>;
+    }
+  | { ok: false };
+
+function runtimeConfigCandidates(
+  env: NodeJS.ProcessEnv,
+  cwd: string,
+  explicitPath: string | undefined,
+): RuntimeConfigCandidate[] {
+  if (explicitPath) return [{ path: explicitPath, kind: "explicit" }];
+  const globalDir = env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
+  return [
+    { path: join(cwd, "tdmcp.json"), kind: "workspace" },
+    { path: join(cwd, ".tdmcprc"), kind: "workspace" },
+    { path: join(globalDir, "tdmcp", "config.json"), kind: "user" },
+  ];
+}
+
+function runtimeProfiles(value: unknown): Record<string, Record<string, unknown>> | null {
+  if (value === undefined) return {};
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const profiles: Record<string, Record<string, unknown>> = {};
+  for (const [name, settings] of Object.entries(value)) {
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) return null;
+    profiles[name] = settings as Record<string, unknown>;
+  }
+  return profiles;
+}
+
+function readRuntimeConfigFile(candidate: RuntimeConfigCandidate): RuntimeConfigFileRead {
+  try {
+    const info = lstatSync(candidate.path);
+    if (info.isSymbolicLink() || !info.isFile() || info.size > 1024 * 1024) return { ok: false };
+    const parsed = JSON.parse(readFileSync(candidate.path, "utf8")) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { ok: false };
+    const raw = parsed as Record<string, unknown>;
+    const profiles = runtimeProfiles(raw.profiles);
+    if (profiles === null) return { ok: false };
+    const { profiles: _ignored, ...base } = raw;
+    return { ok: true, base, profiles };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/** Strict, path-redacted config diagnostic used only by the read-only status command. */
+export function inspectRuntimeConfig(
+  env: NodeJS.ProcessEnv = process.env,
+  opts: Pick<LoadConfigOptions, "profile" | "configPath" | "cwd" | "overrides"> = {},
+): RuntimeConfigInspection {
+  const cwd = opts.cwd ?? process.cwd();
+  const explicitPath = opts.configPath ?? env.TDMCP_CONFIG_FILE?.trim();
+  const candidates = runtimeConfigCandidates(env, cwd, explicitPath);
+  const selected = candidates.find((candidate) => existsSync(candidate.path));
+  const profileName = opts.profile ?? env.TDMCP_PROFILE?.trim() ?? null;
+  if (!selected && explicitPath) {
+    return { state: "unavailable", reason: "config_missing_explicit", profile: profileName };
+  }
+  const file: RuntimeConfigFileRead = selected
+    ? readRuntimeConfigFile(selected)
+    : { ok: true, base: {}, profiles: {} };
+  if (!file.ok) return { state: "unavailable", reason: "config_invalid", profile: profileName };
+  const profilePart = profileName ? file.profiles[profileName] : {};
+  if (profileName && !profilePart) {
+    return { state: "unavailable", reason: "profile_missing", profile: profileName };
+  }
+  const parsedConfig = ConfigSchema.safeParse({
+    ...file.base,
+    ...profilePart,
+    ...pruneUndefined(envValues(env)),
+    ...pruneUndefined(opts.overrides ?? {}),
+  });
+  if (!parsedConfig.success) {
+    return { state: "unavailable", reason: "config_invalid", profile: profileName };
+  }
+  return {
+    state: "available",
+    config: parsedConfig.data,
+    profile: profileName,
+    sourceKind: selected?.kind ?? "defaults",
+  };
 }
 
 /**

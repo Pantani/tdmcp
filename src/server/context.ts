@@ -59,6 +59,7 @@ export function buildToolContext(
       : undefined);
   return {
     client: connection.client,
+    ...(config.bridgeToken !== undefined ? { bridgeToken: config.bridgeToken } : {}),
     knowledge,
     recipes,
     logger,
@@ -66,6 +67,9 @@ export function buildToolContext(
     allowRawPython: config.rawPython !== "off",
     yolo: config.yolo,
     toolProfile: config.toolProfile,
+    projectRoot: config.projectRoot,
+    copilotReceipts: config.copilotReceipts,
+    copilotReceiptsPath: config.copilotReceiptsPath,
     creativeRag,
     projectRag,
   };

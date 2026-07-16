@@ -8,6 +8,7 @@ let tempDirs: string[] = [];
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   process.exitCode = undefined;
   const dirs = tempDirs;
   tempDirs = [];
@@ -188,6 +189,111 @@ describe("install-client CLI", () => {
     expect(stderr).toHaveBeenCalledWith(
       'Unknown client "unknown". Expected claude, codex, or cursor.\n',
     );
+    expect(process.exitCode).toBe(2);
+  });
+
+  it("writes, checks, diffs and removes a project-scoped Claude entry", async () => {
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const configPath = await tempConfigPath("tdmcp.json");
+    const projectDir = dirname(configPath);
+    await writeFile(
+      configPath,
+      JSON.stringify({ profiles: { venue: { tdHost: "127.0.0.2", tdPort: 9987 } } }),
+    );
+    await runInstallClient([
+      "claude",
+      "--scope",
+      "project",
+      "--project-dir",
+      projectDir,
+      "--profile",
+      "venue",
+      "--token",
+      "private-token",
+      "--write",
+      "--json",
+    ]);
+
+    expect(stderr).not.toHaveBeenCalled();
+    const applied = JSON.parse(String(stdout.mock.calls.at(-1)?.[0]));
+    expect(applied).toMatchObject({
+      state: "applied",
+      scope: "project",
+      token_presence: "present",
+    });
+    expect(JSON.stringify(applied)).not.toContain("private-token");
+    const clientConfig = JSON.parse(await readFile(join(projectDir, ".mcp.json"), "utf8"));
+    expect(clientConfig.mcpServers.tdmcp.env).toMatchObject({
+      TDMCP_TD_HOST: "127.0.0.2",
+      TDMCP_TD_PORT: "9987",
+      TDMCP_BRIDGE_TOKEN: "private-token",
+    });
+
+    stdout.mockClear();
+    await runInstallClient([
+      "claude",
+      "--scope",
+      "project",
+      "--project-dir",
+      projectDir,
+      "--profile",
+      "venue",
+      "--token",
+      "private-token",
+      "--check",
+      "--json",
+    ]);
+    expect(JSON.parse(String(stdout.mock.calls.at(-1)?.[0]))).toMatchObject({ state: "matching" });
+
+    stdout.mockClear();
+    await runInstallClient([
+      "claude",
+      "--scope",
+      "project",
+      "--project-dir",
+      projectDir,
+      "--profile",
+      "venue",
+      "--remove",
+      "--diff",
+      "--json",
+    ]);
+    expect(JSON.parse(String(stdout.mock.calls.at(-1)?.[0]))).toMatchObject({
+      action: "remove",
+      state: "planned",
+      wrote: false,
+    });
+    expect(JSON.parse(await readFile(join(projectDir, ".mcp.json"), "utf8"))).toHaveProperty(
+      "mcpServers.tdmcp",
+    );
+
+    stdout.mockClear();
+    await runInstallClient([
+      "claude",
+      "--scope",
+      "project",
+      "--project-dir",
+      projectDir,
+      "--profile",
+      "venue",
+      "--remove",
+      "--write",
+      "--json",
+    ]);
+    expect(JSON.parse(String(stdout.mock.calls.at(-1)?.[0]))).toMatchObject({ state: "removed" });
+    expect(JSON.parse(await readFile(join(projectDir, ".mcp.json"), "utf8"))).not.toHaveProperty(
+      "mcpServers.tdmcp",
+    );
+  });
+
+  it("rejects unverified Codex project scope without writing", async () => {
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const projectDir = dirname(await tempConfigPath("placeholder"));
+    await runInstallClient(["codex", "--scope", "project", "--project-dir", projectDir, "--write"]);
+    expect(stdout).not.toHaveBeenCalled();
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining("not supported"));
     expect(process.exitCode).toBe(2);
   });
 });

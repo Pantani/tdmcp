@@ -44,7 +44,12 @@ def _resolve_type(type_name):
 
 
 def node_ref(node):
-    return {"path": node.path, "type": op_type(node), "name": node.name}
+    return {
+        "path": node.path,
+        "type": op_type(node),
+        "name": node.name,
+        "operator_id": str(getattr(node, "id", "")),
+    }
 
 
 def _jsonable(value):
@@ -242,7 +247,102 @@ def _create_or_reuse(parent, cls, type_name, name, parent_path):
     return existing, True
 
 
-def create_node(parent_path, type_name, name=None, parameters=None):
+_PLACEMENT_X_STEP = 260
+_PLACEMENT_Y_STEP = 200
+_PLACEMENT_ROWS = 6
+
+
+def _layout_cell(node):
+    """Return the deterministic grid cell occupied by one Network Editor node."""
+    try:
+        width = float(getattr(node, "nodeWidth", 130) or 130)
+        height = float(getattr(node, "nodeHeight", 90) or 90)
+        x = float(node.nodeX) + width / 2.0
+        y = float(node.nodeY) + height / 2.0
+        return (round(x / _PLACEMENT_X_STEP), round(-y / _PLACEMENT_Y_STEP))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _auto_position(parent, ignore=None):
+    """First free deterministic 260x200 grid slot among a parent's direct children."""
+    occupied = set()
+    for child in getattr(parent, "children", None) or []:
+        if child is ignore:
+            continue
+        cell = _layout_cell(child)
+        if cell is not None:
+            occupied.add(cell)
+    index = 0
+    while index < 10000:
+        cell = (index // _PLACEMENT_ROWS, index % _PLACEMENT_ROWS)
+        if cell not in occupied:
+            return (cell[0] * _PLACEMENT_X_STEP, -(cell[1] * _PLACEMENT_Y_STEP))
+        index += 1
+    raise RuntimeError("Could not find a free placement cell after 10000 attempts.")
+
+
+def _validate_placement(placement, node_x, node_y):
+    if placement not in (None, "auto", "explicit"):
+        raise ValueError("placement must be 'auto' or 'explicit' when provided")
+    if placement == "explicit" and (node_x is None or node_y is None):
+        raise ValueError("placement='explicit' requires both node_x and node_y")
+    if placement != "explicit" and (node_x is not None or node_y is not None):
+        raise ValueError("node_x/node_y require placement='explicit'")
+    _validate_editor_coordinate("node_x", node_x)
+    _validate_editor_coordinate("node_y", node_y)
+
+
+def _validate_editor_coordinate(field, value):
+    if value is None:
+        return
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("%s must be a finite number" % field)
+    if not math.isfinite(float(value)) or abs(float(value)) > 1_000_000:
+        raise ValueError("%s must be finite and within +/-1000000" % field)
+
+
+def _apply_new_node_editor_state(node, parent, placement, node_x, node_y, viewer):
+    if placement == "auto":
+        node_x, node_y = _auto_position(parent, ignore=node)
+    if placement in ("auto", "explicit"):
+        node.nodeX = float(node_x)
+        node.nodeY = float(node_y)
+    if viewer is not None:
+        node.viewer = viewer
+
+
+def _apply_create_parameters(node, parameters, ref):
+    if not parameters:
+        return
+    _applied, failures = apply_parameters(node, parameters)
+    if failures:
+        ref["parameter_warnings"] = sorted(f["name"] for f in failures)
+
+
+def _add_editor_state(ref, node):
+    for key, attr in (("nodeX", "nodeX"), ("nodeY", "nodeY"), ("viewer", "viewer")):
+        try:
+            value = getattr(node, attr)
+            if isinstance(value, (bool, int, float)):
+                ref[key] = value
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def create_node(
+    parent_path,
+    type_name,
+    name=None,
+    parameters=None,
+    placement=None,
+    node_x=None,
+    node_y=None,
+    viewer=None,
+):
+    _validate_placement(placement, node_x, node_y)
+    if viewer is not None and type(viewer) is not bool:  # noqa: E721 - reject string truthiness
+        raise ValueError("viewer must be a boolean when provided")
     parent = op(parent_path)  # noqa: F821 - TD global
     if parent is None:
         raise LookupError("Parent not found: %s" % parent_path)
@@ -251,32 +351,68 @@ def create_node(parent_path, type_name, name=None, parameters=None):
     ref = node_ref(node)
     if already_existed:
         ref["already_existed"] = True
-    if parameters:
-        # The node is created regardless; surface any params that did not apply
-        # (unknown name or bad value) as a non-fatal warning rather than dropping
-        # them silently. The caller (create_td_node) relays these to the user.
-        _applied, failures = apply_parameters(node, parameters)
-        if failures:
-            ref["parameter_warnings"] = sorted(f["name"] for f in failures)
+    else:
+        _apply_new_node_editor_state(node, parent, placement, node_x, node_y, viewer)
+    # The node is created regardless; surface any params that did not apply as a
+    # non-fatal warning rather than dropping them silently.
+    _apply_create_parameters(node, parameters, ref)
+    _add_editor_state(ref, node)
     return ref
 
 
-def delete_node(path, mode="delete"):
+def delete_node(
+    path, mode="delete", decision=None, confirmation_policy=None, request_id=None
+):
     """Remove a node, or (mode='bypass') just bypass it — a safer, reversible middle ground.
 
-    'bypass' sets the operator's bypass flag instead of destroying it, so the artist can
-    re-enable it with one click; 'delete' (default) destroys it as before.
+    'bypass' sets the operator's bypass flag instead of destroying it. 'delete'
+    destroys only with a consumed Delete decision or an explicit yolo policy;
+    an unconfirmed direct call returns Keep without mutating the operator.
     """
     node = op(path)  # noqa: F821
     if node is None:
         raise LookupError("Node not found: %s" % path)
     if mode == "bypass":
         node.bypass = True
-        return {"bypassed": path, "mode": "bypass"}
+        return {
+            "bypassed": path,
+            "mode": "bypass",
+            "decision": "Bypass",
+            "original_path": path,
+            "final_path": path,
+            "action_applied": "bypass",
+            "applied": True,
+            "request_id": request_id,
+            "confirmation_policy": confirmation_policy or "explicit_mode",
+        }
     if mode != "delete":
-        raise ValueError("Unknown delete mode %r (expected 'delete' or 'bypass')." % mode)
+        raise ValueError(
+            "Unknown delete mode %r (expected 'delete' or 'bypass')." % mode
+        )
+    approved = decision == "Delete" or confirmation_policy == "yolo"
+    if not approved:
+        return {
+            "mode": "delete",
+            "decision": "Keep",
+            "original_path": path,
+            "final_path": path,
+            "action_applied": "keep",
+            "applied": False,
+            "request_id": request_id,
+            "confirmation_policy": confirmation_policy or "native",
+        }
     node.destroy()
-    return {"deleted": path, "mode": "delete"}
+    return {
+        "deleted": path,
+        "mode": "delete",
+        "decision": "Delete",
+        "original_path": path,
+        "final_path": None,
+        "action_applied": "delete",
+        "applied": True,
+        "request_id": request_id,
+        "confirmation_policy": confirmation_policy or "native",
+    }
 
 
 def get_nodes(parent_path=None):
@@ -330,7 +466,11 @@ def _indexed_inputs(node):
             for oc in conns:
                 try:
                     wires.append(
-                        {"in_index": in_index, "from": oc.owner.path, "out_index": oc.index}
+                        {
+                            "in_index": in_index,
+                            "from": oc.owner.path,
+                            "out_index": oc.index,
+                        }
                     )
                 except Exception:  # noqa: BLE001
                     pass

@@ -53,12 +53,6 @@ function tmp(): string {
   return mkdtempSync(join(tmpdir(), "tdmcp-library-"));
 }
 
-function decodePayload(script: string): Record<string, unknown> {
-  const b64 = /b64decode\("([^"]+)"\)/.exec(script)?.[1];
-  if (!b64) throw new Error("No b64decode payload found");
-  return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Record<string, unknown>;
-}
-
 function jsonPayload<T>(result: { content: Array<{ type: string; text?: string }> }): T {
   const text = result.content[0]?.type === "text" ? result.content[0].text : "";
   const json = /```json\n([\s\S]*?)\n```/.exec(text ?? "")?.[1];
@@ -141,15 +135,34 @@ describe("library and packaging tools", () => {
 
   it("sanitizes explicit portable tox names before resolving the output path", async () => {
     const dir = tmp();
-    let capturedScript = "";
+    let capturedTarget = "";
     try {
       const ctx = {
         ...makeCtx(),
         client: {
-          executePythonScript: async (script: string) => {
-            capturedScript = script;
-            return { stdout: JSON.stringify({ saved: "/ignored/widget.tox", size: 1 }) };
+          exportToxTransaction: async (input: { target_path: string }) => {
+            capturedTarget = input.target_path;
+            writeFileSync(input.target_path, "tox");
+            return {
+              operation_id: "opaque_export_operation",
+              status: "succeeded",
+              verdict: "PASS",
+              action_applied: true,
+              phases: [],
+              artifact: {
+                path: input.target_path,
+                size_bytes: 1,
+                sha256: "a".repeat(64),
+              },
+            };
           },
+          getNode: async () => ({
+            path: "/project1/widget",
+            type: "baseCOMP",
+            name: "widget",
+            operator_id: "1234",
+          }),
+          getInfo: async () => ({ td_version: "099", build: "2025.32820" }),
         },
       } as unknown as ToolContext;
 
@@ -162,10 +175,12 @@ describe("library and packaging tools", () => {
       });
 
       expect(result.isError).toBeFalsy();
-      const payload = decodePayload(capturedScript);
-      const toxPath = String(payload.tox_path);
-      expect(dirname(toxPath)).toBe(resolve(dir));
-      expect(basename(toxPath)).toBe(".._shared_widget.tox");
+      expect(dirname(capturedTarget)).toBe(resolve(dir));
+      expect(basename(capturedTarget)).toMatch(
+        /^\.tdmcp-\.\._shared_widget-[A-Za-z0-9_]+\.provenance\.tmp\.tox$/,
+      );
+      expect(existsSync(join(dir, ".._shared_widget.tox"))).toBe(true);
+      expect(existsSync(join(dir, ".._shared_widget.tox.provenance.json"))).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -178,11 +193,30 @@ describe("library and packaging tools", () => {
       const ctx = {
         ...makeCtx(),
         client: {
+          exportToxTransaction: async (input: { target_path: string }) => {
+            writeFileSync(input.target_path, "tox");
+            return {
+              operation_id: "opaque_export_operation",
+              status: "succeeded" as const,
+              verdict: "PASS" as const,
+              action_applied: true,
+              phases: [],
+              artifact: {
+                path: input.target_path,
+                size_bytes: 3,
+                sha256: "b".repeat(64),
+              },
+            };
+          },
+          getNode: async () => ({
+            path: "/project1/widget",
+            type: "baseCOMP",
+            name: "widget",
+            operator_id: "1234",
+          }),
+          getInfo: async () => ({ td_version: "099", build: "2025.32820" }),
           executePythonScript: async (script: string) => {
             scripts.push(script);
-            if (scripts.length === 1) {
-              return { stdout: JSON.stringify({ saved: join(dir, "widget.tox"), size: 1 }) };
-            }
             return {
               stdout: JSON.stringify({
                 title_default: "widget",
@@ -229,7 +263,7 @@ describe("library and packaging tools", () => {
       });
 
       expect(result.isError).toBeFalsy();
-      expect(scripts).toHaveLength(2);
+      expect(scripts).toHaveLength(1);
       const readme = readFileSync(join(dir, "README.md"), "utf8");
       expect(readme).toContain("# widget");
       expect(readme).toContain("## Custom parameters");
@@ -903,6 +937,31 @@ describe("library and packaging tools", () => {
         overwrite: false,
       });
       expect(second.isError).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("installs a local package directory into project-scoped storage", async () => {
+    const dir = tmp();
+    try {
+      const src = join(dir, "srcpkg");
+      const project = join(dir, "project");
+      mkdirSync(src, { recursive: true });
+      mkdirSync(project, { recursive: true });
+      writeFileSync(join(src, "tdmcp-component.json"), JSON.stringify({ id: "srcpkg" }), "utf8");
+      const installed = await installLibraryPackageImpl(makeCtx(), {
+        source: src,
+        scope: "project",
+        project_dir: project,
+        overwrite: false,
+      });
+      expect(installed.isError).toBeFalsy();
+      expect(
+        existsSync(
+          join(project, ".tdmcp", "packages", "installed", "srcpkg", "tdmcp-component.json"),
+        ),
+      ).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { guardTd, jsonResult } from "../result.js";
+import { guardTd, jsonStructuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const updateTdNodeParametersSchema = z.object({
@@ -17,9 +17,10 @@ export async function updateTdNodeParametersImpl(
   return guardTd(
     () => ctx.client.updateNodeParameters(args.path, args.parameters),
     (node) =>
-      jsonResult(`Updated ${Object.keys(args.parameters).length} parameter(s) on ${node.path}.`, {
-        node,
-      }),
+      jsonStructuredResult(
+        `Updated ${Object.keys(args.parameters).length} parameter(s) on ${node.path}.`,
+        { node },
+      ),
   );
 }
 

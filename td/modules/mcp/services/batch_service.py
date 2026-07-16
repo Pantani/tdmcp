@@ -49,6 +49,32 @@ def connect(source_path, target_path, source_output=0, target_input=0):
     in_conn.connect(out_conn)
 
 
+def _delete(operation):
+    path = operation["path"]
+    mode = operation.get("mode", "delete")
+    policy = operation.get("confirmation_policy")
+    if mode == "bypass":
+        result = api_service.delete_node(
+            path, mode="bypass", confirmation_policy="explicit_mode"
+        )
+    elif policy == "yolo":
+        result = api_service.delete_node(path, mode="delete", confirmation_policy="yolo")
+    else:
+        result = api_service.delete_node(path, mode="delete", confirmation_policy="native")
+    entry = {
+        "action": "delete",
+        "ok": bool(result.get("applied")),
+        "path": path,
+        "data": result,
+    }
+    if not entry["ok"]:
+        entry["error"] = (
+            "batch delete kept the operator: use standalone delete_td_node for native consent, "
+            "mode='bypass', or an explicit confirmation_policy='yolo'"
+        )
+    return entry
+
+
 def run(operations):
     results = []
     for operation in operations or []:
@@ -66,8 +92,7 @@ def run(operations):
                 api_service.update_parameters(operation["path"], operation.get("parameters", {}))
                 results.append({"action": action, "ok": True, "path": operation["path"]})
             elif action == "delete":
-                api_service.delete_node(operation["path"])
-                results.append({"action": action, "ok": True, "path": operation["path"]})
+                results.append(_delete(operation))
             elif action == "connect":
                 connect(
                     operation["source_path"],

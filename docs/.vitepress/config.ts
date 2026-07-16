@@ -1,11 +1,14 @@
 import { readFileSync } from "node:fs";
 import { defineConfig, type HeadConfig } from "vitepress";
+import availability from "./feature-availability.json";
 
 const GITHUB = "https://github.com/Pantani/tdmcp";
 const NPM = "https://www.npmjs.com/package/@dpantani/tdmcp";
 const HOSTNAME = "https://pantani.github.io/tdmcp/";
 
 const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
+const sourceOnlyItems = (locale: "en" | "pt"): ArtistItem[] =>
+  availability.pages.map((page) => ({ text: page[locale], slug: page.slug }));
 
 // Keyword-first and under ~155 chars so search engines can show it whole.
 const DESCRIPTION =
@@ -105,6 +108,7 @@ const artistGroupsEn: ArtistGroup[] = [
     collapsed: true,
     items: [
       { text: "Use from TouchDesigner (LOPs)", slug: "lops-integration" },
+      ...sourceOnlyItems("en"),
       { text: "Shader Park", slug: "shader-park" },
       { text: "Session profile & corpus", slug: "session-profile" },
       { text: "MCP resources", slug: "mcp-resources" },
@@ -180,6 +184,7 @@ const artistGroupsPt: ArtistGroup[] = [
     collapsed: true,
     items: [
       { text: "Usar do TouchDesigner (LOPs)", slug: "lops-integration" },
+      ...sourceOnlyItems("pt"),
       { text: "Shader Park", slug: "shader-park" },
       { text: "Perfil de sessão & corpus", slug: "session-profile" },
       { text: "Recursos MCP", slug: "mcp-resources" },

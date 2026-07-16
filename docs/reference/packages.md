@@ -4,7 +4,13 @@ description: "Install and stage TouchDesigner community libraries with tdmcp's m
 
 # Package Manager
 
-`tdmcp install <lib>` stages trusted, manifest-listed TouchDesigner community packages under `~/.tdmcp/packages`. It works when TouchDesigner is closed. If the TD bridge is reachable and a package exposes a safe `.tox` import path, tdmcp can also import it under `/project1/tdmcp_packages/<package_id>`.
+`tdmcp install <lib>` stages trusted, manifest-listed TouchDesigner community
+packages under explicit user or project ownership. User scope remains the
+compatible default at `~/.tdmcp/packages`; project scope uses
+`<project>/.tdmcp/packages` and requires `--project-dir`. It works when
+TouchDesigner is closed. If the TD bridge is reachable and a package exposes a
+safe `.tox` import path, tdmcp can also import it under
+`/project1/tdmcp_packages/<package_id>`.
 
 ## Everyday Commands
 
@@ -12,12 +18,22 @@ description: "Install and stage TouchDesigner community libraries with tdmcp's m
 tdmcp search shader
 tdmcp list --available
 tdmcp info shader-park-td --json
-tdmcp install mediapipe-touchdesigner --dry-run --json
+tdmcp install mediapipe-touchdesigner --scope project --project-dir "$PWD" --dry-run --json
 tdmcp install raytk
-tdmcp doctor comfyui-td
+tdmcp packages doctor comfyui-td
 tdmcp packages --help
 tdmcp packages path
 ```
+
+Storage-aware `list`, `install`, `uninstall`, and `packages path` accept
+`--scope user|project`, `--project-dir <dir>`, and the advanced user-only
+`--packages-root <dir>` override. Project scope rejects ambiguous root overrides,
+missing projects, files, and symlinked project/package directories. MCP tools
+use the equivalent `scope`, `project_dir`, and `packages_root` fields.
+
+Bare `tdmcp doctor` now diagnoses the effective tdmcp environment. The old
+`tdmcp doctor <known-package>` form is temporarily accepted with a deprecation
+warning; new automation should use `tdmcp packages doctor [package]`.
 
 `install-bridge` is separate and unchanged:
 
@@ -78,11 +94,36 @@ When TouchDesigner is closed or the bridge is unreachable, install reports say `
 
 It will not overwrite an existing package node unless you pass `--yes`.
 
+## Safe live reconciliation
+
+Use the MCP tool `manage_packages` with `action: "reconcile"` before removing a
+package that still has a live TouchDesigner target. The first call is always a
+dry-run and returns an expiring `plan_id`; only a unique target whose bounded
+marker matches package ID, source fingerprint, ref and scope is actionable.
+
+Apply the unchanged plan with one explicit choice:
+
+- **Keep** changes nothing;
+- **Bypass** preserves the live COMP and its local install record;
+- **Delete** asks for native **Delete / Bypass / Keep** consent, unless the MCP
+  server was started with explicit YOLO policy.
+
+Deletion quarantines staged files before the live mutation, commits the local
+registry only after TD confirms deletion, and restores or returns a
+`partial_failure` remediation when the phases cannot converge. Foreign,
+markerless, unreadable, mismatched and duplicate targets fail closed. A legacy
+`uninstall` call with a recorded live target now returns this dry-run plan instead
+of deleting local state first.
+
 ## Security Model
 
 tdmcp downloads archives, validates archive paths, extracts into its package cache, scans for artifacts, and writes an installed registry. It does not execute third-party Python, shell scripts, npm postinstall hooks, pip installs, model downloads, CUDA/TensorRT setup, Ableton setup, Bitwig setup, ComfyUI setup, or arbitrary downloaded code by default.
 
 `--allow-python-deps` and `--allow-external` are acknowledgements for doctor/report guidance. They do not run dependency installers in this implementation.
+
+The reconciliation routes are bearer-authenticated structured operations and
+remain available with `TDMCP_BRIDGE_ALLOW_EXEC=0`; they never execute a package's
+scripts or treat missing UI as approval.
 
 ## Developer Notes
 

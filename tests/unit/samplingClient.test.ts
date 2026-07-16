@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { LlmClient } from "../../src/llm/client.js";
+import { LlmClient, LlmResponseTooLargeError } from "../../src/llm/client.js";
 import {
   createLazyLlmClient,
   DEFAULT_LLM_BASE_URL,
@@ -156,6 +156,35 @@ describe("SamplingLlmClient.complete", () => {
     await expect(client.complete([{ role: "user", content: "x" }])).rejects.toThrow(
       /sampling declined/,
     );
+  });
+
+  it("accepts sampled UTF-8 text exactly at maxResponseBytes", async () => {
+    const text = "olá";
+    const server = makeServer({
+      reply: { role: "assistant", content: { type: "text", text } },
+    });
+
+    const result = await new SamplingLlmClient(server as never).complete(
+      [{ role: "user", content: "x" }],
+      { maxResponseBytes: Buffer.byteLength(text, "utf8") },
+    );
+
+    expect(result.text).toBe(text);
+  });
+
+  it("returns the typed oversized error after an already-materialized sampling response", async () => {
+    const text = "olá";
+    const server = makeServer({
+      reply: { role: "assistant", content: { type: "text", text } },
+    });
+
+    const pending = new SamplingLlmClient(server as never).complete(
+      [{ role: "user", content: "x" }],
+      { maxResponseBytes: Buffer.byteLength(text, "utf8") - 1 },
+    );
+
+    await expect(pending).rejects.toBeInstanceOf(LlmResponseTooLargeError);
+    await expect(pending).rejects.toMatchObject({ code: "LLM_RESPONSE_TOO_LARGE" });
   });
 });
 

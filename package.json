@@ -35,6 +35,7 @@
     "safeskill.manifest.json",
     "training/showintent/Modelfile",
     "recipes",
+    "skills/curated",
     "docs/guide/prompt-cookbook.md",
     "docs/pt/guide/prompt-cookbook.md",
     "td/bootstrap.py",
@@ -84,11 +85,13 @@
     "smoke:packages": "tsx scripts/smoke-packages.ts",
     "build:mcpb": "node scripts/build-mcpb.mjs",
     "build:bridge-tox": "tsx scripts/build-bridge-tox.ts",
+    "build:agent-skills": "tsx scripts/build-agent-skills.ts",
     "docs:gen": "tsx scripts/gen-tool-docs.ts",
     "docs:clips": "node scripts/generate-doc-example-clips.mjs",
     "docs:capture": "node scripts/capture-example.mjs",
     "docs:dev": "npm run docs:gen && vitepress dev docs",
-    "docs:build": "npm run docs:gen && vitepress build docs",
+    "docs:availability": "node scripts/check-doc-availability.mjs",
+    "docs:build": "npm run docs:gen && npm run docs:availability && vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "ai-party:dev": "tsx src/automation/aiPartyLive/cli.ts dev",
     "ai-party:dry": "tsx src/automation/aiPartyLive/cli.ts dry",
@@ -97,7 +100,8 @@
     "ai-party:telegram": "tsx src/automation/aiPartyLive/cli.ts telegram",
     "version": "node scripts/sync-manifest-version.mjs",
     "prepack": "node scripts/clean-pycache.mjs",
-    "prepublishOnly": "npm run build && npm test"
+    "release:check": "npm run typecheck && npm run lint && npm run validate:recipes && npm run lint:recipes && npm test && npm run test:bridge && npm run build && npm run build:mcpb",
+    "prepublishOnly": "npm run release:check"
   },
   "allowScripts": {
     "esbuild": true,
@@ -123,7 +127,8 @@
     "derivative"
   ],
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "express": "5.2.1",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
@@ -142,6 +147,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
     "@bottobot/td-mcp": "^2.8.0",
+    "@types/express": "5.0.6",
     "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.9",
     "chokidar": "^4.0.3",

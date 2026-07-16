@@ -1,12 +1,15 @@
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   applySettings,
   ChatAccumulator,
   type ChatMessage,
+  COMPLETE_RESPONSE_BYTES_MAX,
+  InvalidCompleteOptionsError,
   LlmClient,
   type LlmConfig,
+  LlmResponseTooLargeError,
   type OpenAITool,
 } from "../../src/llm/client.js";
 
@@ -20,8 +23,36 @@ const cfg: LlmConfig = {
 
 const server = setupServer();
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-afterEach(() => server.resetHandlers());
+afterEach(() => {
+  server.resetHandlers();
+  vi.restoreAllMocks();
+});
 afterAll(() => server.close());
+
+function chunkedResponse(
+  chunks: Uint8Array[],
+  options: { holdOpenAfterChunks?: boolean; onCancel?: () => void } = {},
+): Response {
+  let index = 0;
+  return new Response(
+    new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const chunk = chunks[index];
+        index += 1;
+        if (chunk) {
+          controller.enqueue(chunk);
+          return;
+        }
+        if (options.holdOpenAfterChunks) return new Promise<void>(() => {});
+        controller.close();
+      },
+      cancel() {
+        options.onCancel?.();
+      },
+    }),
+    { status: 200, headers: { "content-type": "application/json" } },
+  );
+}
 
 describe("applySettings", () => {
   it("only overrides provided non-empty fields and clears apiKey on empty string", () => {
@@ -143,6 +174,68 @@ describe("LlmClient.complete", () => {
     await expect(new LlmClient(cfg).complete([{ role: "user", content: "x" }])).rejects.toThrow(
       /HTTP 404.*model not found/,
     );
+  });
+
+  it("accepts a multi-chunk UTF-8 response exactly at maxResponseBytes", async () => {
+    const payload = JSON.stringify({
+      model: "bounded",
+      choices: [{ message: { content: "olá" }, finish_reason: "stop" }],
+    });
+    const bytes = new TextEncoder().encode(payload);
+    const split = bytes.indexOf(0xc3) + 1;
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      chunkedResponse([bytes.slice(0, split), bytes.slice(split)]),
+    );
+
+    const result = await new LlmClient(cfg).complete([{ role: "user", content: "x" }], {
+      maxResponseBytes: bytes.byteLength,
+    });
+
+    expect(result).toEqual({ text: "olá", model: "bounded", stopReason: "stop" });
+  });
+
+  it("cancels a multi-chunk response as soon as it exceeds maxResponseBytes", async () => {
+    const payload = `${JSON.stringify({ choices: [{ message: { content: "too large" } }] })} `;
+    const bytes = new TextEncoder().encode(payload);
+    const maximum = bytes.byteLength - 1;
+    let cancelled = false;
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      chunkedResponse([bytes.slice(0, maximum), bytes.slice(maximum)], {
+        holdOpenAfterChunks: true,
+        onCancel: () => {
+          cancelled = true;
+        },
+      }),
+    );
+
+    const pending = new LlmClient(cfg).complete([{ role: "user", content: "x" }], {
+      maxResponseBytes: maximum,
+    });
+
+    await expect(pending).rejects.toBeInstanceOf(LlmResponseTooLargeError);
+    await expect(pending).rejects.toMatchObject({
+      code: "LLM_RESPONSE_TOO_LARGE",
+      maxResponseBytes: maximum,
+    });
+    expect(cancelled).toBe(true);
+  });
+
+  it.each([
+    0,
+    -1,
+    1.5,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    COMPLETE_RESPONSE_BYTES_MAX + 1,
+  ])("rejects invalid maxResponseBytes=%s before fetching", async (maxResponseBytes) => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await expect(
+      new LlmClient(cfg).complete([{ role: "user", content: "x" }], {
+        maxResponseBytes,
+      }),
+    ).rejects.toBeInstanceOf(InvalidCompleteOptionsError);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("aborts when timeoutMs elapses", async () => {

@@ -500,5 +500,5 @@ export async function finalize(
   if (previewBase64) {
     content.push({ type: "image", data: previewBase64, mimeType: previewMime ?? "image/png" });
   }
-  return { content };
+  return { content, structuredContent: data };
 }

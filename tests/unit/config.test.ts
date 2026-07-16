@@ -16,11 +16,26 @@ describe("loadConfig", () => {
     expect(config.tdPort).toBe(9980);
     expect(config.transport).toBe("stdio");
     expect(config.httpHost).toBeUndefined();
+    expect(config.httpAuthMode).toBe("auto");
+    expect(config.httpBodyMaxBytes).toBe(1_048_576);
+    expect(config.publicBaseUrl).toBeUndefined();
+    expect(config.oauthAllowInsecureLoopback).toBe(false);
+    expect(config.oauthRedirectOrigins).toEqual([]);
+    expect(config.oauthTrustedProxyHops).toEqual([]);
+    expect(config.oauthAccessTtlSeconds).toBe(900);
+    expect(config.oauthRefreshTtlSeconds).toBe(2_592_000);
+    expect(config.oauthConsentTtlSeconds).toBe(60);
     expect(config.logLevel).toBe("info");
     expect(config.requestTimeoutMs).toBe(10000);
     expect(config.llmTier).toBe("standard");
     expect(config.llmMaxSteps).toBe(8);
     expect(config.llmTemperature).toBe(0.4);
+    expect(config.llmCalibrationMode).toBe("recommend");
+    expect(config.llmCalibrationCachePath).toBeUndefined();
+    expect(config.llmCalibrationTtlMs).toBe(7 * 24 * 60 * 60 * 1000);
+    expect(config.projectRoot).toBeUndefined();
+    expect(config.copilotReceipts).toBe("off");
+    expect(config.copilotReceiptsPath).toBeUndefined();
   });
 
   it("reads overrides and coerces numeric ports", () => {
@@ -38,6 +53,50 @@ describe("loadConfig", () => {
 
   it("rejects an invalid transport", () => {
     expect(() => loadConfig({ TDMCP_TRANSPORT: "carrier-pigeon" })).toThrow();
+  });
+
+  it("reads and bounds the opt-in HTTP OAuth policy without enabling it implicitly", () => {
+    const config = loadConfig({
+      TDMCP_HTTP_AUTH_MODE: " OAUTH ",
+      TDMCP_HTTP_MAX_BODY_BYTES: "999999999",
+      TDMCP_PUBLIC_BASE_URL: "http://127.0.0.1:3939",
+      TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK: "1",
+      TDMCP_OAUTH_REDIRECT_ORIGINS: "https://client.example, https://studio.example",
+      TDMCP_OAUTH_TRUSTED_PROXY_HOPS: "127.0.0.1, ::ffff:192.0.2.10",
+      TDMCP_OAUTH_STATE_DIR: "/tmp/tdmcp-oauth",
+      TDMCP_OAUTH_ACCESS_TTL_SECONDS: "30",
+      TDMCP_OAUTH_REFRESH_TTL_SECONDS: "999999999",
+      TDMCP_OAUTH_CONSENT_TTL_SECONDS: "500",
+    });
+    expect(config.httpAuthMode).toBe("oauth");
+    expect(config.httpBodyMaxBytes).toBe(4_194_304);
+    expect(config.oauthAllowInsecureLoopback).toBe(true);
+    expect(config.oauthRedirectOrigins).toEqual([
+      "https://client.example",
+      "https://studio.example",
+    ]);
+    expect(config.oauthTrustedProxyHops).toEqual(["127.0.0.1", "192.0.2.10"]);
+    expect(config.oauthStateDir).toBe("/tmp/tdmcp-oauth");
+    expect(config.oauthAccessTtlSeconds).toBe(60);
+    expect(config.oauthRefreshTtlSeconds).toBe(7_776_000);
+    expect(config.oauthConsentTtlSeconds).toBe(120);
+  });
+
+  it("fails config closed on ambiguous or unbounded OAuth trusted proxy hops", () => {
+    expect(() => loadConfig({ TDMCP_OAUTH_TRUSTED_PROXY_HOPS: "localhost" })).toThrow(
+      /numeric IP/u,
+    );
+    expect(() =>
+      loadConfig({ TDMCP_OAUTH_TRUSTED_PROXY_HOPS: "127.0.0.1, ::ffff:127.0.0.1" }),
+    ).toThrow(/unique/u);
+    expect(() =>
+      loadConfig({
+        TDMCP_OAUTH_TRUSTED_PROXY_HOPS: Array.from(
+          { length: 9 },
+          (_, index) => `192.0.2.${index + 1}`,
+        ).join(","),
+      }),
+    ).toThrow(/too_big|at most 8|less than or equal to 8/u);
   });
 
   it("defaults cross-RAG fusion knobs and reads overrides", () => {
@@ -70,11 +129,30 @@ describe("loadConfig", () => {
       TDMCP_LLM_TIER: " creative ",
       TDMCP_LLM_MAX_STEPS: "12",
       TDMCP_LLM_TEMPERATURE: "0.75",
+      TDMCP_LLM_CALIBRATION_MODE: "enforce",
+      TDMCP_LLM_CALIBRATION_CACHE: "/tmp/tdmcp-calibration.json",
+      TDMCP_LLM_CALIBRATION_TTL_MS: "86400000",
     });
 
     expect(config.llmTier).toBe("creative");
     expect(config.llmMaxSteps).toBe(12);
     expect(config.llmTemperature).toBe(0.75);
+    expect(config.llmCalibrationMode).toBe("enforce");
+    expect(config.llmCalibrationCachePath).toBe("/tmp/tdmcp-calibration.json");
+    expect(config.llmCalibrationTtlMs).toBe(86_400_000);
+  });
+
+  it("keeps receipt persistence off by default and reads explicit project/audit paths", () => {
+    const config = loadConfig({
+      TDMCP_PROJECT_ROOT: "/tmp/show-project",
+      TDMCP_COPILOT_RECEIPTS: "persist",
+      TDMCP_COPILOT_RECEIPTS_PATH: "/tmp/tdmcp-receipts.json",
+    });
+
+    expect(config.projectRoot).toBe("/tmp/show-project");
+    expect(config.copilotReceipts).toBe("persist");
+    expect(config.copilotReceiptsPath).toBe("/tmp/tdmcp-receipts.json");
+    expect(loadConfig({ TDMCP_COPILOT_RECEIPTS: "unsafe" }).copilotReceipts).toBe("off");
   });
 
   it("reads Telegram copilot knobs and keeps Telegram safe by default", () => {
@@ -112,6 +190,13 @@ describe("loadConfig", () => {
     expect(loadConfig({ TDMCP_LLM_TEMPERATURE: "-1" }).llmTemperature).toBe(0);
     expect(loadConfig({ TDMCP_LLM_TEMPERATURE: "3" }).llmTemperature).toBe(2);
     expect(loadConfig({ TDMCP_LLM_TEMPERATURE: "not-a-number" }).llmTemperature).toBe(0.4);
+    expect(loadConfig({ TDMCP_LLM_CALIBRATION_MODE: "unsafe" }).llmCalibrationMode).toBe(
+      "recommend",
+    );
+    expect(loadConfig({ TDMCP_LLM_CALIBRATION_TTL_MS: "0" }).llmCalibrationTtlMs).toBe(1);
+    expect(loadConfig({ TDMCP_LLM_CALIBRATION_TTL_MS: "not-a-number" }).llmCalibrationTtlMs).toBe(
+      7 * 24 * 60 * 60 * 1000,
+    );
   });
 
   it("builds the TD base URL", () => {
@@ -274,10 +359,14 @@ describe("describeConfig", () => {
       TDMCP_LLM_TIER: "safe",
       TDMCP_LLM_MAX_STEPS: "5",
       TDMCP_LLM_TEMPERATURE: "0.2",
+      TDMCP_LLM_CALIBRATION_MODE: "enforce",
+      TDMCP_LLM_CALIBRATION_TTL_MS: "3600000",
     });
     const safe = describeConfig(cfg);
     expect(safe.llmTier).toBe("safe");
     expect(safe.llmMaxSteps).toBe(5);
     expect(safe.llmTemperature).toBe(0.2);
+    expect(safe.llmCalibrationMode).toBe("enforce");
+    expect(safe.llmCalibrationTtlMs).toBe(3_600_000);
   });
 });

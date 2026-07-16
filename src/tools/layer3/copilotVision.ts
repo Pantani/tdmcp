@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { capturePreview } from "../../feedback/previewCapture.js";
-import { LLM_SYSTEM_OPTION } from "../../llm/client.js";
+import {
+  type CompleteResult,
+  LLM_SYSTEM_OPTION,
+  type LlmRuntimeDescriptor,
+} from "../../llm/client.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -41,6 +45,12 @@ export const copilotVisionSchema = z.object({
     .max(4096)
     .default(512)
     .describe("Upper bound on response tokens."),
+  allow_remote_image_egress: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Explicitly allow this captured frame to leave numeric loopback through a remote OpenAI-compatible endpoint or MCP sampling client. Required for every non-loopback call.",
+    ),
   [LLM_SYSTEM_OPTION]: z
     .string()
     .optional()
@@ -53,6 +63,17 @@ const DEFAULT_SYSTEM =
   "and answer the artist's question concisely and concretely. Refer to specific colors, " +
   "shapes, motion cues, and composition you can see. Never invent details the image doesn't show.";
 
+function redactedEndpointOrigin(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return undefined;
+    return parsed.origin;
+  } catch {
+    return undefined;
+  }
+}
+
 interface CopilotVisionReport {
   source_top: string;
   question: string;
@@ -61,7 +82,51 @@ interface CopilotVisionReport {
   answer: string;
   model?: string;
   stop_reason?: string;
+  egress: {
+    transport: "openai_compatible" | "mcp_sampling" | "unknown";
+    locality: "loopback" | "remote" | "client_managed" | "unknown";
+    endpoint_origin?: string;
+    configured_model?: string;
+    remote_consent: "not_required_loopback" | "explicit";
+    calibration: "not_checked";
+  };
   warnings: string[];
+}
+
+type CapturedPreview = Awaited<ReturnType<typeof capturePreview>>;
+
+function visionWarnings(answer: string): string[] {
+  if (answer) return [];
+  return ["Vision LLM returned an empty response — the configured model may not support images."];
+}
+
+function buildVisionReport(
+  preview: CapturedPreview,
+  args: CopilotVisionArgs,
+  descriptor: LlmRuntimeDescriptor,
+  endpointOrigin: string | undefined,
+  leavesLoopback: boolean,
+  result: CompleteResult,
+): CopilotVisionReport {
+  const answer = (result.text ?? "").trim();
+  return {
+    source_top: preview.path,
+    question: args.question,
+    width: preview.width,
+    height: preview.height,
+    answer: answer || "(no answer)",
+    ...(result.model ? { model: result.model } : {}),
+    ...(result.stopReason ? { stop_reason: result.stopReason } : {}),
+    egress: {
+      transport: descriptor.transport,
+      locality: descriptor.locality,
+      ...(endpointOrigin ? { endpoint_origin: endpointOrigin } : {}),
+      ...(descriptor.configuredModel ? { configured_model: descriptor.configuredModel } : {}),
+      remote_consent: leavesLoopback ? "explicit" : "not_required_loopback",
+      calibration: descriptor.calibration,
+    },
+    warnings: visionWarnings(answer),
+  };
 }
 
 export async function copilotVisionImpl(ctx: ToolContext, args: CopilotVisionArgs) {
@@ -70,9 +135,20 @@ export async function copilotVisionImpl(ctx: ToolContext, args: CopilotVisionArg
       "No LLM backend is configured. Set TDMCP_LLM_BASE_URL + TDMCP_LLM_MODEL (Ollama, OpenAI-compatible, etc.) or run inside an MCP client that supports sampling, then try again.",
     );
   }
+  const descriptor = ctx.llm.describe?.() ?? {
+    transport: "unknown" as const,
+    locality: "unknown" as const,
+    calibration: "not_checked" as const,
+  };
+  const endpointOrigin = redactedEndpointOrigin(descriptor.endpointOrigin);
+  const leavesLoopback = descriptor.locality !== "loopback";
+  if (leavesLoopback && !args.allow_remote_image_egress) {
+    return errorResult(
+      "Image egress refused: the configured vision backend is remote, client-managed, or unknown. Review the endpoint/provider and retry with allow_remote_image_egress=true for this frame only.",
+    );
+  }
   try {
     const preview = await capturePreview(ctx.client, args.source_top, args.width, args.height);
-    const warnings: string[] = [];
     const result = await ctx.llm.complete(
       [
         {
@@ -88,22 +164,14 @@ export async function copilotVisionImpl(ctx: ToolContext, args: CopilotVisionArg
         maxTokens: args.max_tokens,
       },
     );
-    const answer = (result.text ?? "").trim();
-    if (!answer) {
-      warnings.push(
-        "Vision LLM returned an empty response — the configured model may not support images.",
-      );
-    }
-    const report: CopilotVisionReport = {
-      source_top: preview.path,
-      question: args.question,
-      width: preview.width,
-      height: preview.height,
-      answer: answer || "(no answer)",
-      warnings,
-    };
-    if (result.model) report.model = result.model;
-    if (result.stopReason) report.stop_reason = result.stopReason;
+    const report = buildVisionReport(
+      preview,
+      args,
+      descriptor,
+      endpointOrigin,
+      leavesLoopback,
+      result,
+    );
     return jsonResult(`${preview.path}: ${report.answer.slice(0, 120)}`, report);
   } catch (err) {
     // capturePreview throws TdError on bridge failure; LLM throws on backend failure.
@@ -117,7 +185,7 @@ export const registerCopilotVision: ToolRegistrar = (server, ctx) => {
     {
       title: "Ask the LLM about a TOP (multimodal)",
       description:
-        "Capture a TOP as a preview image and ask the configured multimodal LLM a question about it. Returns `{source_top, question, width, height, answer, model?, stop_reason?, warnings[]}`. Uses ctx.llm.complete() with a MultimodalMessage (text + image part). Requires an LLM backend (TDMCP_LLM_BASE_URL / MCP sampling); returns a friendly error otherwise. Different from `caption_top`, which is deterministic-by-default — this tool ALWAYS routes through the vision model with the artist's custom question.",
+        "Capture a TOP as a preview image and ask the configured multimodal LLM a question about it. Numeric-loopback endpoints need no extra opt-in; remote, client-managed, or unknown backends require `allow_remote_image_egress=true` for that frame. Returns redacted egress locality/transport and `calibration: not_checked`; this read-only tool is NOT the calibrated visual-mutation authority. Uses ctx.llm.complete() with an image part. Different from `caption_top`, which is deterministic-by-default.",
       inputSchema: copilotVisionSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },

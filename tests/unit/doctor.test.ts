@@ -90,7 +90,11 @@ describe("tdmcp doctor", () => {
     expect(bridge?.status).toBe("fail");
     expect(bridge?.critical).toBe(true);
     expect(r.stdout).toContain("not reachable");
-    expect(r.stderr).toContain("not ready");
+    expect(r.stdout.match(/Setup is not ready/g)).toHaveLength(1);
+    expect(r.stdout).toContain("Suggested fixes");
+    expect(r.stdout).toContain("tdmcp install-bridge");
+    expect(r.stdout).toContain("never pastes it automatically");
+    expect(r.stderr).toBe("");
   });
 
   it("warns (but does not fail) when the LLM endpoint is unreachable", async () => {
@@ -153,7 +157,8 @@ describe("tdmcp doctor", () => {
   it("produces a human-readable report with a status icon per check", async () => {
     server.use(llmModels("qwen2.5:3b"));
     const r = await runDoctor({ config: makeConfig(), makeCtx });
-    expect(r.stdout).toContain("tdmcp-agent doctor");
+    expect(r.stdout).toContain("tdmcp doctor");
+    expect(r.stdout).not.toContain("tdmcp-agent doctor");
     // one line per check (bridge, config, tools, llm, vault, bridge_token, profile_dir,
     // plus Creative RAG: rag_ollama, rag_embedding_model, rag_data_dir,
     // plus Project RAG: project_rag)
@@ -172,9 +177,9 @@ describe("tdmcp doctor", () => {
     expect(tools?.critical).toBe(false);
   });
 
-  it("--fix appends suggested remediation commands for non-passing checks", async () => {
+  it("appends suggested remediation commands for non-passing checks", async () => {
     // No LLM mock → llm check warns → a fix suggestion appears.
-    const r = await runDoctor({ config: makeConfig(), makeCtx, fix: true });
+    const r = await runDoctor({ config: makeConfig(), makeCtx });
     expect(r.report.fixes?.length).toBeTruthy();
     expect(r.stdout).toContain("Suggested fixes");
     expect(r.report.fixes?.some((f) => f.id === "llm")).toBe(true);

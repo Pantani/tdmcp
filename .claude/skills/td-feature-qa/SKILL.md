@@ -30,6 +30,8 @@ Policy: **offline gates always; live when available.** Call `get_td_info` first.
 - **Bridge up:** build the feature through the agent CLI against the live bridge, capture `get_preview`, and check `get_td_node_errors` **after it cooks**.
 - **Bridge offline:** run offline gates, mark live validation **UNVERIFIED — pending bridge** in the report. Do not fail the pipeline for a missing TD.
 
+Before any live mutation, record the exact disposable PID/project/port and confirm the artist PID owns none of those resources. Do not probe the app binary with guessed flags and do not use Accessibility/menu/Textport automation when multiple TD processes are open. After Python bridge edits, restart only the disposable runtime, verify the loaded module paths and confirm arbitrary exec is disabled before calling product routes.
+
 Live gotchas to rule out before declaring a bug:
 - Silent failures: a Level TOP has no `gain` (it's `brightness1`); no cross-container wires (Select TOP).
 - Paused timeline: time-dependent chains (motion / frame-diff / feedback / beat) read **0** when `op('/').time.play` is false — check it before concluding a reactive chain is dead.

@@ -1,4 +1,13 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -93,6 +102,33 @@ describe("runConfigInit", () => {
     const written = readFileSync(target, "utf8");
     expect(written).toContain("TDMCP_TD_HOST");
     expect(written).not.toContain("PRE-EXISTING");
+  });
+
+  it("replaces a permissive config with an owner-only file under --force", () => {
+    if (process.platform === "win32") return;
+    const target = join(tmp, "config.env");
+    writeFileSync(target, "PRE-EXISTING\n", { mode: 0o644 });
+    chmodSync(target, 0o644);
+
+    const result = runConfigInit({ out: target, force: true, bridgeToken: "sensitive-token" });
+
+    expect(result.code).toBe(0);
+    expect(statSync(target).mode & 0o777).toBe(0o600);
+    expect(readFileSync(target, "utf8")).toContain('TDMCP_BRIDGE_TOKEN="sensitive-token"');
+  });
+
+  it("refuses a symlink target under --force without changing its referent", () => {
+    if (process.platform === "win32") return;
+    const referent = join(tmp, "referent.env");
+    const target = join(tmp, "config.env");
+    writeFileSync(referent, "KEEP\n", { mode: 0o600 });
+    symlinkSync(referent, target);
+
+    const result = runConfigInit({ out: target, force: true, bridgeToken: "secret" });
+
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain("Refusing to overwrite non-regular file");
+    expect(readFileSync(referent, "utf8")).toBe("KEEP\n");
   });
 
   it("creates missing parent directories", () => {

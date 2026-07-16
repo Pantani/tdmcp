@@ -4,7 +4,9 @@ import type { ChatMessage } from "../llm/client.js";
 import { LlmClient } from "../llm/client.js";
 import { buildCreativeContextMessage, clampK } from "../llm/creativeContext.js";
 import { buildFusedContextMessage, fusedRagSearch } from "../llm/crossRagFusion.js";
+import { resolveRuntimeCalibration } from "../llm/runtimeCalibration.js";
 import { resolveTools } from "../llm/tools.js";
+import { formatTurnReceiptSummary, type TurnReceiptV1 } from "../llm/turnReceipt.js";
 import { buildToolContext } from "../server/context.js";
 import {
   DEFAULT_LLM_TEMPERATURE,
@@ -23,6 +25,7 @@ export interface AskCliOptions {
   readOnly: boolean;
   creative: boolean;
   withCreative: boolean;
+  noReceiptPersist: boolean;
   timeoutMs: number;
   prompt?: string;
   model?: string;
@@ -68,12 +71,42 @@ Flags:
                     TDMCP_RAG_INJECT_ASK=1. Card count: TDMCP_RAG_INJECT_K
                     (default 3, max 5).
   --no-ollama       Don't auto-start local Ollama.
+  --no-receipt-persist
+                    Keep this turn's receipt in memory only, even when persistence is enabled.
   --timeout <ms>    Wall-clock cap on the turn (default 120000). Exits 124 on hit.
   -h, --help        Show this help.
 
 Stdout carries only the answer (or JSON line); progress/warnings go to stderr.
 
 Exit codes: 0 ok, 1 model/tool error, 2 usage error, 3 endpoint unreachable, 124 timeout.`;
+
+const ABORT_SETTLEMENT_GRACE_MS = 250;
+
+function receiptJsonFields(receipt: TurnReceiptV1 | undefined): Record<string, unknown> {
+  if (!receipt) return {};
+  return {
+    receiptId: receipt.receipt_id,
+    receipt: {
+      terminalStatus: receipt.terminal_status,
+      overallVerification: receipt.overall_verification,
+      persistence: receipt.persistence,
+    },
+  };
+}
+
+async function settleAbortedTurn(turn: Promise<void>): Promise<void> {
+  let graceTimer: NodeJS.Timeout | undefined;
+  try {
+    await Promise.race([
+      turn,
+      new Promise<void>((resolve) => {
+        graceTimer = setTimeout(resolve, ABORT_SETTLEMENT_GRACE_MS);
+      }),
+    ]);
+  } finally {
+    if (graceTimer) clearTimeout(graceTimer);
+  }
+}
 
 export function parseAskArgs(argv: string[] = []): AskCliOptions {
   const { values, positionals } = parseArgs({
@@ -90,6 +123,7 @@ export function parseAskArgs(argv: string[] = []): AskCliOptions {
       creative: { type: "boolean", default: false },
       "with-creative": { type: "boolean", default: false },
       "no-ollama": { type: "boolean", default: false },
+      "no-receipt-persist": { type: "boolean", default: false },
       timeout: { type: "string" },
     },
   });
@@ -116,6 +150,7 @@ export function parseAskArgs(argv: string[] = []): AskCliOptions {
     readOnly: values["read-only"] === true,
     creative: values.creative === true,
     withCreative: values["with-creative"] === true,
+    noReceiptPersist: values["no-receipt-persist"] === true,
     timeoutMs,
     ...(prompt.length > 0 ? { prompt } : {}),
     ...(typeof values.model === "string" ? { model: values.model } : {}),
@@ -130,6 +165,24 @@ async function readAllStdin(): Promise<string> {
     chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
   }
   return Buffer.concat(chunks).toString("utf8");
+}
+
+async function resolveAskToolPolicy(
+  opts: AskCliOptions,
+  config: LoadedTdmcpConfig,
+  projectRag: boolean,
+) {
+  if (opts.toolsOff) return { requestedTier: "chat" as const, tier: "chat" as const, tools: [] };
+  const calibration = await resolveRuntimeCalibration(config, config.llmTier);
+  return {
+    requestedTier: config.llmTier,
+    tier: calibration.effectiveTier,
+    tools: resolveTools(config.llmTier, {
+      projectRag,
+      calibration,
+      calibrationMode: config.llmCalibrationMode,
+    }),
+  };
 }
 
 /**
@@ -203,7 +256,8 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
   const client = makeClient(config);
 
   const start = now();
-  const tier = opts.toolsOff ? "chat" : config.llmTier;
+  const toolPolicy = await resolveAskToolPolicy(opts, config, ctx.projectRag !== undefined);
+  const { requestedTier, tier, tools } = toolPolicy;
 
   stderrLine(
     `tdmcp ask · model=${config.llmModel} · tier=${tier} · tools=${opts.toolsOff ? "off" : "on"}`,
@@ -235,12 +289,10 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
     // No autostart in the harness — just continue; the turn itself will fail loudly.
   }
 
-  const tools = opts.toolsOff
-    ? []
-    : resolveTools(config.llmTier, { projectRag: ctx.projectRag !== undefined });
   const toolCalls: { name: string; ok: boolean }[] = [];
   let answer: string | undefined;
   let errorMessage: string | undefined;
+  let receipt: TurnReceiptV1 | undefined;
 
   // Creative RAG injection — passive context prepended as a user message.
   // Flag wins over the env-derived config flag; RAG disabled → warn + skip
@@ -299,9 +351,19 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
           else if (event.type === "error") errorMessage = event.message;
           else if (event.type === "tool" && event.status === "done") {
             toolCalls.push({ name: event.name, ok: event.ok });
-          }
+          } else if (event.type === "receipt") receipt = event.receipt;
         },
-        { tools, maxSteps: config.llmMaxSteps, signal: controller.signal },
+        {
+          tools,
+          maxSteps: config.llmMaxSteps,
+          signal: controller.signal,
+          requestedTier,
+          effectiveTier: tier,
+          projectRoot: config.projectRoot,
+          receiptPersistence: config.copilotReceipts,
+          receiptStorePath: config.copilotReceiptsPath,
+          noPersist: opts.noReceiptPersist,
+        },
       );
       if (!answer) {
         const fallback = [...turnResult]
@@ -325,9 +387,13 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
 
   await Promise.race([turnPromise, timeoutPromise]);
   if (timer) clearTimeout(timer);
-  if (timedOut) controller.abort();
+  if (timedOut) {
+    controller.abort();
+    await settleAbortedTurn(turnPromise);
+  }
 
   const durationMs = now() - start;
+  if (!opts.json && receipt) stderrLine(formatTurnReceiptSummary(receipt));
 
   if (timedOut) {
     if (opts.json) {
@@ -339,6 +405,7 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
           model: config.llmModel,
           tier,
           toolCalls,
+          ...receiptJsonFields(receipt),
         })}\n`,
       );
     } else {
@@ -356,6 +423,7 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
       model: config.llmModel,
       tier,
       toolCalls,
+      ...receiptJsonFields(receipt),
     };
     if (errorMessage) payload.error = errorMessage;
     writeStdout(`${JSON.stringify(payload)}\n`);

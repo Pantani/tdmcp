@@ -13,6 +13,12 @@ export interface ResourceContext {
   logger: Logger;
   /** Optional TD client — present for live-scene resources (Campaign BEYOND Wave 3). */
   client?: TouchDesignerClient;
+  /** Effective project root from env, config file, or selected profile. */
+  projectRoot?: string;
+  /** Effective local-copilot receipt policy from the loaded config. */
+  copilotReceipts?: "off" | "persist";
+  /** Effective private receipt-store path from the loaded config. */
+  copilotReceiptsPath?: string;
   /** Optional local Creative RAG service — present only when `TDMCP_RAG_ENABLED=1`. */
   creativeRag?: CreativeRagService;
   /**

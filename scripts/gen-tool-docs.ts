@@ -8,7 +8,7 @@
  * ever call `server.registerTool`), reads each tool's Zod input schema, and
  * renders a grouped Markdown reference. No TouchDesigner or network needed.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -161,6 +161,15 @@ function renderGroup(group: ToolGroup): string {
   return lines.join("\n");
 }
 
+function syncEntryPointCount(path: string, pattern: RegExp, replacement: string): void {
+  const current = readFileSync(path, "utf8");
+  const matches = current.match(pattern);
+  if (matches?.length !== 1) {
+    throw new Error(`Expected exactly one generated tool-count claim in ${path}.`);
+  }
+  writeFileSync(path, current.replace(pattern, replacement), "utf8");
+}
+
 function main(): void {
   const groups: ToolGroup[] = [
     {
@@ -252,6 +261,23 @@ function main(): void {
   );
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, `${rendered}\n`, "utf8");
+
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+  syncEntryPointCount(
+    join(root, "README.md"),
+    /\*\*\d+ tools\*\* across three layers/,
+    `**${total} tools** across three layers`,
+  );
+  syncEntryPointCount(
+    join(root, "docs", "index.md"),
+    /^\s*- title: \d+ tools, three layers$/m,
+    `  - title: ${total} tools, three layers`,
+  );
+  syncEntryPointCount(
+    join(root, "docs", "pt", "index.md"),
+    /^\s*- title: \d+ ferramentas, três camadas$/m,
+    `  - title: ${total} ferramentas, três camadas`,
+  );
 
   console.log(`Wrote ${outPath}`);
   console.log(`Total tools: ${total} (${breakdown})`);

@@ -32,7 +32,27 @@ def _callbacks_source(modules_dir=None):
         "    webServerDAT.webSocketSendPong(client, data=data)\n"
         "def onWebSocketReceivePong(webServerDAT, client, data): return\n"
         "def onServerStart(webServerDAT): return\n"
-        "def onServerStop(webServerDAT): return\n"
+        "def onServerStop(webServerDAT):\n"
+        "    try:\n"
+        "        from mcp.services import interaction_service\n"
+        "        interaction_service.disconnect_interactions()\n"
+        "    except Exception:\n"
+        "        pass\n"
+        "    try:\n"
+        "        from mcp.services import tox_export_service\n"
+        "        tox_export_service.cancel_all('disconnect')\n"
+        "    except Exception:\n"
+        "        pass\n"
+        "    try:\n"
+        "        from mcp.services import tox_roundtrip_service\n"
+        "        tox_roundtrip_service.cancel_all('disconnect')\n"
+        "    except Exception:\n"
+        "        pass\n"
+        "    try:\n"
+        "        from mcp.services import package_namespace_service\n"
+        "        package_namespace_service.clear_package_namespace_plans()\n"
+        "    except Exception:\n"
+        "        pass\n"
     )
 
 
@@ -123,14 +143,64 @@ def _event_hooks_source(modules_dir=None):
     )
 
 
+def _interaction_callbacks_source(modules_dir=None):
+    """Parameter Execute callbacks for the non-modal native decision inbox."""
+    header = ""
+    if modules_dir:
+        header = (
+            "import sys\n"
+            "if %r not in sys.path:\n"
+            "    sys.path.insert(0, %r)\n\n" % (modules_dir, modules_dir)
+        )
+    return header + (
+        "def _set(name, value):\n"
+        "    try:\n"
+        "        getattr(me.parent().par, name).val = value\n"
+        "    except Exception:\n"
+        "        pass\n\n"
+        "def _clear():\n"
+        "    owner = me.parent()\n"
+        "    _set('Interactionid', '')\n"
+        "    _set('Interactionstatus', 'idle')\n"
+        "    _set('Interactiontitle', '')\n"
+        "    _set('Interactionprompt', '')\n"
+        "    try:\n"
+        "        owner.par.Interactionchoice.menuNames = ['Keep']\n"
+        "        owner.par.Interactionchoice.menuLabels = ['Keep']\n"
+        "        owner.par.Interactionchoice.val = 'Keep'\n"
+        "    except Exception:\n"
+        "        pass\n\n"
+        "def onPulse(par):\n"
+        "    from mcp.services import interaction_service\n"
+        "    owner = me.parent()\n"
+        "    request_id = str(owner.par.Interactionid.eval() or '').strip()\n"
+        "    if not request_id:\n"
+        "        return\n"
+        "    if par.name == 'Interactionresolve':\n"
+        "        choice = str(owner.par.Interactionchoice.eval() or 'Keep')\n"
+        "        result = interaction_service.resolve_interaction(request_id, choice)\n"
+        "    elif par.name == 'Interactioncancel':\n"
+        "        result = interaction_service.cancel_interaction(request_id, 'closed')\n"
+        "    else:\n"
+        "        return\n"
+        "    if result.get('state') == 'pending':\n"
+        "        _set('Interactionstatus', 'pending')\n"
+        "    else:\n"
+        "        _clear()\n"
+    )
+
+
 DEFAULT_PACKAGE_NAME = "tdmcp_bridge_package"
 DEFAULT_PACKAGE_TOX_NAME = DEFAULT_PACKAGE_NAME + ".tox"
 DEFAULT_PACKAGE_PALETTE_FOLDER = "tdmcp"
-DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.13.1.zip"
+DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = (
+    "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.13.1.zip"
+)
 DEFAULT_PACKAGE_BOOTSTRAP_DEST = "~/tdmcp-bridge"
 
 RUNTIME_BRIDGE_LAYOUT = {
     "callbacks": (-320, 120),
+    "interaction_callbacks": (-320, -80),
     "webserver": (0, 120),
     "webserver_callbacks": (0, -260),
     "events_hook": (0, -80),
@@ -173,13 +243,19 @@ def _ensure_tox_path(path):
     return text
 
 
-def palette_package_path(tox_name=DEFAULT_PACKAGE_TOX_NAME, palette_dir=None, home=None):
+def palette_package_path(
+    tox_name=DEFAULT_PACKAGE_TOX_NAME, palette_dir=None, home=None
+):
     """Return the default TouchDesigner Palette path for the bridge package .tox."""
     import os
 
     name = str(tox_name or DEFAULT_PACKAGE_TOX_NAME)
     expanded_name = os.path.expanduser(name)
-    if os.path.isabs(expanded_name) or os.sep in expanded_name or (os.altsep and os.altsep in expanded_name):
+    if (
+        os.path.isabs(expanded_name)
+        or os.sep in expanded_name
+        or (os.altsep and os.altsep in expanded_name)
+    ):
         return _ensure_tox_path(expanded_name)
 
     if palette_dir is None:
@@ -191,7 +267,9 @@ def palette_package_path(tox_name=DEFAULT_PACKAGE_TOX_NAME, palette_dir=None, ho
             "Palette",
             DEFAULT_PACKAGE_PALETTE_FOLDER,
         )
-    return _ensure_tox_path(os.path.join(os.path.expanduser(str(palette_dir)), expanded_name))
+    return _ensure_tox_path(
+        os.path.join(os.path.expanduser(str(palette_dir)), expanded_name)
+    )
 
 
 def package_callbacks_source(
@@ -217,208 +295,212 @@ def package_callbacks_source(
         "_BOOTSTRAP_DEST = %r\n"
         "_MARKER = '/td/modules/'\n\n" % (repo_zip, bootstrap_dest)
     )
-    return header + bootstrap_config + (
-        "def _add_module_path(modules_dir):\n"
-        "    if modules_dir and modules_dir not in sys.path:\n"
-        "        sys.path.insert(0, modules_dir)\n"
-        "    return modules_dir\n\n"
-        "def _is_symlink(info):\n"
-        "    return ((info.external_attr >> 16) & 0o170000) == 0o120000\n\n"
-        "def _safe_module_path(name, modules_dir):\n"
-        "    idx = name.find(_MARKER)\n"
-        "    if idx == -1:\n"
-        "        return None\n"
-        "    rel = name[idx + len(_MARKER):].replace('\\\\', '/')\n"
-        "    if not rel or rel.endswith('/'):\n"
-        "        return None\n"
-        "    parts = rel.split('/')\n"
-        "    if (\n"
-        "        rel.startswith('/')\n"
-        "        or rel.startswith('\\\\')\n"
-        "        or (len(parts[0]) >= 2 and parts[0][1] == ':')\n"
-        "        or any(part in ('', '.', '..') for part in parts)\n"
-        "    ):\n"
-        "        raise RuntimeError('[tdmcp package] Refusing unsafe archive entry: %s' % name)\n"
-        "    root = os.path.realpath(modules_dir)\n"
-        "    target = os.path.realpath(os.path.join(modules_dir, *parts))\n"
-        "    if target != root and not target.startswith(root + os.sep):\n"
-        "        raise RuntimeError('[tdmcp package] Refusing archive entry outside modules: %s' % name)\n"
-        "    return target\n\n"
-        "def fetch_modules(repo_zip=_REPO_ZIP, dest=_BOOTSTRAP_DEST):\n"
-        "    dest = os.path.expanduser(str(dest or _BOOTSTRAP_DEST))\n"
-        "    modules_dir = os.path.join(dest, 'modules')\n"
-        "    try:\n"
-        "        data = urllib.request.urlopen(repo_zip, timeout=30).read()\n"
-        "    except Exception as exc:\n"
-        "        raise RuntimeError(\n"
-        "            '[tdmcp package] Could not download bridge modules from %r (%s). '\n"
-        "            'Set Modules Dir to a local td/modules path or check the Repo Zip value.' % (repo_zip, exc)\n"
-        "        )\n"
-        "    zf = zipfile.ZipFile(io.BytesIO(data))\n"
-        "    os.makedirs(modules_dir, exist_ok=True)\n"
-        "    extracted = 0\n"
-        "    for info in zf.infolist():\n"
-        "        name = info.filename\n"
-        "        if name.endswith('/'):\n"
-        "            continue\n"
-        "        target = _safe_module_path(name, modules_dir)\n"
-        "        if target is None:\n"
-        "            continue\n"
-        "        if _is_symlink(info):\n"
-        "            raise RuntimeError('[tdmcp package] Refusing symlink archive entry: %s' % name)\n"
-        "        os.makedirs(os.path.dirname(target), exist_ok=True)\n"
-        "        with zf.open(name) as src, open(target, 'wb') as out:\n"
-        "            out.write(src.read())\n"
-        "        extracted += 1\n"
-        "    if extracted == 0:\n"
-        "        raise RuntimeError('[tdmcp package] Downloaded archive had no td/modules tree')\n"
-        "    print('[tdmcp package] bridge modules -> %s (%d files)' % (modules_dir, extracted))\n"
-        "    return modules_dir\n\n"
-        "def _ensure_modules(opts):\n"
-        "    modules_dir = opts.get('modules_dir')\n"
-        "    if modules_dir:\n"
-        "        return _add_module_path(modules_dir)\n"
-        "    modules_dir = fetch_modules(opts.get('repo_zip') or _REPO_ZIP, opts.get('bootstrap_dest') or _BOOTSTRAP_DEST)\n"
-        "    opts['modules_dir'] = modules_dir\n"
-        "    return _add_module_path(modules_dir)\n\n"
-        "def _load_install(opts):\n"
-        "    _ensure_modules(opts)\n"
-        "    from mcp import install\n"
-        "    return install\n\n"
-        "def _bridge_opts(opts):\n"
-        "    return {\n"
-        "        'port': opts['port'],\n"
-        "        'parent_path': opts['parent_path'],\n"
-        "        'container': opts['container'],\n"
-        "        'modules_dir': opts.get('modules_dir'),\n"
-        "    }\n\n"
-        "def _destroy_bridge(parent_path, container):\n"
-        "    import td\n"
-        "    root = td.op(parent_path) or td.op('/')\n"
-        "    comp = root.op(container) if root is not None else None\n"
-        "    if comp is not None:\n"
-        "        comp.destroy()\n"
-        "        return True\n"
-        "    return False\n\n"
-        "def _owner(source=None):\n"
-        "    try:\n"
-        "        return source.owner\n"
-        "    except Exception:\n"
-        "        pass\n"
-        "    try:\n"
-        "        return me.parent()\n"
-        "    except Exception:\n"
-        "        return None\n\n"
-        "def _read(owner, name, default=None):\n"
-        "    try:\n"
-        "        par = getattr(owner.par, name)\n"
-        "    except Exception:\n"
-        "        return default\n"
-        "    try:\n"
-        "        value = par.eval()\n"
-        "    except Exception:\n"
-        "        try:\n"
-        "            value = par.val\n"
-        "        except Exception:\n"
-        "            return default\n"
-        "    if value in (None, '') and default is not None:\n"
-        "        return default\n"
-        "    return value\n\n"
-        "def _write_status(owner, message):\n"
-        "    try:\n"
-        "        owner.par.Laststatus.val = message\n"
-        "    except Exception:\n"
-        "        pass\n"
-        "    print('[tdmcp package] ' + message)\n\n"
-        "def _as_bool(value):\n"
-        "    if isinstance(value, str):\n"
-        "        return value.strip().lower() in ('1', 'true', 'on', 'yes')\n"
-        "    return bool(value)\n\n"
-        "def _settings(owner):\n"
-        "    modules_dir = str(_read(owner, 'Modulesdir', '') or '').strip() or None\n"
-        "    repo_zip = str(_read(owner, 'Repozip', _REPO_ZIP) or _REPO_ZIP).strip() or _REPO_ZIP\n"
-        "    bootstrap_dest = str(_read(owner, 'Bootstrapdest', _BOOTSTRAP_DEST) or _BOOTSTRAP_DEST).strip() or _BOOTSTRAP_DEST\n"
-        "    return {\n"
-        "        'port': int(_read(owner, 'Bridgeport', 9980) or 9980),\n"
-        "        'parent_path': str(_read(owner, 'Parentpath', '/project1') or '/project1'),\n"
-        "        'container': str(_read(owner, 'Container', 'tdmcp_bridge') or 'tdmcp_bridge'),\n"
-        "        'modules_dir': modules_dir,\n"
-        "        'repo_zip': repo_zip,\n"
-        "        'bootstrap_dest': bootstrap_dest,\n"
-        "    }\n\n"
-        "def _configure_security(owner):\n"
-        "    token = str(_read(owner, 'Token', '') or '').strip()\n"
-        "    allow_exec = _as_bool(_read(owner, 'Allowexec', False))\n"
-        "    if token:\n"
-        "        os.environ['TDMCP_BRIDGE_TOKEN'] = token\n"
-        "        print('[tdmcp package] TDMCP_BRIDGE_TOKEN set for this TD process')\n"
-        "    else:\n"
-        "        os.environ.pop('TDMCP_BRIDGE_TOKEN', None)\n"
-        "        print('[tdmcp package] No Token set; cleared TDMCP_BRIDGE_TOKEN for this TD process')\n"
-        "    if allow_exec:\n"
-        "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '1'\n"
-        "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=1; arbitrary exec endpoints enabled')\n"
-        "    else:\n"
-        "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '0'\n"
-        "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=0; arbitrary exec endpoints disabled')\n"
-        "    return token, allow_exec\n\n"
-        "def install_bridge(source=None, reinstall=False):\n"
-        "    owner = _owner(source)\n"
-        "    if owner is None:\n"
-        "        raise RuntimeError('package owner not found')\n"
-        "    opts = _settings(owner)\n"
-        "    _configure_security(owner)\n"
-        "    install = _load_install(opts)\n"
-        "    if reinstall:\n"
-        "        install.uninstall(parent_path=opts['parent_path'], container=opts['container'])\n"
-        "    comp = install.run(**_bridge_opts(opts))\n"
-        "    _write_status(owner, 'running at %s on port %s' % (comp.path, opts['port']))\n"
-        "    return comp\n\n"
-        "def uninstall_bridge(source=None):\n"
-        "    owner = _owner(source)\n"
-        "    if owner is None:\n"
-        "        raise RuntimeError('package owner not found')\n"
-        "    opts = _settings(owner)\n"
-        "    removed = _destroy_bridge(opts['parent_path'], opts['container'])\n"
-        "    if removed:\n"
-        "        _write_status(owner, 'removed %s/%s' % (opts['parent_path'], opts['container']))\n"
-        "    else:\n"
-        "        _write_status(owner, 'not installed at %s/%s' % (opts['parent_path'], opts['container']))\n\n"
-        "def status_bridge(source=None):\n"
-        "    owner = _owner(source)\n"
-        "    if owner is None:\n"
-        "        raise RuntimeError('package owner not found')\n"
-        "    opts = _settings(owner)\n"
-        "    try:\n"
-        "        import td\n"
-        "        root = td.op(opts['parent_path']) or td.op('/')\n"
-        "        comp = root.op(opts['container']) if root is not None else None\n"
-        "    except Exception:\n"
-        "        comp = None\n"
-        "    if comp is None:\n"
-        "        message = 'not installed at %s/%s' % (opts['parent_path'], opts['container'])\n"
-        "    else:\n"
-        "        webserver = comp.op('webserver') if hasattr(comp, 'op') else None\n"
-        "        try:\n"
-        "            active = bool(webserver.par.active.eval()) if webserver is not None else False\n"
-        "        except Exception:\n"
-        "            active = webserver is not None\n"
-        "        message = 'installed at %s; webserver active=%s; port=%s' % (comp.path, active, opts['port'])\n"
-        "    _write_status(owner, message)\n"
-        "    return message\n\n"
-        "def onPulse(par):\n"
-        "    name = par.name\n"
-        "    if name == 'Install':\n"
-        "        install_bridge(par)\n"
-        "    elif name == 'Reinstall':\n"
-        "        install_bridge(par, reinstall=True)\n"
-        "    elif name == 'Uninstall':\n"
-        "        uninstall_bridge(par)\n"
-        "    elif name == 'Status':\n"
-        "        status_bridge(par)\n"
-        "    return\n\n"
-        "def onValueChange(par, prev): return\n"
-        "def onValuesChanged(changes): return\n"
+    return (
+        header
+        + bootstrap_config
+        + (
+            "def _add_module_path(modules_dir):\n"
+            "    if modules_dir and modules_dir not in sys.path:\n"
+            "        sys.path.insert(0, modules_dir)\n"
+            "    return modules_dir\n\n"
+            "def _is_symlink(info):\n"
+            "    return ((info.external_attr >> 16) & 0o170000) == 0o120000\n\n"
+            "def _safe_module_path(name, modules_dir):\n"
+            "    idx = name.find(_MARKER)\n"
+            "    if idx == -1:\n"
+            "        return None\n"
+            "    rel = name[idx + len(_MARKER):].replace('\\\\', '/')\n"
+            "    if not rel or rel.endswith('/'):\n"
+            "        return None\n"
+            "    parts = rel.split('/')\n"
+            "    if (\n"
+            "        rel.startswith('/')\n"
+            "        or rel.startswith('\\\\')\n"
+            "        or (len(parts[0]) >= 2 and parts[0][1] == ':')\n"
+            "        or any(part in ('', '.', '..') for part in parts)\n"
+            "    ):\n"
+            "        raise RuntimeError('[tdmcp package] Refusing unsafe archive entry: %s' % name)\n"
+            "    root = os.path.realpath(modules_dir)\n"
+            "    target = os.path.realpath(os.path.join(modules_dir, *parts))\n"
+            "    if target != root and not target.startswith(root + os.sep):\n"
+            "        raise RuntimeError('[tdmcp package] Refusing archive entry outside modules: %s' % name)\n"
+            "    return target\n\n"
+            "def fetch_modules(repo_zip=_REPO_ZIP, dest=_BOOTSTRAP_DEST):\n"
+            "    dest = os.path.expanduser(str(dest or _BOOTSTRAP_DEST))\n"
+            "    modules_dir = os.path.join(dest, 'modules')\n"
+            "    try:\n"
+            "        data = urllib.request.urlopen(repo_zip, timeout=30).read()\n"
+            "    except Exception as exc:\n"
+            "        raise RuntimeError(\n"
+            "            '[tdmcp package] Could not download bridge modules from %r (%s). '\n"
+            "            'Set Modules Dir to a local td/modules path or check the Repo Zip value.' % (repo_zip, exc)\n"
+            "        )\n"
+            "    zf = zipfile.ZipFile(io.BytesIO(data))\n"
+            "    os.makedirs(modules_dir, exist_ok=True)\n"
+            "    extracted = 0\n"
+            "    for info in zf.infolist():\n"
+            "        name = info.filename\n"
+            "        if name.endswith('/'):\n"
+            "            continue\n"
+            "        target = _safe_module_path(name, modules_dir)\n"
+            "        if target is None:\n"
+            "            continue\n"
+            "        if _is_symlink(info):\n"
+            "            raise RuntimeError('[tdmcp package] Refusing symlink archive entry: %s' % name)\n"
+            "        os.makedirs(os.path.dirname(target), exist_ok=True)\n"
+            "        with zf.open(name) as src, open(target, 'wb') as out:\n"
+            "            out.write(src.read())\n"
+            "        extracted += 1\n"
+            "    if extracted == 0:\n"
+            "        raise RuntimeError('[tdmcp package] Downloaded archive had no td/modules tree')\n"
+            "    print('[tdmcp package] bridge modules -> %s (%d files)' % (modules_dir, extracted))\n"
+            "    return modules_dir\n\n"
+            "def _ensure_modules(opts):\n"
+            "    modules_dir = opts.get('modules_dir')\n"
+            "    if modules_dir:\n"
+            "        return _add_module_path(modules_dir)\n"
+            "    modules_dir = fetch_modules(opts.get('repo_zip') or _REPO_ZIP, opts.get('bootstrap_dest') or _BOOTSTRAP_DEST)\n"
+            "    opts['modules_dir'] = modules_dir\n"
+            "    return _add_module_path(modules_dir)\n\n"
+            "def _load_install(opts):\n"
+            "    _ensure_modules(opts)\n"
+            "    from mcp import install\n"
+            "    return install\n\n"
+            "def _bridge_opts(opts):\n"
+            "    return {\n"
+            "        'port': opts['port'],\n"
+            "        'parent_path': opts['parent_path'],\n"
+            "        'container': opts['container'],\n"
+            "        'modules_dir': opts.get('modules_dir'),\n"
+            "    }\n\n"
+            "def _destroy_bridge(parent_path, container):\n"
+            "    import td\n"
+            "    root = td.op(parent_path) or td.op('/')\n"
+            "    comp = root.op(container) if root is not None else None\n"
+            "    if comp is not None:\n"
+            "        comp.destroy()\n"
+            "        return True\n"
+            "    return False\n\n"
+            "def _owner(source=None):\n"
+            "    try:\n"
+            "        return source.owner\n"
+            "    except Exception:\n"
+            "        pass\n"
+            "    try:\n"
+            "        return me.parent()\n"
+            "    except Exception:\n"
+            "        return None\n\n"
+            "def _read(owner, name, default=None):\n"
+            "    try:\n"
+            "        par = getattr(owner.par, name)\n"
+            "    except Exception:\n"
+            "        return default\n"
+            "    try:\n"
+            "        value = par.eval()\n"
+            "    except Exception:\n"
+            "        try:\n"
+            "            value = par.val\n"
+            "        except Exception:\n"
+            "            return default\n"
+            "    if value in (None, '') and default is not None:\n"
+            "        return default\n"
+            "    return value\n\n"
+            "def _write_status(owner, message):\n"
+            "    try:\n"
+            "        owner.par.Laststatus.val = message\n"
+            "    except Exception:\n"
+            "        pass\n"
+            "    print('[tdmcp package] ' + message)\n\n"
+            "def _as_bool(value):\n"
+            "    if isinstance(value, str):\n"
+            "        return value.strip().lower() in ('1', 'true', 'on', 'yes')\n"
+            "    return bool(value)\n\n"
+            "def _settings(owner):\n"
+            "    modules_dir = str(_read(owner, 'Modulesdir', '') or '').strip() or None\n"
+            "    repo_zip = str(_read(owner, 'Repozip', _REPO_ZIP) or _REPO_ZIP).strip() or _REPO_ZIP\n"
+            "    bootstrap_dest = str(_read(owner, 'Bootstrapdest', _BOOTSTRAP_DEST) or _BOOTSTRAP_DEST).strip() or _BOOTSTRAP_DEST\n"
+            "    return {\n"
+            "        'port': int(_read(owner, 'Bridgeport', 9980) or 9980),\n"
+            "        'parent_path': str(_read(owner, 'Parentpath', '/project1') or '/project1'),\n"
+            "        'container': str(_read(owner, 'Container', 'tdmcp_bridge') or 'tdmcp_bridge'),\n"
+            "        'modules_dir': modules_dir,\n"
+            "        'repo_zip': repo_zip,\n"
+            "        'bootstrap_dest': bootstrap_dest,\n"
+            "    }\n\n"
+            "def _configure_security(owner):\n"
+            "    token = str(_read(owner, 'Token', '') or '').strip()\n"
+            "    allow_exec = _as_bool(_read(owner, 'Allowexec', False))\n"
+            "    if token:\n"
+            "        os.environ['TDMCP_BRIDGE_TOKEN'] = token\n"
+            "        print('[tdmcp package] TDMCP_BRIDGE_TOKEN set for this TD process')\n"
+            "    else:\n"
+            "        os.environ.pop('TDMCP_BRIDGE_TOKEN', None)\n"
+            "        print('[tdmcp package] No Token set; cleared TDMCP_BRIDGE_TOKEN for this TD process')\n"
+            "    if allow_exec:\n"
+            "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '1'\n"
+            "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=1; arbitrary exec endpoints enabled')\n"
+            "    else:\n"
+            "        os.environ['TDMCP_BRIDGE_ALLOW_EXEC'] = '0'\n"
+            "        print('[tdmcp package] TDMCP_BRIDGE_ALLOW_EXEC=0; arbitrary exec endpoints disabled')\n"
+            "    return token, allow_exec\n\n"
+            "def install_bridge(source=None, reinstall=False):\n"
+            "    owner = _owner(source)\n"
+            "    if owner is None:\n"
+            "        raise RuntimeError('package owner not found')\n"
+            "    opts = _settings(owner)\n"
+            "    _configure_security(owner)\n"
+            "    install = _load_install(opts)\n"
+            "    if reinstall:\n"
+            "        install.uninstall(parent_path=opts['parent_path'], container=opts['container'])\n"
+            "    comp = install.run(**_bridge_opts(opts))\n"
+            "    _write_status(owner, 'running at %s on port %s' % (comp.path, opts['port']))\n"
+            "    return comp\n\n"
+            "def uninstall_bridge(source=None):\n"
+            "    owner = _owner(source)\n"
+            "    if owner is None:\n"
+            "        raise RuntimeError('package owner not found')\n"
+            "    opts = _settings(owner)\n"
+            "    removed = _destroy_bridge(opts['parent_path'], opts['container'])\n"
+            "    if removed:\n"
+            "        _write_status(owner, 'removed %s/%s' % (opts['parent_path'], opts['container']))\n"
+            "    else:\n"
+            "        _write_status(owner, 'not installed at %s/%s' % (opts['parent_path'], opts['container']))\n\n"
+            "def status_bridge(source=None):\n"
+            "    owner = _owner(source)\n"
+            "    if owner is None:\n"
+            "        raise RuntimeError('package owner not found')\n"
+            "    opts = _settings(owner)\n"
+            "    try:\n"
+            "        import td\n"
+            "        root = td.op(opts['parent_path']) or td.op('/')\n"
+            "        comp = root.op(opts['container']) if root is not None else None\n"
+            "    except Exception:\n"
+            "        comp = None\n"
+            "    if comp is None:\n"
+            "        message = 'not installed at %s/%s' % (opts['parent_path'], opts['container'])\n"
+            "    else:\n"
+            "        webserver = comp.op('webserver') if hasattr(comp, 'op') else None\n"
+            "        try:\n"
+            "            active = bool(webserver.par.active.eval()) if webserver is not None else False\n"
+            "        except Exception:\n"
+            "            active = webserver is not None\n"
+            "        message = 'installed at %s; webserver active=%s; port=%s' % (comp.path, active, opts['port'])\n"
+            "    _write_status(owner, message)\n"
+            "    return message\n\n"
+            "def onPulse(par):\n"
+            "    name = par.name\n"
+            "    if name == 'Install':\n"
+            "        install_bridge(par)\n"
+            "    elif name == 'Reinstall':\n"
+            "        install_bridge(par, reinstall=True)\n"
+            "    elif name == 'Uninstall':\n"
+            "        uninstall_bridge(par)\n"
+            "    elif name == 'Status':\n"
+            "        status_bridge(par)\n"
+            "    return\n\n"
+            "def onValueChange(par, prev): return\n"
+            "def onValuesChanged(changes): return\n"
+        )
     )
 
 
@@ -502,12 +584,168 @@ def _append_custom_par(page, comp, kind, name, default=None, label=None):
     return created
 
 
+def _first_created_par(created):
+    """Return the first Par without evaluating a TouchDesigner ParGroup.
+
+    Current TouchDesigner builds return a ParGroup from Page.append*().  A
+    ParGroup deliberately rejects boolean coercion, so checks such as
+    ``created and created[0]`` abort bridge installation.
+    """
+    if created is None:
+        return None
+    if isinstance(created, (list, tuple)):
+        return created[0] if len(created) > 0 else None
+    try:
+        return created[0]
+    except (AttributeError, IndexError, KeyError, TypeError):
+        return created
+
+
 def _configure_parameter_execute(dat, comp):
     _set_first_existing_par(dat, ("active", "Active"), True)
     _set_first_existing_par(dat, ("op", "ops", "OP", "Ops"), comp.path)
-    _set_first_existing_par(dat, ("pars", "parameters", "Pars", "Parameters"), "Install Reinstall Uninstall Status")
+    _set_first_existing_par(
+        dat,
+        ("pars", "parameters", "Pars", "Parameters"),
+        "Install Reinstall Uninstall Status",
+    )
     _set_first_existing_par(dat, ("pulse", "onpulse", "Pulse", "Onpulse"), True)
     _set_first_existing_par(dat, ("valuechange", "Valuechange"), False)
+
+
+def _configure_interaction_execute(dat, comp):
+    _set_first_existing_par(dat, ("active", "Active"), True)
+    _set_first_existing_par(dat, ("op", "ops", "OP", "Ops"), comp.path)
+    _set_first_existing_par(
+        dat,
+        ("pars", "parameters", "Pars", "Parameters"),
+        "Interactionresolve Interactioncancel",
+    )
+    _set_first_existing_par(dat, ("pulse", "onpulse", "Pulse", "Onpulse"), True)
+    _set_first_existing_par(dat, ("valuechange", "Valuechange"), False)
+
+
+def _custom_page(comp, name):
+    try:
+        for page in list(comp.customPages or []):
+            if getattr(page, "name", None) == name:
+                return page
+    except Exception:
+        pass
+    return comp.appendCustomPage(name)
+
+
+def _add_interaction_controls(comp):
+    try:
+        page = _custom_page(comp, "Interactions")
+    except Exception:
+        return False
+    try:
+        existing_id = comp.par.Interactionid
+        controls_exist = bool(getattr(existing_id, "isCustom", False))
+    except Exception:
+        controls_exist = False
+    if not controls_exist:
+        _append_custom_par(page, comp, "Str", "Interactionid", "", label="Request ID")
+        _append_custom_par(
+            page, comp, "Str", "Interactionstatus", "idle", label="Status"
+        )
+        _append_custom_par(page, comp, "Str", "Interactiontitle", "", label="Decision")
+        _append_custom_par(page, comp, "Str", "Interactionprompt", "", label="Impact")
+        created = _append_custom_par(
+            page, comp, "Menu", "Interactionchoice", "Keep", label="Choice"
+        )
+        par = _first_created_par(created)
+        if par is not None:
+            try:
+                par.menuNames = ["Keep"]
+                par.menuLabels = ["Keep"]
+            except Exception:
+                pass
+        _append_custom_par(
+            page, comp, "Pulse", "Interactionresolve", label="Apply Choice"
+        )
+        _append_custom_par(
+            page, comp, "Pulse", "Interactioncancel", label="Safe Close"
+        )
+    return True
+
+
+def _schedule_interaction(td, callback):
+    runner = getattr(td, "run", None)
+    if runner is None:
+        raise RuntimeError("next-frame scheduler unavailable")
+    runner("args[0]()", callback, delayFrames=1)
+
+
+def _present_interaction(td, comp, payload):
+    ui = getattr(td, "ui", None)
+    if ui is None:
+        return False
+    perform_mode = None
+    try:
+        raw = getattr(ui, "performMode")
+        perform_mode = bool(raw)
+    except Exception:
+        try:
+            raw = getattr(td.project, "performMode")
+            perform_mode = bool(raw)
+        except Exception:
+            return False
+    if perform_mode:
+        return False
+    try:
+        choice = comp.par.Interactionchoice
+        choices = list(payload["choices"])
+        choice.menuNames = choices
+        choice.menuLabels = choices
+        choice.val = payload["default_choice"]
+        comp.par.Interactionid.val = payload["request_id"]
+        comp.par.Interactionstatus.val = "pending"
+        comp.par.Interactiontitle.val = payload["title"]
+        comp.par.Interactionprompt.val = payload["prompt"]
+    except Exception:
+        return False
+    return True
+
+
+def _clear_interaction(comp, request_id):
+    try:
+        if str(comp.par.Interactionid.eval() or "").strip() != request_id:
+            return True
+        choice = comp.par.Interactionchoice
+        choice.menuNames = ["Keep"]
+        choice.menuLabels = ["Keep"]
+        choice.val = "Keep"
+        comp.par.Interactionid.val = ""
+        comp.par.Interactionstatus.val = "idle"
+        comp.par.Interactiontitle.val = ""
+        comp.par.Interactionprompt.val = ""
+    except Exception:
+        return False
+    return True
+
+
+def _configure_interaction_broker(td, comp):
+    from mcp.services import interaction_service
+
+    interaction_service.configure_delivery(
+        lambda callback: _schedule_interaction(td, callback),
+        lambda payload: _present_interaction(td, comp, payload),
+        lambda request_id: _clear_interaction(comp, request_id),
+    )
+
+
+def _install_interaction_runtime(td, comp, modules_dir):
+    """Install the small non-modal inbox and attach bounded broker callbacks."""
+    _add_interaction_controls(comp)
+    callbacks_type = getattr(td, "parameterexecuteDAT", td.textDAT)
+    callbacks = comp.op("interaction_callbacks") or comp.create(
+        callbacks_type, "interaction_callbacks"
+    )
+    callbacks.text = _interaction_callbacks_source(modules_dir)
+    _configure_interaction_execute(callbacks, comp)
+    _configure_interaction_broker(td, comp)
 
 
 def _set_node_position(node, x, y):
@@ -529,7 +767,9 @@ def _layout_runtime_bridge(comp):
             _set_node_position(child, x, y)
 
 
-def _add_package_controls(comp, port, parent_path, container, modules_dir, repo_zip, bootstrap_dest):
+def _add_package_controls(
+    comp, port, parent_path, container, modules_dir, repo_zip, bootstrap_dest
+):
     try:
         page = comp.appendCustomPage("Bridge")
     except Exception:
@@ -540,14 +780,22 @@ def _add_package_controls(comp, port, parent_path, container, modules_dir, repo_
     _append_custom_par(page, comp, "Pulse", "Uninstall", label="Uninstall")
     _append_custom_par(page, comp, "Pulse", "Status", label="Status")
     _append_custom_par(page, comp, "Int", "Bridgeport", port, label="Port")
-    _append_custom_par(page, comp, "Str", "Parentpath", parent_path, label="Parent Path")
+    _append_custom_par(
+        page, comp, "Str", "Parentpath", parent_path, label="Parent Path"
+    )
     _append_custom_par(page, comp, "Str", "Container", container, label="Container")
-    _append_custom_par(page, comp, "Str", "Modulesdir", modules_dir or "", label="Modules Dir")
+    _append_custom_par(
+        page, comp, "Str", "Modulesdir", modules_dir or "", label="Modules Dir"
+    )
     _append_custom_par(page, comp, "Str", "Repozip", repo_zip, label="Repo Zip")
-    _append_custom_par(page, comp, "Str", "Bootstrapdest", bootstrap_dest, label="Bootstrap Dest")
+    _append_custom_par(
+        page, comp, "Str", "Bootstrapdest", bootstrap_dest, label="Bootstrap Dest"
+    )
     _append_custom_par(page, comp, "Str", "Token", "", label="Token")
     _append_custom_par(page, comp, "Toggle", "Allowexec", False, label="Allow Exec")
-    _append_custom_par(page, comp, "Str", "Laststatus", "not checked", label="Last Status")
+    _append_custom_par(
+        page, comp, "Str", "Laststatus", "not checked", label="Last Status"
+    )
 
     _set_par_value(comp, "Bridgeport", port)
     _set_par_value(comp, "Parentpath", parent_path)
@@ -582,7 +830,9 @@ def build_package(
     comp = root.op(package_name) or root.create(td.baseCOMP, package_name)
 
     callbacks_type = getattr(td, "parameterexecuteDAT", td.textDAT)
-    callbacks = comp.op("package_callbacks") or comp.create(callbacks_type, "package_callbacks")
+    callbacks = comp.op("package_callbacks") or comp.create(
+        callbacks_type, "package_callbacks"
+    )
     try:
         callbacks.nodeX = -180
         callbacks.nodeY = 0
@@ -610,7 +860,9 @@ def build_package(
         bootstrap_dest=bootstrap_dest,
     )
 
-    _add_package_controls(comp, port, parent_path, container, modules_dir, repo_zip, bootstrap_dest)
+    _add_package_controls(
+        comp, port, parent_path, container, modules_dir, repo_zip, bootstrap_dest
+    )
 
     try:
         comp.nodeX = -300
@@ -681,6 +933,12 @@ def run(
     # until a consumer registers a watch via POST /api/params/watch, so a plain
     # install stays silent.
 
+    # Non-modal, TD-native decision inbox.  Presentation is deferred to the next
+    # frame, so the original REST request returns immediately; no ui.messageBox
+    # runs inside a Web Server callback.  The broker fails closed when the UI or
+    # next-frame scheduler is unavailable.
+    _install_interaction_runtime(td, comp, modules_dir)
+
     _layout_runtime_bridge(comp)
 
     if export_tox:
@@ -697,7 +955,9 @@ def run(
     return comp
 
 
-def export(path, modules_dir=None, port=9980, parent_path="/project1", container="tdmcp_bridge"):
+def export(
+    path, modules_dir=None, port=9980, parent_path="/project1", container="tdmcp_bridge"
+):
     """Build the bridge and save it as a reusable .tox you can drag into any project.
 
     Run this once in your own TouchDesigner, commit the resulting .tox, and from
