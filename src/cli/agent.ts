@@ -3232,7 +3232,7 @@ const COMMANDS: Record<string, Command> = {
   "set-expr": r(
     setParameterExpressionSchema,
     setParameterExpressionImpl,
-    "Set a parameter to an expression/bind/constant without raw Python.",
+    "Set a parameter mode; expression/bind require raw Python, while constant/reset/unbind work in restricted mode.",
     { mutates: true },
   ),
   disconnect: r(

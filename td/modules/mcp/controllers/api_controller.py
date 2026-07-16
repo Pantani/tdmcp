@@ -86,12 +86,13 @@ def _required_token():
 
 
 def _exec_allowed():
-    """Whether the arbitrary-code endpoints (`/api/exec`, node `method`) are enabled.
+    """Whether arbitrary and caller-supplied code-bearing writes are enabled.
 
     Default-deny. Authentication and authorization are separate controls: a
     bearer token proves who may call the bridge, while
     `TDMCP_BRIDGE_ALLOW_EXEC=1` (also accepts true/yes/on) is still required to
-    authorize arbitrary code. Structured endpoints stay available.
+    authorize arbitrary code. Structured endpoints stay available unless their
+    payload itself carries executable expression/DAT source text.
     """
     raw = os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC")
     if raw is None:
@@ -1054,6 +1055,11 @@ def _route_node_special(method, rest, query, body):
 
 def _route_node_mutation_primitive(method, rest, body):
     if method == "POST" and rest[-1] == "custom_params":
+        if _custom_params_contains_caller_code(body) and not _exec_allowed():
+            raise _Forbidden(
+                "Forbidden: custom-parameter expression/bind assignment is disabled "
+                "(TDMCP_BRIDGE_ALLOW_EXEC=0)."
+            )
         return custom_params_service.apply_custom_parameter_lifecycle(
             _node_path(rest[1:-1]), body
         )
@@ -1062,6 +1068,30 @@ def _route_node_mutation_primitive(method, rest, body):
     if method == "PATCH" and rest[-1] == "annotation":
         return annotation_service.edit_annotation(_node_path(rest[1:-1]), body)
     return None
+
+
+def _custom_param_fields_contain_caller_code(fields):
+    if not isinstance(fields, dict):
+        return False
+    mode = str(fields.get("mode") or "").strip().upper()
+    return mode in ("EXPRESSION", "BIND") or any(
+        key in fields for key in ("expression", "bind_expression")
+    )
+
+
+def _custom_param_operation_contains_caller_code(operation):
+    return (
+        isinstance(operation, dict)
+        and operation.get("action") == "edit_parameter"
+        and _custom_param_fields_contain_caller_code(operation.get("fields"))
+    )
+
+
+def _custom_params_contains_caller_code(body):
+    operations = body.get("operations") if isinstance(body, dict) else None
+    if not isinstance(operations, list):
+        return False
+    return any(_custom_param_operation_contains_caller_code(item) for item in operations)
 
 
 def _route_node_parameter_primitive(method, rest):
@@ -1100,10 +1130,16 @@ def _route_node_param_mode(method, rest, body):
         and rest[-1] == "mode"
         and rest[-3] == "params"
     ):
+        mode = str(body.get("mode") or "expression").strip().lower() or "expression"
+        if mode in ("expression", "bind") and not _exec_allowed():
+            raise _Forbidden(
+                "Forbidden: parameter expression/bind assignment is disabled "
+                "(TDMCP_BRIDGE_ALLOW_EXEC=0)."
+            )
         return param_text_service.set_param_mode(
             _node_path(rest[1:-3]),
             unquote(rest[-2]),
-            body.get("mode", "expression"),
+            mode,
             body.get("expr"),
             body.get("value"),
         )
@@ -1169,12 +1205,26 @@ def _route_nodes(method, rest, query, body):
     routed = _route_node_param_mode(method, rest, body)
     if routed is not None:
         return routed
-    if method == "GET" and rest[-1] == "text":
-        return _route_dat_text_get(rest)
-    if method == "PUT" and rest[-1] == "text":
-        _require(body, "text")
-        return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
+    routed = _route_dat_text(method, rest, body)
+    if routed is not None:
+        return routed
     return _route_node_crud(method, rest, query, body)
+
+
+def _route_dat_text(method, rest, body):
+    if rest[-1] != "text":
+        return None
+    if method == "GET":
+        return _route_dat_text_get(rest)
+    if method != "PUT":
+        return None
+    if not _exec_allowed():
+        raise _Forbidden(
+            "Forbidden: DAT text mutation is disabled "
+            "(TDMCP_BRIDGE_ALLOW_EXEC=0)."
+        )
+    _require(body, "text")
+    return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
 
 
 def _route_dat_text_get(rest):

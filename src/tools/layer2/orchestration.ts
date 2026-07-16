@@ -3,6 +3,7 @@ import { checkErrors } from "../../feedback/errorChecker.js";
 import { capturePreview } from "../../feedback/previewCapture.js";
 import type { Recipe, RecipeGlslUniform } from "../../recipes/schema.js";
 import { friendlyTdError, isMissingEndpoint } from "../../td-client/types.js";
+import { allowsCallerCode, recipeCodeBearingSources } from "../codeBearing.js";
 import {
   computeLayoutByParent,
   type LayoutEdge,
@@ -280,6 +281,13 @@ export async function buildFromRecipe(
   parentPath: string,
   containerName = recipe.id,
 ): Promise<RecipeBuildResult> {
+  const codeSources = recipeCodeBearingSources(recipe);
+  if (!allowsCallerCode(ctx) && codeSources.length > 0) {
+    throw new Error(
+      `Recipe "${recipe.id}" contains ${codeSources.join(" and ")}, but raw Python is disabled ` +
+        "(TDMCP_RAW_PYTHON=off). No TouchDesigner node was created.",
+    );
+  }
   const builder = await createSystemContainer(ctx, parentPath, containerName);
 
   for (const node of recipe.nodes) {
