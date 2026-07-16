@@ -5,6 +5,20 @@ export const TD_BASE = "http://127.0.0.1:9980";
 
 const ok = (data: unknown) => HttpResponse.json({ ok: true, data });
 
+function resolvedInteraction(kind: "delete_node" | "save_overwrite", requestId = "test-ticket") {
+  const choice = kind === "delete_node" ? "Delete" : "Overwrite";
+  return {
+    request_id: requestId,
+    kind,
+    state: "resolved",
+    choices: kind === "delete_node" ? ["Delete", "Bypass", "Keep"] : ["Overwrite", "Keep"],
+    created_at: 1,
+    expires_at: 31,
+    consumed: false,
+    result: { choice, reason: "user_choice", at: 2 },
+  };
+}
+
 /**
  * Default 404 for the v0.6.0 first-class endpoints (connect/disconnect, param-mode,
  * DAT-text, logs). The rewired tools try these FIRST and, on a 404 (→ TdApiError),
@@ -41,6 +55,21 @@ export const tdHandlers = [
     return ok({ path: `${body.parent_path}/${name}`, type: body.type, name });
   }),
 
+  http.post(`${TD_BASE}/api/interactions`, async ({ request }) => {
+    const body = (await request.json()) as { kind: "delete_node" | "save_overwrite" };
+    return ok(resolvedInteraction(body.kind));
+  }),
+  http.get(`${TD_BASE}/api/interactions/:id`, ({ params }) =>
+    ok(resolvedInteraction("delete_node", String(params.id))),
+  ),
+  http.post(`${TD_BASE}/api/interactions/:id/cancel`, ({ params }) =>
+    ok({
+      ...resolvedInteraction("delete_node", String(params.id)),
+      state: "cancelled",
+      result: { choice: "Keep", reason: "client_cancelled", at: 2 },
+    }),
+  ),
+
   http.get(`${TD_BASE}/api/nodes`, ({ request }) => {
     const parent = new URL(request.url).searchParams.get("parent") ?? "/project1";
     return ok({
@@ -76,6 +105,8 @@ export const tdHandlers = [
   http.post(`${TD_BASE}/api/nodes/:seg/save`, notFound),
   http.post(`${TD_BASE}/api/duplicate`, notFound),
   http.get(`${TD_BASE}/api/optypes`, notFound),
+  http.get(`${TD_BASE}/api/nodes/search`, notFound),
+  http.post(`${TD_BASE}/api/params/search`, notFound),
   http.post(`${TD_BASE}/api/params/watch`, notFound),
   http.delete(`${TD_BASE}/api/params/watch`, notFound),
   http.get(`${TD_BASE}/api/params/watch`, notFound),
@@ -105,8 +136,30 @@ export const tdHandlers = [
 
   http.delete(`${TD_BASE}/api/nodes/:seg`, ({ params, request }) => {
     const mode = new URL(request.url).searchParams.get("mode") ?? "delete";
-    if (mode === "bypass") return ok({ bypassed: seg(params), mode: "bypass" });
-    return ok({ deleted: seg(params), mode: "delete" });
+    const path = seg(params);
+    const policy = new URL(request.url).searchParams.get("confirmation_policy") ?? "native";
+    if (mode === "bypass") {
+      return ok({
+        bypassed: path,
+        mode: "bypass",
+        decision: "Bypass",
+        original_path: path,
+        final_path: path,
+        action_applied: "bypass",
+        applied: true,
+        confirmation_policy: policy === "explicit_mode" ? "explicit_mode" : "native",
+      });
+    }
+    return ok({
+      deleted: path,
+      mode: "delete",
+      decision: "Delete",
+      original_path: path,
+      final_path: null,
+      action_applied: "delete",
+      applied: true,
+      confirmation_policy: policy === "yolo" ? "yolo" : "native",
+    });
   }),
 
   http.post(`${TD_BASE}/api/exec`, () => ok({ result: null, stdout: "" })),
@@ -180,8 +233,39 @@ export const tdHandlers = [
   ),
 
   http.post(`${TD_BASE}/api/editor/focus`, async ({ request }) => {
-    const body = (await request.json()) as { paths: string[]; animate?: boolean };
-    return ok({ focused: body.paths, pane: "pane1", animate: body.animate ?? true });
+    const body = (await request.json()) as {
+      paths: string[];
+      animate?: boolean;
+      action?: string;
+      framing?: string;
+    };
+    return ok({
+      operation_id: "mock_focus_operation",
+      status: "applied",
+      action: body.action ?? "view",
+      requested_paths: body.paths,
+      resolved_paths: body.paths,
+      missing_paths: [],
+      focused: body.paths,
+      pane: "pane1",
+      pane_strategy: "owner_active",
+      animate: body.animate ?? true,
+      framing: {
+        requested: body.framing ?? "auto",
+        applied: "selection",
+        animation: body.animate === false ? "instant" : "none",
+      },
+      previous: null,
+      final: {
+        owner: "/project1",
+        current: body.paths[0] ?? null,
+        selected: body.paths,
+        viewport: { x: 0, y: 0, zoom: 1 },
+      },
+      suppression_reason: null,
+      warnings: [],
+      undo_label: null,
+    });
   }),
 
   http.post(`${TD_BASE}/api/batch`, async ({ request }) => {

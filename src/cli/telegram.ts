@@ -5,6 +5,7 @@ import { createInterface, emitKeypressEvents } from "node:readline";
 import { parseArgs } from "node:util";
 import { runAgentTurn } from "../llm/agent.js";
 import { LlmClient } from "../llm/client.js";
+import { resolveRuntimeCalibration } from "../llm/runtimeCalibration.js";
 import type { ToolTier } from "../llm/tools.js";
 import { buildToolContext } from "../server/context.js";
 import { TelegramBotClient } from "../telegram/client.js";
@@ -487,6 +488,11 @@ export async function runTelegram(
       allowedUserIds: new Set(config.telegramAllowedUsers),
       defaultTier: config.telegramDefaultTier,
       confirmTimeoutMs: config.telegramConfirmTimeoutMs,
+      calibrationMode: config.llmCalibrationMode,
+      resolveCalibration: (tier, signal) => resolveRuntimeCalibration(config, tier, signal),
+      projectRoot: config.projectRoot,
+      receiptPersistence: config.copilotReceipts,
+      receiptStorePath: config.copilotReceiptsPath,
     });
 
   if (opts.dropPendingUpdates) await bot.deleteWebhook(true);

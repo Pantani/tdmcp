@@ -18,22 +18,41 @@ from urllib.parse import parse_qs, unquote, urlparse
 from mcp import events
 from mcp.services import (
     analysis_service,
+    annotation_layout_service,
+    annotation_service,
     api_service,
     batch_service,
     connect_service,
     custom_params_service,
     duplicate_service,
+    editor_insert_service,
     editor_service,
+    editor_context_service,
+    interaction_service,
     log_service,
+    metadata_service,
     optypes_service,
+    oauth_consent_service,
+    operation_plan_service,
+    operation_runtime_service,
+    package_namespace_service,
+    parameter_search_service,
+    parameter_service,
     param_text_service,
     preview_service,
     project_analysis_service,
     project_load_service,
+    project_service,
+    reposition_service,
     save_service,
+    search_service,
     system_service,
+    tox_export_service,
     transport_service,
+    visual_parameter_tuning_service,
     watch_service,
+    workspace_service,
+    tox_roundtrip_service,
 )
 
 
@@ -47,6 +66,12 @@ class _Forbidden(PermissionError):
     """Request refused regardless of credentials — cross-origin or exec disabled (HTTP 403)."""
 
     status = 403
+
+
+class _PayloadTooLarge(ValueError):
+    """A bounded JSON mutation body exceeded its route limit (HTTP 413)."""
+
+    status = 413
 
 
 def _required_token():
@@ -127,7 +152,11 @@ def _find_header(request, name):
                 # so the Origin guard never fails *open* on a list-shaped header.
                 if isinstance(value, str):
                     return value
-                if isinstance(value, (list, tuple)) and value and isinstance(value[0], str):
+                if (
+                    isinstance(value, (list, tuple))
+                    and value
+                    and isinstance(value[0], str)
+                ):
                     return value[0]
         for nested in ("headers", "header", "fields"):
             sub = node.get(nested)
@@ -146,6 +175,25 @@ def _check_auth(request):
     provided = (_find_header(request, "authorization") or "").strip()
     if not hmac.compare_digest(provided, "Bearer " + token):
         raise _Unauthorized("Unauthorized: missing or invalid bearer token.")
+
+
+def _authorized_operation_principal(path):
+    """Return the ephemeral bearer principal for the operation route family.
+
+    Structured commit receipts are capabilities, so this family intentionally
+    requires bridge authentication even when unrelated local routes use the
+    zero-config mode.  The caller invokes this after `_check_auth` and before
+    parsing the body; the raw token is never retained, returned or logged.
+    """
+
+    if not path.startswith("/api/operations/"):
+        return None
+    token = _required_token()
+    if token is None:
+        raise _Unauthorized(
+            "Unauthorized: structured operations require a configured bearer token."
+        )
+    return token
 
 
 _LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
@@ -296,7 +344,9 @@ def _check_origin(request):
         return
     host = urlparse(origin).hostname
     if host not in _LOOPBACK_HOSTS:
-        raise _Forbidden("Forbidden: cross-origin request rejected (origin %r)." % origin)
+        raise _Forbidden(
+            "Forbidden: cross-origin request rejected (origin %r)." % origin
+        )
 
 
 def _check_host(request):
@@ -339,8 +389,29 @@ def _qs(query, key, default=None):
     return values[0] if values else default
 
 
-def _parse_body(request):
+def _encoded_body_size(data):
+    if isinstance(data, (bytes, bytearray)):
+        return len(data)
+    if isinstance(data, str):
+        return len(data.encode("utf-8"))
+    if isinstance(data, (dict, list)):
+        return len(
+            json.dumps(
+            data, ensure_ascii=False, separators=(",", ":"), allow_nan=False
+            ).encode("utf-8")
+        )
+    return None
+
+
+def _reject_oversized_body(data, max_bytes):
+    size = _encoded_body_size(data)
+    if max_bytes is not None and size is not None and size > max_bytes:
+        raise _PayloadTooLarge("Request body exceeds the bounded route limit.")
+
+
+def _parse_body(request, max_bytes=None):
     data = request.get("data")
+    _reject_oversized_body(data, max_bytes)
     if isinstance(data, (bytes, bytearray)):
         data = data.decode("utf-8", "ignore")
     if not data:  # None, "", b"" all become an empty body
@@ -351,6 +422,30 @@ def _parse_body(request):
             return {}
         return json.loads(data)
     return data
+
+
+DEFAULT_MUTATION_BODY_LIMIT = 1024 * 1024
+
+
+def _bounded_body_limit(method, path):
+    """Return a conservative cap for every request that may carry a JSON body."""
+    if method not in ("POST", "PATCH", "PUT", "DELETE"):
+        return None
+    if path in ("/api/editor/reposition", "/api/editor/reposition/context"):
+        return 256 * 1024
+    if path == "/api/editor/workspaces" or path.startswith(
+        "/api/editor/workspaces/"
+    ):
+        return 32 * 1024
+    if path == "/api/interactions" or path.startswith("/api/oauth/consents/"):
+        return 32 * 1024
+    if path in ("/api/operations/receipt", "/api/operations/revert"):
+        return 8 * 1024
+    if path.startswith("/api/operations/"):
+        return operation_plan_service.MAX_BODY_BYTES
+    if path.startswith("/api/editor/visual-parameters/"):
+        return visual_parameter_tuning_service.MAX_BODY_BYTES
+    return DEFAULT_MUTATION_BODY_LIMIT
 
 
 def _node_path(segments):
@@ -432,6 +527,24 @@ def _route_get_root(rest, query, webserver=None):
         return api_service.get_health(webserver)
     if rest == ["nodes"]:
         return api_service.get_nodes(_qs(query, "parent"))
+    if rest == ["nodes", "search"]:
+        return search_service.search_nodes(
+            _qs(query, "root", "/project1"),
+            pattern=_qs(query, "pattern") or None,
+            name_glob=_qs(query, "name_glob") or None,
+            path_glob=_qs(query, "path_glob") or None,
+            type_filter=_qs(query, "type") or None,
+            type_match=_qs(query, "type_match", "contains"),
+            family=_qs(query, "family") or None,
+            max_depth=int(_qs(query, "max_depth", 32)),
+            limit=int(_qs(query, "limit", search_service.DEFAULT_LIMIT)),
+            node_scan_limit=int(
+                _qs(query, "node_scan_limit", search_service.DEFAULT_NODE_SCAN_LIMIT)
+            ),
+            time_limit_ms=int(
+                _qs(query, "time_limit_ms", search_service.DEFAULT_TIME_LIMIT_MS)
+            ),
+        )
     if rest == ["system"]:
         # Combined GPU/monitors/performMode snapshot — survives ALLOW_EXEC=0.
         include_raw = _qs(query, "include")
@@ -443,24 +556,317 @@ def _route_get_root(rest, query, webserver=None):
         return optypes_service.list_optypes()
     if rest == ["logs"]:
         return _route_logs(query, webserver)
+    if rest == ["editor", "context"]:
+        return editor_context_service.get_editor_context()
     return None
+
+
+def _interaction_target(kind, body):
+    """Build a server-side target fingerprint and bounded native copy.
+
+    A caller never gets to choose the fingerprint that authorizes the eventual
+    mutation.  This keeps an approval bound to the exact operator identity or
+    normalized Save As target observed by the bridge.
+    """
+    target = body.get("target")
+    if not isinstance(target, dict):
+        raise ValueError("Field 'target' must be a JSON object.")
+    if kind == "delete_node":
+        _require(target, "path")
+        node = api_service.get_node(target["path"])
+        path = node["path"]
+        type_name = node.get("type") or "operator"
+        name = node.get("name") or path.rsplit("/", 1)[-1]
+        fingerprint = interaction_service.fingerprint_target(path, type_name, name)
+        return (
+            fingerprint,
+            "Delete, bypass, or keep operator?",
+            "%s (%s) at %s. Delete removes this operator and its local wiring; "
+            "Bypass preserves it; Keep changes nothing." % (name, type_name, path),
+        )
+    if kind == "save_overwrite":
+        _require(target, "path")
+        path = project_service.normalize_project_path(target["path"])
+        fingerprint = interaction_service.fingerprint_target("save_overwrite", path)
+        return (
+            fingerprint,
+            "Overwrite existing TouchDesigner project?",
+            "%s already exists. Overwrite replaces that file; Keep leaves it unchanged."
+            % path,
+        )
+    if kind == "artifact_overwrite":
+        _require(target, "source_path", "target_path")
+        descriptor = tox_export_service.build_overwrite_request(
+            target["source_path"], target["target_path"]
+        )
+        return (
+            descriptor["target_fingerprint"],
+            descriptor["title"],
+            descriptor["prompt"],
+        )
+    if kind == oauth_consent_service.CONSENT_KIND:
+        descriptor = _oauth_consent_descriptor(target)
+        return (
+            descriptor["target_fingerprint"],
+            descriptor["title"],
+            descriptor["prompt"],
+        )
+    if kind == "visual_parameter_apply":
+        descriptor = visual_parameter_tuning_service.build_interaction_request(target)
+        return (
+            descriptor["target_fingerprint"],
+            descriptor["title"],
+            descriptor["prompt"],
+        )
+    raise ValueError("Unsupported interaction kind: %s" % kind)
+
+
+def _oauth_consent_descriptor(target):
+    """Rebuild the bounded TD display target without trusting a fingerprint."""
+    if not isinstance(target, dict):
+        raise ValueError("Field 'target' must be a JSON object.")
+    resource = target.get("resource")
+    registered_redirect_uris = target.get("registered_redirect_uris")
+    allowed_redirect_origins = target.get("allowed_redirect_origins")
+    return oauth_consent_service.prepare_oauth_consent(
+        target,
+        registered_redirect_uris=registered_redirect_uris,
+        canonical_resource=resource,
+        allowed_redirect_origins=allowed_redirect_origins,
+    )
+
+
+def _create_interaction(body):
+    _require(body, "kind", "target")
+    kind = body["kind"]
+    fingerprint, title, prompt = _interaction_target(kind, body)
+    return interaction_service.create_interaction(
+        kind=kind,
+        choices=interaction_service.INTERACTION_CHOICES.get(kind, ()),
+        title=title,
+        prompt=prompt,
+        target_fingerprint=fingerprint,
+        ttl_seconds=body.get("ttl_seconds", interaction_service.DEFAULT_TTL_SECONDS),
+        dedupe_key=body.get("dedupe_key"),
+    )
+
+
+def _route_interactions(method, rest, body):
+    if rest == ["interactions"] and method == "POST":
+        return _create_interaction(body)
+    if rest == ["interactions", "status"] and method == "GET":
+        return interaction_service.interaction_summary()
+    if len(rest) == 2 and rest[0] == "interactions" and method == "GET":
+        return interaction_service.get_interaction(unquote(rest[1]))
+    if (
+        len(rest) == 3
+        and rest[0] == "interactions"
+        and rest[2] == "cancel"
+        and method == "POST"
+    ):
+        return interaction_service.cancel_interaction(
+            unquote(rest[1]), body.get("reason", "client_cancelled")
+        )
+    return None
+
+
+def _route_oauth_consents(method, rest, body):
+    if (
+        method == "POST"
+        and len(rest) == 4
+        and rest[:2] == ["oauth", "consents"]
+        and rest[3] == "consume"
+    ):
+        _require(body, "target")
+        descriptor = _oauth_consent_descriptor(body["target"])
+        request_id = unquote(rest[2])
+        consumed = interaction_service.consume_interaction(
+            request_id, descriptor["target_fingerprint"]
+        )
+        return {
+            "request_id": request_id,
+            "state": consumed.get("state"),
+            "accepted": consumed.get("accepted", False),
+            "decision": consumed.get("decision") or "Deny",
+            "error": consumed.get("error"),
+        }
+    return None
+
+
+def _artifact_overwrite_claim(body):
+    interaction_id = body.get("interaction_id")
+    if interaction_id is None:
+        return None
+    descriptor = tox_export_service.build_overwrite_request(
+        body.get("source_path"), body.get("target_path")
+    )
+    consumed = interaction_service.consume_interaction(
+        interaction_id, descriptor["target_fingerprint"]
+    )
+    if not consumed.get("accepted") or consumed.get("decision") != "Overwrite":
+        raise tox_export_service.InteractionMismatchError(
+            "tox export: overwrite approval was not accepted"
+        )
+    return {
+        "kind": "artifact_overwrite",
+        "state": "resolved",
+        "choice": "Overwrite",
+        "request_id": interaction_id,
+        "target_path": descriptor["normalized_target"],
+        "target_fingerprint": descriptor["target_fingerprint"],
+    }
+
+
+def _route_tox_roundtrip(method, rest, body):
+    roundtrip = ["artifacts", "tox", "roundtrip"]
+    if rest[:3] != roundtrip:
+        return None
+    if not _quarantine_load_enabled():
+        raise _Forbidden(
+            "Forbidden: TOX roundtrip is available only on an explicitly "
+            "configured throwaway quarantine bridge."
+        )
+    if rest == roundtrip and method == "POST":
+        _require(body, "path")
+        return tox_roundtrip_service.start_roundtrip(
+            body["path"],
+            expected_contract=body.get("expected_contract"),
+            artifact_sha256=body.get("artifact_sha256"),
+            settle_frames=body.get("settle_frames", 4),
+            max_nodes=body.get("max_nodes", 500),
+            max_errors=body.get("max_errors", 50),
+            max_external_refs=body.get("max_external_refs", 50),
+            timeout_ms=body.get("timeout_ms", 15000),
+        )
+    if len(rest) == 4 and method == "GET":
+        return tox_roundtrip_service.get_roundtrip(unquote(rest[3]))
+    if len(rest) == 5 and rest[4] == "cancel" and method == "POST":
+        return tox_roundtrip_service.cancel_roundtrip(
+            unquote(rest[3]), body.get("reason", "client_cancelled")
+        )
+    return None
+
+
+def _route_tox_exports(method, rest, body):
+    prefix = ["artifacts", "tox", "exports"]
+    if rest == prefix and method == "POST":
+        _require(body, "source_path", "target_path", "idempotency_key")
+        return tox_export_service.start_export(
+            body["source_path"],
+            body["target_path"],
+            mode=body.get("mode", "as_is"),
+            create_folders=_as_bool(
+                body.get("create_folders", False), "create_folders"
+            ),
+            idempotency_key=body["idempotency_key"],
+            overwrite_approval=_artifact_overwrite_claim(body),
+        )
+    if len(rest) == 5 and rest[:4] == prefix + ["by-key"] and method == "GET":
+        return tox_export_service.get_export_by_key(unquote(rest[4]))
+    if len(rest) == 4 and rest[:3] == prefix and method == "GET":
+        return tox_export_service.get_export(unquote(rest[3]))
+    if (
+        len(rest) == 5
+        and rest[:3] == prefix
+        and rest[4] == "cancel"
+        and method == "POST"
+    ):
+        return tox_export_service.cancel_export(
+            unquote(rest[3]), body.get("reason", "client_cancelled")
+        )
+    return None
+
+
+def _route_artifacts(method, rest, body):
+    roundtrip = _route_tox_roundtrip(method, rest, body)
+    if roundtrip is not None:
+        return roundtrip
+    return _route_tox_exports(method, rest, body)
+
+
+def _save_project(body):
+    path = body.get("path")
+    interaction_id = body.get("interaction_id")
+    if interaction_id is None:
+        result = project_service.save_project(path)
+        result.update({"saved": True, "action_applied": True})
+        return result
+    normalized = project_service.normalize_project_path(path)
+    fingerprint = interaction_service.fingerprint_target("save_overwrite", normalized)
+    consumed = interaction_service.consume_interaction(interaction_id, fingerprint)
+    if not consumed.get("accepted") or consumed.get("decision") != "Overwrite":
+        return {
+            "requested_path": normalized,
+            "final_path": None,
+            "decision": consumed.get("decision") or "Keep",
+            "saved": False,
+            "action_applied": False,
+            "verified_exists": False,
+            "request_id": interaction_id,
+        }
+    claim = {
+        "kind": "save_overwrite",
+        "state": "resolved",
+        "choice": "Overwrite",
+        "target_path": normalized,
+    }
+    result = project_service.save_project(normalized, overwrite_approval=claim)
+    result.update({"saved": True, "action_applied": True, "request_id": interaction_id})
+    return result
 
 
 def _route_post_root_core(rest, body):
     if rest == ["nodes"]:
         _require(body, "parent_path", "type")
         return api_service.create_node(
-            body["parent_path"], body["type"], body.get("name"), body.get("parameters")
+            body["parent_path"],
+            body["type"],
+            body.get("name"),
+            body.get("parameters"),
+            placement=body.get("placement"),
+            node_x=body.get("node_x"),
+            node_y=body.get("node_y"),
+            viewer=body.get("viewer"),
         )
 
     if rest == ["exec"]:
         if not _exec_allowed():
-            raise _Forbidden("Forbidden: arbitrary code execution is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).")
+            raise _Forbidden(
+                "Forbidden: arbitrary code execution is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0)."
+            )
         _require(body, "script")
         return api_service.exec_script(body["script"], body.get("return_output", True))
 
     if rest == ["batch"]:
         return batch_service.run(body.get("operations", []))
+
+    if rest == ["params", "search"]:
+        return parameter_search_service.search_parameters(
+            body.get("root_path", "/project1"),
+            max_depth=body.get("max_depth", parameter_search_service.DEFAULT_MAX_DEPTH),
+            node_pattern=body.get("node_pattern"),
+            node_name_glob=body.get("node_name_glob"),
+            node_path_glob=body.get("node_path_glob"),
+            type_filter=body.get("type"),
+            type_match=body.get("type_match", "partial"),
+            family=body.get("family"),
+            parameter_glob=body.get("parameter_glob"),
+            value_glob=body.get("value_glob"),
+            expression_glob=body.get("expression_glob"),
+            mode=body.get("mode"),
+            non_default_only=body.get("non_default_only", False),
+            limit=body.get("limit", parameter_search_service.DEFAULT_LIMIT),
+            node_scan_limit=body.get(
+                "node_scan_limit", parameter_search_service.DEFAULT_NODE_SCAN_LIMIT
+            ),
+            parameter_scan_limit=body.get(
+                "parameter_scan_limit",
+                parameter_search_service.DEFAULT_PARAMETER_SCAN_LIMIT,
+            ),
+            time_budget_ms=body.get(
+                "time_budget_ms", parameter_search_service.DEFAULT_TIME_BUDGET_MS
+            ),
+        )
 
     return None
 
@@ -508,6 +914,9 @@ def _route_post_root_controls(rest, body):
 
 
 def _route_post_root_project(rest, body):
+    if rest == ["project", "save"]:
+        return _save_project(body)
+
     if rest == ["project", "load"]:
         # Load a .toe/.tox for the Project RAG quarantine analyzer. NOT exec-gated
         # (TD's own loaders, not arbitrary Python), but gated behind an explicit
@@ -530,14 +939,20 @@ def _route_post_root_project(rest, body):
         _require(body, "items")
         return param_text_service.read_param_modes_batch(
             body["items"],
-            continue_on_error=_as_bool(body.get("continue_on_error", True), "continue_on_error"),
+            continue_on_error=_as_bool(
+                body.get("continue_on_error", True), "continue_on_error"
+            ),
         )
 
     return None
 
 
 def _route_post_root(rest, body):
-    for router in (_route_post_root_core, _route_post_root_controls, _route_post_root_project):
+    for router in (
+        _route_post_root_core,
+        _route_post_root_controls,
+        _route_post_root_project,
+    ):
         routed = router(rest, body)
         if routed is not None:
             return routed
@@ -570,6 +985,9 @@ def _route_watch(method, rest, body, webserver=None):
 
 
 def _route_root(method, rest, query, body, webserver=None):
+    interacted = _route_interactions(method, rest, body)
+    if interacted is not None:
+        return interacted
     watched = _route_watch(method, rest, body, webserver)
     if watched is not None:
         return watched
@@ -585,7 +1003,9 @@ def _route_projects(method, rest, query):
         # /api/projects/<path…>/analysis — diagnostic scan, survives ALLOW_EXEC=0.
         recursive_raw = _qs(query, "recursive")
         recursive = True if recursive_raw is None else (recursive_raw == "true")
-        return project_analysis_service.analyze(_node_path(rest[1:-1]), recursive=recursive)
+        return project_analysis_service.analyze(
+            _node_path(rest[1:-1]), recursive=recursive
+        )
     return None
 
 
@@ -599,7 +1019,10 @@ def _route_node_post_special(rest, body):
             )
         _require(body, "method")
         return api_service.call_method(
-            _node_path(rest[1:-1]), body["method"], body.get("args", []), body.get("kwargs", {})
+            _node_path(rest[1:-1]),
+            body["method"],
+            body.get("args", []),
+            body.get("kwargs", {}),
         )
     if rest[-1] == "save":
         # Structured node save (COMP -> .tox, TOP -> image). NO exec gate: it must
@@ -629,8 +1052,54 @@ def _route_node_special(method, rest, query, body):
     return None
 
 
+def _route_node_mutation_primitive(method, rest, body):
+    if method == "POST" and rest[-1] == "custom_params":
+        return custom_params_service.apply_custom_parameter_lifecycle(
+            _node_path(rest[1:-1]), body
+        )
+    if method == "PATCH" and rest[-1] == "metadata":
+        return metadata_service.edit_node_metadata(_node_path(rest[1:-1]), body)
+    if method == "PATCH" and rest[-1] == "annotation":
+        return annotation_service.edit_annotation(_node_path(rest[1:-1]), body)
+    return None
+
+
+def _route_node_parameter_primitive(method, rest):
+    if (
+        method == "GET"
+        and len(rest) >= 5
+        and rest[-1] == "menu"
+        and rest[-3] == "params"
+    ):
+        return parameter_service.read_parameter_menu(
+            _node_path(rest[1:-3]), unquote(rest[-2])
+        )
+    if (
+        method == "POST"
+        and len(rest) >= 5
+        and rest[-1] == "pulse"
+        and rest[-3] == "params"
+    ):
+        return parameter_service.pulse_parameter(
+            _node_path(rest[1:-3]), unquote(rest[-2])
+        )
+    return None
+
+
+def _route_node_editor_primitive(method, rest, body):
+    routed = _route_node_mutation_primitive(method, rest, body)
+    if routed is not None:
+        return routed
+    return _route_node_parameter_primitive(method, rest)
+
+
 def _route_node_param_mode(method, rest, body):
-    if method == "PATCH" and len(rest) >= 4 and rest[-1] == "mode" and rest[-3] == "params":
+    if (
+        method == "PATCH"
+        and len(rest) >= 4
+        and rest[-1] == "mode"
+        and rest[-3] == "params"
+    ):
         return param_text_service.set_param_mode(
             _node_path(rest[1:-3]),
             unquote(rest[-2]),
@@ -641,6 +1110,42 @@ def _route_node_param_mode(method, rest, body):
     return None
 
 
+def _delete_with_ticket(node_path, request_id):
+    node = api_service.get_node(node_path)
+    fingerprint = interaction_service.fingerprint_target(
+        node["path"], node.get("type") or "operator", node.get("name") or ""
+    )
+    consumed = interaction_service.consume_interaction(request_id, fingerprint)
+    decision = consumed.get("decision") if consumed.get("accepted") else "Keep"
+    chosen_mode = "bypass" if decision == "Bypass" else "delete"
+    return api_service.delete_node(
+        node_path,
+        mode=chosen_mode,
+        decision=decision,
+        confirmation_policy="native",
+        request_id=request_id,
+    )
+
+
+def _route_node_delete(node_path, query):
+    mode = _qs(query, "mode", "delete")
+    policy = _qs(query, "confirmation_policy")
+    request_id = _qs(query, "interaction_id")
+    if mode == "bypass" and request_id is None:
+        return api_service.delete_node(
+            node_path, mode="bypass", confirmation_policy=policy or "explicit_mode"
+        )
+    if policy == "yolo":
+        return api_service.delete_node(
+            node_path, mode="delete", confirmation_policy="yolo"
+        )
+    if request_id is None:
+        return api_service.delete_node(
+            node_path, mode="delete", confirmation_policy="native"
+        )
+    return _delete_with_ticket(node_path, request_id)
+
+
 def _route_node_crud(method, rest, query, body):
     node_path = _node_path(rest[1:])
     if method == "GET":
@@ -648,13 +1153,16 @@ def _route_node_crud(method, rest, query, body):
     if method == "PATCH":
         return api_service.update_parameters(node_path, body.get("parameters", {}))
     if method == "DELETE":
-        return api_service.delete_node(node_path, _qs(query, "mode", "delete"))
+        return _route_node_delete(node_path, query)
     return None
 
 
 def _route_nodes(method, rest, query, body):
     if len(rest) < 2:
         return None
+    routed = _route_node_editor_primitive(method, rest, body)
+    if routed is not None:
+        return routed
     routed = _route_node_special(method, rest, query, body)
     if routed is not None:
         return routed
@@ -718,10 +1226,130 @@ def _route_preview_job(method, rest):
     return None
 
 
-def _route_editor(method, rest, body):
+def _route_annotation_layout(method, rest, body):
+    if method == "POST" and rest == ["editor", "annotation-layout", "context"]:
+        _require(body, "root_path")
+        return annotation_layout_service.get_layout_context(
+            body["root_path"],
+            recursive=_as_bool(body.get("recursive", False), "recursive"),
+        )
+    if method == "POST" and rest == ["editor", "annotation-layout", "apply"]:
+        return annotation_layout_service.apply_layout(body)
+    return None
+
+
+def _route_editor_insert(method, rest, body):
+    if method == "POST" and rest == ["editor", "insert"]:
+        _require(body, "type", "expected_context", "idempotency_key")
+        return editor_insert_service.insert_operator_at_selection(body)
+    return None
+
+
+def _route_editor_focus(method, rest, body):
     if method == "POST" and rest == ["editor", "focus"]:
         _require(body, "paths")
-        return editor_service.focus(body["paths"], _as_bool(body.get("animate", True), "animate"))
+        return editor_service.start_follow(
+            body["paths"],
+            animate=_as_bool(body.get("animate", True), "animate"),
+            action=body.get("action", "view"),
+            framing=body.get("framing", "auto"),
+            enabled=_as_bool(body.get("enabled", True), "enabled"),
+            request_id=body.get("request_id"),
+        )
+    if method == "GET" and len(rest) == 3 and rest[:2] == ["editor", "focus"]:
+        return editor_service.get_follow_status(unquote(rest[2]))
+    if (
+        method == "POST"
+        and len(rest) == 4
+        and rest[:2] == ["editor", "focus"]
+        and rest[3] == "cancel"
+    ):
+        return editor_service.cancel_follow(unquote(rest[2]))
+    return None
+
+
+def _route_editor_reposition(method, rest, body):
+    if method == "POST" and rest == ["editor", "reposition", "context"]:
+        return reposition_service.get_reposition_context(body)
+    if method == "POST" and rest == ["editor", "reposition"]:
+        return reposition_service.reposition_operators(body)
+    return None
+
+
+def _route_editor_visual_parameters(method, rest, body):
+    if method != "POST" or rest[:2] != ["editor", "visual-parameters"]:
+        return None
+    if rest == ["editor", "visual-parameters", "inspect"]:
+        return visual_parameter_tuning_service.inspect_visual_parameters(body)
+    if rest == ["editor", "visual-parameters", "commit"]:
+        return visual_parameter_tuning_service.commit_visual_parameters(body)
+    if rest == ["editor", "visual-parameters", "restore"]:
+        return visual_parameter_tuning_service.restore_visual_parameters(body)
+    return None
+
+
+def _route_editor_workspace_item(method, rest, body):
+    if len(rest) < 3 or rest[:2] != ["editor", "workspaces"]:
+        return None
+    workspace_id = unquote(rest[2])
+    if method == "GET" and len(rest) == 3:
+        return workspace_service.get_workspace_status(workspace_id)
+    if method == "POST" and len(rest) == 4 and rest[3] == "restore":
+        return workspace_service.restore_workspace(workspace_id, body)
+    if method == "POST" and len(rest) == 4 and rest[3] == "cancel":
+        return workspace_service.cancel_workspace(workspace_id, body)
+    return None
+
+
+def _route_editor_workspaces(method, rest, body):
+    if method == "POST" and rest == ["editor", "workspaces"]:
+        return workspace_service.open_workspace(body)
+    return _route_editor_workspace_item(method, rest, body)
+
+
+def _route_editor(method, rest, body):
+    for router in (
+        _route_annotation_layout,
+        _route_editor_insert,
+        _route_editor_focus,
+        _route_editor_reposition,
+        _route_editor_visual_parameters,
+        _route_editor_workspaces,
+    ):
+        routed = router(method, rest, body)
+        if routed is not None:
+            return routed
+    return None
+
+
+def _route_packages(method, rest, body):
+    if method == "POST" and rest == ["packages", "reconcile", "check"]:
+        _require(
+            body,
+            "project_path",
+            "package_id",
+            "source_url",
+            "recorded_ref",
+            "scope",
+            "intent",
+        )
+        return package_namespace_service.check_package_namespace(
+            project_path=body["project_path"],
+            package_id=body["package_id"],
+            source_url=body["source_url"],
+            recorded_ref=body["recorded_ref"],
+            recorded_target_path=body.get("recorded_target_path"),
+            scope=body["scope"],
+            intent=body["intent"],
+        )
+    if method == "POST" and rest == ["packages", "reconcile", "apply"]:
+        _require(body, "plan_id", "choice", "confirmation_policy")
+        return package_namespace_service.apply_package_namespace(
+            plan_id=body["plan_id"],
+            choice=body["choice"],
+            confirmation_policy=body["confirmation_policy"],
+            interaction_id=body.get("interaction_id"),
+        )
     return None
 
 
@@ -732,7 +1360,9 @@ def _route_network(method, rest, query):
         if kind == "errors":
             return analysis_service.errors(node_path)
         if kind == "topology":
-            return analysis_service.topology(node_path, recursive=_qs(query, "recursive") == "true")
+            return analysis_service.topology(
+                node_path, recursive=_qs(query, "recursive") == "true"
+            )
         if kind == "performance":
             return analysis_service.performance(
                 node_path, recursive=_qs(query, "recursive") == "true"
@@ -744,6 +1374,13 @@ def _route_second_tier(method, rest, query, body):
     """Dispatch the non-root REST families by their first path segment."""
     if not rest:
         return None
+    routed = _route_second_tier_core(method, rest, query, body)
+    if routed is not None:
+        return routed
+    return _route_second_tier_extended(method, rest, query, body)
+
+
+def _route_second_tier_core(method, rest, query, body):
     head = rest[0]
     if head == "projects":
         return _route_projects(method, rest, query)
@@ -753,18 +1390,58 @@ def _route_second_tier(method, rest, query, body):
         return _route_preview(method, rest, query, body)
     if head == "preview_job":
         return _route_preview_job(method, rest)
+    return None
+
+
+def _route_operations(method, rest, body, principal):
+    """Authenticated structured-operation boundary; never exec-gated."""
+
+    if rest[:1] != ["operations"]:
+        return None
+    if principal is None:
+        raise _Unauthorized(
+            "Unauthorized: structured operations require a configured bearer token."
+        )
+    if method != "POST":
+        return None
+    if rest == ["operations", "preview"]:
+        return operation_runtime_service.preview(body, principal)
+    if rest == ["operations", "commit"]:
+        return operation_runtime_service.commit(body, principal)
+    if rest == ["operations", "receipt"]:
+        return operation_runtime_service.receipt(body, principal)
+    return None
+
+
+def _route_second_tier_extended(method, rest, query, body):
+    head = rest[0]
     if head == "editor":
         return _route_editor(method, rest, body)
     if head == "network":
         return _route_network(method, rest, query)
+    if head == "interactions":
+        return _route_interactions(method, rest, body)
+    if head == "oauth":
+        return _route_oauth_consents(method, rest, body)
+    if head in ("artifacts", "packages"):
+        return _route_wave7_foundations(method, rest, body)
     return None
 
 
-def _route(method, path, query, body, webserver=None):
+def _route_wave7_foundations(method, rest, body):
+    if rest[0] == "artifacts":
+        return _route_artifacts(method, rest, body)
+    return _route_packages(method, rest, body)
+
+
+def _route(method, path, query, body, webserver=None, operation_principal=None):
     parts = [p for p in path.split("/") if p]
     if not parts or parts[0] != "api":
         raise ValueError("Not found: %s" % path)
     rest = parts[1:]
+    routed = _route_operations(method, rest, body, operation_principal)
+    if routed is not None:
+        return routed
     routed = _route_root(method, rest, query, body, webserver)
     if routed is None:
         routed = _route_second_tier(method, rest, query, body)
@@ -828,7 +1505,12 @@ def _emit_event(webserver, method, path, data):
             _emit_node_errors(webserver, (data or {}).get("path"))
         elif method == "PATCH" and len(rest) >= 2 and rest[0] == "nodes":
             _emit_node_errors(webserver, (data or {}).get("path"))
-        elif method == "DELETE" and len(rest) >= 2 and rest[0] == "nodes" and (data or {}).get("deleted"):
+        elif (
+            method == "DELETE"
+            and len(rest) >= 2
+            and rest[0] == "nodes"
+            and (data or {}).get("deleted")
+        ):
             # A bypass (mode='bypass') reports {bypassed}, not {deleted}: not a deletion.
             events.broadcast(webserver, "node.deleted", data)
         elif method == "POST" and rest == ["batch"]:
@@ -852,25 +1534,157 @@ def _get_ui():
         return None
 
 
-# POST routes that don't mutate the project graph and so need no undo block
-# (a batched param-mode read; a UI-only editor pan/zoom).
-_READ_ONLY_POST = (["param_modes", "batch"], ["editor", "focus"])
+def _undo_stack_receipt(ui):
+    """Return a bounded newest-first native stack receipt, or ``None``."""
+    try:
+        stack = ui.undo.undoStack
+        count = len(stack)
+        top = None if count == 0 else str(stack[0])
+    except Exception:  # noqa: BLE001 - optional runtime receipt
+        return None
+    if count < 0 or count > 100_000:
+        return None
+    if top is not None and (
+        not top or len(top) > 256 or any(char in top for char in ("\x00", "\r", "\n"))
+    ):
+        return None
+    return {"count": count, "top": top}
 
 
-def _undo_label(method, path):
+def _attach_undo_receipt(data, wrapper_label, before, after):
+    """Expose the actual artist-visible item, not merely the requested label."""
+    if not isinstance(data, dict):
+        return
+    data.pop("undo_label", None)
+    data.pop("undo_wrapper_label", None)
+    if before is None or after is None or after["count"] != before["count"] + 1:
+        return
+    actual_label = after.get("top")
+    if actual_label is None:
+        return
+    data["undo_label"] = actual_label
+    if actual_label != wrapper_label:
+        data["undo_wrapper_label"] = wrapper_label
+
+
+# POST routes excluded from the generic request wrapper: read/UI/file operations
+# plus structured operations whose transaction adapter owns its callback journal.
+_UNDO_EXCLUDED_POST = (
+    ["param_modes", "batch"],
+    ["params", "search"],
+    ["editor", "focus"],
+    ["editor", "annotation-layout", "context"],
+    ["editor", "reposition", "context"],
+    ["project", "save"],
+    ["packages", "reconcile", "check"],
+    ["operations", "preview"],
+    ["operations", "commit"],
+    ["operations", "receipt"],
+)
+
+
+def _undo_label(method, path, body=None):
     """Undo-block label for a mutating request, or None for a read-only one.
 
-    Every operation that changes the TD network (create/update/delete/connect/exec/…)
-    is wrapped in one `ui.undo` block so the artist can Ctrl+Z the whole agent action
-    at once. All GETs and the batched param-mode read mutate nothing, so they get no
-    block (and never pollute the undo stack).
+    Every REST request that changes the TD network is wrapped in one `ui.undo`
+    block. This is intentionally *not* described as a whole MCP-tool transaction:
+    a high-level tool may issue several HTTP requests, and cross-request nesting is
+    held behind live validation. Reads and broker traffic never pollute the stack.
     """
-    if method == "GET":
-        return None
     parts = [p for p in path.split("/") if p]
     rest = parts[1:] if parts[:1] == ["api"] else parts
-    if method == "POST" and rest in _READ_ONLY_POST:
+    if _undo_excluded(method, rest):
         return None
+    return _specific_undo_label(method, path, rest, body or {})
+
+
+def _undo_excluded(method, rest):
+    if method == "GET":
+        return True
+    if rest[:2] == ["editor", "focus"]:
+        return True
+    if rest[:3] == ["artifacts", "tox", "exports"]:
+        return True
+    if rest[:3] == ["artifacts", "tox", "roundtrip"]:
+        return True
+    if rest[:2] == ["editor", "workspaces"]:
+        return True
+    if rest[:2] == ["oauth", "consents"]:
+        return True
+    if rest == ["editor", "visual-parameters", "inspect"]:
+        return True
+    return method == "POST" and (
+        rest in _UNDO_EXCLUDED_POST or rest[:1] == ["interactions"]
+    )
+
+
+def _post_node_undo_label(rest):
+    if rest == ["nodes"]:
+        return "MCP create_td_node"
+    if len(rest) >= 5 and rest[:1] == ["nodes"] and rest[-1] == "pulse":
+        return "MCP pulse_td_parameter %s" % _node_path(rest[1:-3])
+    if rest[:1] == ["nodes"] and rest[-1:] == ["custom_params"]:
+        return "MCP custom_parameter_lifecycle %s" % _node_path(rest[1:-1])
+    return None
+
+
+def _node_specific_undo_label(method, rest):
+    if method == "POST":
+        return _post_node_undo_label(rest)
+    if method == "DELETE" and rest[:1] == ["nodes"]:
+        return "MCP delete_td_node %s" % _node_path(rest[1:])
+    if method == "PATCH" and rest[-1:] == ["metadata"] and rest[:1] == ["nodes"]:
+        return "MCP edit_td_node_metadata %s" % _node_path(rest[1:-1])
+    if method == "PATCH" and rest[-1:] == ["annotation"] and rest[:1] == ["nodes"]:
+        return "MCP manage_annotation edit %s" % _node_path(rest[1:-1])
+    return None
+
+
+def _visual_parameter_undo_label(method, rest, body):
+    if method != "POST" or rest[:2] != ["editor", "visual-parameters"]:
+        return None
+    if rest[-1:] == ["commit"]:
+        return "MCP enhance_build visual parameters %s" % body.get(
+            "scope_path", "unknown"
+        )
+    if rest[-1:] == ["restore"]:
+        return visual_parameter_tuning_service.restore_undo_label(body)
+    return None
+
+
+def _editor_undo_label(method, rest, body):
+    if method != "POST":
+        return None
+    visual_label = _visual_parameter_undo_label(method, rest, body)
+    if visual_label is not None:
+        return visual_label
+    if method == "POST" and rest == ["editor", "insert"]:
+        expected = body.get("expected_context") or {}
+        return "MCP insert_operator_at_selection %s" % expected.get(
+            "selected_path", "unknown"
+        )
+    if method == "POST" and rest == ["editor", "annotation-layout", "apply"]:
+        return "MCP arrange_network annotation-aware %s" % body.get(
+            "root_path", "unknown"
+        )
+    if method == "POST" and rest == ["editor", "reposition"]:
+        return "MCP arrange_network explicit %s" % body.get(
+            "root_path", "unknown"
+        )
+    return None
+
+
+def _specific_undo_label(method, path, rest, body=None):
+    node_label = _node_specific_undo_label(method, rest)
+    if node_label is not None:
+        return node_label
+    if method == "POST" and rest == ["packages", "reconcile", "apply"]:
+        return package_namespace_service.package_namespace_undo_label(
+            (body or {}).get("plan_id", "unknown")
+        )
+    editor_label = _editor_undo_label(method, rest, body or {})
+    if editor_label is not None:
+        return editor_label
     return "MCP %s %s" % (method, path)
 
 
@@ -890,7 +1704,7 @@ def _undo_block(label):
         except Exception:  # noqa: BLE001
             started = False
     try:
-        yield
+        yield started
     finally:
         if started:
             try:
@@ -937,7 +1751,8 @@ def _backpressure_response(response):
             "ok": False,
             "error": {
                 "code": "backpressure",
-                "message": "TouchDesigner is recovering from a slow request; retry after %ds." % retry_after,
+                "message": "TouchDesigner is recovering from a slow request; retry after %ds."
+                % retry_after,
                 "retry_after": retry_after,
             },
         },
@@ -949,28 +1764,167 @@ def _record_duration(elapsed_seconds):
         _BACKPRESSURE["cooldown_until"] = time.monotonic() + _cooldown_ms() / 1000.0
 
 
+_DOMAIN_ERROR_CODES = (
+    (_Unauthorized, "unauthorized"),
+    (PermissionError, "forbidden"),
+    (interaction_service.InteractionNotFoundError, "interaction_not_found"),
+    (interaction_service.InteractionCapacityError, "interaction_capacity"),
+    (interaction_service.InteractionConflictError, "interaction_conflict"),
+)
+
+_CODED_DOMAIN_ERRORS = (
+    annotation_layout_service.AnnotationLayoutError,
+    tox_export_service.ToxExportError,
+    tox_roundtrip_service.ToxRoundtripError,
+    package_namespace_service.PackageNamespaceError,
+    visual_parameter_tuning_service.VisualParameterTuningError,
+    editor_insert_service.EditorInsertError,
+    reposition_service.RepositionError,
+    workspace_service.WorkspaceError,
+    operation_plan_service.OperationPlanError,
+)
+
+
+def _coded_domain_error_code(exc):
+    for error_type in _CODED_DOMAIN_ERRORS:
+        if isinstance(exc, error_type):
+            return exc.code
+
+
+def _static_domain_error_code(exc):
+    for error_type, code in _DOMAIN_ERROR_CODES:
+        if isinstance(exc, error_type):
+            return code
+    return None
+
+
+def _domain_error_code(exc):
+    return _coded_domain_error_code(exc) or _static_domain_error_code(exc)
+
+
+def _error_code(exc):
+    if isinstance(exc, _PayloadTooLarge):
+        return "payload_too_large"
+    domain_code = _domain_error_code(exc)
+    if domain_code is not None:
+        return domain_code
+    if isinstance(exc, KeyError):
+        return "parameter_not_found"
+    if isinstance(exc, LookupError):
+        return "operator_not_found"
+    if isinstance(exc, TypeError):
+        return "invalid_parameter_type"
+    if isinstance(exc, ValueError):
+        return "invalid_input"
+    return "bridge_error"
+
+
+def _error_payload(exc):
+    error = {"code": _error_code(exc), "message": str(exc)}
+    report = getattr(exc, "report", None)
+    if isinstance(report, dict):
+        error["details"] = report
+    return {"ok": False, "error": error}
+
+
+def _operation_error_status(exc):
+    if not isinstance(exc, operation_plan_service.OperationPlanError):
+        return 400
+    if exc.code == "operation_authority":
+        return 403
+    if exc.code in ("preview_expired", "receipt_unavailable"):
+        return 410
+    if exc.code in (
+        "stale_plan",
+        "idempotency_conflict",
+        "operation_busy",
+        "undo_busy",
+    ):
+        return 409
+    return 400
+
+
+def _attach_started_undo_receipt(data, undo_label, undo_ui, undo_before, started):
+    if not started or not undo_label or undo_ui is None:
+        return
+    _attach_undo_receipt(
+        data,
+        undo_label,
+        undo_before,
+        _undo_stack_receipt(undo_ui),
+    )
+
+
+def _dispatch_with_undo(
+    method,
+    path,
+    query,
+    body,
+    webserver,
+    operation_principal=None,
+):
+    undo_label = _undo_label(method, path, body)
+    undo_ui = _get_ui() if undo_label is not None else None
+    undo_before = _undo_stack_receipt(undo_ui) if undo_ui is not None else None
+    with _undo_block(undo_label) as undo_started:
+        data = _route(
+            method,
+            path,
+            query,
+            body,
+            webserver,
+            operation_principal,
+        )
+    _attach_started_undo_receipt(
+        data,
+        undo_label,
+        undo_ui,
+        undo_before,
+        undo_started,
+    )
+    _emit_event(webserver, method, path, data)
+    return data
+
+
+def _authorized_response(request, response, webserver):
+    _check_address_scope(request)
+    _check_origin(request)
+    _check_host(request)
+    _check_auth(request)
+    method = (request.get("method") or "GET").upper()
+    parsed = urlparse(request.get("uri", "/"))
+    operation_principal = _authorized_operation_principal(parsed.path)
+    gate = _backpressure_response(response)
+    if gate is not None:
+        return gate
+    query = _merge_query(request, parse_qs(parsed.query))
+    body_limit = _bounded_body_limit(method, parsed.path)
+    body = _parse_body(request, body_limit)
+    start = time.monotonic()
+    try:
+        data = _dispatch_with_undo(
+            method,
+            parsed.path,
+            query,
+            body,
+            webserver,
+            operation_principal,
+        )
+    finally:
+        _record_duration(time.monotonic() - start)
+    return _send(response, 200, {"ok": True, "data": data})
+
+
 def handle(request, response, webserver=None):
     try:
-        _check_address_scope(request)
-        _check_origin(request)
-        _check_host(request)
-        _check_auth(request)
-        gate = _backpressure_response(response)
-        if gate is not None:
-            return gate
-        method = (request.get("method") or "GET").upper()
-        parsed = urlparse(request.get("uri", "/"))
-        query = _merge_query(request, parse_qs(parsed.query))
-        body = _parse_body(request)
-        start = time.monotonic()
-        try:
-            with _undo_block(_undo_label(method, parsed.path)):
-                data = _route(method, parsed.path, query, body, webserver)
-                _emit_event(webserver, method, parsed.path, data)
-        finally:
-            _record_duration(time.monotonic() - start)
-        return _send(response, 200, {"ok": True, "data": data})
+        return _authorized_response(request, response, webserver)
     except PermissionError as exc:
-        return _send(response, getattr(exc, "status", 403), {"ok": False, "error": {"message": str(exc)}})
+        return _send(
+            response,
+            getattr(exc, "status", 403),
+            {"ok": False, "error": {"code": _error_code(exc), "message": str(exc)}},
+        )
+    except _PayloadTooLarge as exc:
+        return _send(response, exc.status, _error_payload(exc))
     except Exception as exc:  # noqa: BLE001
-        return _send(response, 400, {"ok": False, "error": {"message": str(exc)}})
+        return _send(response, _operation_error_status(exc), _error_payload(exc))

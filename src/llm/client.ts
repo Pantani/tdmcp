@@ -30,6 +30,59 @@ export interface MultimodalMessage {
 }
 
 export const LLM_SYSTEM_OPTION = "system" as const;
+export const COMPLETE_RESPONSE_BYTES_MAX = 64 * 1024 * 1024;
+export const LLM_RESPONSE_TOO_LARGE_CODE = "LLM_RESPONSE_TOO_LARGE" as const;
+export const LLM_INVALID_COMPLETE_OPTIONS_CODE = "LLM_INVALID_COMPLETE_OPTIONS" as const;
+
+export class LlmResponseTooLargeError extends Error {
+  readonly code = LLM_RESPONSE_TOO_LARGE_CODE;
+
+  constructor(readonly maxResponseBytes: number) {
+    super(`LLM response exceeded the configured ${maxResponseBytes}-byte limit`);
+    this.name = "LlmResponseTooLargeError";
+  }
+}
+
+export class InvalidCompleteOptionsError extends TypeError {
+  readonly code = LLM_INVALID_COMPLETE_OPTIONS_CODE;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidCompleteOptionsError";
+  }
+}
+
+export function validatedMaxResponseBytes(value: unknown): number | undefined {
+  if (value === undefined) return undefined;
+  if (
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    value < 1 ||
+    value > COMPLETE_RESPONSE_BYTES_MAX
+  ) {
+    throw new InvalidCompleteOptionsError(
+      `maxResponseBytes must be a safe integer between 1 and ${COMPLETE_RESPONSE_BYTES_MAX}`,
+    );
+  }
+  return value;
+}
+
+export function assertCompletionResponseSize(text: string, maxResponseBytes?: number): void {
+  const maximum = validatedMaxResponseBytes(maxResponseBytes);
+  if (maximum !== undefined && Buffer.byteLength(text, "utf8") > maximum) {
+    throw new LlmResponseTooLargeError(maximum);
+  }
+}
+
+export function isLlmResponseTooLargeError(error: unknown): error is LlmResponseTooLargeError {
+  return (
+    error instanceof LlmResponseTooLargeError ||
+    (typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === LLM_RESPONSE_TOO_LARGE_CODE)
+  );
+}
 
 /** Options for {@link LlmClientLike.complete}. */
 export interface CompleteOptions {
@@ -43,6 +96,12 @@ export interface CompleteOptions {
   signal?: AbortSignal;
   /** Per-call timeout in ms. */
   timeoutMs?: number;
+  /**
+   * Optional hard UTF-8 byte ceiling for one completion response. HTTP clients
+   * stop reading as soon as the streamed body crosses it. Omitted preserves the
+   * legacy unbounded transport behavior for existing consumers.
+   */
+  maxResponseBytes?: number;
 }
 
 /** Result of {@link LlmClientLike.complete}. */
@@ -53,6 +112,14 @@ export interface CompleteResult {
   model?: string;
   /** `"endTurn" | "stopSequence" | "maxTokens" | string`, when known. */
   stopReason?: string;
+}
+
+export interface LlmRuntimeDescriptor {
+  transport: "openai_compatible" | "mcp_sampling" | "unknown";
+  locality: "loopback" | "remote" | "client_managed" | "unknown";
+  endpointOrigin?: string;
+  configuredModel?: string;
+  calibration: "not_checked";
 }
 
 /**
@@ -66,6 +133,8 @@ export interface LlmClientLike {
     opts?: StreamOptions,
   ): Promise<ChatMessage>;
   complete(messages: MultimodalMessage[], opts?: CompleteOptions): Promise<CompleteResult>;
+  /** Redacted egress metadata. Never includes credentials, paths, prompts or image bytes. */
+  describe?(): LlmRuntimeDescriptor;
 }
 
 /** A single chat message in the OpenAI chat-completions shape. */
@@ -123,6 +192,151 @@ export interface PullProgress {
   status: string;
   total?: number;
   completed?: number;
+}
+
+async function rejectOversizedDeclaredResponse(
+  response: Response,
+  maxResponseBytes: number,
+): Promise<void> {
+  const declaredLength = response.headers.get("content-length");
+  if (!declaredLength || !/^\d+$/u.test(declaredLength)) return;
+  const bytes = Number(declaredLength);
+  if (!Number.isSafeInteger(bytes) || bytes <= maxResponseBytes) return;
+  await response.body?.cancel().catch(() => undefined);
+  throw new LlmResponseTooLargeError(maxResponseBytes);
+}
+
+async function readBoundedResponseText(
+  response: Response,
+  maxResponseBytes: number,
+): Promise<string> {
+  await rejectOversizedDeclaredResponse(response, maxResponseBytes);
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const parts: string[] = [];
+  let bytesRead = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytesRead += value.byteLength;
+      if (bytesRead > maxResponseBytes) {
+        const error = new LlmResponseTooLargeError(maxResponseBytes);
+        await reader.cancel(error).catch(() => undefined);
+        throw error;
+      }
+      parts.push(decoder.decode(value, { stream: true }));
+    }
+    parts.push(decoder.decode());
+    return parts.join("");
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+type OpenAiCompletionPayload = {
+  choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+  model?: string;
+};
+
+function toOpenAiMessage(
+  message: MultimodalMessage,
+  systemOverride?: string,
+): Record<string, unknown> {
+  if (typeof message.content === "string") {
+    const content =
+      message.role === "system" && systemOverride !== undefined ? systemOverride : message.content;
+    return { role: message.role, content };
+  }
+  const content = message.content.map((part) =>
+    part.type === "text"
+      ? { type: "text" as const, text: part.text }
+      : {
+          type: "image_url" as const,
+          image_url: { url: `data:${part.mimeType};base64,${part.data}` },
+        },
+  );
+  return { role: message.role, content };
+}
+
+function completionMessages(
+  messages: MultimodalMessage[],
+  systemOverride?: string,
+): Array<Record<string, unknown>> {
+  const mapped = messages.map((message) => toOpenAiMessage(message, systemOverride));
+  if (systemOverride === undefined || messages.some((message) => message.role === "system")) {
+    return mapped;
+  }
+  return [{ role: "system", content: systemOverride }, ...mapped];
+}
+
+function completionRequestBody(
+  model: string,
+  messages: MultimodalMessage[],
+  opts: CompleteOptions,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model,
+    messages: completionMessages(messages, opts.system),
+    stream: false,
+  };
+  if (opts.maxTokens != null) body.max_tokens = opts.maxTokens;
+  if (opts.temperature != null) body.temperature = opts.temperature;
+  if (opts.stopSequences?.length) body.stop = opts.stopSequences;
+  return body;
+}
+
+interface CompletionAbort {
+  signal?: AbortSignal;
+  dispose: () => void;
+}
+
+function completionAbort(opts: CompleteOptions): CompletionAbort {
+  if (opts.timeoutMs == null) return { signal: opts.signal, dispose: () => undefined };
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  const timer = setTimeout(abort, opts.timeoutMs);
+  if (opts.signal?.aborted) abort();
+  else opts.signal?.addEventListener("abort", abort, { once: true });
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      clearTimeout(timer);
+      opts.signal?.removeEventListener("abort", abort);
+    },
+  };
+}
+
+async function responseText(response: Response, maxResponseBytes?: number): Promise<string> {
+  return maxResponseBytes === undefined
+    ? response.text()
+    : readBoundedResponseText(response, maxResponseBytes);
+}
+
+async function completionPayload(
+  response: Response,
+  maxResponseBytes?: number,
+): Promise<OpenAiCompletionPayload> {
+  if (!response.ok) {
+    const body = await responseText(response, maxResponseBytes);
+    throw new Error(`LLM endpoint returned HTTP ${response.status}: ${body.slice(0, 300)}`);
+  }
+  if (maxResponseBytes === undefined) {
+    return (await response.json()) as OpenAiCompletionPayload;
+  }
+  return JSON.parse(
+    await readBoundedResponseText(response, maxResponseBytes),
+  ) as OpenAiCompletionPayload;
+}
+
+function completionResult(payload: OpenAiCompletionPayload): CompleteResult {
+  const choice = payload.choices?.[0];
+  return {
+    text: choice?.message?.content ?? "",
+    ...(payload.model ? { model: payload.model } : {}),
+    ...(choice?.finish_reason ? { stopReason: choice.finish_reason } : {}),
+  };
 }
 
 /** A streamed completion chunk in OpenAI's delta shape. */
@@ -226,6 +440,28 @@ async function readLines(
 export class LlmClient implements LlmClientLike {
   constructor(private readonly cfg: LlmConfig) {}
 
+  describe(): LlmRuntimeDescriptor {
+    try {
+      const endpoint = new URL(this.cfg.llmBaseUrl);
+      const hostname = endpoint.hostname.toLowerCase();
+      const loopback = hostname === "127.0.0.1" || hostname === "[::1]" || hostname === "::1";
+      return {
+        transport: "openai_compatible",
+        locality: loopback ? "loopback" : "remote",
+        endpointOrigin: endpoint.origin,
+        configuredModel: this.cfg.llmModel,
+        calibration: "not_checked",
+      };
+    } catch {
+      return {
+        transport: "openai_compatible",
+        locality: "unknown",
+        configuredModel: this.cfg.llmModel,
+        calibration: "not_checked",
+      };
+    }
+  }
+
   /**
    * One-shot non-streaming completion against OpenAI-compatible /chat/completions.
    * Multimodal image parts are forwarded in OpenAI's `image_url` form (data URL).
@@ -234,72 +470,19 @@ export class LlmClient implements LlmClientLike {
     messages: MultimodalMessage[],
     opts: CompleteOptions = {},
   ): Promise<CompleteResult> {
-    const oaiMessages = messages.map((m) => {
-      if (typeof m.content === "string") {
-        if (m.role === "system" && opts.system !== undefined) {
-          return { role: m.role, content: opts.system };
-        }
-        return { role: m.role, content: m.content };
-      }
-      const parts = m.content.map((p) =>
-        p.type === "text"
-          ? { type: "text" as const, text: p.text }
-          : {
-              type: "image_url" as const,
-              image_url: { url: `data:${p.mimeType};base64,${p.data}` },
-            },
-      );
-      return { role: m.role, content: parts };
-    });
-    // Honor an explicit system override even when no system message was given.
-    const finalMessages =
-      opts.system !== undefined && !messages.some((m) => m.role === "system")
-        ? [{ role: "system" as const, content: opts.system }, ...oaiMessages]
-        : oaiMessages;
-
-    const body: Record<string, unknown> = {
-      model: this.cfg.llmModel,
-      messages: finalMessages,
-      stream: false,
-    };
-    if (opts.maxTokens != null) body.max_tokens = opts.maxTokens;
-    if (opts.temperature != null) body.temperature = opts.temperature;
-    if (opts.stopSequences?.length) body.stop = opts.stopSequences;
-
-    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-    let signal = opts.signal;
-    if (opts.timeoutMs != null) {
-      const ctrl = new AbortController();
-      timeoutHandle = setTimeout(() => ctrl.abort(), opts.timeoutMs);
-      if (opts.signal) {
-        if (opts.signal.aborted) ctrl.abort();
-        else opts.signal.addEventListener("abort", () => ctrl.abort(), { once: true });
-      }
-      signal = ctrl.signal;
-    }
+    const maxResponseBytes = validatedMaxResponseBytes(opts.maxResponseBytes);
+    const body = completionRequestBody(this.cfg.llmModel, messages, opts);
+    const abort = completionAbort(opts);
     try {
       const res = await fetch(`${this.cfg.llmBaseUrl}/chat/completions`, {
         method: "POST",
         headers: this.headers(),
         body: JSON.stringify(body),
-        signal,
+        signal: abort.signal,
       });
-      if (!res.ok) {
-        const errBody = await res.text();
-        throw new Error(`LLM endpoint returned HTTP ${res.status}: ${errBody.slice(0, 300)}`);
-      }
-      const data = (await res.json()) as {
-        choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
-        model?: string;
-      };
-      const choice = data.choices?.[0];
-      return {
-        text: choice?.message?.content ?? "",
-        ...(data.model ? { model: data.model } : {}),
-        ...(choice?.finish_reason ? { stopReason: choice.finish_reason } : {}),
-      };
+      return completionResult(await completionPayload(res, maxResponseBytes));
     } finally {
-      if (timeoutHandle) clearTimeout(timeoutHandle);
+      abort.dispose();
     }
   }
 

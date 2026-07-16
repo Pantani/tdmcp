@@ -27,6 +27,9 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "create_python_script", // raw client-authored code stored in DATs (also gated by rawPython)
   "author_script_operator", // raw client-authored Script callback code (also gated by rawPython)
   "delete_td_node", // removes nodes
+  "edit_td_node_metadata", // can rename/move operators and rewrite live metadata
+  "add_custom_parameters", // lifecycle can edit/delete parameters and custom pages
+  "save_td_project", // writes or overwrites a .toe on disk after consent
   "rebuild_network", // can clear/recreate a parent's children
   "edit_dat_content", // destructive DAT rewrite, even though scoped/guarded
   "set_dat_content", // whole-DAT overwrite
@@ -61,6 +64,7 @@ const SAFE_PROFILE_EXCLUDE = new Set<string>([
   "merge_vaults", // the 'theirs' strategy overwrites files in the target vault
   "manage_component_storage", // the delete action removes storage keys; set overwrites values
   "macro_recorder", // stop writes a caller-named file (absolute paths allowed), truncating any existing file
+  "manage_agent_skills", // installs, updates, or removes manifest-owned local skill files
 ]);
 
 /**
@@ -83,6 +87,7 @@ const DIRECTORY_PROFILE_ALLOW = new Set<string>([
   "list_recipes",
   "apply_recipe",
   "browse_library",
+  "get_td_docs",
 ]);
 
 export const runtimeToolRegistrars: ToolRegistrar[] = [
@@ -95,6 +100,38 @@ export const runtimeToolRegistrars: ToolRegistrar[] = [
   ...vaultRegistrars,
   ...aiRegistrars,
 ];
+
+export interface RuntimeToolMetadata {
+  title?: string;
+  description?: string;
+  enabled: true;
+}
+
+/**
+ * Build a registration-derived, read-only tool catalog without starting an MCP
+ * transport. The agent CLI uses this only to ground the opt-in visual planner;
+ * callbacks are deliberately discarded and can never be executed through the
+ * catalog.
+ */
+export function collectRuntimeToolMetadata(ctx: ToolContext): Record<string, RuntimeToolMetadata> {
+  const catalog: Record<string, RuntimeToolMetadata> = {};
+  const recorder = {
+    registerTool(name: string, config: unknown): undefined {
+      const metadata =
+        config !== null && typeof config === "object"
+          ? (config as { title?: unknown; description?: unknown })
+          : {};
+      catalog[name] = {
+        ...(typeof metadata.title === "string" ? { title: metadata.title } : {}),
+        ...(typeof metadata.description === "string" ? { description: metadata.description } : {}),
+        enabled: true,
+      };
+      return undefined;
+    },
+  };
+  registerToolRegistrars(recorder as unknown as McpServer, ctx, runtimeToolRegistrars);
+  return catalog;
+}
 
 export function registerToolRegistrars(
   server: McpServer,

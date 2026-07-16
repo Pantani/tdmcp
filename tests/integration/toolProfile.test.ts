@@ -30,6 +30,9 @@ const SAFE_PROFILE_EXCLUDE = [
   "create_python_script",
   "author_script_operator",
   "delete_td_node",
+  "edit_td_node_metadata",
+  "add_custom_parameters",
+  "save_td_project",
   "rebuild_network",
   "edit_dat_content",
   "set_dat_content",
@@ -64,6 +67,7 @@ const SAFE_PROFILE_EXCLUDE = [
   "merge_vaults",
   "manage_component_storage",
   "macro_recorder",
+  "manage_agent_skills",
 ];
 
 // Build/inspect surface that the safe profile must keep available.
@@ -76,6 +80,7 @@ const SAFE_PROFILE_KEEP = [
   "get_td_classes",
   "load_session_profile",
   "search_operators",
+  "get_td_docs",
 ];
 
 const DIRECTORY_PROFILE_TOOLS = [
@@ -94,6 +99,7 @@ const DIRECTORY_PROFILE_TOOLS = [
   "list_recipes",
   "apply_recipe",
   "browse_library",
+  "get_td_docs",
 ];
 
 async function toolList(env: NodeJS.ProcessEnv = {}) {
@@ -134,6 +140,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     expect(names).not.toContain("create_panic");
     expect(names).not.toContain("manage_checkpoint");
     expect(names).not.toContain("manage_component");
+    expect(names).not.toContain("add_custom_parameters");
     expect(names).not.toContain("manage_packages");
     expect(names).not.toContain("make_portable_tox");
     expect(names).not.toContain("export_recipe_bundle");
@@ -163,7 +170,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
   it("directory exposes exactly the compact registry-facing surface", async () => {
     const names = await toolNames({ TDMCP_TOOL_PROFILE: "directory" });
     expect(names.sort()).toEqual([...DIRECTORY_PROFILE_TOOLS].sort());
-    expect(names).toHaveLength(15);
+    expect(names).toHaveLength(16);
   });
 
   it("directory is a non-destructive subset of safe", async () => {
@@ -180,7 +187,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
     expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
-    expect(SAFE_PROFILE_EXCLUDE.length).toBe(39);
+    expect(SAFE_PROFILE_EXCLUDE.length).toBe(43);
   });
 
   it("safe exclusion list matches destructive tool annotations", async () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 import { isLocalOllama } from "../../src/cli/chat.js";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { type AgentEvent, runAgentTurn } from "../../src/llm/agent.js";
@@ -10,6 +11,7 @@ import {
   type LlmConfig,
 } from "../../src/llm/client.js";
 import { buildHandoffPrompt } from "../../src/llm/handoff.js";
+import { createMutationDescriptor } from "../../src/llm/mutationVerification.js";
 import { resolveRequestedTier } from "../../src/llm/server.js";
 import {
   CREATIVE_TOOLS,
@@ -56,6 +58,7 @@ describe("local copilot — curated tool registry", () => {
     expect(names).toContain("get_td_nodes");
     expect(names).toContain("create_td_node");
     expect(names).toContain("connect_nodes");
+    expect(names).toContain("manage_project_brief");
     // The whole point: no system generators, no escape hatches.
     expect(names).not.toContain("create_visual_system");
     expect(names).not.toContain("create_feedback_network");
@@ -72,6 +75,7 @@ describe("local copilot — curated tool registry", () => {
     expect(byName.get_td_nodes).toBe(false);
     expect(byName.create_td_node).toBe(true);
     expect(byName.delete_td_node).toBe(true);
+    expect(byName.manage_project_brief).toBe(true);
   });
 
   it("the safe tier exposes only read-only tools", () => {
@@ -79,7 +83,29 @@ describe("local copilot — curated tool registry", () => {
     expect(safe.length).toBeGreaterThan(0);
     expect(safe.every((t) => !t.mutates)).toBe(true);
     expect(safe.map((t) => t.name)).not.toContain("create_td_node");
+    expect(safe.map((t) => t.name)).not.toContain("manage_project_brief");
+    expect(resolveTools("standard").map((t) => t.name)).toContain("manage_project_brief");
     expect(resolveTools("standard")).toHaveLength(LLM_TOOLS.length);
+  });
+
+  it("applies calibration as a maximum tier and fails closed when enforce has no decision", () => {
+    const verifiedStandard = {
+      effectiveTier: "standard" as const,
+      policyReason: "enforce_verified_cap" as const,
+    };
+
+    expect(resolveTools("creative", { calibration: verifiedStandard })).toHaveLength(
+      LLM_TOOLS.length,
+    );
+    expect(
+      resolveTools("safe", { calibration: verifiedStandard }).every((tool) => !tool.mutates),
+    ).toBe(true);
+    expect(
+      resolveTools("creative", { calibrationMode: "enforce" }).every((tool) => !tool.mutates),
+    ).toBe(true);
+    expect(resolveTools("creative", { calibrationMode: "recommend" })).toHaveLength(
+      LLM_TOOLS.length + CREATIVE_TOOLS.length,
+    );
   });
 
   it("exposes the new read-only KB tools to every tier", () => {
@@ -189,6 +215,439 @@ describe("local copilot — streaming accumulator", () => {
 });
 
 describe("local copilot — agent loop", () => {
+  it("grounds one turn before the latest user message and never persists the evidence", async () => {
+    const getEditorContext = vi.fn().mockResolvedValue({
+      project: { name: "show.toe", folder: "/private", save_version: 1, save_build: 2 },
+      touchdesigner: { version: "2025", build: "32820" },
+      perform_mode: false,
+      ui_available: true,
+      panes: [{ type: "NETWORKEDITOR", active: true, name: "pane1" }],
+      active_network_editor: {
+        pane: { type: "NETWORKEDITOR", name: "pane1" },
+        owner: "/project1/scene",
+        current: "/project1/scene/noise1",
+        selected: ["/project1/scene/noise1"],
+        rollover_operator: null,
+        rollover_parameter: null,
+        viewport: { x: 10, y: 20, zoom: 0.8 },
+      },
+      warnings: [],
+    });
+    const ctx = { ...makeCtx(), client: { getEditorContext } } as unknown as ToolContext;
+    let seenMessages: ChatMessage[] = [];
+    let seenTools: Array<{ function: { name: string } }> = [];
+    const events: AgentEvent[] = [];
+    const model = {
+      chatStream: async (messages: ChatMessage[], tools: Array<{ function: { name: string } }>) => {
+        seenMessages = [...messages];
+        seenTools = tools;
+        return { role: "assistant", content: "ok" };
+      },
+    } as unknown as LlmClient;
+
+    const returned = await runAgentTurn(
+      ctx,
+      model,
+      [{ role: "user", content: "inspect this node" }],
+      (event) => events.push(event),
+      { tools: resolveTools("safe") },
+    );
+
+    expect(getEditorContext).toHaveBeenCalledOnce();
+    expect(seenMessages.at(-3)?.content).toContain("tdmcp_untrusted_editor_context_json");
+    expect(seenMessages.at(-2)?.content).toContain("UNTRUSTED_PROJECT_BRIEF");
+    expect(seenMessages.at(-1)?.content).toBe("inspect this node");
+    expect(JSON.stringify(returned)).not.toContain("tdmcp_untrusted_editor_context_json");
+    expect(JSON.stringify(returned)).not.toContain("UNTRUSTED_PROJECT_BRIEF");
+    expect(events.filter((event) => event.type === "receipt")).toHaveLength(1);
+    expect(seenTools.map((tool) => tool.function.name)).toContain("get_editor_context");
+    expect(seenTools.map((tool) => tool.function.name)).toContain("invoke_registered_prompt");
+    expect(seenMessages[0]?.content).not.toContain("default parent COMP is /project1");
+  });
+
+  it("renders a registered prompt only as a tool result", async () => {
+    const model = scriptedClient([
+      {
+        role: "assistant",
+        content: null,
+        tool_calls: [
+          {
+            id: "p1",
+            type: "function",
+            function: {
+              name: "invoke_registered_prompt",
+              arguments: '{"name":"debug_network","arguments":{"root_path":"/project1"}}',
+            },
+          },
+        ],
+      },
+      { role: "assistant", content: "I will follow the bounded playbook." },
+    ]);
+
+    const messages = await runAgentTurn(
+      makeCtx(),
+      model,
+      [{ role: "user", content: "use the debug prompt" }],
+      () => {},
+      { tools: resolveTools("safe") },
+    );
+
+    const rendered = messages.find(
+      (message) => message.role === "tool" && message.name === "invoke_registered_prompt",
+    );
+    expect(rendered?.content).toContain('"status":"rendered"');
+    expect(messages.filter((message) => message.role === "system")).toHaveLength(1);
+    expect(messages[0]?.content).not.toContain("Debug the TouchDesigner network at /project1");
+  });
+
+  it("attaches PASS verification before the next model step", async () => {
+    const mutationTool = {
+      name: "test_create",
+      description: "synthetic local mutation",
+      schema: z.object({ type: z.string() }),
+      mutates: true,
+      mutation: createMutationDescriptor(),
+      run: vi.fn(async () => ({
+        content: [{ type: "text" as const, text: "Created test node." }],
+        structuredContent: { node: { path: "/project1/noise1", parameter_warnings: [] } },
+      })),
+    };
+    const bridge = {
+      getEditorContext: vi.fn().mockResolvedValue({
+        project: {},
+        touchdesigner: {},
+        perform_mode: false,
+        ui_available: true,
+        panes: [],
+        active_network_editor: {
+          pane: {},
+          owner: "/project1",
+          current: "/project1/noise1",
+          selected: [],
+          rollover_operator: null,
+          rollover_parameter: null,
+          viewport: null,
+        },
+        warnings: [],
+      }),
+      getNode: vi.fn().mockResolvedValue({
+        path: "/project1/noise1",
+        type: "noiseTOP",
+        parameters: {},
+      }),
+      getNetworkErrors: vi.fn().mockResolvedValue({ errors: [] }),
+      getNetworkTopology: vi.fn(),
+      sampleGrid: vi.fn(),
+      getInfo: vi.fn(),
+      getNodes: vi.fn(),
+    };
+    const ctx = { ...makeCtx(), client: bridge } as unknown as ToolContext;
+    const turns: ChatMessage[] = [
+      {
+        role: "assistant",
+        content: null,
+        tool_calls: [
+          {
+            id: "m1",
+            type: "function",
+            function: { name: "test_create", arguments: '{"type":"noiseTOP"}' },
+          },
+        ],
+      },
+      { role: "assistant", content: "verified" },
+    ];
+    let callIndex = 0;
+    let secondStep: ChatMessage[] = [];
+    const model = {
+      chatStream: async (messages: ChatMessage[]) => {
+        if (callIndex === 1) secondStep = [...messages];
+        return turns[callIndex++] as ChatMessage;
+      },
+    } as unknown as LlmClient;
+    const events: AgentEvent[] = [];
+
+    await runAgentTurn(
+      ctx,
+      model,
+      [{ role: "user", content: "create it" }],
+      (event) => events.push(event),
+      { tools: [mutationTool] },
+    );
+
+    const done = events.find(
+      (event): event is Extract<AgentEvent, { type: "tool"; status: "done" }> =>
+        event.type === "tool" && event.status === "done",
+    );
+    expect(done?.verification?.status).toBe("PASS");
+    const toolResult = secondStep.find((message) => message.role === "tool");
+    expect(toolResult?.content).toContain('"status":"PASS"');
+    expect(bridge.getNode).toHaveBeenCalledOnce();
+    expect(mutationTool.run).toHaveBeenCalledOnce();
+  });
+
+  it("returns bounded validation recovery evidence without dispatching the tool", async () => {
+    const run = vi.fn();
+    const tool = {
+      name: "strict_read",
+      description: "strict synthetic read",
+      schema: z.object({ path: z.string() }),
+      mutates: false,
+      run,
+    };
+    const model = scriptedClient([
+      {
+        role: "assistant",
+        content: null,
+        tool_calls: [
+          {
+            id: "r1",
+            type: "function",
+            function: { name: "strict_read", arguments: '{"path":42}' },
+          },
+        ],
+      },
+      { role: "assistant", content: "corrected later" },
+    ]);
+    const events: AgentEvent[] = [];
+
+    const messages = await runAgentTurn(
+      makeCtx(),
+      model,
+      [{ role: "user", content: "inspect" }],
+      (event) => events.push(event),
+      { tools: [tool] },
+    );
+
+    expect(run).not.toHaveBeenCalled();
+    const done = events.find(
+      (event): event is Extract<AgentEvent, { type: "tool"; status: "done" }> =>
+        event.type === "tool" && event.status === "done",
+    );
+    expect(done?.recovery).toMatchObject({
+      category: "invalid_args",
+      outcome: "recovered",
+      mutationRetry: "blocked",
+    });
+    expect(messages.find((message) => message.role === "tool")?.content).toContain(
+      '"mutationRetry":"blocked"',
+    );
+  });
+
+  it("passes only bounded validated parameter metadata into a real menu recovery", async () => {
+    const getParameterMenu = vi.fn().mockResolvedValue({ names: ["add", "multiply"] });
+    const bridge = {
+      getEditorContext: vi.fn().mockRejectedValue(new Error("headless")),
+      getParameterMenu,
+    };
+    const ctx = { ...makeCtx(), client: bridge } as unknown as ToolContext;
+    const tool = {
+      name: "strict_menu_update",
+      description: "synthetic menu update",
+      schema: z.object({
+        path: z.string(),
+        parameters: z.record(z.string(), z.unknown()),
+      }),
+      mutates: false,
+      run: vi.fn(async () => ({
+        isError: true,
+        content: [{ type: "text" as const, text: "invalid menu" }],
+        structuredContent: { error: { api_code: "invalid_menu_value" } },
+      })),
+    };
+    const model = scriptedClient([
+      {
+        role: "assistant",
+        content: null,
+        tool_calls: [
+          {
+            id: "menu-1",
+            type: "function",
+            function: {
+              name: tool.name,
+              arguments: '{"path":"/project1/comp1","parameters":{"operation":"secret-choice"}}',
+            },
+          },
+        ],
+      },
+      { role: "assistant", content: "Use one of the live choices." },
+    ]);
+    const events: AgentEvent[] = [];
+
+    await runAgentTurn(
+      ctx,
+      model,
+      [{ role: "user", content: "set operation" }],
+      (event) => events.push(event),
+      { tools: [tool] },
+    );
+
+    expect(getParameterMenu).toHaveBeenCalledWith("/project1/comp1", "operation", {
+      timeoutMs: 1000,
+      retryGet: false,
+    });
+    const done = events.find(
+      (event): event is Extract<AgentEvent, { type: "tool"; status: "done" }> =>
+        event.type === "tool" && event.status === "done",
+    );
+    expect(done?.recovery).toMatchObject({
+      category: "menu_invalid",
+      action: "probe_menu",
+      outcome: "recovered",
+      evidence: { parameter: "operation", choices: ["add", "multiply"] },
+    });
+    expect(JSON.stringify(done?.recovery)).not.toContain("secret-choice");
+  });
+
+  it("keeps recovered evidence probes in the failure streak until a real success", async () => {
+    const run = vi.fn();
+    const tool = {
+      name: "strict_streak_read",
+      description: "synthetic strict read",
+      schema: z.object({ path: z.string() }),
+      mutates: false,
+      run,
+    };
+    const invalidCall = (id: string): ChatMessage => ({
+      role: "assistant",
+      content: null,
+      tool_calls: [
+        {
+          id,
+          type: "function",
+          function: { name: tool.name, arguments: '{"path":42}' },
+        },
+      ],
+    });
+    const events: AgentEvent[] = [];
+
+    await runAgentTurn(
+      makeCtx(),
+      scriptedClient([
+        invalidCall("recover-1"),
+        invalidCall("recover-2"),
+        { role: "assistant", content: "handoff" },
+      ]),
+      [{ role: "user", content: "inspect twice" }],
+      (event) => events.push(event),
+      { tools: [tool] },
+    );
+
+    expect(run).not.toHaveBeenCalled();
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "tool" &&
+          event.status === "done" &&
+          event.recovery?.outcome === "recovered",
+      ),
+    ).toHaveLength(2);
+    expect(events.filter((event) => event.type === "suggestion")).toHaveLength(1);
+  });
+
+  it("resets the failure streak only after a genuinely successful tool outcome", async () => {
+    const tool = {
+      name: "strict_reset_read",
+      description: "synthetic strict read",
+      schema: z.object({ path: z.string() }),
+      mutates: false,
+      run: vi.fn(async () => ({ content: [{ type: "text" as const, text: "ok" }] })),
+    };
+    const call = (id: string, path: string | number): ChatMessage => ({
+      role: "assistant",
+      content: null,
+      tool_calls: [
+        {
+          id,
+          type: "function",
+          function: { name: tool.name, arguments: JSON.stringify({ path }) },
+        },
+      ],
+    });
+    const events: AgentEvent[] = [];
+
+    await runAgentTurn(
+      makeCtx(),
+      scriptedClient([
+        call("reset-fail-1", 42),
+        call("reset-success", "/project1"),
+        call("reset-fail-2", 42),
+        { role: "assistant", content: "done" },
+      ]),
+      [{ role: "user", content: "inspect" }],
+      (event) => events.push(event),
+      { tools: [tool] },
+    );
+
+    expect(tool.run).toHaveBeenCalledOnce();
+    expect(events.filter((event) => event.type === "suggestion")).toHaveLength(0);
+  });
+
+  it("bypasses recovery for emergency-equivalent names without overmatching failover", async () => {
+    const emergencyNames = [
+      "panic_status",
+      "safety_blackout",
+      "emergency_stop",
+      "e_stop",
+      "estop",
+      "kill_switch",
+      "master_kill",
+      "show_fail_safe",
+      "stop_all",
+      "all_stop",
+    ];
+    const ordinaryName = "create_show_failover";
+    const getInfo = vi.fn().mockResolvedValue({ build: "2025.32820" });
+    const ctx = {
+      ...makeCtx(),
+      client: {
+        getEditorContext: vi.fn().mockRejectedValue(new Error("headless")),
+        getInfo,
+      },
+    } as unknown as ToolContext;
+    const failureResult = async () => ({
+      isError: true,
+      content: [{ type: "text" as const, text: "stale" }],
+      structuredContent: { error: { api_code: "bridge_stale" } },
+    });
+    const tools = [...emergencyNames, ordinaryName].map((name) => ({
+      name,
+      description: "synthetic safety failure",
+      schema: z.object({}),
+      mutates: false,
+      run: vi.fn(failureResult),
+    }));
+    const events: AgentEvent[] = [];
+
+    await runAgentTurn(
+      ctx,
+      scriptedClient([
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: tools.map((tool, index) => ({
+            id: `safety-${index}`,
+            type: "function" as const,
+            function: { name: tool.name, arguments: "{}" },
+          })),
+        },
+        { role: "assistant", content: "stopped safely" },
+      ]),
+      [{ role: "user", content: "stop" }],
+      (event) => events.push(event),
+      { tools },
+    );
+
+    const done = events.filter(
+      (event): event is Extract<AgentEvent, { type: "tool"; status: "done" }> =>
+        event.type === "tool" && event.status === "done",
+    );
+    for (const name of emergencyNames) {
+      expect(done.find((event) => event.name === name)?.recovery).toBeUndefined();
+    }
+    expect(done.find((event) => event.name === ordinaryName)?.recovery?.outcome).toBe("recovered");
+    expect(getInfo).toHaveBeenCalledOnce();
+  });
+
   it("runs a tool call, streams tokens, then returns the final answer", async () => {
     const client = scriptedClient([
       {
@@ -227,7 +686,11 @@ describe("local copilot — agent loop", () => {
     });
     expect(events.some((e) => e.type === "tool" && e.status === "done" && e.ok)).toBe(true);
     expect(events).toContainEqual({ type: "token", text: "There are several TOP classes." });
-    expect(events.at(-1)).toEqual({ type: "answer", content: "There are several TOP classes." });
+    expect(events).toContainEqual({
+      type: "answer",
+      content: "There are several TOP classes.",
+    });
+    expect(events.at(-1)?.type).toBe("receipt");
   });
 
   it("suggests a handoff after consecutive tool failures, once per turn", async () => {
@@ -312,7 +775,59 @@ describe("local copilot — agent loop", () => {
       (e) => events.push(e),
       { signal: ac.signal },
     );
-    expect(events).toEqual([{ type: "error", message: "cancelled" }]);
+    expect(events[0]).toEqual({ type: "error", message: "cancelled" });
+    expect(events).toHaveLength(2);
+    expect(events[1]).toMatchObject({
+      type: "receipt",
+      receipt: { terminal_status: "cancelled", persistence: "off" },
+    });
+  });
+
+  it("stops a tool batch after cancellation and finalizes as cancelled", async () => {
+    const controller = new AbortController();
+    const first = vi.fn(async () => {
+      controller.abort();
+      return { content: [{ type: "text" as const, text: "first complete" }] };
+    });
+    const second = vi.fn(async () => ({
+      content: [{ type: "text" as const, text: "must not run" }],
+    }));
+    const tools = [
+      { name: "first", description: "first", schema: z.object({}), mutates: false, run: first },
+      { name: "second", description: "second", schema: z.object({}), mutates: false, run: second },
+    ];
+    const events: AgentEvent[] = [];
+
+    await runAgentTurn(
+      makeCtx(),
+      scriptedClient([
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [
+            { id: "first-call", type: "function", function: { name: "first", arguments: "{}" } },
+            {
+              id: "second-call",
+              type: "function",
+              function: { name: "second", arguments: "{}" },
+            },
+          ],
+        },
+      ]),
+      [{ role: "user", content: "run then cancel" }],
+      (event) => events.push(event),
+      { tools, signal: controller.signal, maxSteps: 1 },
+    );
+
+    expect(first).toHaveBeenCalledOnce();
+    expect(second).not.toHaveBeenCalled();
+    expect(
+      events.filter((event) => event.type === "tool" && event.status === "start"),
+    ).toHaveLength(1);
+    expect(events.at(-1)).toMatchObject({
+      type: "receipt",
+      receipt: { terminal_status: "cancelled", persistence: "off" },
+    });
   });
 
   it("refuses a mutating tool call when running in the safe tier", async () => {
@@ -378,7 +893,11 @@ describe("local copilot — agent loop", () => {
 
     expect(calls).toBe(2);
     expect(messages.at(-1)?.content).toContain("maximum number of steps");
-    expect(events.at(-1)).toEqual({ type: "answer", content: messages.at(-1)?.content });
+    expect(events).toContainEqual({ type: "answer", content: messages.at(-1)?.content });
+    expect(events.at(-1)).toMatchObject({
+      type: "receipt",
+      receipt: { terminal_status: "max_steps" },
+    });
   });
 
   it("caps programmatic maximum step overrides", async () => {

@@ -1,6 +1,10 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
+  manageProjectBriefImpl,
+  manageProjectBriefLlmSchema,
+} from "../tools/ai/manageProjectBrief.js";
+import {
   createAudioReactiveImpl,
   createAudioReactiveSchema,
 } from "../tools/layer1/createAudioReactive.js";
@@ -42,6 +46,7 @@ import {
   draftRecipeFromTutorialSchema,
 } from "../tools/layer3/draftRecipeFromTutorial.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
+import { getEditorContextImpl, getEditorContextSchema } from "../tools/layer3/getEditorContext.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
 import {
   getOperatorWorkflowGuideImpl,
@@ -92,11 +97,31 @@ import {
   validateOperatorChainSchema,
 } from "../tools/layer3/validateOperatorChain.js";
 import type { ToolContext } from "../tools/types.js";
+import type { CalibrationMode, CalibrationPolicyResolution } from "./calibration.js";
 import type { OpenAITool } from "./client.js";
+import { classifyFailure, type RecoveryReport, type ToolFailure } from "./failureRecovery.js";
+import {
+  connectMutationDescriptor,
+  createMutationDescriptor,
+  deleteMutationDescriptor,
+  generatorMutationDescriptor,
+  type MutationDescriptor,
+  type MutationVerificationPlan,
+  type MutationVerificationReport,
+  updateParametersMutationDescriptor,
+} from "./mutationVerification.js";
 import { createProjectRagSearchTool } from "./projectRagSearchTool.js";
 
-// biome-ignore lint/suspicious/noExplicitAny: args are validated by each tool's zod schema before use.
-type Runner = (ctx: ToolContext, args: any) => CallToolResult | Promise<CallToolResult>;
+type Runner = (
+  ctx: ToolContext,
+  // biome-ignore lint/suspicious/noExplicitAny: args are validated by the tool's Zod schema before use.
+  args: any,
+  execution?: LlmToolExecution,
+) => CallToolResult | Promise<CallToolResult>;
+
+export interface LlmToolExecution {
+  signal?: AbortSignal;
+}
 
 export interface LlmTool {
   /** Function name advertised to the model (mirrors the MCP tool name). */
@@ -106,6 +131,9 @@ export interface LlmTool {
   run: Runner;
   /** Whether the tool changes the TD project (vs. read-only inspection). */
   mutates: boolean;
+  /** Deterministic state contract for a successful local-copilot mutation. */
+  // biome-ignore lint/suspicious/noExplicitAny: each descriptor receives its tool's validated schema output.
+  mutation?: MutationDescriptor<any>;
 }
 
 const t = (
@@ -114,12 +142,15 @@ const t = (
   schema: z.ZodTypeAny,
   run: Runner,
   mutates = false,
+  // biome-ignore lint/suspicious/noExplicitAny: each descriptor receives its tool's validated schema output.
+  mutation?: MutationDescriptor<any>,
 ): LlmTool => ({
   name,
   description,
   schema,
   run,
   mutates,
+  ...(mutation ? { mutation } : {}),
 });
 
 /**
@@ -138,6 +169,12 @@ export const LLM_TOOLS: LlmTool[] = [
     (ctx) => getTdInfoImpl(ctx),
   ),
   t(
+    "get_editor_context",
+    "Read compact active Network Editor, selection, rollover, viewport and perform-mode context.",
+    getEditorContextSchema,
+    getEditorContextImpl,
+  ),
+  t(
     "diagnose_hardware_environment",
     "Preflight a physical installation: bridge, display/projector topology, and generated sensor/helper status DATs.",
     diagnoseHardwareEnvironmentSchema,
@@ -145,7 +182,7 @@ export const LLM_TOOLS: LlmTool[] = [
   ),
   t(
     "get_td_nodes",
-    "List the direct child nodes of a COMP (defaults to /project1).",
+    "List the direct child nodes of an explicit COMP path.",
     getTdNodesSchema,
     getTdNodesImpl,
   ),
@@ -301,6 +338,7 @@ export const LLM_TOOLS: LlmTool[] = [
     createTdNodeSchema,
     createTdNodeImpl,
     true,
+    createMutationDescriptor(),
   ),
   t(
     "update_td_node_parameters",
@@ -308,13 +346,29 @@ export const LLM_TOOLS: LlmTool[] = [
     updateTdNodeParametersSchema,
     updateTdNodeParametersImpl,
     true,
+    updateParametersMutationDescriptor(),
   ),
-  t("delete_td_node", "Delete a node.", deleteTdNodeSchema, deleteTdNodeImpl, true),
+  t(
+    "delete_td_node",
+    "Ask for a native Delete / Bypass / Keep decision, or apply an explicit bypass policy.",
+    deleteTdNodeSchema,
+    deleteTdNodeImpl,
+    true,
+    deleteMutationDescriptor(),
+  ),
   t(
     "connect_nodes",
     "Wire one node's output into another node's input.",
     connectNodesSchema,
     connectNodesImpl,
+    true,
+    connectMutationDescriptor(),
+  ),
+  t(
+    "manage_project_brief",
+    "Read or atomically replace the bounded project-owned creative brief. Replacement requires an exact revision precondition.",
+    manageProjectBriefLlmSchema,
+    manageProjectBriefImpl,
     true,
   ),
 ];
@@ -334,6 +388,7 @@ export const CREATIVE_TOOLS: LlmTool[] = [
     createGenerativeArtSchema,
     createGenerativeArtImpl,
     true,
+    generatorMutationDescriptor(),
   ),
   t(
     "create_feedback_network",
@@ -341,6 +396,7 @@ export const CREATIVE_TOOLS: LlmTool[] = [
     createFeedbackNetworkSchema,
     createFeedbackNetworkImpl,
     true,
+    generatorMutationDescriptor(),
   ),
   t(
     "create_audio_reactive",
@@ -348,6 +404,7 @@ export const CREATIVE_TOOLS: LlmTool[] = [
     createAudioReactiveSchema,
     createAudioReactiveImpl,
     true,
+    generatorMutationDescriptor(),
   ),
 ];
 
@@ -370,6 +427,19 @@ export interface ResolveToolsOptions {
    * tool. Should be `true` only when `ctx.projectRag !== undefined`.
    */
   projectRag?: boolean;
+  /** Prevalidated runtime calibration policy. Never raises the caller's requested tier. */
+  calibration?: CalibrationPolicyResolution;
+  /** Enforce without a valid decision fails closed to safe; recommend preserves compatibility. */
+  calibrationMode?: CalibrationMode;
+}
+
+const TOOL_TIER_RANK: Record<ToolTier, number> = { safe: 0, standard: 1, creative: 2 };
+
+function calibratedTier(tier: ToolTier, opts: ResolveToolsOptions): ToolTier {
+  if (!opts.calibration) return opts.calibrationMode === "enforce" ? "safe" : tier;
+  return TOOL_TIER_RANK[opts.calibration.effectiveTier] < TOOL_TIER_RANK[tier]
+    ? opts.calibration.effectiveTier
+    : tier;
 }
 
 /**
@@ -380,10 +450,11 @@ export function resolveTools(
   tier: ToolTier = "standard",
   opts: ResolveToolsOptions = {},
 ): LlmTool[] {
+  const effectiveTier = calibratedTier(tier, opts);
   const base =
-    tier === "safe"
+    effectiveTier === "safe"
       ? LLM_TOOLS.filter((tool) => !tool.mutates)
-      : tier === "creative"
+      : effectiveTier === "creative"
         ? [...LLM_TOOLS, ...CREATIVE_TOOLS]
         : LLM_TOOLS;
   if (opts.projectRag === true) {
@@ -418,6 +489,218 @@ export interface ToolOutcome {
   summary: string;
   /** Full payload (text + structured JSON) fed back to the model. */
   payload: string;
+  /** Machine result from the tool; never reconstructed from prose. */
+  structuredContent?: Record<string, unknown>;
+  /** Bounded plan derived only from validated args + structured result. */
+  mutationPlan?: MutationVerificationPlan;
+  verification?: MutationVerificationReport;
+  failure?: ToolFailure;
+  recovery?: RecoveryReport;
+  validationIssues?: Array<{ path: string; code: string; message: string }>;
+  affectedPaths?: string[];
+  /** Bounded recovery selectors derived from validated keys only; never contains values/raw args. */
+  recoveryMetadata?: { parameter?: string; searchRoot?: string };
+}
+
+function objectValue(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function numberValue(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function validationIssues(error: z.ZodError): ToolOutcome["validationIssues"] {
+  return error.issues.slice(0, 12).map((issue) => ({
+    path: issue.path.map(String).join(".").slice(0, 160) || "arguments",
+    code: issue.code.slice(0, 80),
+    message: "Value does not satisfy the registered tool schema.",
+  }));
+}
+
+function affectedPaths(args: unknown): string[] {
+  const value = objectValue(args);
+  if (!value) return [];
+  const pathKeys = ["path", "parent_path", "source_path", "target_path"];
+  return [
+    ...new Set(
+      pathKeys
+        .map((key) => stringValue(value[key]))
+        .filter((path): path is string => boundedTdPath(path) !== undefined),
+    ),
+  ].slice(0, 8);
+}
+
+function boundedTdPath(value: unknown): string | undefined {
+  return typeof value === "string" && value.startsWith("/") && value.length <= 240
+    ? value
+    : undefined;
+}
+
+function boundedParameter(value: unknown): string | undefined {
+  return typeof value === "string" && /^[A-Za-z][A-Za-z0-9_]{0,159}$/.test(value)
+    ? value
+    : undefined;
+}
+
+function parameterFromRecord(value: unknown): string | undefined {
+  const parameters = objectValue(value);
+  if (!parameters) return undefined;
+  const names = Object.keys(parameters);
+  return names.length === 1 ? boundedParameter(names[0]) : undefined;
+}
+
+function recoveryMetadata(args: unknown): { parameter?: string; searchRoot?: string } | undefined {
+  const value = objectValue(args);
+  if (!value) return undefined;
+  const parameter =
+    boundedParameter(value.parameter) ??
+    boundedParameter(value.par) ??
+    parameterFromRecord(value.parameters);
+  const searchRoot = boundedTdPath(value.parent_path);
+  if (!parameter && !searchRoot) return undefined;
+  return {
+    ...(parameter ? { parameter } : {}),
+    ...(searchRoot ? { searchRoot } : {}),
+  };
+}
+
+function failureFromResult(result: CallToolResult, mutates: boolean): ToolFailure {
+  const structured = objectValue(result.structuredContent);
+  const error = objectValue(structured?.error);
+  return classifyFailure({
+    phase: "dispatch",
+    mutates,
+    code: stringValue(error?.code),
+    apiCode: stringValue(error?.api_code),
+    status: numberValue(error?.status),
+  });
+}
+
+type PreparedToolArgs = { ok: true; data: unknown } | { ok: false; outcome: ToolOutcome };
+
+function prepareToolArgs(tool: LlmTool, name: string, rawArgs: string): PreparedToolArgs {
+  let parsed: unknown;
+  try {
+    parsed = rawArgs.trim() ? JSON.parse(rawArgs) : {};
+  } catch {
+    return {
+      ok: false,
+      outcome: {
+        ok: false,
+        summary: `bad JSON args for ${name}`,
+        payload: "Error: arguments were not valid JSON.",
+        failure: classifyFailure({ phase: "parse", mutates: tool.mutates, code: "bad_json" }),
+      },
+    };
+  }
+
+  const args = tool.schema.safeParse(parsed);
+  if (args.success) return { ok: true, data: args.data };
+  const issues = validationIssues(args.error);
+  return {
+    ok: false,
+    outcome: {
+      ok: false,
+      summary: `invalid args for ${name}`,
+      payload: `Error: invalid arguments: ${JSON.stringify({ issues })}`,
+      failure: classifyFailure({
+        phase: "validate",
+        mutates: tool.mutates,
+        code: "invalid_args",
+      }),
+      validationIssues: issues,
+    },
+  };
+}
+
+type ToolRun = { ok: true; result: CallToolResult } | { ok: false; outcome: ToolOutcome };
+
+async function runPreparedTool(
+  ctx: ToolContext,
+  tool: LlmTool,
+  name: string,
+  args: unknown,
+  execution: LlmToolExecution,
+): Promise<ToolRun> {
+  try {
+    return { ok: true, result: await tool.run(ctx, args, execution) };
+  } catch (error) {
+    const failure = classifyFailure({ phase: "dispatch", mutates: tool.mutates, error });
+    const paths = affectedPaths(args);
+    const metadata = recoveryMetadata(args);
+    return {
+      ok: false,
+      outcome: {
+        ok: false,
+        summary: `tool failed: ${name}`,
+        payload: `Error: ${failure.safeMessage}`,
+        failure,
+        ...(paths.length > 0 ? { affectedPaths: paths } : {}),
+        ...(metadata ? { recoveryMetadata: metadata } : {}),
+      },
+    };
+  }
+}
+
+function resultPayload(
+  text: string,
+  structuredContent: Record<string, unknown> | undefined,
+): string {
+  if (!structuredContent) return text;
+  const separator = text ? "\n\n" : "";
+  return `${text}${separator}${JSON.stringify(structuredContent)}`;
+}
+
+function resultMutationPlan(
+  tool: LlmTool,
+  args: unknown,
+  structuredContent: Record<string, unknown> | undefined,
+  ok: boolean,
+): MutationVerificationPlan | undefined {
+  if (!ok || !tool.mutates || !tool.mutation) return undefined;
+  return tool.mutation.plan(args, structuredContent);
+}
+
+function attachOutcomeEvidence(
+  outcome: ToolOutcome,
+  tool: LlmTool,
+  args: unknown,
+  result: CallToolResult,
+  structuredContent: Record<string, unknown> | undefined,
+): void {
+  const mutationPlan = resultMutationPlan(tool, args, structuredContent, outcome.ok);
+  const paths = affectedPaths(args);
+  const metadata = recoveryMetadata(args);
+  if (structuredContent) outcome.structuredContent = structuredContent;
+  if (mutationPlan) outcome.mutationPlan = mutationPlan;
+  if (!outcome.ok) outcome.failure = failureFromResult(result, tool.mutates);
+  if (paths.length > 0) outcome.affectedPaths = paths;
+  if (metadata) outcome.recoveryMetadata = metadata;
+}
+
+function completedToolOutcome(
+  tool: LlmTool,
+  name: string,
+  args: unknown,
+  result: CallToolResult,
+): ToolOutcome {
+  const text = textOf(result);
+  const structuredContent = objectValue(result.structuredContent);
+  const ok = !result.isError;
+  const outcome: ToolOutcome = {
+    ok,
+    summary: text.split("\n")[0] || name,
+    payload: resultPayload(text, structuredContent),
+  };
+  attachOutcomeEvidence(outcome, tool, args, result, structuredContent);
+  return outcome;
 }
 
 /** Validate args against the tool's schema, run it, and package the result for the model. */
@@ -426,6 +709,7 @@ export async function dispatchTool(
   name: string,
   rawArgs: string,
   tools: LlmTool[] = LLM_TOOLS,
+  execution: LlmToolExecution = {},
 ): Promise<ToolOutcome> {
   const tool = tools.find((candidate) => candidate.name === name);
   if (!tool)
@@ -433,32 +717,11 @@ export async function dispatchTool(
       ok: false,
       summary: `unknown tool: ${name}`,
       payload: `Error: no tool named "${name}".`,
+      failure: classifyFailure({ phase: "dispatch", mutates: false }),
     };
-
-  let parsed: unknown;
-  try {
-    parsed = rawArgs.trim() ? JSON.parse(rawArgs) : {};
-  } catch (err) {
-    return {
-      ok: false,
-      summary: `bad JSON args for ${name}`,
-      payload: `Error: arguments were not valid JSON: ${(err as Error).message}`,
-    };
-  }
-
-  const args = tool.schema.safeParse(parsed);
-  if (!args.success) {
-    return {
-      ok: false,
-      summary: `invalid args for ${name}`,
-      payload: `Error: invalid arguments: ${args.error.message}`,
-    };
-  }
-
-  const result = await tool.run(ctx, args.data);
-  const text = textOf(result);
-  const payload = result.structuredContent
-    ? `${text}\n\n${JSON.stringify(result.structuredContent)}`
-    : text;
-  return { ok: !result.isError, summary: text.split("\n")[0] ?? name, payload };
+  const prepared = prepareToolArgs(tool, name, rawArgs);
+  if (!prepared.ok) return prepared.outcome;
+  const run = await runPreparedTool(ctx, tool, name, prepared.data, execution);
+  if (!run.ok) return run.outcome;
+  return completedToolOutcome(tool, name, prepared.data, run.result);
 }

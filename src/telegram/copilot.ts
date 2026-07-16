@@ -1,6 +1,8 @@
 import type { AgentEvent, runAgentTurn as runAgentTurnFn } from "../llm/agent.js";
+import type { CalibrationMode, CalibrationPolicyResolution } from "../llm/calibration.js";
 import type { ChatMessage, LlmClient } from "../llm/client.js";
 import { resolveTools, type ToolTier } from "../llm/tools.js";
+import { formatTurnReceiptSummary } from "../llm/turnReceipt.js";
 import type { ToolContext } from "../tools/types.js";
 import type { TelegramUpdate } from "./client.js";
 
@@ -18,6 +20,7 @@ interface PendingPrompt {
   prompt: string;
   tier: ToolTier;
   createdAt: number;
+  noPersist: boolean;
 }
 
 export interface TelegramCopilotServiceOptions {
@@ -31,6 +34,15 @@ export interface TelegramCopilotServiceOptions {
   confirmTimeoutMs?: number;
   maxHistoryMessages?: number;
   now?: () => number;
+  calibrationMode?: CalibrationMode;
+  resolveCalibration?: (
+    tier: ToolTier,
+    signal?: AbortSignal,
+  ) => Promise<CalibrationPolicyResolution>;
+  projectRoot?: string;
+  receiptPersistence?: "off" | "persist";
+  receiptStorePath?: string;
+  noPersist?: boolean;
 }
 
 const DEFAULT_CONFIRM_TIMEOUT_MS = 60_000;
@@ -52,6 +64,10 @@ function commandOf(text: string): { command: string; rest: string } | undefined 
 
 function trimHistory(messages: ChatMessage[], max: number): ChatMessage[] {
   return messages.filter((m) => m.role !== "system").slice(-max);
+}
+
+function isTierCommand(command: string): boolean {
+  return command === "/safe" || command === "/standard" || command === "/creative";
 }
 
 export class TelegramCopilotService {
@@ -86,7 +102,7 @@ export class TelegramCopilotService {
       return;
     }
 
-    await this.handlePrompt(chatId, chatKey, state, text);
+    await this.handlePrompt(chatId, chatKey, state, text, false);
   }
 
   private isAllowed(chatId: string, userId?: string): boolean {
@@ -117,7 +133,7 @@ export class TelegramCopilotService {
     if (command === "/help" || command === "/start") {
       await this.send(
         chatId,
-        "tdmcp telegram commands: /status, /safe, /standard, /creative, /approve, /cancel, /panic.",
+        "tdmcp telegram commands: /status, /safe, /standard, /creative, /private <prompt>, /approve, /cancel, /panic.",
       );
       return;
     }
@@ -130,18 +146,16 @@ export class TelegramCopilotService {
       );
       return;
     }
-    if (command === "/safe" || command === "/standard" || command === "/creative") {
-      state.tier = command.slice(1) as ToolTier;
-      state.pending = undefined;
-      const suffix =
-        state.tier === "safe"
-          ? "Read-only prompts run immediately."
-          : `Non-safe prompts are staged first. Send /approve to execute the next ${state.tier} prompt.`;
-      await this.send(chatId, `tdmcp telegram: tier set to ${state.tier}. ${suffix}`);
+    if (isTierCommand(command)) {
+      await this.setTier(chatId, state, command.slice(1) as ToolTier);
       return;
     }
     if (command === "/approve") {
       await this.approve(chatId, chatKey, state);
+      return;
+    }
+    if (command === "/private") {
+      await this.handlePrivatePrompt(chatId, chatKey, state, rest);
       return;
     }
     if (command === "/cancel") {
@@ -160,14 +174,38 @@ export class TelegramCopilotService {
     await this.send(chatId, `tdmcp telegram: unknown command ${command}${rest ? ` ${rest}` : ""}.`);
   }
 
-  private async handlePrompt(
+  private async setTier(chatId: number | string, state: ChatState, tier: ToolTier): Promise<void> {
+    state.tier = tier;
+    state.pending = undefined;
+    const suffix =
+      tier === "safe"
+        ? "Read-only prompts run immediately."
+        : `Non-safe prompts are staged first. Send /approve to execute the next ${tier} prompt.`;
+    await this.send(chatId, `tdmcp telegram: tier set to ${tier}. ${suffix}`);
+  }
+
+  private async handlePrivatePrompt(
     chatId: number | string,
     chatKey: string,
     state: ChatState,
     prompt: string,
   ): Promise<void> {
+    if (!prompt) {
+      await this.send(chatId, "tdmcp telegram: /private requires a prompt.");
+      return;
+    }
+    await this.handlePrompt(chatId, chatKey, state, prompt, true);
+  }
+
+  private async handlePrompt(
+    chatId: number | string,
+    chatKey: string,
+    state: ChatState,
+    prompt: string,
+    noPersist: boolean,
+  ): Promise<void> {
     if (state.tier !== "safe") {
-      state.pending = { prompt, tier: state.tier, createdAt: this.now() };
+      state.pending = { prompt, tier: state.tier, createdAt: this.now(), noPersist };
       await this.send(
         chatId,
         `tdmcp telegram: staged ${state.tier} request. Send /approve within ${Math.round(
@@ -176,7 +214,7 @@ export class TelegramCopilotService {
       );
       return;
     }
-    await this.executePrompt(chatId, chatKey, state, prompt, "safe");
+    await this.executePrompt(chatId, chatKey, state, prompt, "safe", noPersist);
   }
 
   private async approve(chatId: number | string, chatKey: string, state: ChatState): Promise<void> {
@@ -190,7 +228,14 @@ export class TelegramCopilotService {
       await this.send(chatId, "tdmcp telegram: pending request expired; send it again.");
       return;
     }
-    await this.executePrompt(chatId, chatKey, state, pending.prompt, pending.tier);
+    await this.executePrompt(
+      chatId,
+      chatKey,
+      state,
+      pending.prompt,
+      pending.tier,
+      pending.noPersist,
+    );
   }
 
   private async executePrompt(
@@ -199,6 +244,7 @@ export class TelegramCopilotService {
     state: ChatState,
     prompt: string,
     tier: ToolTier,
+    noPersist: boolean,
   ): Promise<void> {
     if (this.active.has(chatKey)) {
       await this.send(chatId, "tdmcp telegram: a turn is already running. Send /cancel first.");
@@ -209,14 +255,17 @@ export class TelegramCopilotService {
     this.active.set(chatKey, controller);
     let answer = "";
     let error = "";
+    let receiptSummary = "";
     const toolEvents: string[] = [];
     try {
       const history: ChatMessage[] = [...state.history, { role: "user", content: prompt }];
+      const calibration = await this.opts.resolveCalibration?.(tier, controller.signal);
       const messages = await this.opts.runAgentTurn(
         this.opts.ctx,
         this.opts.client,
         history,
         (event) => {
+          if (event.type === "receipt") receiptSummary = formatTurnReceiptSummary(event.receipt);
           this.recordEvent(
             event,
             toolEvents,
@@ -229,8 +278,18 @@ export class TelegramCopilotService {
           );
         },
         {
-          tools: resolveTools(tier, { projectRag: this.opts.ctx.projectRag !== undefined }),
+          tools: resolveTools(tier, {
+            projectRag: this.opts.ctx.projectRag !== undefined,
+            calibration,
+            calibrationMode: this.opts.calibrationMode,
+          }),
           signal: controller.signal,
+          requestedTier: tier,
+          effectiveTier: calibration?.effectiveTier ?? tier,
+          projectRoot: this.opts.projectRoot,
+          receiptPersistence: this.opts.receiptPersistence,
+          receiptStorePath: this.opts.receiptStorePath,
+          noPersist: this.opts.noPersist === true || noPersist,
         },
       );
       state.history = trimHistory(messages, this.maxHistoryMessages);
@@ -243,13 +302,16 @@ export class TelegramCopilotService {
     for (const line of toolEvents.slice(0, 6)) await this.send(chatId, line);
     if (answer.trim()) {
       await this.send(chatId, answer.trim());
+      await this.sendReceiptSummary(chatId, receiptSummary);
       return;
     }
     if (error.trim()) {
       await this.send(chatId, `tdmcp telegram: ${error.trim()}`);
+      await this.sendReceiptSummary(chatId, receiptSummary);
       return;
     }
     await this.send(chatId, "tdmcp telegram: no response.");
+    await this.sendReceiptSummary(chatId, receiptSummary);
   }
 
   private recordEvent(
@@ -267,6 +329,10 @@ export class TelegramCopilotService {
         }`,
       );
     }
+  }
+
+  private async sendReceiptSummary(chatId: number | string, summary: string): Promise<void> {
+    if (summary) await this.send(chatId, summary);
   }
 
   private async send(chatId: number | string, text: string): Promise<void> {

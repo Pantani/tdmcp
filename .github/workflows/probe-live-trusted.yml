@@ -1,0 +1,99 @@
+name: probe-live-trusted
+
+# Hard trust boundary: this workflow has no pull_request trigger. Secret-bearing
+# probes execute only after reviewed code is present on main.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/creativeRag/sources/**"
+      - "scripts/probe-creative-source.ts"
+      - ".github/workflows/probe-live-trusted.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NPM_CONFIG_AUDIT: "false"
+  NPM_CONFIG_FUND: "false"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - run: npm ci
+
+      - name: Detect changed sources
+        id: changed
+        run: |
+          KNOWN_IDS="artic cleveland europeana met rijksmuseum smithsonian wikimedia"
+          DIFF_RANGE="${{ github.event.before }}...${{ github.sha }}"
+          SHARED_CHANGED=$(git diff --name-only "$DIFF_RANGE" -- \
+            src/creativeRag/sources/http.ts src/creativeRag/sources/types.ts \
+            scripts/probe-creative-source.ts | wc -l | tr -d ' ')
+
+          if [ "$SHARED_CHANGED" -gt "0" ]; then
+            IDS="$KNOWN_IDS"
+          else
+            CHANGED_FILES=$(git diff --name-only "$DIFF_RANGE" -- src/creativeRag/sources/)
+            IDS=""
+            for ID in $KNOWN_IDS; do
+              if echo "$CHANGED_FILES" | grep -q "${ID}.ts"; then
+                IDS="$IDS $ID"
+              fi
+            done
+          fi
+          echo "ids=$(echo "$IDS" | xargs)" >> "$GITHUB_OUTPUT"
+
+      - name: Probe changed sources with trusted credentials
+        if: steps.changed.outputs.ids != ''
+        env:
+          TDMCP_RAG_EUROPEANA_KEY: ${{ secrets.TDMCP_RAG_EUROPEANA_KEY || secrets.EUROPEANA_API_KEY }}
+          TDMCP_RAG_SMITHSONIAN_KEY: ${{ secrets.TDMCP_RAG_SMITHSONIAN_KEY || secrets.SMITHSONIAN_API_KEY }}
+          TDMCP_RAG_RIJKSMUSEUM_KEY: ${{ secrets.TDMCP_RAG_RIJKSMUSEUM_KEY || secrets.RIJKSMUSEUM_API_KEY }}
+          EUROPEANA_API_KEY: ${{ secrets.TDMCP_RAG_EUROPEANA_KEY || secrets.EUROPEANA_API_KEY }}
+          SMITHSONIAN_API_KEY: ${{ secrets.TDMCP_RAG_SMITHSONIAN_KEY || secrets.SMITHSONIAN_API_KEY }}
+          RIJKSMUSEUM_API_KEY: ${{ secrets.TDMCP_RAG_RIJKSMUSEUM_KEY || secrets.RIJKSMUSEUM_API_KEY }}
+        run: |
+          FAILED=""
+          for id in ${{ steps.changed.outputs.ids }}; do
+            echo "--- Probing source: $id ---"
+            EXIT_CODE=0
+            npx tsx scripts/probe-creative-source.ts "$id" --json || EXIT_CODE=$?
+            if [ "$EXIT_CODE" -eq "3" ]; then
+              echo "::error::Source '$id' has missing credentials in CI (exit 3). Configure the repo secret."
+              FAILED="$FAILED $id(missing-credential)"
+            elif [ "$EXIT_CODE" -eq "4" ]; then
+              echo "::error::Upstream for '$id' is unreachable (exit 4)."
+              FAILED="$FAILED $id(unreachable)"
+            elif [ "$EXIT_CODE" -ne "0" ]; then
+              echo "::error::Probe FAILED for source '$id' (exit $EXIT_CODE)."
+              FAILED="$FAILED $id(failed)"
+            else
+              echo "Probe PASSED for source '$id'."
+            fi
+          done
+
+          if [ -n "$FAILED" ]; then
+            echo "::error::probe-live-trusted FAILED for:$FAILED"
+            exit 2
+          fi
+
+      - name: No sources changed
+        if: steps.changed.outputs.ids == ''
+        run: echo "No live source adapters changed — trusted probe not required."

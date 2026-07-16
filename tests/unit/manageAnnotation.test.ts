@@ -173,6 +173,74 @@ describe("manage_annotation", () => {
     expect(scripts.length).toBe(0);
   });
 
+  it("edit: uses one structured annotation PATCH and never calls /api/exec", async () => {
+    const execCalls: string[] = [];
+    let requestBody: unknown;
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalls.push("exec");
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+      http.patch(`${TD_BASE}/api/nodes/:path/annotation`, async ({ request, params }) => {
+        requestBody = await request.json();
+        expect(decodeURIComponent(String(params.path))).toBe("/project1/note");
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            action: "edit",
+            original_path: "/project1/note",
+            final_path: "/project1/note",
+            node_type: "annotateCOMP",
+            applied: true,
+            rolled_back: false,
+            fields: {
+              title: {
+                status: "applied",
+                requested: { redacted: true, length: 5 },
+                actual: { redacted: true, length: 5 },
+                binding: "Titletext",
+              },
+              x: { status: "applied", requested: -200, actual: -200, binding: "nodeX" },
+            },
+            undo_label: "MCP manage_annotation edit /project1/note",
+          },
+        });
+      }),
+    );
+
+    const result = await manageAnnotationImpl(makeCtx(), {
+      action: "edit",
+      parent_path: "/project1",
+      node_path: "/project1/note",
+      title: "hello",
+      x: -200,
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(requestBody).toEqual({ title: "hello", x: -200 });
+    expect(execCalls).toEqual([]);
+    expect(JSON.stringify(result)).not.toContain("hello");
+  });
+
+  it("edit: rejects missing fields and legacy aliases before touching the bridge", async () => {
+    const { scripts } = captureExec("{}");
+    const missing = await manageAnnotationImpl(makeCtx(), {
+      action: "edit",
+      parent_path: "/project1",
+      node_path: "/project1/note",
+    });
+    const legacy = await manageAnnotationImpl(makeCtx(), {
+      action: "edit",
+      parent_path: "/project1",
+      node_path: "/project1/note",
+      text: "ambiguous",
+      title: "title",
+    });
+    expect(missing.isError).toBe(true);
+    expect(legacy.isError).toBe(true);
+    expect(scripts).toEqual([]);
+  });
+
   it("schema: rejects an unknown action and defaults parent_path", () => {
     expect(() => manageAnnotationSchema.parse({ action: "delete" })).toThrow();
     expect(manageAnnotationSchema.parse({ action: "list" }).parent_path).toBe("/project1");

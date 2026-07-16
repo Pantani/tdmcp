@@ -1,12 +1,71 @@
 import { runInstallBridge } from "./cli/installBridge.js";
 import { renderMainHelp, resolveMainCompletionCommand } from "./cli/mainHelp.js";
 import { parseServeArgs, renderServeHelp, resolveServeInvocation } from "./cli/serverArgs.js";
-import { isPackageCommand, runPackageCli } from "./packages/cli.js";
+import { isKnownPackageDoctorTarget, isPackageCommand, runPackageCli } from "./packages/cli.js";
 import { createTdmcpServer } from "./server/tdmcpServer.js";
 import { startTransport } from "./server/transportFactory.js";
 import { loadConfig } from "./utils/config.js";
 import { createLogger } from "./utils/logger.js";
 import { getVersion } from "./utils/version.js";
+
+type LocalCommandHandler = (args: string[]) => Promise<void>;
+
+const LOCAL_COMMANDS: Record<string, LocalCommandHandler> = {
+  "install-client": async (args) => {
+    const { runInstallClient } = await import("./cli/installClient.js");
+    await runInstallClient(args);
+  },
+  skills: async (args) => {
+    const { runManageSkillsCli } = await import("./cli/manageSkills.js");
+    const result = runManageSkillsCli(args);
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    process.exitCode = result.code;
+  },
+  status: async (args) => {
+    const [{ runRuntimeStatus }, { createRuntimeStatusDeps }] = await Promise.all([
+      import("./cli/runtimeStatus.js"),
+      import("./cli/runtimeStatusAdapters.js"),
+    ]);
+    const result = await runRuntimeStatus(args, createRuntimeStatusDeps());
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    process.exitCode = result.code;
+  },
+  show: async (args) => {
+    const { runShowMode } = await import("./cli/showMode.js");
+    writeLocalResult(await runShowMode(args));
+  },
+  "copilot-calibrate": async (args) => {
+    const { runCopilotCalibrate } = await import("./cli/copilotCalibrate.js");
+    process.exitCode = await runCopilotCalibrate(args);
+  },
+};
+
+async function runLocalCommand(argv: string[]): Promise<boolean> {
+  const handler = LOCAL_COMMANDS[argv[0] ?? ""];
+  if (!handler) return false;
+  await handler(argv.slice(1));
+  return true;
+}
+
+function writeLocalResult(result: { stdout: string; stderr: string; code: number }): void {
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+  process.exitCode = result.code;
+}
+
+async function runDoctorCommand(argv: string[]): Promise<void> {
+  if (isKnownPackageDoctorTarget(argv[1])) {
+    process.stderr.write(
+      "Deprecated: use `tdmcp packages doctor [package]`; bare `tdmcp doctor` now diagnoses the environment.\n",
+    );
+    writeLocalResult(await runPackageCli(argv));
+    return;
+  }
+  const { runTopLevelDoctor } = await import("./cli/topLevelDoctor.js");
+  writeLocalResult(await runTopLevelDoctor(argv.slice(1)));
+}
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
@@ -39,18 +98,15 @@ async function main(): Promise<void> {
     await runAsk(argv.slice(1));
     return;
   }
+  if (argv[0] === "doctor") {
+    await runDoctorCommand(argv);
+    return;
+  }
   if (isPackageCommand(argv[0])) {
-    const result = await runPackageCli(argv);
-    if (result.stdout) process.stdout.write(result.stdout);
-    if (result.stderr) process.stderr.write(result.stderr);
-    process.exitCode = result.code;
+    writeLocalResult(await runPackageCli(argv));
     return;
   }
-  if (argv[0] === "install-client") {
-    const { runInstallClient } = await import("./cli/installClient.js");
-    await runInstallClient(argv.slice(1));
-    return;
-  }
+  if (await runLocalCommand(argv)) return;
   if (argv[0] === "chat" || argv[0] === "llm-run") {
     const { runChat } = await import("./cli/chat.js");
     await runChat(argv.slice(1));

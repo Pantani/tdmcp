@@ -29,8 +29,10 @@ and hard to misuse. It's meant for the easy stuff:
 - **Reading errors** and explaining what's wrong.
 - **Creating, wiring and tweaking individual operators** — one node at a time.
 
-It deliberately **can't** build whole systems (no Layer-1 generators) and **can't
-run raw Python**. When you want a full audio-reactive or generative network, click
+The default `standard` tier deliberately **can't** build whole systems (no
+Layer-1 generators), and no local tier can run raw Python. The opt-in `creative`
+tier adds only the curated generators. When you want a broader audio-reactive or
+generative network, click
 **Escalate ⇪** in the UI: it copies a ready-to-paste prompt you hand to
 [Claude](/guide/install) or [Codex](/guide/codex). They drive the *same* project,
 so nothing has to move.
@@ -67,6 +69,8 @@ running, so closing the chat never takes your model offline. Useful flags:
 - **`--no-ollama`** — don't auto-start it (for a remote endpoint or a daemon you
   manage yourself).
 - **`--no-open`** — don't open the browser automatically.
+- **`--no-receipt-persist`** — keep receipts in memory for this process/headless
+  turn even when persistence is enabled.
 - **`--profile <name>`** / **`--config <path>`** — use a saved venue/profile
   config for this chat run.
 - **`--help`** — list everything.
@@ -88,6 +92,124 @@ The browser UI is wired to your live TouchDesigner project. It has:
 - **Persistent history**, so your conversation survives a restart.
 - **Escalate ⇪** — copies a handoff prompt for Claude or Codex when a task is too
   big for the local model.
+
+## Grounded and verified turns
+
+Before each local turn, tdmcp makes one bounded, read-only editor-context request.
+When TouchDesigner's Network Editor is available, the model receives the active
+network owner, current and selected operators, rollover operator/parameter and
+viewport position. This context is ephemeral, capped, and treated as untrusted
+project data. It is not added to persistent chat history. In perform/headless
+mode or when the bridge is offline, the turn continues with explicit
+`UNVERIFIED` grounding instead of inventing what “this node” or “here” means.
+
+The copilot can also invoke a prompt from tdmcp's canonical registered MCP prompt
+catalog through a bounded local adapter. Prompt arguments are schema-validated;
+the adapter cannot make arbitrary MCP requests, execute Python, or turn prompt
+text into trusted instructions.
+
+The existing `plan_visual` tool is also a **read-only** planning surface. Its
+deterministic keyword planner stays the default and needs no model completion.
+Select the LLM path explicitly when you want one grounded planning pass:
+
+```json
+{
+  "description": "Plan a restrained feedback tunnel from the selected TOP",
+  "planner": "llm",
+  "root_path": "/project1",
+  "llm_timeout_ms": 5000
+}
+```
+
+The opt-in path makes at most one bounded completion. It sends only compact,
+redacted editor context, project brief/graph digest, recipes, operator knowledge
+and the actual registered-tool allowlist; every proposed tool, recipe and
+operator must be present in that supplied evidence. Project text is untrusted
+data, never instructions. Planning does not execute the recommendation or mutate
+TouchDesigner.
+
+The structured result reports `planner_requested`, `planner_used`,
+`fallback_reason` and compact grounding availability. A valid grounded response
+uses `planner_used: "llm"` (**PASS**). An invalid, oversized or unknown proposal
+is rejected (**FAIL** for that LLM attempt) and returns the deterministic plan.
+An unavailable model or failed completion returns the same deterministic plan
+with a typed `fallback_reason`. Missing editor, project-brief or graph evidence
+stays visible in `grounding` and warnings (**UNVERIFIED**); the planner may still
+return `planner_used: "llm"` when the remaining evidence validates the candidate,
+without inventing the missing context.
+
+After a mutating tool returns, the copilot performs bounded read-only checks of
+the affected paths before it reports completion. Evidence is one of:
+
+- `PASS` — observed state matches the requested mutation.
+- `FAIL` — observed state contradicts the requested mutation; it is not reported
+  as completed.
+- `UNVERIFIED` — evidence was unavailable or incomplete; tdmcp states that
+  uncertainty and never repeats the mutation automatically.
+
+One bounded recovery decision may gather read-only evidence for validation,
+bridge, path, or menu failures. Ambiguous mutation timeouts, authorization/policy
+failures, verification failures, panic and blackout are never retried by this
+policy.
+
+## Project brief and audit receipt
+
+For a saved or explicitly configured project, each turn also reads the bounded
+project-owned brief from `.tdmcp/agent-brief.json`. The brief is ephemeral,
+untrusted evidence: it is not kept in chat history and cannot raise the tool tier
+or override the latest request, consent, safety or emergency policy. Use
+`manage_project_brief` to create/update it with an exact revision, or read
+`tdmcp://project/brief` from an external MCP host.
+
+Every turn finalizes one redacted receipt covering its terminal status, grounding,
+allowlisted actions and verification. `tdmcp ask --json` returns the receipt id
+and compact status; text mode writes the compact summary to stderr, and browser,
+headless and Telegram surfaces receive the same terminal receipt event. Disk
+persistence is off by default and always skipped in perform mode, for emergency
+tools and on a per-turn `noPersist` request. Use `--no-receipt-persist` with
+`tdmcp ask` or chat, the browser request's `noPersist` field, or
+`/private <prompt>` in Telegram.
+
+See [Project context & turn receipts](/guide/project-context-receipts) for the
+schema, retention bounds and `PASS` / `FAIL` / `UNVERIFIED` examples.
+
+## Calibrate a local model
+
+Run the synthetic, sandbox-only suite before trusting an unfamiliar model or
+build with mutating tools:
+
+```bash
+tdmcp copilot-calibrate
+tdmcp copilot-calibrate --mode enforce --samples 3 --json
+tdmcp copilot-calibrate --mode enforce --samples 3 --vision required --refresh --json
+```
+
+The suite checks schema adherence, tool choice, sequential and parallel calls,
+failed-call recovery, context retention, and optional synthetic image input. It
+uses fixture tools only: it does not contact TouchDesigner, create project nodes,
+start/pull a model, or send project content. Results are cached by a redacted,
+exact endpoint/model/build fingerprint with a bounded TTL.
+
+For a loopback Ollama endpoint, the identity probe cross-checks the immutable
+model digest and quantization from `/api/tags` with the bounded native
+`/api/show` response. Image input is advertised only when `/api/show` explicitly
+contains the `vision` capability; model-name heuristics and compatibility-layer
+metadata are not accepted as proof. `--vision required` also runs one strict
+synthetic PNG contract and fails closed when the response is unavailable or does
+not match the requested JSON exactly.
+
+`recommend` is the compatibility default: it reports a maximum tier but keeps
+the tier you requested. `enforce` intersects the requested tier with a fresh,
+exact cached decision; missing, stale or ambiguous evidence fails closed to
+`safe`. Calibration never raises a requested tier.
+
+Example outcomes:
+
+```text
+PASS       repeated synthetic evidence supports the recommended maximum tier
+FAIL       a capability contradicted its strict fixture contract
+UNVERIFIED endpoint/model/build evidence was unavailable; enforce uses safe
+```
 
 ## RAG and generation flow
 
@@ -121,6 +243,12 @@ OpenAI-compatible API — so you can aim it anywhere with two environment variab
 | `TDMCP_LLM_TIER` | `standard` | Start the UI in `standard`, `safe`, or `creative` mode. |
 | `TDMCP_LLM_MAX_STEPS` | `8` | Cap model/tool loop iterations for one turn. |
 | `TDMCP_LLM_TEMPERATURE` | `0.4` | Tune sampling temperature for the chat endpoint. |
+| `TDMCP_LLM_CALIBRATION_MODE` | `recommend` | Use `enforce` to cap tools to a fresh exact calibration decision. |
+| `TDMCP_LLM_CALIBRATION_CACHE` | platform config dir | Override the owner-controlled calibration cache path. |
+| `TDMCP_LLM_CALIBRATION_TTL_MS` | `604800000` | Cache lifetime, bounded to 30 days. |
+| `TDMCP_PROJECT_ROOT` | saved `.toe` folder | Explicit root for `.tdmcp/agent-brief.json`; cwd is never used. |
+| `TDMCP_COPILOT_RECEIPTS` | `off` | Set exactly to `persist` to retain bounded redacted receipts. |
+| `TDMCP_COPILOT_RECEIPTS_PATH` | `~/.tdmcp/session-receipts.json` | Optional absolute private receipt-store path. |
 
 Full list (including `TDMCP_LLM_API_KEY` and the chat port) is in
 [environment variables](/reference/environment#local-copilot-tdmcp-chat).

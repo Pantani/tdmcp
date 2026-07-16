@@ -16,7 +16,11 @@ describe("tdmcp top-level help", () => {
     expect(help).toContain("install-bridge");
     expect(help).toContain("--verify/--wait");
     expect(help).toContain("install-client");
+    expect(help).toContain("show <profile>");
+    expect(help).toContain("fail-closed show gates");
+    expect(help).toContain("source-only; TD 2025.32820 live QA passed");
     expect(help).toContain("chat");
+    expect(help).toContain("copilot-calibrate");
     expect(help).toContain("telegram");
     expect(help).toContain("creative-rag");
     expect(help).toContain("project-rag");
@@ -34,7 +38,11 @@ describe("tdmcp top-level help", () => {
     expect(completion).toContain("complete -F _tdmcp tdmcp");
     expect(completion).toContain("install-bridge");
     expect(completion).toContain("install-client");
+    expect(completion).toContain("skills");
+    expect(completion).toContain("status");
+    expect(completion).toContain("show");
     expect(completion).toContain("telegram");
+    expect(completion).toContain("copilot-calibrate");
     expect(completion).toContain("creative-rag");
     expect(completion).toContain("project-rag");
     expect(completion).toContain("search");
@@ -80,7 +88,7 @@ describe("tdmcp top-level help", () => {
 
     expect(completion).toContain("COMP_WORDS[COMP_CWORD - 1]");
     expect(completion).toContain('== "packages"');
-    expect(completion).toContain("compgen -W 'path --help -h'");
+    expect(completion).toContain("compgen -W 'path doctor --help -h'");
   });
 
   it("returns undefined for unsupported completion shells", () => {

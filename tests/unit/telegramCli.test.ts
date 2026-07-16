@@ -246,6 +246,80 @@ describe("TelegramCopilotService", () => {
     expect(sender.messages.at(-1)?.text).toContain("Project looks clean.");
   });
 
+  it("maps /private to a single noPersist turn", async () => {
+    const sender = new RecordingSender();
+    let noPersist: boolean | undefined;
+    const turn = vi.fn(async (_ctx, _client, messages: ChatMessage[], onEvent, opts) => {
+      noPersist = opts?.noPersist;
+      onEvent?.({ type: "answer", content: "Private inspection complete." } as AgentEvent);
+      return [...messages, { role: "assistant" as const, content: "Private inspection complete." }];
+    }) as unknown as typeof import("../../src/llm/agent.js").runAgentTurn;
+    const service = new TelegramCopilotService({
+      ctx: makeCtx(),
+      client: {} as LlmClient,
+      sender,
+      runAgentTurn: turn,
+      allowedChatIds: new Set(["111"]),
+      allowedUserIds: new Set(),
+      defaultTier: "safe",
+      receiptPersistence: "persist",
+    });
+
+    await service.handleUpdate({
+      update_id: 1,
+      message: { chat: { id: 111 }, from: { id: 5 }, text: "/private inspect /project1" },
+    });
+
+    expect(noPersist).toBe(true);
+    expect(sender.messages.at(-1)?.text).toBe("Private inspection complete.");
+  });
+
+  it("sends the bounded receipt summary after the unchanged answer", async () => {
+    const sender = new RecordingSender();
+    const turn = vi.fn(async (_ctx, _client, messages: ChatMessage[], onEvent) => {
+      onEvent?.({ type: "answer", content: "Project looks clean." } as AgentEvent);
+      onEvent?.({
+        type: "receipt",
+        receipt: {
+          schema_version: 1,
+          receipt_id: "b22253d0-c7d3-47b7-bc56-2e1138f145d2",
+          started_at: "2026-07-15T00:00:00.000Z",
+          completed_at: "2026-07-15T00:00:01.000Z",
+          duration_ms: 1000,
+          terminal_status: "success",
+          requested_tier: "safe",
+          effective_tier: "safe",
+          grounding: { status: "unavailable", verification: "UNVERIFIED" },
+          goal_summary: "inspect",
+          actions: [],
+          overall_verification: "UNVERIFIED",
+          warnings: [],
+          persistence: "off",
+        },
+      } as AgentEvent);
+      return [...messages, { role: "assistant" as const, content: "Project looks clean." }];
+    }) as unknown as typeof import("../../src/llm/agent.js").runAgentTurn;
+    const service = new TelegramCopilotService({
+      ctx: makeCtx(),
+      client: {} as LlmClient,
+      sender,
+      runAgentTurn: turn,
+      allowedChatIds: new Set(["111"]),
+      allowedUserIds: new Set(),
+      defaultTier: "safe",
+    });
+
+    await service.handleUpdate({
+      update_id: 1,
+      message: { chat: { id: 111 }, from: { id: 5 }, text: "inspect /project1" },
+    });
+
+    expect(sender.messages.at(-2)?.text).toBe("Project looks clean.");
+    expect(sender.messages.at(-1)?.text).toBe(
+      "tdmcp receipt: b22253d0-c7d3-47b7-bc56-2e1138f145d2 — success/UNVERIFIED",
+    );
+  });
+
   it("requires /approve before running prompts in standard mode", async () => {
     const sender = new RecordingSender();
     const seen: { prompts: string[]; tools: string[][] } = { prompts: [], tools: [] };
@@ -279,6 +353,41 @@ describe("TelegramCopilotService", () => {
     expect(seen.tools).toHaveLength(1);
     expect(seen.tools.at(0)).toContain("create_td_node");
     expect(sender.messages.at(-1)?.text).toContain("Created it.");
+  });
+
+  it("intersects an approved Telegram tier with enforced calibration", async () => {
+    const sender = new RecordingSender();
+    const seen: { prompts: string[]; tools: string[][] } = { prompts: [], tools: [] };
+    const resolveCalibration = vi.fn(async () => ({
+      effectiveTier: "safe" as const,
+      policyReason: "enforce_verified_cap" as const,
+    }));
+    const service = new TelegramCopilotService({
+      ctx: makeCtx(),
+      client: {} as LlmClient,
+      sender,
+      runAgentTurn: answeringTurn("Inspected only.", seen),
+      allowedChatIds: new Set(["111"]),
+      allowedUserIds: new Set(),
+      defaultTier: "standard",
+      calibrationMode: "enforce",
+      resolveCalibration,
+    });
+    const base = { update_id: 1, message: { chat: { id: 111 }, from: { id: 5 } } };
+
+    await service.handleUpdate({
+      ...base,
+      message: { ...base.message, text: "create a noise TOP" },
+    });
+    await service.handleUpdate({
+      ...base,
+      update_id: 2,
+      message: { ...base.message, text: "/approve" },
+    });
+
+    expect(resolveCalibration).toHaveBeenCalledWith("standard", expect.any(AbortSignal));
+    expect(seen.tools.at(0)).toContain("get_td_nodes");
+    expect(seen.tools.at(0)).not.toContain("create_td_node");
   });
 });
 

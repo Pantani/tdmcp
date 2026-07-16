@@ -111,7 +111,7 @@ describe("runDoctor", () => {
     expect(r.code).toBe(1);
     expect(r.report.ok).toBe(false);
     expect(r.stdout).toContain("Setup is not ready");
-    expect(r.stderr).toContain("not ready");
+    expect(r.stderr).toBe("");
   });
 
   it("returns critical config failure when loadConfig throws (no config injected)", async () => {
@@ -124,7 +124,8 @@ describe("runDoctor", () => {
       expect(r.report.checks).toHaveLength(1);
       expect(r.report.checks[0]?.id).toBe("config");
       expect(r.report.checks[0]?.status).toBe("fail");
-      expect(r.stderr).toContain("invalid configuration");
+      expect(r.stdout).toContain("invalid configuration");
+      expect(r.stderr).toBe("");
     } finally {
       if (prev === undefined) delete process.env.TDMCP_TD_PORT;
       else process.env.TDMCP_TD_PORT = prev;
@@ -374,14 +375,13 @@ describe("runDoctor", () => {
       runInstallBridge: () =>
         // biome-ignore lint/suspicious/noExplicitAny: install-bridge result shape
         Promise.resolve({ ok: true, detail: "installed" } as any),
-      runTextportInstall: () => Promise.resolve({ ok: true, detail: "sent" }),
     });
     const repair = r.report.repairs?.find((x) => x.id === "bridge");
     expect(repair?.status).toBe("applied");
     expect(repair?.detail).toContain("install-bridge --verify succeeded");
   });
 
-  it("--fix bridge repair falls through to Textport when install-bridge fails with command", async () => {
+  it("--fix bridge repair stages Textport commands without applying them", async () => {
     const r = await runDoctor({
       fix: true,
       config: baseConfig({ bridgeToken: "x" }),
@@ -395,11 +395,10 @@ describe("runDoctor", () => {
           textportCommand: "td.something()",
           // biome-ignore lint/suspicious/noExplicitAny: install-bridge result shape
         } as any),
-      runTextportInstall: () => Promise.resolve({ ok: false, detail: "automation blocked" }),
     });
     const repair = r.report.repairs?.find((x) => x.id === "bridge");
     expect(repair?.status).toBe("failed");
-    expect(repair?.detail).toContain("Textport");
+    expect(repair?.detail).toContain("not applied automatically");
   });
 
   it("--fix bridge repair reports error when install-bridge throws", async () => {

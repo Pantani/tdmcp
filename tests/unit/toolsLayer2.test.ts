@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
-import { arrangeNetworkImpl } from "../../src/tools/layer2/arrangeNetwork.js";
+import { arrangeNetworkImpl, arrangeNetworkSchema } from "../../src/tools/layer2/arrangeNetwork.js";
 import { connectNodesImpl } from "../../src/tools/layer2/connectNodes.js";
 import { createContainerImpl } from "../../src/tools/layer2/createContainer.js";
 import { createGlslShaderImpl } from "../../src/tools/layer2/createGlslShader.js";
@@ -198,6 +198,251 @@ describe("layer 2 tool handlers", () => {
     expect(execScript).toContain("_n.nodeX = _xy[0]");
     expect(execScript).toContain('"/project1/a":[0,0]');
     expect(execScript).toContain('"/project1/b":[200,0]');
+  });
+
+  it("arrange_network applies annotation-aware plans without raw exec", async () => {
+    let applyBody: Record<string, unknown> | undefined;
+    server.use(
+      http.post(`${TD_BASE}/api/editor/annotation-layout/context`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            root_path: "/project1",
+            recursive: false,
+            fingerprint: "a".repeat(64),
+            networks: [
+              {
+                path: "/project1",
+                nodes: [
+                  { path: "/project1/a", x: -20, y: 50, w: 100, h: 60 },
+                  { path: "/project1/out", x: 700, y: 40, w: 100, h: 60 },
+                ],
+                annotations: [
+                  {
+                    path: "/project1/note",
+                    x: -100,
+                    y: 100,
+                    w: 300,
+                    h: 200,
+                    enclosed_paths: ["/project1/a"],
+                  },
+                ],
+                docked: [],
+                edges: [{ from: "/project1/a", to: "/project1/out" }],
+              },
+            ],
+          },
+        }),
+      ),
+      http.post(`${TD_BASE}/api/editor/annotation-layout/apply`, async ({ request }) => {
+        applyBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            applied: true,
+            rolled_back: false,
+            root_path: "/project1",
+            fingerprint: "a".repeat(64),
+            moved: 3,
+            resized_annotations: 1,
+            networks: 1,
+            rollback_errors: [],
+            undo_wrapper_label: "MCP arrange annotation-aware /project1",
+          },
+        });
+      }),
+    );
+
+    const result = await arrangeNetworkImpl(makeCtx(), {
+      path: "/project1",
+      recursive: false,
+      include_docked: true,
+      annotation_aware: true,
+      resize_annotations: true,
+      annotation_padding: 80,
+    });
+
+    expect(result.isError).not.toBe(true);
+    expect(textOf(result)).toContain("annotation-aware grouping");
+    expect(applyBody).toMatchObject({
+      root_path: "/project1",
+      recursive: false,
+      fingerprint: "a".repeat(64),
+    });
+    const networks = applyBody?.networks as Array<{
+      positions: Record<string, [number, number]>;
+      annotation_bounds: Record<string, { resized: boolean }>;
+    }>;
+    expect(networks[0]?.positions).toHaveProperty("/project1/a");
+    expect(networks[0]?.positions).toHaveProperty("/project1/note");
+    expect(networks[0]?.annotation_bounds["/project1/note"]?.resized).toBe(true);
+  });
+
+  it("arrange_network explicit uses one context read and one structured apply", async () => {
+    let contextCalls = 0;
+    let applyCalls = 0;
+    let applyBody: Record<string, unknown> | undefined;
+    const fingerprint = "a".repeat(64);
+    server.use(
+      http.post(`${TD_BASE}/api/editor/reposition/context`, async ({ request }) => {
+        contextCalls += 1;
+        const body = (await request.json()) as Record<string, unknown>;
+        expect(body).toMatchObject({
+          root_path: "/project1/show",
+          target_source: "provided_paths",
+          include_docked: true,
+        });
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            root_path: body.root_path,
+            target_source: body.target_source,
+            include_docked: body.include_docked,
+            requested_paths: ["/project1/show/a"],
+            nodes: [
+              {
+                path: "/project1/show/a",
+                position: [0, 0],
+                source: "explicit",
+              },
+            ],
+            editor_context: null,
+            fingerprint,
+          },
+        });
+      }),
+      http.post(`${TD_BASE}/api/editor/reposition`, async ({ request }) => {
+        applyCalls += 1;
+        applyBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            mode: "explicit",
+            status: "applied",
+            idempotency_key: applyBody.idempotency_key,
+            root_path: "/project1/show",
+            target_source: "provided_paths",
+            fingerprint_before: fingerprint,
+            fingerprint_after: "b".repeat(64),
+            paths: [
+              {
+                path: "/project1/show/a",
+                source: "explicit",
+                requested: [100, -50],
+                previous: [0, 0],
+                final: [100, -50],
+                status: "applied",
+              },
+            ],
+            counts: { explicit: 1, docked_carried: 0, applied: 1, unchanged: 0, failed: 0 },
+            rollback: { attempted: false, succeeded: true, errors: [] },
+            warnings: [],
+          },
+        });
+      }),
+    );
+
+    const result = await arrangeNetworkImpl(makeCtx(), {
+      path: "/project1/show",
+      layout_mode: "explicit",
+      positions: { "/project1/show/a": [100, -50] },
+    });
+
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toMatchObject({ status: "applied" });
+    expect(contextCalls).toBe(1);
+    expect(applyCalls).toBe(1);
+    expect(applyBody).toMatchObject({
+      fingerprint,
+      editor_context: null,
+      positions: [{ path: "/project1/show/a", x: 100, y: -50 }],
+    });
+  });
+
+  it("arrange_network explicit preserves bounded rollback details as an MCP error", async () => {
+    const fingerprint = "a".repeat(64);
+    server.use(
+      http.post(`${TD_BASE}/api/editor/reposition/context`, async ({ request }) => {
+        const body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            root_path: body.root_path,
+            target_source: body.target_source,
+            include_docked: body.include_docked,
+            requested_paths: ["/project1/show/a"],
+            nodes: [{ path: "/project1/show/a", position: [0, 0], source: "explicit" }],
+            editor_context: null,
+            fingerprint,
+          },
+        });
+      }),
+      http.post(`${TD_BASE}/api/editor/reposition`, async ({ request }) => {
+        const body = (await request.json()) as { idempotency_key: string };
+        return HttpResponse.json(
+          {
+            ok: false,
+            error: {
+              code: "reposition_apply_failed",
+              message: "placement failed and was restored",
+              details: {
+                mode: "explicit",
+                status: "failed",
+                idempotency_key: body.idempotency_key,
+                root_path: "/project1/show",
+                target_source: "provided_paths",
+                paths: [
+                  {
+                    path: "/project1/show/a",
+                    source: "explicit",
+                    requested: [100, -50],
+                    previous: [0, 0],
+                    final: [0, 0],
+                    status: "failed",
+                    rollback: "restored",
+                  },
+                ],
+                counts: {
+                  explicit: 1,
+                  docked_carried: 0,
+                  applied: 0,
+                  unchanged: 0,
+                  failed: 1,
+                },
+                rollback: { attempted: true, succeeded: true, errors: [] },
+                error: {
+                  code: "reposition_apply_failed",
+                  message: "placement failed and was restored",
+                },
+                warnings: [],
+              },
+            },
+          },
+          { status: 400 },
+        );
+      }),
+    );
+
+    const result = await arrangeNetworkImpl(makeCtx(), {
+      path: "/project1/show",
+      layout_mode: "explicit",
+      positions: { "/project1/show/a": [100, -50] },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent?.error).toMatchObject({
+      api_code: "reposition_apply_failed",
+      details: { status: "failed", rollback: { succeeded: true } },
+    });
+  });
+
+  it("arrange_network rejects explicit-only fields in automatic mode", () => {
+    expect(
+      arrangeNetworkSchema.safeParse({
+        path: "/project1",
+        positions: { "/project1/a": [0, 0] },
+      }).success,
+    ).toBe(false);
   });
 
   it("create_python_script writes a text DAT's code to its own .text", async () => {

@@ -70,6 +70,15 @@ export function createLazyLlmClient(
     return cached;
   };
   return {
+    describe() {
+      return (
+        get().describe?.() ?? {
+          transport: "unknown" as const,
+          locality: "unknown" as const,
+          calibration: "not_checked" as const,
+        }
+      );
+    },
     chatStream(messages: ChatMessage[], tools: OpenAITool[], opts?: StreamOptions) {
       return get().chatStream(messages, tools, opts);
     },

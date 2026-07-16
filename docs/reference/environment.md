@@ -17,6 +17,17 @@ config stay simple. Every variable is optional and has a sensible default.
 | `TDMCP_TRANSPORT` | `stdio` | MCP transport: `stdio` (default) or `http` (Streamable HTTP). |
 | `TDMCP_HTTP_HOST` | `127.0.0.1` | Bind host for the HTTP transport. Keep loopback for local runs; the Docker image explicitly uses `0.0.0.0` so its published port is reachable. |
 | `TDMCP_HTTP_PORT` | `3939` | Port for the HTTP transport (when `TDMCP_TRANSPORT=http`). |
+| `TDMCP_HTTP_AUTH_MODE` | `auto` | HTTP authentication: `auto`, `none`, `static`, `oauth`, or explicit migration mode `hybrid`. `auto` preserves compatibility by selecting `static` only when `TDMCP_HTTP_AUTH_TOKEN` is set; it never enables OAuth implicitly. Invalid combinations fail startup. See [OAuth, PKCE & TD consent](/guide/oauth-pkce). |
+| `TDMCP_HTTP_AUTH_TOKEN` | _(unset)_ | Legacy pre-shared bearer for `static` or `hybrid` HTTP auth. This is not an OAuth token and is separate from `TDMCP_BRIDGE_TOKEN`. Pure `oauth` mode refuses it rather than silently downgrading. |
+| `TDMCP_HTTP_MAX_BODY_BYTES` | `1048576` | Maximum buffered MCP JSON request body, clamped to `1024..4194304`. OAuth registration and SDK token routes also apply smaller/default parser limits and rate/cap guards. |
+| `TDMCP_PUBLIC_BASE_URL` | _(unset)_ | Required canonical OAuth issuer origin and resource base. Public deployments require HTTPS at a trusted same-host reverse proxy while Node remains bound to numeric loopback. Development HTTP requires explicit numeric loopback plus `TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK=1`; paths, credentials, query, fragments, wildcards and `localhost` are refused. |
+| `TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK` | `false` | Development-only opt-in for plain HTTP on `127.0.0.1` or `[::1]`. The HTTP bind must also be numeric loopback, never `localhost` or wildcard. |
+| `TDMCP_OAUTH_REDIRECT_ORIGINS` | _(empty)_ | Comma-separated exact HTTPS origins allowed for non-loopback public-client callbacks. Wildcards and origins with path/query/fragment are refused. Numeric loopback callbacks use their registered path and may vary only by port. |
+| `TDMCP_OAUTH_TRUSTED_PROXY_HOPS` | _(empty)_ | Comma-separated numeric IP addresses for the bounded same-host proxy chain. Forwarding headers are rejected unless the socket peer is pinned here and the canonical host/protocol/port match exactly; maximum 8 unique hops. |
+| `TDMCP_OAUTH_STATE_DIR` | `$XDG_STATE_HOME/tdmcp/oauth` or `~/.local/state/tdmcp/oauth` | Absolute owner-private directory for public client metadata, token HMAC key and digest-only token records. Symlinks, unsafe permissions or corrupt state fail startup. |
+| `TDMCP_OAUTH_ACCESS_TTL_SECONDS` | `900` | OAuth access-token lifetime, clamped to `60..3600`. |
+| `TDMCP_OAUTH_REFRESH_TTL_SECONDS` | `2592000` | Rotating refresh-token lifetime, clamped to `3600..7776000`. Replay revokes the refresh family. |
+| `TDMCP_OAUTH_CONSENT_TTL_SECONDS` | `60` | TD-native Allow/Deny transaction lifetime, clamped to `5..120`; every unsafe terminal path resolves to Deny. |
 | `TDMCP_EVENTS` | `on` | Subscribe to TD WebSocket events and forward them as MCP logging notifications (`on`/`off`). Events are disabled automatically when `TDMCP_BRIDGE_TOKEN` is set until the bridge exposes an authenticated WebSocket handshake. |
 | `TDMCP_RAW_PYTHON` | `on` | Whether to expose client-authored raw-Python tools, including persistent Script callbacks. Set to `off` to lock them out for restricted setups. This removes only client-authored-code tools — many higher-level tools still send their own *templated* Python to the bridge, so `off` is **not** "no code runs in TD". The bridge keeps arbitrary-code endpoints disabled unless `TDMCP_BRIDGE_ALLOW_EXEC=1` is explicitly set; a token authenticates but does not authorize exec by itself. |
 | `TDMCP_TOOL_PROFILE` | `full` | Tool exposure profile. `full` registers every tool; `safe` hides destructive/raw-code tools, including raw Python, node deletion, DAT rewrites, checkpoint/component/package writes and preview-asset writes — a strict superset of `TDMCP_RAW_PYTHON=off`; `directory` exposes a compact build/inspect surface for MCP directories and hosted scanners. Use `safe` for an autonomous in-TD agent (e.g. dotsimulate's LOPs MCP Client). Default `full` keeps existing clients unchanged. |
@@ -39,6 +50,12 @@ These configure the [local LLM copilot](/reference/cli#local-copilot-tdmcp-chat)
 | `TDMCP_LLM_TIER` | `standard` | Default chat tool tier: `standard`, `safe` (read-only), or `creative` (adds curated generators). The browser toggles can still override it per turn. |
 | `TDMCP_LLM_MAX_STEPS` | `8` | Maximum model/tool loop iterations for one local copilot turn. Values are clamped to `1..32`. |
 | `TDMCP_LLM_TEMPERATURE` | `0.4` | Sampling temperature sent to the OpenAI-compatible chat endpoint. Values are clamped to `0..2`. |
+| `TDMCP_LLM_CALIBRATION_MODE` | `recommend` | Calibration policy for local copilot surfaces. `recommend` preserves compatibility; `enforce` requires a fresh exact cached decision and otherwise caps to `safe`. |
+| `TDMCP_LLM_CALIBRATION_CACHE` | `~/.cache/tdmcp/copilot-calibration-v1.json` | Absolute owner-controlled calibration cache path. The manifest contains bounded synthetic evidence and redacted endpoint identity, never project content or API keys. |
+| `TDMCP_LLM_CALIBRATION_TTL_MS` | `604800000` | Cache lifetime in milliseconds (7 days by default; clamped to `1..2592000000`). |
+| `TDMCP_PROJECT_ROOT` | saved `.toe` folder when available | Absolute project root used for `.tdmcp/agent-brief.json`. Explicit tool input wins; cwd is never a fallback. |
+| `TDMCP_COPILOT_RECEIPTS` | `off` | Set exactly to `persist` to retain redacted, bounded built-in-copilot receipts. Perform mode, emergencies and per-turn `noPersist` still skip writes. |
+| `TDMCP_COPILOT_RECEIPTS_PATH` | `~/.tdmcp/session-receipts.json` | Optional absolute owner-controlled receipt-store path. Relative paths are rejected. |
 | `TDMCP_CHAT_PORT` | `4141` | Loopback port the `tdmcp chat` web UI binds to. |
 
 ## Telegram copilot (`tdmcp telegram`)
@@ -98,6 +115,8 @@ depth — they are enforced bridge-side, even for direct network callers. See
 | `TDMCP_BRIDGE_ALLOW_LAN` | _(unset)_ | Bridge address scope. The bridge is loopback-only by default and refuses off-host (non-loopback) peers immediately (HTTP `403`), before routing/auth. Set to `1`/`true`/`yes`/`on` in TouchDesigner's environment to allow LAN peers; pair it with `TDMCP_BRIDGE_TOKEN`. |
 | `TDMCP_BRIDGE_ALLOW_EXEC` | _(unset)_ | Optional bridge-side opt-in. Set to `1`/`true`/`on` in TouchDesigner's environment to allow arbitrary-code endpoints (`/api/exec`, node `method`) when no bridge token is configured. Leave unset for the safer default; structured endpoints keep working. |
 | `TDMCP_BRIDGE_TOKEN` | _(unset)_ | Shared bearer token; must match the server's value to authorize requests. |
+| `TDMCP_EDITOR_FOLLOW_ENABLED` | `1` | Set to `0`/`false`/`off` to suppress action-aware Network Editor follow jobs without changing MCP tool exposure. Suppression is typed and does not move the UI. |
+| `TDMCP_TOX_PORTABLE_ENABLED` | build-aware | When unset, portable export is enabled only on the live-proven 2025.32820 build. Set false to disable it; set true only after separately validating the current TD build's DAT/external-TOX snapshot and restoration behavior. |
 
 ## Example: MCP client config
 

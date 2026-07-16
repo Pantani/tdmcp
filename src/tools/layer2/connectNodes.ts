@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { guardTd, jsonResult } from "../result.js";
+import { guardTd, jsonStructuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { connectNodesViaBridge } from "./connectHelper.js";
 
@@ -41,7 +41,7 @@ export async function connectNodesImpl(ctx: ToolContext, args: ConnectNodesArgs)
           ? ` Batch connect first failed (${result.batchError}); used the Python fallback.`
           : "") +
         (packed ? ` Requested input ${args.target_input} packed to live slot ${actualInput}.` : "");
-      return jsonResult(
+      return jsonStructuredResult(
         `Connected ${args.source_path} → ${args.target_path} (via ${result.method}).${note}`,
         {
           source: args.source_path,

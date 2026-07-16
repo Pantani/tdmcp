@@ -1,4 +1,13 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import {
+  chmodSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 
@@ -128,6 +137,75 @@ export function renderStarterConfig(opts: { bridgeToken?: string } = {}): string
   ].join("\n");
 }
 
+function result(path: string, code: number, stdout: string, stderr: string): ConfigInitResult {
+  return { stdout, stderr, code, path };
+}
+
+function inspectExistingTarget(target: string, force: boolean): ConfigInitResult | undefined {
+  if (!existsSync(target)) return undefined;
+  if (!force) {
+    return result(
+      target,
+      1,
+      "",
+      `Refusing to overwrite existing file ${target}. Re-run with --force to replace it.\n`,
+    );
+  }
+  try {
+    const targetStat = lstatSync(target);
+    if (targetStat.isSymbolicLink() || !targetStat.isFile()) {
+      return result(target, 2, "", `Refusing to overwrite non-regular file ${target}.\n`);
+    }
+  } catch (err) {
+    return result(target, 2, "", `Failed to inspect ${target}: ${(err as Error).message}\n`);
+  }
+  return undefined;
+}
+
+function verifyWrittenTarget(target: string): void {
+  const writtenStat = lstatSync(target);
+  if (writtenStat.isSymbolicLink() || !writtenStat.isFile()) {
+    throw new Error("config target is not a regular file after write");
+  }
+  if (process.platform !== "win32" && (writtenStat.mode & 0o777) !== 0o600) {
+    throw new Error("config permissions are not owner-only after write");
+  }
+}
+
+function removeTemporaryConfig(tempPath: string | undefined): void {
+  if (!tempPath) return;
+  try {
+    unlinkSync(tempPath);
+  } catch {
+    // Best effort: the primary filesystem error is more useful to callers.
+  }
+}
+
+function writeStarterConfig(target: string, body: string): ConfigInitResult {
+  let tempPath: string | undefined;
+  try {
+    mkdirSync(dirname(target), { recursive: true });
+    tempPath = `${target}.tmp-${process.pid}-${randomBytes(8).toString("hex")}`;
+    writeFileSync(tempPath, body, { encoding: "utf8", flag: "wx", mode: 0o600 });
+    // POSIX applies the create mode through the process umask. Set the exact
+    // owner-only mode before the atomic rename so --force cannot preserve an
+    // existing permissive mode when the rendered config contains a token.
+    if (process.platform !== "win32") chmodSync(tempPath, 0o600);
+    renameSync(tempPath, target);
+    tempPath = undefined;
+    verifyWrittenTarget(target);
+    return result(
+      target,
+      0,
+      `${target}\n`,
+      `Wrote starter tdmcp config to ${target}.\nSource it with:  set -a && source ${target} && set +a\n`,
+    );
+  } catch (err) {
+    removeTemporaryConfig(tempPath);
+    return result(target, 2, "", `Failed to write ${target}: ${(err as Error).message}\n`);
+  }
+}
+
 /**
  * Write a starter config file (or print it under `--dry-run`). Never throws —
  * filesystem errors are returned as a non-zero exit code. The default target
@@ -139,38 +217,9 @@ export function runConfigInit(opts: ConfigInitOptions = {}): ConfigInitResult {
   const body = renderStarterConfig({ bridgeToken: opts.bridgeToken });
 
   if (opts.dryRun) {
-    return {
-      stdout: body,
-      stderr: `# Dry run — would write ${target}\n`,
-      code: 0,
-      path: target,
-    };
+    return result(target, 0, body, `# Dry run — would write ${target}\n`);
   }
 
-  if (existsSync(target) && !opts.force) {
-    return {
-      stdout: "",
-      stderr: `Refusing to overwrite existing file ${target}. Re-run with --force to replace it.\n`,
-      code: 1,
-      path: target,
-    };
-  }
-
-  try {
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, body, { mode: 0o600 });
-    return {
-      stdout: `${target}\n`,
-      stderr: `Wrote starter tdmcp config to ${target}.\nSource it with:  set -a && source ${target} && set +a\n`,
-      code: 0,
-      path: target,
-    };
-  } catch (err) {
-    return {
-      stdout: "",
-      stderr: `Failed to write ${target}: ${(err as Error).message}\n`,
-      code: 2,
-      path: target,
-    };
-  }
+  const refused = inspectExistingTarget(target, opts.force === true);
+  return refused ?? writeStarterConfig(target, body);
 }

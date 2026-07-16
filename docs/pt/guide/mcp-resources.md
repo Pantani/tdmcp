@@ -63,6 +63,8 @@ divergirem:
 | Comandos | `tdmcp://commands` | Os verbos de CLI, gerados a partir do dispatcher real (seguro / mutante / inseguro). |
 | Prompts | `tdmcp://prompts` | Os prompts MCP que o tdmcp oferece, gerados a partir do registro de prompts. |
 | Perfil de sessão | `tdmcp://session/profile` | O seu perfil persistente entre sessões — veja [Perfil de sessão & aprendizado de corpus](/pt/guide/session-profile). |
+| Brief do projeto | `tdmcp://project/brief` | O brief limitado e versionado pertencente ao projeto escolhido; hosts externos precisam lê-lo explicitamente. |
+| Recibos de turno | `tdmcp://session/receipts{?limit,status}` | Recibos redigidos do copiloto embutido, do mais novo ao mais antigo. Persistência é opt-in e consultas são limitadas. |
 
 ## Projeto ao vivo (precisa da ponte)
 
@@ -94,3 +96,5 @@ cada resultado.
   servidos.
 - [Perfil de sessão & aprendizado de corpus](/pt/guide/session-profile) para os
   recursos de perfil de sessão e RAG em profundidade.
+- [Contexto por projeto & recibos de turno](/pt/guide/project-context-receipts)
+  para resolução da raiz, revisões otimistas e política de retenção do audit.

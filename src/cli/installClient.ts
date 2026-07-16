@@ -1,145 +1,26 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { readFile } from "node:fs/promises";
+import { parseArgs } from "node:util";
+import { loadConfig, type TdmcpConfig } from "../utils/config.js";
 import { getVersion } from "../utils/version.js";
+import {
+  buildTdmcpStdioServer,
+  type ClientRegistrationAction,
+  type ClientRegistrationClient,
+  type ClientRegistrationResult,
+  manageClientRegistration,
+  renderClientRegistrationSnippet,
+  SUPPORTED_CLIENTS,
+} from "./clientRegistration.js";
 
-const SUPPORTED_CLIENTS = ["claude", "codex", "cursor"] as const;
 const CLIENTS = new Set<string>(SUPPORTED_CLIENTS);
-type Client = (typeof SUPPORTED_CLIENTS)[number];
+type Client = ClientRegistrationClient;
 
-function tdmcpServerConfig(token?: string): object {
-  const env: Record<string, string> = {
-    TDMCP_TD_HOST: "127.0.0.1",
-    TDMCP_TD_PORT: "9980",
-  };
-  if (token) env.TDMCP_BRIDGE_TOKEN = token;
-  return {
-    command: "tdmcp",
-    args: [],
-    env,
-  };
-}
-
-function installClientConfig(client: string, token?: string): Record<string, unknown> {
-  const server = tdmcpServerConfig(token);
-  if (client === "codex") {
-    return { mcp_servers: { tdmcp: server } };
-  }
-  return { mcpServers: { tdmcp: server } };
-}
-
-function codexTomlSnippet(token?: string): string {
-  const lines = [
-    "[mcp_servers.tdmcp]",
-    'command = "tdmcp"',
-    "args = []",
-    "",
-    "[mcp_servers.tdmcp.env]",
-    'TDMCP_TD_HOST = "127.0.0.1"',
-    'TDMCP_TD_PORT = "9980"',
-  ];
-  if (token) lines.push(`TDMCP_BRIDGE_TOKEN = ${JSON.stringify(token)}`);
-  return lines.join("\n");
+function defaultServer(token?: string) {
+  return buildTdmcpStdioServer({ host: "127.0.0.1", port: 9980, token });
 }
 
 export function installClientSnippet(client: string, token?: string): object | string {
-  if (client === "codex") return codexTomlSnippet(token);
-  return installClientConfig(client, token);
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function deepMergeConfig(
-  existing: Record<string, unknown>,
-  update: Record<string, unknown>,
-): Record<string, unknown> {
-  const merged: Record<string, unknown> = { ...existing };
-  for (const [key, value] of Object.entries(update)) {
-    const current = merged[key];
-    if (isPlainObject(current) && isPlainObject(value)) {
-      merged[key] = deepMergeConfig(current, value);
-    } else {
-      merged[key] = value;
-    }
-  }
-  return merged;
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function hasCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
-}
-
-async function readExistingJsonConfig(configPath: string): Promise<Record<string, unknown>> {
-  let raw: string;
-  try {
-    raw = await readFile(configPath, "utf8");
-  } catch (error) {
-    if (hasCode(error, "ENOENT")) {
-      return {};
-    }
-    throw new Error(`Failed to read ${configPath}: ${errorMessage(error)}`);
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (error) {
-    throw new Error(`Invalid JSON in ${configPath}: ${errorMessage(error)}`);
-  }
-  if (!isPlainObject(parsed)) {
-    throw new Error(`Invalid JSON in ${configPath}: expected a top-level object.`);
-  }
-  return parsed;
-}
-
-async function readExistingTextConfig(configPath: string): Promise<string> {
-  try {
-    return await readFile(configPath, "utf8");
-  } catch (error) {
-    if (hasCode(error, "ENOENT")) return "";
-    throw new Error(`Failed to read ${configPath}: ${errorMessage(error)}`);
-  }
-}
-
-function tomlSectionName(line: string): string | undefined {
-  const match = line.trim().match(/^\[([^\]]+)\]$/);
-  return match?.[1]?.trim();
-}
-
-function withoutCodexTdmcpServer(raw: string): string {
-  const kept: string[] = [];
-  let skip = false;
-  for (const line of raw.split(/\r?\n/)) {
-    const section = tomlSectionName(line);
-    if (section !== undefined) {
-      skip = section === "mcp_servers.tdmcp" || section.startsWith("mcp_servers.tdmcp.");
-    }
-    if (!skip) kept.push(line);
-  }
-  return kept.join("\n").trimEnd();
-}
-
-async function writeCodexConfig(configPath: string, token?: string): Promise<string> {
-  const existing = await readExistingTextConfig(configPath);
-  const preserved = withoutCodexTdmcpServer(existing);
-  const serialized = `${preserved ? `${preserved}\n\n` : ""}${codexTomlSnippet(token)}\n`;
-
-  await mkdir(dirname(configPath), { recursive: true });
-  await writeFile(configPath, serialized, "utf8");
-
-  const verified = await readFile(configPath, "utf8");
-  if (!verified.includes("[mcp_servers.tdmcp]")) {
-    throw new Error(`Failed to verify ${configPath}: missing [mcp_servers.tdmcp].`);
-  }
-  if (!verified.includes("[mcp_servers.tdmcp.env]")) {
-    throw new Error(`Failed to verify ${configPath}: missing [mcp_servers.tdmcp.env].`);
-  }
-  return verified;
+  return renderClientRegistrationSnippet(client as Client, "tdmcp", defaultServer(token));
 }
 
 export async function writeInstallClientConfig(
@@ -147,126 +28,303 @@ export async function writeInstallClientConfig(
   configPath: string,
   token?: string,
 ): Promise<Record<string, unknown> | string> {
-  if (client === "codex") return writeCodexConfig(configPath, token);
-
-  const existing = await readExistingJsonConfig(configPath);
-  const merged = deepMergeConfig(existing, installClientConfig(client, token));
-  const serialized = `${JSON.stringify(merged, null, 2)}\n`;
-
-  await mkdir(dirname(configPath), { recursive: true });
-  await writeFile(configPath, serialized, "utf8");
-
-  const verified = JSON.parse(await readFile(configPath, "utf8"));
-  if (!isPlainObject(verified)) {
-    throw new Error(`Failed to verify ${configPath}: expected a top-level object.`);
-  }
-  return verified;
+  const result = await manageClientRegistration({
+    client,
+    explicitPath: configPath,
+    action: "install",
+    server: defaultServer(token),
+    write: true,
+  });
+  const raw = await readFile(result.path, "utf8");
+  return client === "codex" ? raw : (JSON.parse(raw) as Record<string, unknown>);
 }
 
-const HELP = `tdmcp install-client <claude|codex|cursor> [--write --path <file>]
+const HELP = `tdmcp install-client <claude|codex|cursor> [options]
 
-Print a ready-to-paste MCP client configuration snippet for tdmcp ${getVersion()}.
-Without --write, this command only prints a snippet and does not modify files.
-With --write, it deep-merges Claude/Cursor JSON or Codex TOML into the explicit config file.`;
+Print or safely reconcile an MCP client registration for tdmcp ${getVersion()}.
 
-type ParsedArgs =
+Targets:
+  --scope <project|user>    Resolve the host-native config target.
+  --project-dir <dir>      Required for project scope.
+  --path <file>             Legacy explicit client config target.
+  --name <name>             Named MCP entry (default: tdmcp).
+  --profile <name>          Resolve TD host/port from a tdmcp config profile.
+  --config <file>           Explicit tdmcp config source.
+
+Actions:
+  --check                   Report absent, matching, or drifted; never writes.
+  --diff                    Show redacted changed field names; never writes.
+  --remove                  Plan removal of only the named entry.
+  --dry-run                 Explicitly prevent writes.
+  --write                   Apply install/removal atomically after verification.
+  --json                    Emit a structured result.
+
+Without target/action options this command preserves the legacy ready-to-paste snippet.`;
+
+interface ParsedArgs {
+  client: string;
+  write: boolean;
+  dryRun: boolean;
+  diff: boolean;
+  check: boolean;
+  remove: boolean;
+  json: boolean;
+  configPath?: string;
+  explicitPath?: string;
+  token?: string;
+  scope?: string;
+  projectDir?: string;
+  name?: string;
+  profile?: string;
+}
+
+type ParseResult =
   | { kind: "help" }
-  | { kind: "run"; client: string; write: boolean; configPath?: string; token?: string }
-  | { kind: "error"; message: string; exitCode: number };
+  | { kind: "run"; args: ParsedArgs }
+  | { kind: "error"; message: string };
 
-function parseArgs(argv: string[]): ParsedArgs {
-  if (argv.includes("--help") || argv.includes("-h") || argv.length === 0) {
-    return { kind: "help" };
+function parseInstallClientArgs(argv: string[]): ParseResult {
+  if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) return { kind: "help" };
+  try {
+    const parsed = parseArgs({
+      args: argv,
+      allowPositionals: true,
+      strict: true,
+      options: {
+        write: { type: "boolean", default: false },
+        "dry-run": { type: "boolean", default: false },
+        diff: { type: "boolean", default: false },
+        check: { type: "boolean", default: false },
+        remove: { type: "boolean", default: false },
+        json: { type: "boolean", default: false },
+        path: { type: "string" },
+        token: { type: "string" },
+        scope: { type: "string" },
+        "project-dir": { type: "string" },
+        name: { type: "string" },
+        profile: { type: "string" },
+        config: { type: "string" },
+      },
+    });
+    const client = parsed.positionals[0]?.toLowerCase() ?? "";
+    const positionalPath = parsed.positionals[1];
+    if (parsed.positionals.length > 2) {
+      return { kind: "error", message: `Unexpected argument "${parsed.positionals[2]}".` };
+    }
+    return {
+      kind: "run",
+      args: {
+        client,
+        write: parsed.values.write ?? false,
+        dryRun: parsed.values["dry-run"] ?? false,
+        diff: parsed.values.diff ?? false,
+        check: parsed.values.check ?? false,
+        remove: parsed.values.remove ?? false,
+        json: parsed.values.json ?? false,
+        explicitPath: parsed.values.path ?? positionalPath,
+        token: parsed.values.token,
+        scope: parsed.values.scope,
+        projectDir: parsed.values["project-dir"],
+        name: parsed.values.name,
+        profile: parsed.values.profile,
+        configPath: parsed.values.config,
+      },
+    };
+  } catch (error) {
+    return { kind: "error", message: error instanceof Error ? error.message : String(error) };
   }
+}
 
-  let client = "";
-  let write = false;
-  let configPath: string | undefined;
-  let token: string | undefined;
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--write") {
-      write = true;
-      continue;
-    }
-    if (arg === "--path") {
-      const value = argv[index + 1];
-      if (!value) {
-        return { kind: "error", message: "--path requires a file path.\n", exitCode: 2 };
-      }
-      configPath = value;
-      index += 1;
-      continue;
-    }
-    if (arg === "--token") {
-      const value = argv[index + 1];
-      if (!value) {
-        return { kind: "error", message: "--token requires a value.\n", exitCode: 2 };
-      }
-      token = value;
-      index += 1;
-      continue;
-    }
-    if (arg?.startsWith("-")) {
-      return { kind: "error", message: `Unknown option "${arg}".\n`, exitCode: 2 };
-    }
-    if (!client) {
-      client = arg?.toLowerCase() ?? "";
-      continue;
-    }
-    if (write && !configPath) {
-      configPath = arg;
-      continue;
-    }
-    return { kind: "error", message: `Unexpected argument "${arg}".\n`, exitCode: 2 };
+type ArgsValidator = (args: ParsedArgs) => string | undefined;
+
+const validateClient: ArgsValidator = (args) =>
+  CLIENTS.has(args.client)
+    ? undefined
+    : `Unknown client "${args.client || "(missing)"}". Expected claude, codex, or cursor.`;
+
+const validateScope: ArgsValidator = (args) => {
+  if (args.scope !== undefined && args.scope !== "project" && args.scope !== "user") {
+    return "--scope must be project or user.";
   }
+  if (args.scope === "project" && !args.projectDir) return "Project scope requires --project-dir.";
+  if (args.scope !== "project" && args.projectDir) {
+    return "--project-dir is only valid with --scope project.";
+  }
+  return undefined;
+};
 
-  return { kind: "run", client, write, configPath, token };
+const validateActionCombination: ArgsValidator = (args) => {
+  if (args.write && (args.dryRun || args.diff || args.check)) {
+    return "--write cannot be combined with --dry-run, --diff, or --check.";
+  }
+  if (args.check && args.remove) return "--check cannot be combined with --remove.";
+  return undefined;
+};
+
+const validateTargetSelection: ArgsValidator = (args) => {
+  const targetsConfig = Boolean(args.explicitPath || args.scope || args.projectDir);
+  const selectsAction = args.write || args.dryRun || args.diff || args.check || args.remove;
+  if (selectsAction && !targetsConfig) {
+    return "Scoped/check/remove operations require --scope <project|user> or legacy --path <file>.";
+  }
+  return undefined;
+};
+
+function validateArgs(args: ParsedArgs): string | undefined {
+  const validators: ArgsValidator[] = [
+    validateClient,
+    validateScope,
+    validateActionCombination,
+    validateTargetSelection,
+  ];
+  for (const validate of validators) {
+    const error = validate(args);
+    if (error) return error;
+  }
+  return undefined;
+}
+
+function isLegacySnippet(args: ParsedArgs): boolean {
+  return !(
+    args.write ||
+    args.dryRun ||
+    args.diff ||
+    args.check ||
+    args.remove ||
+    args.explicitPath ||
+    args.scope ||
+    args.projectDir ||
+    args.profile ||
+    args.configPath ||
+    args.name ||
+    args.json
+  );
+}
+
+function isLegacyExplicitWrite(args: ParsedArgs): boolean {
+  return Boolean(
+    args.write &&
+      args.explicitPath &&
+      !args.scope &&
+      !args.projectDir &&
+      !args.diff &&
+      !args.check &&
+      !args.remove &&
+      !args.dryRun &&
+      !args.json &&
+      !args.name &&
+      !args.profile &&
+      !args.configPath,
+  );
+}
+
+function registrationAction(args: ParsedArgs): ClientRegistrationAction {
+  if (args.check) return "check";
+  if (args.remove) return "remove";
+  return "install";
+}
+
+function renderHuman(result: ClientRegistrationResult): string {
+  const fields = result.fields_changed.length > 0 ? result.fields_changed.join(", ") : "none";
+  return [
+    `Client registration ${result.state}: ${result.client}/${result.scope}/${result.name}`,
+    `Target: ${result.path}`,
+    `Changed fields: ${fields}`,
+    `Token: ${result.token_presence}`,
+  ].join("\n");
+}
+
+function inputFailureCode(message: string): number {
+  return /requires|only valid|cannot be combined|not supported|registration name/.test(message)
+    ? 2
+    : 1;
 }
 
 export async function runInstallClient(argv: string[] = []): Promise<void> {
-  const parsed = parseArgs(argv);
+  const parsed = parseInstallClientArgs(argv);
+  if (handleNonRunResult(parsed)) return;
+  await runParsedInstallClient(parsed.args);
+}
+
+function handleNonRunResult(parsed: ParseResult): parsed is Exclude<ParseResult, { kind: "run" }> {
   if (parsed.kind === "help") {
     process.stdout.write(`${HELP}\n`);
-    return;
+    return true;
   }
   if (parsed.kind === "error") {
-    process.stderr.write(parsed.message);
-    process.exitCode = parsed.exitCode;
-    return;
+    process.stderr.write(`${parsed.message}\n`);
+    process.exitCode = 2;
+    return true;
   }
+  return false;
+}
 
-  const client = parsed.client;
-  if (!CLIENTS.has(client)) {
-    process.stderr.write(
-      `Unknown client "${client || "(missing)"}". Expected claude, codex, or cursor.\n`,
-    );
+async function runParsedInstallClient(args: ParsedArgs): Promise<void> {
+  const error = validateArgs(args);
+  if (error) {
+    process.stderr.write(`${error}\n`);
     process.exitCode = 2;
     return;
   }
-
-  if (!parsed.write) {
-    const snippet = installClientSnippet(client, parsed.token);
+  const client = args.client as Client;
+  if (isLegacySnippet(args)) {
+    const snippet = installClientSnippet(client, args.token);
     process.stdout.write(
       typeof snippet === "string" ? `${snippet}\n` : `${JSON.stringify(snippet, null, 2)}\n`,
     );
     return;
   }
+  const config = loadRegistrationConfig(args);
+  if (!config) return;
+  await executeRegistration(args, client, config);
+}
 
-  if (!parsed.configPath) {
-    process.stderr.write(
-      "--write requires --path <file> or a positional file path after --write.\n",
-    );
-    process.exitCode = 2;
-    return;
-  }
-
+function loadRegistrationConfig(args: ParsedArgs): TdmcpConfig | undefined {
   try {
-    await writeInstallClientConfig(client as Client, parsed.configPath, parsed.token);
-  } catch (error) {
-    process.stderr.write(`${errorMessage(error)}\n`);
-    process.exitCode = 1;
-    return;
+    return loadConfig(process.env, {
+      useFiles: true,
+      profile: args.profile,
+      configPath: args.configPath,
+      cwd: args.projectDir ?? process.cwd(),
+    });
+  } catch (loadError) {
+    process.stderr.write(`${loadError instanceof Error ? loadError.message : String(loadError)}\n`);
+    process.exitCode = 2;
+    return undefined;
   }
-  process.stdout.write(`Wrote ${parsed.configPath}\n`);
+}
+
+async function executeRegistration(
+  args: ParsedArgs,
+  client: Client,
+  config: TdmcpConfig,
+): Promise<void> {
+  try {
+    const result = await manageClientRegistration({
+      client,
+      scope: args.scope as "project" | "user" | undefined,
+      projectDir: args.projectDir,
+      explicitPath: args.explicitPath,
+      name: args.name,
+      action: registrationAction(args),
+      server: buildTdmcpStdioServer({
+        host: config.tdHost,
+        port: config.tdPort,
+        token: args.token ?? config.bridgeToken,
+      }),
+      write: args.write,
+    });
+    if (isLegacyExplicitWrite(args)) {
+      process.stdout.write(`Wrote ${result.path}\n`);
+      return;
+    }
+    process.stdout.write(
+      args.json ? `${JSON.stringify(result, null, 2)}\n` : `${renderHuman(result)}\n`,
+    );
+  } catch (registrationError) {
+    const message =
+      registrationError instanceof Error ? registrationError.message : String(registrationError);
+    process.stderr.write(`${message}\n`);
+    process.exitCode = inputFailureCode(message);
+  }
 }

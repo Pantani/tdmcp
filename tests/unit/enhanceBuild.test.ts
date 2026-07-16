@@ -2,7 +2,17 @@ import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { LlmClientLike } from "../../src/llm/client.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
-import { enhanceBuildImpl, enhanceBuildSchema } from "../../src/tools/layer1/enhanceBuild.js";
+import {
+  enhanceBuildImpl,
+  enhanceBuildSchema,
+  enhanceBuildWithVisualImpl,
+} from "../../src/tools/layer1/enhanceBuild.js";
+import {
+  VISUAL_CRITIQUE_FIXTURE_RECEIPT_ID,
+  VISUAL_CRITIQUE_FIXTURE_SUITE,
+  VISUAL_CRITIQUE_RUBRIC_ID,
+  type VisualCritiqueDependencies,
+} from "../../src/tools/layer1/enhanceBuildVisualCritique.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
@@ -68,6 +78,138 @@ describe("enhanceBuildImpl", () => {
     expect(parsed.autoApply).toBe(false);
     expect(parsed.maxProposals).toBe(3);
     expect(parsed.rescore).toBe(true);
+  });
+
+  it("adds strict visualCritique without accepting a caller-owned gate boolean", () => {
+    const parsed = enhanceBuildSchema.parse({
+      visualCritique: {
+        outputTopPath: "/project1/out1",
+        targets: [{ nodePath: "/project1/level1", parameter: "opacity", minimum: 0, maximum: 1 }],
+      },
+    });
+    expect(parsed.visualCritique?.fixtureReceiptId).toBe(VISUAL_CRITIQUE_FIXTURE_RECEIPT_ID);
+    expect(() =>
+      enhanceBuildSchema.parse({
+        focusCriterion: "palette",
+        visualCritique: {
+          outputTopPath: "/project1/out1",
+          targets: [{ nodePath: "/project1/level1", parameter: "opacity", minimum: 0, maximum: 1 }],
+        },
+      }),
+    ).toThrow(/cannot be combined/);
+    expect(() =>
+      enhanceBuildSchema.parse({
+        visualCritique: {
+          outputTopPath: "/project1/out1",
+          targets: [{ nodePath: "/project1/level1", parameter: "opacity", minimum: 0, maximum: 1 }],
+          fixtureReceiptId: true,
+        },
+      }),
+    ).toThrow();
+  });
+
+  it("routes visualCritique through the bounded branch and leaves the legacy planner unused", async () => {
+    const fingerprint = "a".repeat(64);
+    const digest = "0533d74300e4f9bc367d675d4e64ffd073d50ff16a2b4096cc2e8a1cf8c96319";
+    const model = "qwen3-vl:8b-instruct-q4_K_M";
+    const calibrationFingerprint =
+      "sha256:c7439a25964685329e256ee9706aba340226068cbc5a652f802eef30d0ed1241";
+    const legacyLlm = makeLlm('{"proposals":[{"tool":"delete_td_node"}]}');
+    const visualDeps: VisualCritiqueDependencies = {
+      now: () => 1_000,
+      resolveGate: async () => ({
+        identity: {
+          provider: "ollama",
+          model,
+          digest,
+          quantization: "Q4_K_M",
+          fingerprint: calibrationFingerprint,
+          advertisesVision: true,
+        },
+        calibration: {
+          status: "PASS",
+          model,
+          digest,
+          fingerprint: calibrationFingerprint,
+          reusableForMutation: true,
+          expiresAtMs: 2_000,
+          imageInput: { status: "PASS", passed: 1, failed: 0, unverified: 0 },
+        },
+        fixture: {
+          result: "PASS",
+          suite: VISUAL_CRITIQUE_FIXTURE_SUITE,
+          rubricId: VISUAL_CRITIQUE_RUBRIC_ID,
+          model,
+          digest,
+          calibrationFingerprint,
+          strictResponses: 6,
+          goodSpread: 0,
+          badSpread: 0,
+          medianDelta: 39,
+          expiresAtMs: 2_000,
+        },
+      }),
+      inspect: async () => ({
+        scopePath: "/project1",
+        outputTopPath: "/project1/out1",
+        fingerprint,
+        targets: [
+          {
+            id: "t1",
+            path: "/project1/level1",
+            parameter: "opacity",
+            type: "Float",
+            mode: "CONSTANT",
+            value: 0.5,
+            minimum: 0,
+            maximum: 1,
+          },
+        ],
+      }),
+      capture: async () => ({
+        base64: Buffer.from("visual-frame").toString("base64"),
+        mimeType: "image/png",
+        width: 640,
+        height: 360,
+        technical: { errorCount: 0, previewReadable: true },
+      }),
+      critique: async () => ({
+        text: JSON.stringify({
+          rubric: {
+            composition_hierarchy: 80,
+            palette_coherence: 80,
+            contrast_legibility: 80,
+            spatial_balance: 80,
+          },
+          summary: "bounded",
+          changes: [{ target_id: "t1", value: 0.75, rationale: "bounded", risk: "low" }],
+        }),
+        identity: { model, digest, fingerprint: calibrationFingerprint },
+      }),
+      approve: async () => ({ state: "resolved", choice: "Keep" }),
+      commit: async () => ({ status: "failed" }),
+      restore: async () => ({ restored: false, verified: false }),
+    };
+    const parsed = enhanceBuildSchema.parse({
+      visualCritique: {
+        outputTopPath: "/project1/out1",
+        targets: [{ nodePath: "/project1/level1", parameter: "opacity", minimum: 0, maximum: 1 }],
+      },
+    });
+    const result = await enhanceBuildWithVisualImpl(
+      makeCtx({ llm: legacyLlm }),
+      parsed,
+      visualDeps,
+    );
+    const output = result.structuredContent as {
+      visualCritique: { status: string; iterations: unknown[] };
+      proposals: unknown[];
+      applied: unknown[];
+    };
+    expect(output.visualCritique.status).toBe("PASS");
+    expect(output.visualCritique.iterations).toHaveLength(1);
+    expect(output.proposals).toHaveLength(1);
+    expect(output.applied).toEqual([]);
   });
 
   it("no LLM configured → warning, proposals empty, before populated", async () => {

@@ -5,7 +5,8 @@ import { silentLogger } from "../utils/logger.js";
 import { doctorAllPackages, doctorPackage } from "./doctor.js";
 import { installPackage, uninstallPackage } from "./installer.js";
 import { createPackagePaths } from "./paths.js";
-import { listPackages, resolvePackage, searchPackages } from "./registry.js";
+import { getDeferredPackage, listPackages, resolvePackage, searchPackages } from "./registry.js";
+import { type PackageStorageResolution, resolvePackageStorage } from "./scopes.js";
 import { readPackageState } from "./state.js";
 import type { PackageBridge, PackageCliResult, PackageManagerOptions } from "./types.js";
 
@@ -21,6 +22,9 @@ const PACKAGE_COMMANDS = new Set([
 
 export interface RunPackageCliOptions extends PackageManagerOptions {
   bridge?: PackageBridge;
+  cwd?: string;
+  homeDir?: string;
+  env?: NodeJS.ProcessEnv;
 }
 
 export function isPackageCommand(command: string | undefined): boolean {
@@ -76,9 +80,59 @@ function usage(): string {
     "  tdmcp info <lib> [--json]",
     "  tdmcp install <lib> [--project /project1] [--name customName] [--dry-run] [--pin <ref>] [--json] [--yes] [--allow-python-deps] [--allow-external]",
     "  tdmcp uninstall <lib> [--project /project1] [--json] [--yes]",
-    "  tdmcp doctor [<lib>] [--json]",
-    "  tdmcp packages path [--json]",
+    "  tdmcp packages doctor [<lib>] [--json]",
+    "  tdmcp packages path [--scope user|project] [--project-dir <dir>] [--json]",
   ]);
+}
+
+function packageScope(value: string | boolean | undefined): "project" | "user" {
+  if (value === undefined || value === "user") return "user";
+  if (value === "project") return "project";
+  throw new Error("--scope must be user or project.");
+}
+
+function stringValue(value: string | boolean | undefined): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function resolveCliStorage(
+  values: ParsedValues,
+  opts: RunPackageCliOptions,
+): PackageStorageResolution {
+  return resolvePackageStorage({
+    scope: packageScope(values.scope),
+    projectDir: stringValue(values["project-dir"]),
+    rootOverride: stringValue(values["packages-root"]) ?? stringValue(values.dir) ?? opts.rootDir,
+    cwd: opts.cwd,
+    homeDir: opts.homeDir,
+    env: opts.env,
+  });
+}
+
+const STORAGE_OPTIONS = {
+  scope: { type: "string" as const },
+  "project-dir": { type: "string" as const },
+  "packages-root": { type: "string" as const },
+};
+
+function packageDoctorResult(id: string | undefined, asJson: boolean): PackageCliResult {
+  const report = id ? doctorPackage(id) : doctorAllPackages();
+  if (asJson) return ok(json(report));
+  return ok(
+    textList([
+      report.package
+        ? `${report.package.displayName}: ${report.status}`
+        : report.deferred
+          ? `${report.deferred.displayName}: deferred`
+          : `Package doctor: ${report.status}`,
+      ...report.checks.map((check) => `[${check.status}] ${check.message}`),
+      ...report.nextSteps.map((step) => `Next: ${step}`),
+    ]),
+  );
+}
+
+export function isKnownPackageDoctorTarget(id: string | undefined): boolean {
+  return Boolean(id && (resolvePackage(id) || getDeferredPackage(id)));
 }
 
 function packageSummary(pkg: ReturnType<typeof listPackages>[number]): string {
@@ -107,14 +161,16 @@ export async function runPackageCli(
         json: { type: "boolean", default: false },
         installed: { type: "boolean", default: false },
         available: { type: "boolean", default: false },
+        ...STORAGE_OPTIONS,
       });
       const values = parsed.values as ParsedValues;
-      const paths = createPackagePaths({ rootDir: opts.rootDir });
+      const storage = resolveCliStorage(values, opts);
+      const paths = createPackagePaths({ rootDir: storage.root });
       const available = listPackages({
         available: !(values.installed && !values.available),
       });
       const installed = values.installed ? readPackageState(paths).packages : [];
-      const doc = { available, installed };
+      const doc = { available, installed, storage };
       if (values.json) return ok(json(doc));
       const rows = [
         ...(available.length > 0 ? ["Available:", ...available.map(packageSummary)] : []),
@@ -158,19 +214,16 @@ export async function runPackageCli(
         yes: { type: "boolean", default: false },
         "allow-python-deps": { type: "boolean", default: false },
         "allow-external": { type: "boolean", default: false },
+        scope: { type: "string" },
+        "project-dir": { type: "string" },
       });
       const values = parsed.values as ParsedValues;
       const id = parsed.positionals[0];
       if (!id) return fail("Usage: tdmcp install <lib> [--dry-run] [--json]");
-      const rootDir =
-        typeof values["packages-root"] === "string"
-          ? values["packages-root"]
-          : typeof values.dir === "string"
-            ? values.dir
-            : opts.rootDir;
+      const storage = resolveCliStorage(values, opts);
       const report = await installPackage(id, {
         ...opts,
-        rootDir,
+        rootDir: storage.root,
         dryRun: Boolean(values["dry-run"]),
         projectPath: typeof values.project === "string" ? values.project : undefined,
         name: typeof values.name === "string" ? values.name : undefined,
@@ -181,11 +234,12 @@ export async function runPackageCli(
         allowExternal: Boolean(values["allow-external"]),
         bridge: values["dry-run"] ? { mode: "offline" } : (opts.bridge ?? defaultBridge()),
       });
-      if (values.json) return ok(json(report));
+      if (values.json) return ok(json({ ...report, storage }));
       return ok(
         textList(
           [
             `${report.package.displayName}: ${report.status}`,
+            `Storage: ${storage.scope} (${storage.root})`,
             report.stagedPath ? `Staged: ${report.stagedPath}` : "",
             ...report.warnings.map((warning) => `Warning: ${warning}`),
             ...report.nextSteps.map((step) => `Next: ${step}`),
@@ -199,15 +253,22 @@ export async function runPackageCli(
         json: { type: "boolean", default: false },
         project: { type: "string" },
         yes: { type: "boolean", default: false },
+        ...STORAGE_OPTIONS,
       });
       const values = parsed.values as ParsedValues;
       const id = parsed.positionals[0];
       if (!id) return fail("Usage: tdmcp uninstall <lib> [--json] [--yes]");
-      const report = await uninstallPackage(id, { ...opts, yes: Boolean(values.yes) });
-      if (values.json) return ok(json(report));
+      const storage = resolveCliStorage(values, opts);
+      const report = await uninstallPackage(id, {
+        ...opts,
+        rootDir: storage.root,
+        yes: Boolean(values.yes),
+      });
+      if (values.json) return ok(json({ ...report, storage }));
       return ok(
         textList([
           `${report.packageId}: ${report.removed ? "removed" : "not installed"}`,
+          `Storage: ${storage.scope} (${storage.root})`,
           ...report.warnings.map((warning) => `Warning: ${warning}`),
           ...report.nextSteps.map((step) => `Next: ${step}`),
         ]),
@@ -217,28 +278,26 @@ export async function runPackageCli(
     if (command === "doctor") {
       const parsed = parse(argv.slice(1), { json: { type: "boolean", default: false } });
       const values = parsed.values as ParsedValues;
-      const id = parsed.positionals[0];
-      const report = id ? doctorPackage(id) : doctorAllPackages();
-      if (values.json) return ok(json(report));
-      return ok(
-        textList([
-          report.package
-            ? `${report.package.displayName}: ${report.status}`
-            : report.deferred
-              ? `${report.deferred.displayName}: deferred`
-              : `Package doctor: ${report.status}`,
-          ...report.checks.map((check) => `[${check.status}] ${check.message}`),
-          ...report.nextSteps.map((step) => `Next: ${step}`),
-        ]),
-      );
+      return packageDoctorResult(parsed.positionals[0], Boolean(values.json));
     }
 
     if (command === "packages") {
-      const parsed = parse(argv.slice(1), { json: { type: "boolean", default: false } });
+      const parsed = parse(argv.slice(1), {
+        json: { type: "boolean", default: false },
+        ...STORAGE_OPTIONS,
+      });
       const values = parsed.values as ParsedValues;
-      if (parsed.positionals[0] !== "path") return fail("Usage: tdmcp packages path [--json]");
-      const paths = createPackagePaths({ rootDir: opts.rootDir });
-      if (values.json) return ok(json(paths));
+      if (parsed.positionals[0] === "doctor") {
+        return packageDoctorResult(parsed.positionals[1], Boolean(values.json));
+      }
+      if (parsed.positionals[0] !== "path") {
+        return fail(
+          "Usage: tdmcp packages path [--json] or tdmcp packages doctor [package] [--json]",
+        );
+      }
+      const storage = resolveCliStorage(values, opts);
+      const paths = createPackagePaths({ rootDir: storage.root });
+      if (values.json) return ok(json({ ...paths, storage }));
       return ok(textList([paths.root]));
     }
   } catch (err) {

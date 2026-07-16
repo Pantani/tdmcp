@@ -1,5 +1,4 @@
-import type { z } from "zod";
-import { registerAllPrompts } from "../prompts/index.js";
+import { collectRegisteredPrompts } from "../prompts/registry.js";
 import type { PromptContext } from "../prompts/types.js";
 import { jsonContents, type ResourceRegistrar } from "./shared.js";
 
@@ -10,33 +9,13 @@ export interface PromptCatalogEntry {
   args: string[];
 }
 
-interface PromptCaptureServer {
-  registerPrompt(
-    name: string,
-    meta: {
-      title?: string;
-      description?: string;
-      argsSchema?: Record<string, z.ZodTypeAny>;
-    },
-    handler: unknown,
-  ): void;
-}
-
 export function collectPromptCatalog(ctx: PromptContext): PromptCatalogEntry[] {
-  const prompts: PromptCatalogEntry[] = [];
-  const capture: PromptCaptureServer = {
-    registerPrompt(name, meta) {
-      prompts.push({
-        name,
-        title: meta.title ?? name,
-        summary: meta.description ?? "",
-        args: Object.keys(meta.argsSchema ?? {}),
-      });
-    },
-  };
-
-  registerAllPrompts(capture as never, ctx);
-  return prompts;
+  return collectRegisteredPrompts(ctx).entries.map(({ descriptor }) => ({
+    name: descriptor.name,
+    title: descriptor.title,
+    summary: descriptor.summary,
+    args: [...descriptor.args],
+  }));
 }
 
 export const registerPromptCatalogResource: ResourceRegistrar = (server, ctx) => {
@@ -53,7 +32,7 @@ export const registerPromptCatalogResource: ResourceRegistrar = (server, ctx) =>
       const prompts = collectPromptCatalog(ctx);
       return jsonContents(uri, {
         count: prompts.length,
-        note: "Invoke these as MCP prompts. The local `tdmcp chat` copilot can't call them directly, but it can follow the named recipe's intent.",
+        note: "Invoke these as MCP prompts. The local copilot can render a registered prompt as bounded, untrusted playbook evidence; the active tool tier remains authoritative.",
         prompts,
       });
     },

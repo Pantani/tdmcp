@@ -78,6 +78,11 @@ class FakeNode:
         self.inputConnectors = [FakeConnector() for _ in range(n_in)]
         self.outputConnectors = [FakeConnector() for _ in range(n_out)]
         self._parent_path = parent_path
+        self.nodeX = 0.0
+        self.nodeY = 0.0
+        self.nodeWidth = 130.0
+        self.nodeHeight = 90.0
+        self.viewer = False
 
     def pars(self):
         return [v for v in vars(self.par).values() if isinstance(v, FakePar)]
@@ -141,6 +146,77 @@ class CreateNodeWarningTests(unittest.TestCase):
             ref = api_service.create_node("/project1", "fakeTOP", "lvl", {"brightness1": 0.5})
         self.assertNotIn("parameter_warnings", ref)
         self.assertNotIn("already_existed", ref)
+
+
+class CreateNodePlacementTests(unittest.TestCase):
+    def _create(self, node, parent, **kwargs):
+        parent.op.return_value = None
+        parent.create.return_value = node
+        with mock.patch.object(api_service, "op", lambda _p: parent), mock.patch.object(
+            api_service, "_resolve_type", lambda _t: object
+        ):
+            return api_service.create_node("/project1", "fakeTOP", "placed", **kwargs)
+
+    def test_legacy_omission_preserves_touchdesigner_drop_position(self):
+        node = FakeNode("/project1/placed")
+        node.nodeX, node.nodeY, node.viewer = 37.0, -19.0, True
+        ref = self._create(node, mock.MagicMock(name="parent"))
+        self.assertEqual((node.nodeX, node.nodeY, node.viewer), (37.0, -19.0, True))
+        self.assertEqual((ref["nodeX"], ref["nodeY"], ref["viewer"]), (37.0, -19.0, True))
+
+    def test_explicit_placement_and_viewer_are_exact(self):
+        node = FakeNode("/project1/placed")
+        ref = self._create(
+            node,
+            mock.MagicMock(name="parent"),
+            placement="explicit",
+            node_x=420,
+            node_y=-240,
+            viewer=True,
+        )
+        self.assertEqual((node.nodeX, node.nodeY, node.viewer), (420.0, -240.0, True))
+        self.assertEqual((ref["nodeX"], ref["nodeY"], ref["viewer"]), (420.0, -240.0, True))
+
+    def test_auto_placement_uses_first_free_deterministic_grid_cell(self):
+        occupied = FakeNode("/project1/existing")
+        node = FakeNode("/project1/placed")
+        parent = mock.MagicMock(name="parent")
+        parent.children = [occupied, node]
+        self._create(node, parent, placement="auto")
+        self.assertEqual((node.nodeX, node.nodeY), (0.0, -200.0))
+
+    def test_explicit_coordinates_require_explicit_policy(self):
+        with self.assertRaisesRegex(ValueError, "placement='explicit'"):
+            api_service.create_node("/project1", "fakeTOP", node_x=1, node_y=2)
+
+    def test_direct_rest_values_reject_non_finite_coordinates_and_string_viewer(self):
+        for kwargs in (
+            {"placement": "explicit", "node_x": float("inf"), "node_y": 0},
+            {"placement": "explicit", "node_x": 0, "node_y": 0, "viewer": "false"},
+        ):
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                api_service.create_node("/project1", "fakeTOP", **kwargs)
+
+    def test_reused_node_keeps_existing_editor_state(self):
+        existing = FakeNode("/project1/placed")
+        existing.OPType = "fakeTOP"
+        existing.nodeX, existing.nodeY, existing.viewer = 12.0, -34.0, True
+        parent = mock.MagicMock(name="parent")
+        parent.op.return_value = existing
+        with mock.patch.object(api_service, "op", lambda _p: parent), mock.patch.object(
+            api_service, "_resolve_type", lambda _t: object
+        ):
+            ref = api_service.create_node(
+                "/project1",
+                "fakeTOP",
+                "placed",
+                placement="explicit",
+                node_x=999,
+                node_y=999,
+                viewer=False,
+            )
+        self.assertTrue(ref["already_existed"])
+        self.assertEqual((existing.nodeX, existing.nodeY, existing.viewer), (12.0, -34.0, True))
 
 
 class CreateNodeIdempotencyTests(unittest.TestCase):
@@ -277,12 +353,29 @@ class SampleGridTests(unittest.TestCase):
 
 
 class DeleteModeTests(unittest.TestCase):
-    def test_default_mode_destroys(self):
+    def test_default_mode_fails_closed_to_keep(self):
         node = mock.MagicMock(name="node")
         with mock.patch.object(api_service, "op", lambda p: node):
             result = api_service.delete_node("/project1/x")
+        node.destroy.assert_not_called()
+        self.assertEqual(result["decision"], "Keep")
+        self.assertFalse(result["applied"])
+
+    def test_resolved_delete_destroys(self):
+        node = mock.MagicMock(name="node")
+        with mock.patch.object(api_service, "op", lambda p: node):
+            result = api_service.delete_node("/project1/x", decision="Delete")
         node.destroy.assert_called_once()
         self.assertEqual(result["deleted"], "/project1/x")
+
+    def test_explicit_yolo_destroys_and_is_auditable(self):
+        node = mock.MagicMock(name="node")
+        with mock.patch.object(api_service, "op", lambda p: node):
+            result = api_service.delete_node(
+                "/project1/x", confirmation_policy="yolo"
+            )
+        node.destroy.assert_called_once()
+        self.assertEqual(result["confirmation_policy"], "yolo")
 
     def test_bypass_mode_sets_flag_and_does_not_destroy(self):
         node = mock.MagicMock(name="node")
@@ -303,6 +396,56 @@ class DeleteModeTests(unittest.TestCase):
         with mock.patch.object(api_service, "op", lambda p: None):
             with self.assertRaises(LookupError):
                 api_service.delete_node("/nope", "bypass")
+
+
+class BatchDeleteSafetyTests(unittest.TestCase):
+    def test_unconfirmed_batch_delete_is_keep_and_not_success(self):
+        with mock.patch.object(
+            batch_service.api_service,
+            "delete_node",
+            return_value={"decision": "Keep", "applied": False, "action_applied": "keep"},
+        ) as delete:
+            report = batch_service.run([{"action": "delete", "path": "/project1/x"}])
+        entry = report["results"][0]
+        self.assertFalse(entry["ok"])
+        self.assertEqual(entry["data"]["decision"], "Keep")
+        self.assertIn("standalone delete_td_node", entry["error"])
+        delete.assert_called_once_with(
+            "/project1/x", mode="delete", confirmation_policy="native"
+        )
+
+    def test_batch_bypass_is_explicit_and_reported_from_readback(self):
+        result = {"decision": "Bypass", "applied": True, "action_applied": "bypass"}
+        with mock.patch.object(
+            batch_service.api_service, "delete_node", return_value=result
+        ) as delete:
+            report = batch_service.run(
+                [{"action": "delete", "path": "/project1/x", "mode": "bypass"}]
+            )
+        self.assertTrue(report["results"][0]["ok"])
+        delete.assert_called_once_with(
+            "/project1/x", mode="bypass", confirmation_policy="explicit_mode"
+        )
+
+    def test_batch_yolo_delete_is_explicit_and_auditable(self):
+        result = {"decision": "Delete", "applied": True, "confirmation_policy": "yolo"}
+        with mock.patch.object(
+            batch_service.api_service, "delete_node", return_value=result
+        ) as delete:
+            report = batch_service.run(
+                [
+                    {
+                        "action": "delete",
+                        "path": "/project1/x",
+                        "confirmation_policy": "yolo",
+                    }
+                ]
+            )
+        self.assertTrue(report["results"][0]["ok"])
+        self.assertEqual(report["results"][0]["data"]["confirmation_policy"], "yolo")
+        delete.assert_called_once_with(
+            "/project1/x", mode="delete", confirmation_policy="yolo"
+        )
 
 
 class EditorFocusTests(unittest.TestCase):

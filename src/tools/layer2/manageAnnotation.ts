@@ -5,9 +5,9 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const manageAnnotationSchema = z.object({
   action: z
-    .enum(["create", "comment", "list", "enclosed"])
+    .enum(["create", "comment", "list", "enclosed", "edit"])
     .describe(
-      "'create' a titled annotation box, 'comment' to set an op's comment, 'list' the annotations in a network, or 'enclosed' to list the ops a box geometrically encloses.",
+      "'create' a titled annotation box, 'edit' an Annotate COMP's text/style/bounds, 'comment' to set an op's comment, 'list' the annotations in a network, or 'enclosed' to list the ops a box geometrically encloses.",
     ),
   parent_path: z
     .string()
@@ -37,6 +37,25 @@ export const manageAnnotationSchema = z.object({
     .describe("(create) Node-space Y position for the box's top edge."),
   w: z.coerce.number().optional().describe("(create) Node-space width of the box."),
   h: z.coerce.number().optional().describe("(create) Node-space height of the box."),
+  title: z
+    .string()
+    .max(512)
+    .optional()
+    .describe("(edit) Exact Annotate COMP title; empty clears it."),
+  body: z
+    .string()
+    .max(8192)
+    .optional()
+    .describe("(edit) Exact Annotate COMP body; empty clears it."),
+  color: z
+    .tuple([
+      z.number().finite().min(0).max(1),
+      z.number().finite().min(0).max(1),
+      z.number().finite().min(0).max(1),
+      z.number().finite().min(0).max(1),
+    ])
+    .optional()
+    .describe("(edit) Exact RGBA background colour, four channels from 0 to 1."),
 });
 type ManageAnnotationArgs = z.infer<typeof manageAnnotationSchema>;
 
@@ -269,61 +288,115 @@ export function buildManageAnnotationScript(payload: object): string {
   return buildPayloadScript(ANNOTATION_SCRIPT, payload);
 }
 
-export async function manageAnnotationImpl(ctx: ToolContext, args: ManageAnnotationArgs) {
-  // Per-action argument pre-checks the schema can't express (avoid a wasted bridge call).
-  if (args.action === "comment") {
-    if (!args.node_path || args.text === undefined) {
-      return errorResult("`comment` requires both `node_path` (the op) and `text` (the comment).");
-    }
+function validateManageAnnotationArgs(args: ManageAnnotationArgs): string | undefined {
+  if (args.action === "comment" && (!args.node_path || args.text === undefined)) {
+    return "`comment` requires both `node_path` (the op) and `text` (the comment).";
   }
   if (args.action === "enclosed" && !args.node_path) {
-    return errorResult("`enclosed` requires `node_path` (the annotation box to inspect).");
+    return "`enclosed` requires `node_path` (the annotation box to inspect).";
   }
+  if (args.action !== "edit") return undefined;
+  if (!args.node_path) {
+    return "`edit` requires `node_path` (the Annotate COMP to update).";
+  }
+  if (args.text !== undefined || args.name !== undefined) {
+    return "`edit` uses `title`/`body`; legacy `text` and `name` are not allowed.";
+  }
+  return undefined;
+}
+
+function annotationChanges(args: ManageAnnotationArgs) {
+  return {
+    ...(args.title !== undefined ? { title: args.title } : {}),
+    ...(args.body !== undefined ? { body: args.body } : {}),
+    ...(args.color !== undefined ? { color: args.color } : {}),
+    ...(args.x !== undefined ? { x: args.x } : {}),
+    ...(args.y !== undefined ? { y: args.y } : {}),
+    ...(args.w !== undefined ? { w: args.w } : {}),
+    ...(args.h !== undefined ? { h: args.h } : {}),
+  };
+}
+
+function editAnnotation(ctx: ToolContext, args: ManageAnnotationArgs) {
+  const changes = annotationChanges(args);
+  if (Object.keys(changes).length === 0) {
+    return errorResult("`edit` requires at least one of title, body, color, x, y, w, or h.");
+  }
+  return guardTd(
+    () => ctx.client.editAnnotation(args.node_path as string, changes),
+    (report) => {
+      if (!report.applied) {
+        return errorResult(
+          `Annotation edit failed: ${report.error?.message ?? "TouchDesigner did not confirm the requested state"}.`,
+          report,
+        );
+      }
+      const applied = Object.values(report.fields).filter(
+        (field) => field.status === "applied",
+      ).length;
+      const unchanged = Object.values(report.fields).filter(
+        (field) => field.status === "unchanged",
+      ).length;
+      return jsonResult(
+        `Edited annotation ${report.final_path}: ${applied} applied, ${unchanged} unchanged.`,
+        report,
+      );
+    },
+  );
+}
+
+async function runLegacyAnnotation(ctx: ToolContext, args: ManageAnnotationArgs) {
+  const script = buildManageAnnotationScript({
+    action: args.action,
+    parent: args.parent_path,
+    text: args.text ?? null,
+    name: args.name ?? null,
+    node: args.node_path ?? null,
+    x: args.x ?? null,
+    y: args.y ?? null,
+    w: args.w ?? null,
+    h: args.h ?? null,
+  });
+  const exec = await ctx.client.executePythonScript(script, true);
+  return parsePythonReport<AnnotationReport>(exec.stdout);
+}
+
+function annotationSummary(report: AnnotationReport, parentPath: string): string {
+  const warn = report.warnings.length ? ` (${report.warnings.length} warning(s))` : "";
+  switch (report.action) {
+    case "create":
+      return `Created annotation at ${report.created}${
+        report.pars_set?.length ? ` — set ${report.pars_set.join(", ")}` : ""
+      }${warn}.`;
+    case "comment":
+      return report.commented
+        ? `Set comment on ${report.node}${warn}.`
+        : `Could not set a comment on ${report.node}${warn}.`;
+    case "list":
+      return `Found ${report.annotations?.length ?? 0} annotation COMP(s) and ${
+        report.network_boxes?.length ?? 0
+      } network box(es) in ${parentPath}${warn}.`;
+    default:
+      return `${report.box} encloses ${report.enclosed?.length ?? 0} op(s)${warn}.`;
+  }
+}
+
+function legacyAnnotationResult(report: AnnotationReport, parentPath: string) {
+  if (report.fatal) {
+    return errorResult(`Annotation ${report.action} failed: ${report.fatal}`, report);
+  }
+  return jsonResult(annotationSummary(report, parentPath), report);
+}
+
+export async function manageAnnotationImpl(ctx: ToolContext, args: ManageAnnotationArgs) {
+  // Per-action argument pre-checks the schema can't express (avoid a wasted bridge call).
+  const validationError = validateManageAnnotationArgs(args);
+  if (validationError) return errorResult(validationError);
+  if (args.action === "edit") return editAnnotation(ctx, args);
 
   return guardTd(
-    async () => {
-      const script = buildManageAnnotationScript({
-        action: args.action,
-        parent: args.parent_path,
-        text: args.text ?? null,
-        name: args.name ?? null,
-        node: args.node_path ?? null,
-        x: args.x ?? null,
-        y: args.y ?? null,
-        w: args.w ?? null,
-        h: args.h ?? null,
-      });
-      const exec = await ctx.client.executePythonScript(script, true);
-      return parsePythonReport<AnnotationReport>(exec.stdout);
-    },
-    (report) => {
-      if (report.fatal) {
-        return errorResult(`Annotation ${report.action} failed: ${report.fatal}`, report);
-      }
-      const warn = report.warnings.length ? ` (${report.warnings.length} warning(s))` : "";
-      let summary: string;
-      switch (report.action) {
-        case "create":
-          summary = `Created annotation at ${report.created}${
-            report.pars_set?.length ? ` — set ${report.pars_set.join(", ")}` : ""
-          }${warn}.`;
-          break;
-        case "comment":
-          summary = report.commented
-            ? `Set comment on ${report.node}${warn}.`
-            : `Could not set a comment on ${report.node}${warn}.`;
-          break;
-        case "list":
-          summary = `Found ${report.annotations?.length ?? 0} annotation COMP(s) and ${
-            report.network_boxes?.length ?? 0
-          } network box(es) in ${args.parent_path}${warn}.`;
-          break;
-        default:
-          summary = `${report.box} encloses ${report.enclosed?.length ?? 0} op(s)${warn}.`;
-          break;
-      }
-      return jsonResult(summary, report);
-    },
+    () => runLegacyAnnotation(ctx, args),
+    (report) => legacyAnnotationResult(report, args.parent_path),
   );
 }
 
@@ -333,7 +406,7 @@ export const registerManageAnnotation: ToolRegistrar = (server, ctx) => {
     {
       title: "Manage annotation",
       description:
-        "Self-document a network: create a titled annotation box, set an op's comment, list the annotations/comments in a network, or list the ops a box geometrically encloses. Makes generated networks legible.",
+        "Self-document a network: create a titled annotation box; safely edit an existing Annotate COMP's title, body, RGBA background, or exact node-space bounds; set an op comment; list annotations; or inspect geometric enclosure. The edit action is a structured, verified transaction that works with raw Python disabled.",
       inputSchema: manageAnnotationSchema.shape,
       // list/enclosed are read-ish, but create/comment mutate, so this is not read-only.
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },

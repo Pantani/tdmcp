@@ -1,0 +1,46 @@
+{
+  "pages": [
+    {
+      "slug": "native-interaction-safety",
+      "status": "source-only",
+      "en": "Native interaction & safety",
+      "pt": "Interação nativa & segurança"
+    },
+    {
+      "slug": "oauth-pkce",
+      "status": "source-only",
+      "en": "OAuth, PKCE & TD consent",
+      "pt": "OAuth, PKCE & consentimento TD"
+    },
+    {
+      "slug": "editor-workspaces",
+      "status": "source-only",
+      "en": "Editor workspaces & exact placement",
+      "pt": "Workspaces do editor & placement exato"
+    },
+    {
+      "slug": "build-aware-runtime",
+      "status": "source-only",
+      "en": "Build-aware agent & runtime",
+      "pt": "Agent build-aware & runtime"
+    },
+    {
+      "slug": "live-project-search",
+      "status": "source-only",
+      "en": "Live project search",
+      "pt": "Busca no projeto live"
+    },
+    {
+      "slug": "project-scoped-ownership",
+      "status": "source-only",
+      "en": "Project-scoped ownership",
+      "pt": "Ownership por projeto"
+    },
+    {
+      "slug": "project-context-receipts",
+      "status": "source-only",
+      "en": "Project context & receipts",
+      "pt": "Contexto por projeto & recibos"
+    }
+  ]
+}
