@@ -1127,12 +1127,10 @@ class UndoBlockTests(unittest.TestCase):
 
 
 class StructuredEndpointTests(unittest.TestCase):
-    """The 0.6.0 structured routes dispatch correctly AND are NOT behind the exec
-    gate — they must keep working with TDMCP_BRIDGE_ALLOW_EXEC=0. Exec is disabled
-    for every test here, so a passing dispatch also proves exec-gate survival."""
+    """Structured routes remain available with exec disabled unless they carry code."""
 
     def setUp(self):
-        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"  # the routes below must ignore this
+        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
         self._saved = {
             "connect": ac.connect_service,
             "log": ac.log_service,
@@ -1269,6 +1267,44 @@ class StructuredEndpointTests(unittest.TestCase):
             "/project1/sub/deep/comp"
         )
 
+    def test_custom_param_expression_and_bind_are_blocked_with_exec_disabled(self):
+        for fields in (
+            {"mode": "EXPRESSION", "expression": "absTime.seconds"},
+            {"mode": "BIND", "bind_expression": "op('caller')"},
+        ):
+            with self.subTest(mode=fields["mode"]):
+                with self.assertRaises(PermissionError):
+                    ac._route(
+                        "POST",
+                        "/api/nodes/project1/comp1/custom_params",
+                        {},
+                        {
+                            "operations": [
+                                {
+                                    "action": "edit_parameter",
+                                    "name": "Gain",
+                                    "fields": fields,
+                                }
+                            ]
+                        },
+                    )
+        ac.custom_params_service.apply_custom_parameter_lifecycle.assert_not_called()
+
+    def test_custom_param_constant_dispatches_with_exec_disabled(self):
+        body = {
+            "operations": [
+                {
+                    "action": "edit_parameter",
+                    "name": "Gain",
+                    "fields": {"mode": "CONSTANT", "value": 0.5},
+                }
+            ]
+        }
+        ac._route("POST", "/api/nodes/project1/comp1/custom_params", {}, body)
+        ac.custom_params_service.apply_custom_parameter_lifecycle.assert_called_once_with(
+            "/project1/comp1", body
+        )
+
     def test_parameter_menu_dispatches_with_exec_disabled(self):
         ac._route(
             "GET",
@@ -1298,24 +1334,51 @@ class StructuredEndpointTests(unittest.TestCase):
             "/project1/noise1", ["tx", "ty"], False
         )
 
-    def test_param_mode_patch_dispatches_with_exec_disabled(self):
-        ac._route(
-            "PATCH",
-            "/api/nodes/project1/noise1/params/tx/mode",
-            {},
-            {"mode": "expression", "expr": "absTime.seconds"},
-        )
-        ac.param_text_service.set_param_mode.assert_called_once_with(
-            "/project1/noise1", "tx", "expression", "absTime.seconds", None
-        )
+    def test_expression_bind_and_blank_default_are_blocked_with_exec_disabled(self):
+        for mode in ("expression", "bind", "", "   "):
+            with self.subTest(mode=mode):
+                with self.assertRaises(PermissionError):
+                    ac._route(
+                        "PATCH",
+                        "/api/nodes/project1/noise1/params/tx/mode",
+                        {},
+                        {"mode": mode, "expr": "absTime.seconds"},
+                    )
+        ac.param_text_service.set_param_mode.assert_not_called()
+
+    def test_non_code_param_modes_dispatch_with_exec_disabled(self):
+        for mode, value in (("constant", 1), ("reset", None), ("unbind", None)):
+            with self.subTest(mode=mode):
+                ac._route(
+                    "PATCH",
+                    "/api/nodes/project1/noise1/params/tx/mode",
+                    {},
+                    {"mode": mode, "value": value},
+                )
+        self.assertEqual(ac.param_text_service.set_param_mode.call_count, 3)
 
     def test_dat_text_get_dispatches_with_exec_disabled(self):
         ac.param_text_service.is_dat.return_value = True
         ac._route("GET", "/api/nodes/project1/text1/text", {}, {})
         ac.param_text_service.get_dat_text.assert_called_once_with("/project1/text1")
 
-    def test_dat_text_put_dispatches_with_exec_disabled(self):
-        ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
+    def test_dat_text_put_is_blocked_with_exec_disabled(self):
+        with self.assertRaises(PermissionError):
+            ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
+        ac.param_text_service.put_dat_text.assert_not_called()
+
+    def test_code_bearing_routes_dispatch_when_exec_is_enabled(self):
+        with mock.patch.dict(os.environ, {"TDMCP_BRIDGE_ALLOW_EXEC": "1"}):
+            ac._route(
+                "PATCH",
+                "/api/nodes/project1/noise1/params/tx/mode",
+                {},
+                {"mode": "expression", "expr": "absTime.seconds"},
+            )
+            ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
+        ac.param_text_service.set_param_mode.assert_called_once_with(
+            "/project1/noise1", "tx", "expression", "absTime.seconds", None
+        )
         ac.param_text_service.put_dat_text.assert_called_once_with(
             "/project1/text1", "hello"
         )

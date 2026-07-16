@@ -1,8 +1,8 @@
-"""Param-mode + DAT-text endpoints — survive TDMCP_BRIDGE_ALLOW_EXEC=0.
+"""Param-mode + DAT-text endpoints with controller-enforced code authorization.
 
-Promote reactive authoring (parameter mode / expression / bind / constant) and
-whole-text DAT editing off `/api/exec` so they keep working when arbitrary code
-execution is disabled in TouchDesigner.
+Promote parameter-mode and DAT-text operations off `/api/exec`. Constant,
+reset, unbind, and reads survive exec-off; the controller rejects caller-supplied
+expression/bind and DAT source text unless code execution is explicitly enabled.
 
 Pure module of top-level functions taking primitives. `op` is bound from `td`
 at import time (mirroring mcp/services/api_service.py) so the module imports
@@ -176,23 +176,57 @@ def read_param_modes_batch(items, continue_on_error=True):
     return {"items": out}
 
 
+def _write_expression(par, param, mode_cls, expr, _value):
+    if not expr:
+        raise ValueError("expr is required for mode 'expression' (param %s)" % param)
+    par.expr = expr
+    par.mode = mode_cls.EXPRESSION
+
+
+def _write_bind(par, param, mode_cls, expr, _value):
+    if not expr:
+        raise ValueError("expr is required for mode 'bind' (param %s)" % param)
+    par.bindExpr = expr
+    par.mode = mode_cls.BIND
+
+
+def _write_constant_mode(par, param, mode_cls, _expr, value):
+    _write_constant(par, param, value, mode_cls)
+
+
+def _write_reset(par, _param, mode_cls, _expr, _value):
+    reset = getattr(par, "reset", None)
+    if callable(reset):
+        reset()
+        return
+    if hasattr(par, "default"):
+        par.val = par.default
+    par.expr = ""
+    par.bindExpr = ""
+    par.mode = mode_cls.CONSTANT
+
+
+def _write_unbind(par, _param, mode_cls, _expr, _value):
+    par.val = par.eval()
+    par.mode = mode_cls.CONSTANT
+
+
+_MODE_WRITERS = {
+    "expression": _write_expression,
+    "bind": _write_bind,
+    "constant": _write_constant_mode,
+    "reset": _write_reset,
+    "unbind": _write_unbind,
+}
+
+
 def _write_param_mode(par, param, norm, mode_cls, expr=None, value=None):
-    if norm == "expression":
-        if not expr:
-            raise ValueError("expr is required for mode 'expression' (param %s)" % param)
-        par.expr = expr
-        par.mode = mode_cls.EXPRESSION
-        return
-    if norm == "bind":
-        if not expr:
-            raise ValueError("expr is required for mode 'bind' (param %s)" % param)
-        par.bindExpr = expr
-        par.mode = mode_cls.BIND
-        return
-    if norm == "constant":
-        _write_constant(par, param, value, mode_cls)
-        return
-    raise ValueError("Unknown mode %r (expected expression|bind|constant)" % norm)
+    writer = _MODE_WRITERS.get(norm)
+    if writer is None:
+        raise ValueError(
+            "Unknown mode %r (expected expression|bind|constant|reset|unbind)" % norm
+        )
+    writer(par, param, mode_cls, expr, value)
 
 
 def _write_constant(par, param, value, mode_cls):
@@ -217,7 +251,7 @@ def _readback_expr(par, norm):
 
 
 def set_param_mode(path, param, mode, expr=None, value=None):
-    """Set one parameter's mode to expression / bind / constant.
+    """Set one parameter's mode to expression/bind/constant/reset/unbind.
 
     Uses ModeCls = type(par.mode) for the enum (ParMode is not importable).
     Returns {path, param, mode, readback_mode, readback_expr}. Raises on

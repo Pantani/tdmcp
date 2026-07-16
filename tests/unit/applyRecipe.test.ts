@@ -1,8 +1,9 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
+import { RecipeSchema } from "../../src/recipes/schema.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import { applyRecipeImpl } from "../../src/tools/layer1/applyRecipe.js";
 import type { ToolContext } from "../../src/tools/types.js";
@@ -68,5 +69,52 @@ describe("applyRecipeImpl", () => {
     expect(result.isError).toBeFalsy();
     const text = textOf(result);
     expect(text).toContain("reaction_diffusion");
+  });
+
+  it.each([
+    {
+      label: "parameter expression",
+      extra: {
+        parameters: [{ name: "Driven", node: "out1", param: "opacity", expr: "absTime.seconds" }],
+      },
+    },
+    {
+      label: "inline Python",
+      extra: { python_code: { out1: "print('caller code')" } },
+    },
+    {
+      label: "inline GLSL",
+      extra: {
+        glsl_code: { out1: "out vec4 fragColor; void main(){ fragColor=vec4(1.0); }" },
+      },
+    },
+  ])("rejects recipe $label before creating any node when raw Python is disabled", async ({
+    extra,
+  }) => {
+    const recipe = RecipeSchema.parse({
+      id: "restricted_recipe",
+      name: "Restricted recipe",
+      nodes: [{ name: "out1", type: "nullTOP" }],
+      ...extra,
+    });
+    const createNode = vi.fn();
+    const ctx = {
+      ...makeCtx(),
+      allowRawPython: false,
+      client: { createNode },
+      recipes: {
+        get: (id: string) => (id === recipe.id ? recipe : undefined),
+        list: () => [{ id: recipe.id }],
+      },
+    } as unknown as ToolContext;
+
+    const result = await applyRecipeImpl(ctx, {
+      id: recipe.id,
+      parent_path: "/project1",
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(createNode).not.toHaveBeenCalled();
   });
 });
