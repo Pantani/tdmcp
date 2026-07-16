@@ -480,6 +480,7 @@ describe("setParameterExpressionImpl — raw Python disabled", () => {
     });
 
     expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("structured parameter-mode endpoint is unavailable");
     expect(executePythonScript).not.toHaveBeenCalled();
   });
 });

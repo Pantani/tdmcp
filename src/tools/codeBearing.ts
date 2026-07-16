@@ -5,6 +5,7 @@ import type { ToolContext } from "./types.js";
 interface RecipeCodeInputs {
   parameters?: readonly { expr?: unknown }[];
   python_code?: Readonly<Record<string, unknown>>;
+  glsl_code?: Readonly<Record<string, unknown>>;
 }
 
 /** Whether caller-supplied Python/code-bearing text may cross into TouchDesigner. */
@@ -29,6 +30,9 @@ export function recipeCodeBearingSources(recipe: RecipeCodeInputs): string[] {
   }
   if (recipe.python_code && Object.keys(recipe.python_code).length > 0) {
     sources.push("python_code");
+  }
+  if (recipe.glsl_code && Object.keys(recipe.glsl_code).length > 0) {
+    sources.push("glsl_code");
   }
   return sources;
 }
