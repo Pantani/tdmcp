@@ -23,6 +23,9 @@ _CHANNELS = ("r", "g", "b", "a")
 # later TD frame and stashes the result here; a follow-up call collects it by job id.
 _PREVIEW_JOBS = {}
 _JOB_TTL_SECONDS = 120.0
+_MAX_PREVIEW_JOBS = 32
+_MAX_STORED_PREVIEW_JOBS = 128
+_MAX_JOB_ERROR_CHARS = 512
 
 # Mid-gray checkerboard (16x9 cells). Self-contained fragment shader, no inputs/uniforms.
 _CHECKER_FRAG = """out vec4 fragColor;
@@ -242,30 +245,69 @@ def _capture_now(path, width, height, sample_grid_n):
 
 
 def _prune_jobs(now):
-    for job_id in [jid for jid, job in _PREVIEW_JOBS.items() if now - job["created"] > _JOB_TTL_SECONDS]:
+    for job_id in [
+        jid
+        for jid, job in _PREVIEW_JOBS.items()
+        if now - job["created"] > _JOB_TTL_SECONDS
+    ]:
         del _PREVIEW_JOBS[job_id]
 
 
+def _job_receipt(job_id, job):
+    status = job["status"]
+    receipt = {"status": status, "job_id": job_id}
+    if status == "ready":
+        receipt["preview"] = job["result"]
+    elif status == "error":
+        receipt["error"] = job["error"]
+    return receipt
+
+
 def _schedule_deferred(path, width, height, delay_frames, sample_grid_n):
-    _prune_jobs(time.monotonic())
+    now = time.monotonic()
+    _prune_jobs(now)
+    active_jobs = sum(1 for job in _PREVIEW_JOBS.values() if job["status"] == "pending")
+    if active_jobs >= _MAX_PREVIEW_JOBS:
+        raise RuntimeError(
+            "Deferred preview capacity reached (%d active jobs); collect, cancel, or wait for expiry."
+            % _MAX_PREVIEW_JOBS
+        )
+    if len(_PREVIEW_JOBS) >= _MAX_STORED_PREVIEW_JOBS:
+        raise RuntimeError(
+            "Deferred preview receipt capacity reached (%d stored jobs); collect or wait for expiry."
+            % _MAX_STORED_PREVIEW_JOBS
+        )
     job_id = uuid.uuid4().hex
-    job = {"created": time.monotonic(), "status": "pending", "result": None, "error": None}
+    job = {"created": now, "status": "pending", "result": None, "error": None}
     _PREVIEW_JOBS[job_id] = job
 
     def _run():
+        current = _PREVIEW_JOBS.get(job_id)
+        if current is not job or current["status"] != "pending":
+            return
+        if time.monotonic() - job["created"] > _JOB_TTL_SECONDS:
+            del _PREVIEW_JOBS[job_id]
+            return
         try:
-            job["result"] = _capture_now(path, width, height, sample_grid_n)
-            job["status"] = "ready"
+            result = _capture_now(path, width, height, sample_grid_n)
         except Exception as exc:  # noqa: BLE001
+            if _PREVIEW_JOBS.get(job_id) is not job or job["status"] != "pending":
+                return
             job["status"] = "error"
-            job["error"] = str(exc)
+            job["error"] = str(exc)[:_MAX_JOB_ERROR_CHARS]
+            return
+        if _PREVIEW_JOBS.get(job_id) is not job or job["status"] != "pending":
+            return
+        job["result"] = result
+        job["status"] = "ready"
 
     _schedule(_run, delay_frames)
     return {
-        "status": "capturing",
+        "status": "pending",
         "job_id": job_id,
         "delay_frames": int(delay_frames),
         "wait_ms": int(delay_frames * 1000 / _fps()),
+        "expires_in_ms": int(_JOB_TTL_SECONDS * 1000),
     }
 
 
@@ -284,11 +326,24 @@ def capture_advanced(path, width=640, height=360, pre_pulses=None, delay_frames=
     return _capture_now(path, width, height, sample_grid_n)
 
 
-def collect_preview_job(job_id):
-    """Collect a deferred capture by id: pending | ready(+preview) | error | expired.
+def cancel_preview_job(job_id):
+    """Cancel a pending capture without allowing a late callback to resurrect it."""
+    _prune_jobs(time.monotonic())
+    job = _PREVIEW_JOBS.get(job_id)
+    if job is None:
+        return {"status": "expired", "job_id": job_id}
+    if job["status"] == "pending":
+        job["status"] = "cancelled"
+        job["result"] = None
+        job["error"] = None
+    return _job_receipt(job_id, job)
 
-    Ready/error results are one-shot (removed on collection); an unknown or TTL-expired
-    id reports 'expired'.
+
+def collect_preview_job(job_id):
+    """Collect a deferred capture by id.
+
+    Ready/error/cancelled results are one-shot (removed on collection); pending is
+    non-consuming, and an unknown or TTL-expired id reports 'expired'.
     """
     _prune_jobs(time.monotonic())
     job = _PREVIEW_JOBS.get(job_id)
@@ -296,10 +351,9 @@ def collect_preview_job(job_id):
         return {"status": "expired", "job_id": job_id}
     if job["status"] == "pending":
         return {"status": "pending", "job_id": job_id}
+    receipt = _job_receipt(job_id, job)
     del _PREVIEW_JOBS[job_id]
-    if job["status"] == "error":
-        return {"status": "error", "job_id": job_id, "error": job["error"]}
-    return {"status": "ready", "job_id": job_id, "preview": job["result"]}
+    return receipt
 
 
 def sample_grid(path, n=8):

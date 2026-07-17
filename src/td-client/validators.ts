@@ -224,10 +224,11 @@ export type TdSampleGrid = z.infer<typeof SampleGridSchema>;
 
 /** Returned when a capture was deferred by delay_frames; collect it later by job_id. */
 export const CapturingJobSchema = z.object({
-  status: z.literal("capturing"),
+  status: z.enum(["pending", "capturing"]),
   job_id: z.string(),
   delay_frames: z.number().int().nonnegative(),
   wait_ms: z.number().int().nonnegative(),
+  expires_in_ms: z.number().int().positive().optional(),
 });
 export type TdCapturingJob = z.infer<typeof CapturingJobSchema>;
 
@@ -237,7 +238,7 @@ export type TdAdvancedCapture = z.infer<typeof AdvancedCaptureSchema>;
 
 /** Result of collecting a deferred capture job. */
 export const PreviewJobSchema = z.object({
-  status: z.enum(["pending", "ready", "error", "expired"]),
+  status: z.enum(["pending", "ready", "error", "cancelled", "expired"]),
   job_id: z.string(),
   preview: z.union([PreviewSchema, SampleGridSchema]).optional(),
   error: z.string().optional(),

@@ -39,6 +39,7 @@ export type AgentEvent =
       summary: string;
       verification?: MutationVerificationReport;
       recovery?: RecoveryReport;
+      follow?: ToolOutcome["follow"];
     }
   | { type: "answer"; content: string }
   | { type: "receipt"; receipt: TurnReceiptV1 }
@@ -75,6 +76,8 @@ export interface RunOptions {
   noPersist?: boolean;
   /** Explicit project root from validated runtime configuration. */
   projectRoot?: string;
+  /** Frame successful mutating results in the existing Network Editor. Default true. */
+  autoFollow?: boolean;
 }
 
 const MAX_PROMPT_CATALOG_ENTRIES = 40;
@@ -158,12 +161,78 @@ function bypassesRecovery(toolName: string): boolean {
   return EMERGENCY_TOOL_NAME.test(toolName);
 }
 
+function followAction(tool: LlmTool): "create" | "edit" | "layout" | "delete" {
+  switch (tool.mutation?.kind) {
+    case "create":
+    case "generator":
+      return "create";
+    case "delete":
+      return "delete";
+    case "connect":
+      return "layout";
+    default:
+      return "edit";
+  }
+}
+
+function followPaths(outcome: ToolOutcome): string[] {
+  const candidates = outcome.mutationPlan?.affectedPaths ?? outcome.affectedPaths ?? [];
+  return [
+    ...new Set(
+      candidates.filter(
+        (path): path is string =>
+          typeof path === "string" && path.startsWith("/") && path.length <= 240,
+      ),
+    ),
+  ].slice(0, 16);
+}
+
+async function applyAutomaticFollow(
+  ctx: ToolContext,
+  tool: LlmTool | undefined,
+  outcome: ToolOutcome,
+  grounding: EditorGroundingEvidence,
+  enabled: boolean,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (
+    !enabled ||
+    signal?.aborted ||
+    !tool?.mutates ||
+    !outcome.ok ||
+    outcome.verification?.status === "FAIL" ||
+    !previewAllowed(grounding)
+  ) {
+    return;
+  }
+  const paths = followPaths(outcome);
+  if (paths.length === 0) return;
+  try {
+    outcome.follow = await ctx.client.focusEditor(paths, true, {
+      action: followAction(tool),
+      framing: "auto",
+      enabled: true,
+    });
+  } catch {
+    outcome.follow = {
+      status: "failed",
+      animate: true,
+      requested_paths: paths,
+      resolved_paths: [],
+      missing_paths: [],
+      focused: [],
+      warnings: ["Automatic result follow failed; the mutation result is unchanged."],
+    };
+  }
+}
+
 async function applyPostDispatchPolicy(
   ctx: ToolContext,
   tool: LlmTool | undefined,
   toolName: string,
   outcome: ToolOutcome,
   grounding: EditorGroundingEvidence,
+  autoFollow: boolean,
   signal?: AbortSignal,
 ): Promise<void> {
   if (outcome.ok && tool?.mutates) {
@@ -193,6 +262,7 @@ async function applyPostDispatchPolicy(
       signal,
     });
   }
+  await applyAutomaticFollow(ctx, tool, outcome, grounding, autoFollow, signal);
 }
 
 function appendToolOutcome(
@@ -201,11 +271,12 @@ function appendToolOutcome(
   outcome: ToolOutcome,
 ): void {
   const evidence =
-    outcome.verification || outcome.recovery
+    outcome.verification || outcome.recovery || outcome.follow
       ? `\n\n${JSON.stringify({
           tdmcp_evidence: {
             ...(outcome.verification ? { verification: outcome.verification } : {}),
             ...(outcome.recovery ? { recovery: outcome.recovery } : {}),
+            ...(outcome.follow ? { follow: outcome.follow } : {}),
           },
         })}`
       : "";
@@ -246,6 +317,7 @@ async function executeToolCalls(
   streak: FailureStreak,
   grounding: EditorGroundingEvidence,
   recordOutcome: (tool: string, outcome: ToolOutcome, callId: string) => void,
+  autoFollow: boolean,
   signal?: AbortSignal,
 ): Promise<FailureStreak> {
   let currentStreak = streak;
@@ -262,7 +334,15 @@ async function executeToolCalls(
       signal,
     });
     try {
-      await applyPostDispatchPolicy(ctx, tool, call.function.name, outcome, grounding, signal);
+      await applyPostDispatchPolicy(
+        ctx,
+        tool,
+        call.function.name,
+        outcome,
+        grounding,
+        autoFollow,
+        signal,
+      );
     } finally {
       recordOutcome(call.function.name, outcome, call.id);
     }
@@ -274,6 +354,7 @@ async function executeToolCalls(
       summary: outcome.summary,
       ...(outcome.verification ? { verification: outcome.verification } : {}),
       ...(outcome.recovery ? { recovery: outcome.recovery } : {}),
+      ...(outcome.follow ? { follow: outcome.follow } : {}),
     });
     appendToolOutcome(messages, call, outcome);
     currentStreak = updateFailureStreak(outcome, currentStreak, emit);
@@ -290,6 +371,7 @@ async function executeToolCallsAbortAware(
   streak: FailureStreak,
   grounding: EditorGroundingEvidence,
   recordOutcome: (tool: string, outcome: ToolOutcome, callId: string) => void,
+  autoFollow: boolean,
   signal?: AbortSignal,
 ): Promise<FailureStreak> {
   try {
@@ -302,6 +384,7 @@ async function executeToolCallsAbortAware(
       streak,
       grounding,
       recordOutcome,
+      autoFollow,
       signal,
     );
   } catch (error) {
@@ -452,6 +535,7 @@ export async function runAgentTurn(
         streak,
         grounding,
         (tool, outcome, callId) => collector.recordToolOutcome(tool, outcome, callId),
+        opts.autoFollow !== false,
         opts.signal,
       );
     }

@@ -133,6 +133,43 @@ describe("TouchDesignerClient", () => {
     await expect(client().getHealth()).rejects.toMatchObject({ name: "TdApiError" });
   });
 
+  it("accepts legacy deferred-capture starts and sends explicit preview cancellation", async () => {
+    let cancelledPath = "";
+    server.use(
+      http.post(`${TD_BASE}/api/preview/:path`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            status: "capturing",
+            job_id: "legacy-job",
+            delay_frames: 6,
+            wait_ms: 100,
+          },
+        }),
+      ),
+      http.post(`${TD_BASE}/api/preview_job/:jobId/cancel`, ({ params }) => {
+        cancelledPath = String(params.jobId);
+        return HttpResponse.json({
+          ok: true,
+          data: { status: "cancelled", job_id: cancelledPath },
+        });
+      }),
+    );
+
+    await expect(
+      client().captureAdvanced("/project1/out1", {
+        width: 320,
+        height: 180,
+        delayFrames: 6,
+      }),
+    ).resolves.toMatchObject({ status: "capturing", job_id: "legacy-job" });
+    await expect(client().cancelPreviewJob("opaque-job")).resolves.toEqual({
+      status: "cancelled",
+      job_id: "opaque-job",
+    });
+    expect(cancelledPath).toBe("opaque-job");
+  });
+
   it("createNode posts and returns the node ref", async () => {
     const node = await client().createNode({ parent_path: "/project1", type: "noiseTOP" });
     expect(node.path).toBe("/project1/noisetop1");

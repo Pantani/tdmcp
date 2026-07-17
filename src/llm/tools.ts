@@ -1,5 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import type { TdEditorFocus } from "../td-client/validators.js";
 import {
   manageProjectBriefImpl,
   manageProjectBriefLlmSchema,
@@ -498,6 +499,8 @@ export interface ToolOutcome {
   recovery?: RecoveryReport;
   validationIssues?: Array<{ path: string; code: string; message: string }>;
   affectedPaths?: string[];
+  /** Best-effort UI-only framing receipt after a successful local-copilot mutation. */
+  follow?: TdEditorFocus;
   /** Bounded recovery selectors derived from validated keys only; never contains values/raw args. */
   recoveryMetadata?: { parameter?: string; searchRoot?: string };
 }
@@ -622,6 +625,152 @@ function prepareToolArgs(tool: LlmTool, name: string, rawArgs: string): Prepared
 
 type ToolRun = { ok: true; result: CallToolResult } | { ok: false; outcome: ToolOutcome };
 
+const PARAMETER_PREFLIGHT_TOOL = "update_td_node_parameters";
+const PARAMETER_PREFLIGHT_MAX_KEYS = 16;
+const PARAMETER_PREFLIGHT_MAX_MENUS = 4;
+
+type ParameterPreflightIssue = { path: string; code: string; message: string };
+
+function parameterPreflightFailure(
+  name: string,
+  issues: ParameterPreflightIssue[],
+  evidence: Record<string, unknown> = {},
+  affectedPath?: string,
+): ToolRun {
+  return {
+    ok: false,
+    outcome: {
+      ok: false,
+      summary: `parameter preflight rejected for ${name}`,
+      payload: `Error: parameter preflight rejected: ${JSON.stringify({ issues, ...evidence })}`,
+      structuredContent: { preflight: { status: "blocked", issues, ...evidence } },
+      failure: classifyFailure({
+        phase: "validate",
+        mutates: true,
+        code: "build_parameter_preflight",
+      }),
+      validationIssues: issues,
+      ...(affectedPath ? { affectedPaths: [affectedPath] } : {}),
+    },
+  };
+}
+
+async function preflightPreparedTool(
+  ctx: ToolContext,
+  name: string,
+  args: unknown,
+  execution: LlmToolExecution,
+): Promise<ToolRun | undefined> {
+  if (name !== PARAMETER_PREFLIGHT_TOOL) return undefined;
+  const input = objectValue(args);
+  const path = boundedTdPath(input?.path);
+  const parameters = objectValue(input?.parameters);
+  if (!path || !parameters) return undefined;
+  const keys = Object.keys(parameters);
+  if (keys.length > PARAMETER_PREFLIGHT_MAX_KEYS) {
+    return parameterPreflightFailure(
+      name,
+      [
+        {
+          path: "parameters",
+          code: "too_many_parameters",
+          message: `Parameter preflight accepts at most ${PARAMETER_PREFLIGHT_MAX_KEYS} keys.`,
+        },
+      ],
+      { max_parameters: PARAMETER_PREFLIGHT_MAX_KEYS },
+      path,
+    );
+  }
+  if (execution.signal?.aborted) {
+    return parameterPreflightFailure(
+      name,
+      [{ path: "arguments", code: "cancelled", message: "Parameter preflight was cancelled." }],
+      {},
+      path,
+    );
+  }
+
+  let node: Awaited<ReturnType<ToolContext["client"]["getNode"]>>;
+  try {
+    node = await ctx.client.getNode(path, {
+      timeoutMs: 1000,
+      retryGet: false,
+      signal: execution.signal,
+    });
+  } catch (error) {
+    const failure = classifyFailure({ phase: "dispatch", mutates: true, error });
+    if (failure.category !== "path_missing") return undefined;
+    return {
+      ok: false,
+      outcome: {
+        ok: false,
+        summary: `parameter preflight could not resolve the target for ${name}`,
+        payload: `Error: parameter preflight could not resolve the target node.`,
+        failure,
+        affectedPaths: [path],
+        validationIssues: [
+          { path: "path", code: "path_missing", message: "Target node was not found." },
+        ],
+      },
+    };
+  }
+
+  const available = new Set(Object.keys(node.parameters));
+  const unknown = keys.filter((key) => !available.has(key)).sort();
+  if (unknown.length > 0) {
+    return parameterPreflightFailure(
+      name,
+      unknown.map((key) => ({
+        path: `parameters.${key}`,
+        code: "unknown_parameter",
+        message: "Parameter is unavailable on the connected TouchDesigner build.",
+      })),
+      { operator_type: node.type, invalid_parameters: unknown },
+      path,
+    );
+  }
+
+  const menuChoices: Record<string, string[]> = {};
+  for (const key of keys
+    .filter((key) => typeof parameters[key] === "string")
+    .slice(0, PARAMETER_PREFLIGHT_MAX_MENUS)) {
+    if (execution.signal?.aborted) {
+      return parameterPreflightFailure(
+        name,
+        [{ path: "arguments", code: "cancelled", message: "Parameter preflight was cancelled." }],
+        {},
+        path,
+      );
+    }
+    try {
+      const menu = await ctx.client.getParameterMenu(path, key, {
+        timeoutMs: 1000,
+        retryGet: false,
+        signal: execution.signal,
+      });
+      if (menu.names.length > 0 && !menu.names.includes(parameters[key] as string)) {
+        menuChoices[key] = menu.names.slice(0, 32);
+      }
+    } catch {
+      // A non-menu parameter, older bridge, or unavailable optional probe is not authoritative.
+    }
+  }
+  const invalidMenus = Object.keys(menuChoices).sort();
+  if (invalidMenus.length > 0) {
+    return parameterPreflightFailure(
+      name,
+      invalidMenus.map((key) => ({
+        path: `parameters.${key}`,
+        code: "invalid_menu_value",
+        message: "Value is not one of the live menu choices.",
+      })),
+      { menu_choices: menuChoices },
+      path,
+    );
+  }
+  return undefined;
+}
+
 async function runPreparedTool(
   ctx: ToolContext,
   tool: LlmTool,
@@ -721,6 +870,8 @@ export async function dispatchTool(
     };
   const prepared = prepareToolArgs(tool, name, rawArgs);
   if (!prepared.ok) return prepared.outcome;
+  const preflight = await preflightPreparedTool(ctx, name, prepared.data, execution);
+  if (preflight && !preflight.ok) return preflight.outcome;
   const run = await runPreparedTool(ctx, tool, name, prepared.data, execution);
   if (!run.ok) return run.outcome;
   return completedToolOutcome(tool, name, prepared.data, run.result);

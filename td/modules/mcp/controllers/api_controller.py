@@ -1223,6 +1223,8 @@ def _route_preview(method, rest, query, body):
 def _route_preview_job(method, rest):
     if method == "GET" and len(rest) >= 2:
         return preview_service.collect_preview_job(unquote(rest[1]))
+    if method == "POST" and len(rest) == 3 and rest[2] == "cancel":
+        return preview_service.cancel_preview_job(unquote(rest[1]))
     return None
 
 

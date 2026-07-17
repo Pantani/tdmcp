@@ -303,6 +303,7 @@ skill author the endpoint + client + validator + exec-fallback slice.
 |------|--------|--------|--------|
 | 2026-05-30 | Initial build | 1 agent (`tdmcp-backlog-planner`) + 1 skill (`tdmcp-backlog-campaign`) + ledger | drive the round-2 "BEYOND" backlog (66 buildable: 2 foundations + 64 features, 5 waves) to completion idempotently; reuses the whole per-wave pipeline. Policy: staged-by-priority, checkpoint after wave 1, commit+push **no-tag**, TD-required before build waves |
 | 2026-05-30 | Consolidated a parallel campaign (PR #29) | +9 artist-control tools (`create_test_pattern`, `create_text_crawl`, `create_band_router`, `create_sidechain_pump`, `create_xy_pad`, `create_time_echo`, `create_capture_loop`, `create_vector_lines`, `create_blob_reactive`) + `tdmcp-bridge-engineer` agent + `tdmcp-bridge-endpoint` skill | a concurrent session built these round-1 tools (live-validated TD 099: 8 qa_pass, `create_blob_reactive` unverified pending live camera) on a duplicate harness; merged into this line keeping its tools + bridge authoring, dropping the duplicate campaign agent/scripts in favour of `tdmcp-backlog-planner` |
+| 2026-07-16 | Extension-aware routing | campaign + per-wave pipeline + architect/integrator/QA | classify every slice as `new-tool`, `extension`, or `bridge`; add `td-extension-builder`/`td-feature-extend`, explicit non-overlapping ownership leases, serial bridge routing, dirty-work blocking, and campaign-local release authority |
 
 ## Harness: docs interactivity
 

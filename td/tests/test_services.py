@@ -535,9 +535,10 @@ class DeferredCaptureTests(unittest.TestCase):
             preview_service, "capture", return_value={"path": "/project1/out", "base64": "x"}
         ):
             scheduled = preview_service.capture_advanced("/project1/out", delay_frames=6)
-        self.assertEqual(scheduled["status"], "capturing")
+        self.assertEqual(scheduled["status"], "pending")
         self.assertIn("job_id", scheduled)
         self.assertGreater(scheduled["wait_ms"], 0)
+        self.assertEqual(scheduled["expires_in_ms"], 120000)
         collected = preview_service.collect_preview_job(scheduled["job_id"])
         self.assertEqual(collected["status"], "ready")
         self.assertEqual(collected["preview"]["path"], "/project1/out")
@@ -560,6 +561,84 @@ class DeferredCaptureTests(unittest.TestCase):
         )
         collected = preview_service.collect_preview_job(scheduled["job_id"])
         self.assertEqual(collected["status"], "expired")
+        self.assertNotIn(scheduled["job_id"], preview_service._PREVIEW_JOBS)
+
+    def test_cancelled_job_is_one_shot_and_late_callback_cannot_resurrect_it(self):
+        callbacks = []
+        with mock.patch.object(
+            preview_service, "_schedule", lambda cb, frames: callbacks.append(cb)
+        ), mock.patch.object(preview_service, "_capture_now") as capture_now:
+            scheduled = preview_service.capture_advanced("/project1/out", delay_frames=6)
+            cancelled = preview_service.cancel_preview_job(scheduled["job_id"])
+            callbacks[0]()
+
+        self.assertEqual(cancelled["status"], "cancelled")
+        capture_now.assert_not_called()
+        collected = preview_service.collect_preview_job(scheduled["job_id"])
+        self.assertEqual(collected["status"], "cancelled")
+        self.assertEqual(
+            preview_service.collect_preview_job(scheduled["job_id"])["status"], "expired"
+        )
+
+    def test_cancel_is_idempotent_and_does_not_discard_ready_result(self):
+        with mock.patch.object(
+            preview_service, "capture", return_value={"path": "/project1/out", "base64": "x"}
+        ):
+            scheduled = preview_service.capture_advanced("/project1/out", delay_frames=1)
+        cancelled = preview_service.cancel_preview_job(scheduled["job_id"])
+        self.assertEqual(cancelled["status"], "ready")
+        self.assertEqual(cancelled["preview"]["path"], "/project1/out")
+        cancelled_again = preview_service.cancel_preview_job(scheduled["job_id"])
+        self.assertEqual(cancelled_again["status"], "ready")
+        self.assertEqual(cancelled_again["preview"]["path"], "/project1/out")
+        self.assertEqual(
+            preview_service.collect_preview_job(scheduled["job_id"])["status"], "ready"
+        )
+
+    def test_capacity_rejects_without_evicting_active_jobs(self):
+        with mock.patch.object(preview_service, "_MAX_PREVIEW_JOBS", 2), mock.patch.object(
+            preview_service, "_schedule", lambda cb, frames: None
+        ):
+            first = preview_service.capture_advanced("/project1/a", delay_frames=1)
+            second = preview_service.capture_advanced("/project1/b", delay_frames=1)
+            with self.assertRaises(RuntimeError):
+                preview_service.capture_advanced("/project1/c", delay_frames=1)
+
+        self.assertEqual(set(preview_service._PREVIEW_JOBS), {first["job_id"], second["job_id"]})
+
+    def test_cancelled_tombstones_do_not_consume_active_capacity(self):
+        with mock.patch.object(preview_service, "_MAX_PREVIEW_JOBS", 1), mock.patch.object(
+            preview_service, "_schedule", lambda cb, frames: None
+        ):
+            first = preview_service.capture_advanced("/project1/a", delay_frames=1)
+            preview_service.cancel_preview_job(first["job_id"])
+            second = preview_service.capture_advanced("/project1/b", delay_frames=1)
+
+        self.assertEqual(preview_service._PREVIEW_JOBS[first["job_id"]]["status"], "cancelled")
+        self.assertEqual(preview_service._PREVIEW_JOBS[second["job_id"]]["status"], "pending")
+
+    def test_stored_terminal_receipts_have_an_independent_bound(self):
+        with mock.patch.object(preview_service, "_MAX_PREVIEW_JOBS", 3), mock.patch.object(
+            preview_service, "_MAX_STORED_PREVIEW_JOBS", 2
+        ), mock.patch.object(preview_service, "_schedule", lambda cb, frames: None):
+            for path in ("/project1/a", "/project1/b"):
+                scheduled = preview_service.capture_advanced(path, delay_frames=1)
+                preview_service.cancel_preview_job(scheduled["job_id"])
+            with self.assertRaises(RuntimeError):
+                preview_service.capture_advanced("/project1/c", delay_frames=1)
+
+    def test_expired_job_callback_does_not_capture(self):
+        callbacks = []
+        with mock.patch.object(
+            preview_service, "_schedule", lambda cb, frames: callbacks.append(cb)
+        ), mock.patch.object(preview_service, "_capture_now") as capture_now:
+            scheduled = preview_service.capture_advanced("/project1/out", delay_frames=1)
+            preview_service._PREVIEW_JOBS[scheduled["job_id"]]["created"] -= (
+                preview_service._JOB_TTL_SECONDS + 1
+            )
+            callbacks[0]()
+
+        capture_now.assert_not_called()
         self.assertNotIn(scheduled["job_id"], preview_service._PREVIEW_JOBS)
 
 

@@ -1830,6 +1830,10 @@ export class TouchDesignerClient {
     return this.request("GET", `/api/preview_job/${segment(jobId)}`, PreviewJobSchema);
   }
 
+  cancelPreviewJob(jobId: string) {
+    return this.request("POST", `/api/preview_job/${segment(jobId)}/cancel`, PreviewJobSchema);
+  }
+
   async focusEditor(
     paths: string[],
     animate: boolean,

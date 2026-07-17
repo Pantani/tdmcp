@@ -65,7 +65,7 @@ const MIME_BY_FORMAT: Record<string, string> = {
 function renderAdvanced(res: TdAdvancedCapture, path: string) {
   if ("status" in res) {
     return jsonResult(
-      `Capturing ${path} in ${res.delay_frames} frame(s) (~${res.wait_ms}ms). ` +
+      `Queued ${path} for capture in ${res.delay_frames} frame(s) (~${res.wait_ms}ms). ` +
         `Call get_preview again with job_id="${res.job_id}" to collect it.`,
       res,
     );
@@ -88,6 +88,9 @@ function renderJob(job: TdPreviewJob) {
       `Capture ${job.job_id} expired or is unknown (deferred jobs live ~120s). Re-issue the capture.`,
       job,
     );
+  }
+  if (job.status === "cancelled") {
+    return jsonResult(`Deferred capture ${job.job_id} was cancelled.`, job);
   }
   if (job.status === "error") {
     return errorResult(`Deferred capture ${job.job_id} failed: ${job.error ?? "unknown error"}.`);
@@ -120,12 +123,14 @@ export async function getPreviewImpl(ctx: ToolContext, args: GetPreviewArgs) {
       "node_path is required to capture a preview (only omit it when collecting a deferred capture by job_id).",
     );
   }
+  const width = args.width ?? 640;
+  const height = args.height ?? 360;
   if (isAdvanced(args)) {
     return guardTd(
       () =>
         ctx.client.captureAdvanced(nodePath, {
-          width: args.width,
-          height: args.height,
+          width,
+          height,
           sampleGrid: args.sample_grid,
           prePulses: args.pre_pulses,
           delayFrames: args.delay_frames,
@@ -145,7 +150,7 @@ export async function getPreviewImpl(ctx: ToolContext, args: GetPreviewArgs) {
     );
   }
   return guardTd(
-    () => capturePreview(ctx.client, nodePath, args.width, args.height),
+    () => capturePreview(ctx.client, nodePath, width, height),
     (preview) =>
       imageResult(
         preview.base64,

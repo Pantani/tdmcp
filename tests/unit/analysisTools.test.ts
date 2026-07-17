@@ -6,7 +6,10 @@ import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import { duplicateNetworkImpl } from "../../src/tools/layer2/duplicateNetwork.js";
 import { getTdPerformanceImpl } from "../../src/tools/layer3/getTdPerformance.js";
-import { getTdTopologyImpl } from "../../src/tools/layer3/getTdTopology.js";
+import {
+  getTdTopologyImpl,
+  getTdTopologyOutputSchema,
+} from "../../src/tools/layer3/getTdTopology.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
@@ -59,6 +62,84 @@ describe("analysis tool handlers", () => {
       expect(data).toContain("nodeCount");
       expect(data).toContain("connectionCount");
       expect(data).toContain("/project1/noise1");
+      expect(getTdTopologyOutputSchema.parse(result.structuredContent)).toMatchObject({
+        topological_order: ["/project1/noise1"],
+        cycle_members: [],
+        has_cycles: false,
+      });
+    });
+
+    it("returns deterministic order for shuffled, disconnected, and noisy DAG input", async () => {
+      server.use(
+        http.get(`${TD_BASE}/api/network/:seg/topology`, () =>
+          HttpResponse.json({
+            ok: true,
+            data: {
+              nodes: ["d", "b", "e", "a", "c"].map((name) => ({
+                path: `/project1/${name}`,
+                name,
+                type: "nullTOP",
+              })),
+              connections: [
+                { source_path: "/project1/b", target_path: "/project1/c" },
+                { source_path: "/project1/a", target_path: "/project1/c" },
+                { source_path: "/project1/c", target_path: "/project1/d" },
+                { source_path: "/project1/a", target_path: "/project1/c" },
+                { source_path: "/unknown", target_path: "/project1/d" },
+              ],
+            },
+          }),
+        ),
+      );
+
+      const result = await getTdTopologyImpl(makeCtx(), { root_path: "/project1" });
+      expect(getTdTopologyOutputSchema.parse(result.structuredContent)).toMatchObject({
+        topological_order: [
+          "/project1/a",
+          "/project1/b",
+          "/project1/c",
+          "/project1/d",
+          "/project1/e",
+        ],
+        cycle_members: [],
+        has_cycles: false,
+      });
+    });
+
+    it("orders SCC condensation and reports only real cycle members", async () => {
+      server.use(
+        http.get(`${TD_BASE}/api/network/:seg/topology`, () =>
+          HttpResponse.json({
+            ok: true,
+            data: {
+              nodes: ["e", "d", "c", "b", "a"].map((name) => ({
+                path: `/project1/${name}`,
+                name,
+                type: "nullTOP",
+              })),
+              connections: [
+                { source_path: "/project1/a", target_path: "/project1/b" },
+                { source_path: "/project1/b", target_path: "/project1/a" },
+                { source_path: "/project1/b", target_path: "/project1/c" },
+                { source_path: "/project1/d", target_path: "/project1/d" },
+              ],
+            },
+          }),
+        ),
+      );
+
+      const result = await getTdTopologyImpl(makeCtx(), { root_path: "/project1" });
+      expect(getTdTopologyOutputSchema.parse(result.structuredContent)).toMatchObject({
+        topological_order: [
+          "/project1/a",
+          "/project1/b",
+          "/project1/c",
+          "/project1/d",
+          "/project1/e",
+        ],
+        cycle_members: ["/project1/a", "/project1/b", "/project1/d"],
+        has_cycles: true,
+      });
     });
   });
 

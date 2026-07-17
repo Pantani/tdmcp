@@ -5,17 +5,17 @@ description: "Orchestrates the tdmcp feature team end-to-end: design/wireframe �
 
 # tdmcp-pipeline — feature delivery orchestrator
 
-Coordinate the five tdmcp specialists to take feature ideas from spec to a pushed release, following the project's proven workflow: parallel isolated builders + a single-writer integrator + live-validated QA + an autonomous release.
+Coordinate the tdmcp specialists from spec through build, integration, and QA, then perform only the release actions explicitly authorized for this run.
 
 ## Execution mode: hybrid
 
 | Stage | Mode | Why |
 |---|---|---|
 | Design | sub-agent (fan-out if many features) | the architect is an isolated one-shot producer; specs land in `_workspace/` |
-| Build | sub-agent (fan-out, parallel) | builders are fully isolated by design (new files only, no inter-comms) — the textbook sub-agent case |
-| Integrate → QA → Release | **agent team** | producer↔reviewer feedback loops (QA ↔ builder-fixer/integrator) and the release gate need live messaging |
+| Build | hybrid routing | new-tool builders fan out; existing-file extensions fan out only with disjoint leases; bridge slices run serially |
+| Integrate → QA → optional Release | coordinated sub-agents by default | producer↔reviewer feedback loops need live messaging; release is a separate policy gate |
 
-Why this split: builders must NOT touch shared files so they can run concurrently; that isolation removes any need for build-time team comms. The integrate/QA/release trio, by contrast, lives on a tight fix-and-re-verify loop, which is exactly what an agent team is for.
+Why this split: new-tool builders are isolated by new files, extension builders are isolated by disjoint leases, and bridge work is serialized. Integrate/QA/fix lives on a tight fix-and-re-verify loop; use coordinated sub-agents even when a native team API is unavailable.
 
 ## Agent roster
 
@@ -23,9 +23,11 @@ Why this split: builders must NOT touch shared files so they can run concurrentl
 |---|---|---|---|
 | `td-architect` | custom | `td-feature-design` | `_workspace/01_design_<feature>.md` |
 | `td-builder` (×N) | custom | `td-feature-build` | new tool + test files; `_workspace/02_build_<feature>.md` |
+| `td-extension-builder` (×N) | custom | `td-feature-extend` | leased existing-file patch + tests; `_workspace/02_extend_<feature>.md` |
+| `tdmcp-bridge-engineer` (×1 serial) | custom | `tdmcp-bridge-endpoint` | bridge + client + validator vertical slice |
 | `td-integrator` | custom | `td-feature-integrate` | wired `index.ts`/`agent.ts`; `_workspace/03_integrate.md` |
 | `td-qa` | custom | `td-feature-qa` | `_workspace/04_qa_<batch>.md` (PASS/FAIL/UNVERIFIED) |
-| `td-releaser` | custom | `td-feature-release` | CHANGELOG + version bump + commit/tag/push; `_workspace/05_release.md` |
+| `td-releaser` (policy-gated) | custom | `td-feature-release` | only authorized release actions; `_workspace/05_release.md` |
 
 All `Agent` / `TeamCreate` calls use `model: "opus"`.
 
@@ -43,51 +45,52 @@ All `Agent` / `TeamCreate` calls use `model: "opus"`.
 
 1. Parse the request into a concrete feature list. If the user named a roadmap cluster (e.g. "the cue sequencer + stage dashboard"), pull scope from `docs/ROADMAP.md`.
 2. Create `_workspace/` and write the feature list to `_workspace/00_input/features.md`.
+3. Resolve and record one canonical `release_policy` object: `{ version_bump, commit, push, tag, publish, deploy }`. Each field is boolean and defaults false unless the current user request explicitly authorizes it or an enclosing campaign passes it. Campaign policy always wins; a prior run never carries authority forward.
 
 ### Phase 2 — design (sub-agent fan-out)
 
-Spawn one `td-architect` per feature (or one for the whole small batch) via `Agent`, `subagent_type: "td-architect"`, `model: "opus"`, `run_in_background: true` for parallelism. Each writes `_workspace/01_design_<feature>.md`. Wait for all, then read the specs and resolve any flagged overlaps/contention before building.
+Spawn one `td-architect` per feature (or one for the whole small batch) via `Agent`, `subagent_type: "td-architect"`, `model: "opus"`, `run_in_background: true` for parallelism. Each writes `_workspace/01_design_<feature>.md` and classifies `build_mode` as `new-tool`, `extension`, or `bridge`, with an explicit `ownership[]` lease. Wait for all, then read the specs and resolve any flagged overlaps/contention before building.
 
-### Phase 3 — build (sub-agent fan-out, parallel)
+### Phase 3 — build (mode-routed)
 
-Spawn N `td-builder` sub-agents in a single message (`run_in_background: true`), one per spec. Each prompt includes its spec path and the hard rule: **new files only, never edit shared registries/CLI/docs**. Each returns green-in-isolation files (`vitest` + biome) and a build note. Size N to the batch; keep it to a manageable parallel set (~3–5 at a time for a large batch, then a second wave).
+Partition specs before spawning:
 
-### Phase 4 — integrate + QA + release (agent team)
+1. **`new-tool`** — fan out `td-builder` in one message. New files only; never edit shared registries/CLI/docs.
+2. **`extension`** — spawn `td-extension-builder`. Parallelize only when every `ownership[]` set is disjoint; serialize overlapping leases. Each builder baselines the slice, edits only leased existing files, adds focused tests, and writes `_workspace/02_extend_<feature>.md`.
+3. **`bridge`** — run `tdmcp-bridge-engineer` one at a time. Bridge slices share `td/` routing, `touchDesignerClient.ts`, and validators, so parallel execution is forbidden. Before integration, run `python3 -m py_compile` on every changed `td/**/*.py` file plus the focused bridge tests, Biome, typecheck, and build.
 
-Form the team and run the convergence loop:
+Keep each concurrent sub-batch to ~3–5 items. A feature whose mode or lease is ambiguous returns to `td-architect` before code is written.
 
-1. `TeamCreate(team_name: "tdmcp-delivery", members: [`
-   `{ name: "integrator", agent_type: "td-integrator", model: "opus" },`
-   `{ name: "qa", agent_type: "td-qa", model: "opus" },`
-   `{ name: "builder-fixer", agent_type: "td-builder", model: "opus" },`
-   `{ name: "releaser", agent_type: "td-releaser", model: "opus" }])`
-   (builder-fixer closes QA's fix requests on handler/schema/test bugs without re-spawning.)
-2. `TaskCreate` the pipeline with dependencies:
+### Phase 4 — integrate + QA + policy-gated release
+
+Run the convergence loop without assuming a native team API:
+
+1. Spawn coordinated `td-integrator`, `td-qa`, `td-builder` fixer, and `td-extension-builder` fixer sub-agents. If `TeamCreate`/shared task APIs are actually available, they may be used; otherwise the leader owns the dependency list and relays file:line fixes with agent messaging.
+2. Track these dependencies explicitly:
    - integrate all built features (`integrator`)
    - QA each feature **incrementally** as it integrates (`qa`, depends on integrate) — not one big pass at the end
-   - fix defects (`builder-fixer`/`integrator`, depends on QA findings)
-   - release (`releaser`, depends on QA = PASS for everything shipping)
-3. Team self-coordinates via `SendMessage`: QA sends `file:line` + fix to the owner the instant a defect is found; boundary bugs go to both sides; QA re-validates after each fix (cap ~2–3 rounds/feature).
-4. Leader monitors with `TaskGet`, intervenes if a member stalls.
+   - fix defects (`builder-fixer` / `extension-fixer` / `integrator`, depends on QA findings)
+3. QA sends `file:line` + fix to the owner immediately; boundary bugs go to both sides; QA re-validates after each fix (cap ~2–3 rounds/feature). The leader monitors and replaces stalled agents without discarding their diffs.
+4. After QA, inspect `release_policy`. If every action is false (or the enclosing campaign requested `through_qa_only`), skip `td-releaser` and record an unreleased QA checkpoint. Otherwise spawn it with exactly the enabled booleans; commit, push, tag, publish, deploy, and version bump are independent permissions.
 
 ### Phase 5 — cleanup + report
 
-1. Confirm `_workspace/05_release.md` exists (or that release was intentionally held).
-2. `TeamDelete`. Preserve `_workspace/` for audit.
-3. Report to the user: features shipped, the released version + tag + SHA, anything held back (with reason), and any live-validation marked UNVERIFIED because the bridge was offline.
+1. Confirm `_workspace/05_release.md` exists only when release actions ran; otherwise confirm the unreleased QA checkpoint is recorded.
+2. Close coordinated agents/team resources. Preserve `_workspace/` for audit.
+3. Report features completed, only the release artifacts actually produced, anything held back, and live validation marked UNVERIFIED.
 
 ## Data flow
 
 ```
-[leader] → architect(s) ─ specs → builders (parallel) ─ files+notes →
-   ┌─ TeamCreate(integrator, qa, builder-fixer, releaser) ─┐
+[leader] → architect(s) ─ specs → builders (mode-routed) ─ files+notes →
+   ┌─ coordinated sub-agents (native team optional) ───────┐
    │  integrator wires → qa validates (live if bridge up)  │
    │     ↑ fix requests (SendMessage) ↓                    │
-   │  builder-fixer / integrator patch → qa re-checks      │
-   │  qa PASS → releaser cuts + pushes                     │
+   │  builder-fixer / extension-fixer / integrator → QA    │
+   │  qa PASS → release_policy gate → optional releaser    │
    └───────────────────────────────────────────────────────┘
                          ↓
-              _workspace/0*_*.md + pushed tag
+              _workspace/0*_*.md + authorized outputs only
 ```
 
 ## Error handling
@@ -95,9 +98,12 @@ Form the team and run the convergence loop:
 | Situation | Strategy |
 |---|---|
 | One builder fails in isolation | Ship the rest; route its spec to builder-fixer in Phase 4 (or re-spawn). Don't block the batch. |
+| Extension ownership overlaps | Serialize those extensions; never let two agents edit the same existing file concurrently. |
+| Extension hits unknown dirty work | Preserve it, mark the feature blocked, and continue with disjoint work. |
+| Bridge slice is requested | Route to one `tdmcp-bridge-engineer`; never run bridge engineers in parallel. |
 | Build breaks on integrate | Integrator bisects, wires the rest, sends the offender a precise fix; team continues. |
 | QA finds a boundary bug | SendMessage to **both** producer and consumer; re-validate after fix; cap ~2–3 rounds, else report blocker. |
-| Bridge offline | QA runs offline gates, marks live checks UNVERIFIED-pending; release may still ship (note it) — never fail the pipeline for a missing TD. |
+| Bridge offline | QA runs offline gates and marks live checks UNVERIFIED-pending; the explicit release policy decides whether any release action may still run. |
 | QA = FAIL on a feature | Releaser holds it for next cycle; ships only PASS features; report what was held. |
 | Concurrent agent's WIP breaks compile project-wide | Validate the slice in isolation (`vitest run <file>`); wait for their tree to go green before the full build/release. |
 
@@ -111,6 +117,6 @@ Form the team and run the convergence loop:
 
 ## Test scenarios
 
-**Normal:** user asks to build the cue-sequencer feature → Phase 1 lists 1 feature → architect writes the spec → 1 builder produces a green tool+test → team forms → integrator wires + builds green → QA validates live (preview + post-cook errors clean) = PASS → releaser bumps minor, writes CHANGELOG, commits/tags/pushes → report names the new version.
+**Normal:** a batch contains one new tool, one CLI extension, and one bridge promotion → architect labels modes/leases → new-tool and disjoint extension run in parallel → bridge engineer runs serially with py_compile → integrator and QA converge through coordinated sub-agents → only QA-PASS work reaches the explicit release-policy gate.
 
 **Error:** in a 4-feature batch, builder-3's tool cooks to a TD error caught by QA (a Level TOP `gain` no-op) → QA SendMessages builder-fixer with `file:line` + use `brightness1` → fix re-validates PASS → the other 3 already PASS → releaser ships all 4. If builder-3 can't be fixed in 3 rounds, releaser ships the 3 PASS features and the report holds builder-3 for next cycle.

@@ -21,6 +21,7 @@ Most defects here live at **boundaries**, and a tool that returns success can st
 | Tool ↔ registry | `register…` export | `layer*/index.ts` + `tools/index.ts` | actually registered + aggregated, not just written |
 | Tool ↔ docs | live registry | generated `docs/reference/tools.md` | regenerates and includes the new tool |
 | `…Impl` ↔ test | real return / `isError` shape | msw test assertions | test exercises the actual shape, not a cast-away generic |
+| Extension producer ↔ consumers | leased existing-file behavior/schema | every caller, CLI, prompt, resource, and focused regression test named in the spec | no stale assumptions or partial migration outside the lease |
 | Code ↔ TD | operator types created | what this build can create | optype exists + is createable (dir(td) suffix-match over-counts; ~22 names not createable; KB lags ~14 ops) |
 | Bridge ↔ client | `td/` endpoint/payload | `touchDesignerClient.ts` + `validators.ts` envelope | response shape matches the Zod validator |
 
@@ -45,6 +46,7 @@ A report at `_workspace/04_qa_<feature|batch>.md` with three explicit buckets �
 
 ## Fix loop
 
-- Send each defect immediately to its owner (`td-builder` for handler/schema/test, `td-integrator` for wiring/CLI/docs); boundary bugs go to **both**. Re-validate after each fix.
+- Send each defect immediately to its routed owner (`td-builder` for new tools, `td-extension-builder` for leased existing-surface behavior, `tdmcp-bridge-engineer` for bridge slices, `td-integrator` for convergence wiring); boundary bugs go to **both** sides. Re-validate after each fix.
+- Verify changed files stay inside the manifest lease. Unknown dirty work, lease expansion, or overlap is a FAIL/blocker until the leader serializes or reassigns it.
 - Cap at ~2–3 rounds per feature; if still failing, report a blocker with full findings instead of looping.
 - If a gate fails due to a concurrent agent's unrelated in-flight WIP, say so and validate your slice in isolation (`vitest run <yourfile>`).

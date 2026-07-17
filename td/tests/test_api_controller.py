@@ -467,6 +467,10 @@ class RoutingTests(unittest.TestCase):
         ac._route("GET", "/api/preview_job/abc123", {}, {})
         ac.preview_service.collect_preview_job.assert_called_once_with("abc123")
 
+    def test_preview_job_cancel_dispatch(self):
+        ac._route("POST", "/api/preview_job/abc123/cancel", {}, {})
+        ac.preview_service.cancel_preview_job.assert_called_once_with("abc123")
+
     def test_editor_focus_dispatch(self):
         ac._route(
             "POST",

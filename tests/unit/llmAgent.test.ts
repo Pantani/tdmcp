@@ -34,6 +34,34 @@ const makeCtx = (): ToolContext => ({
   logger: silentLogger,
 });
 
+function parameterPreflightCtx(overrides: Record<string, unknown> = {}): {
+  ctx: ToolContext;
+  getNode: ReturnType<typeof vi.fn>;
+  getParameterMenu: ReturnType<typeof vi.fn>;
+  updateNodeParameters: ReturnType<typeof vi.fn>;
+} {
+  const getNode = vi.fn().mockResolvedValue({
+    path: "/project1/math1",
+    type: "mathCHOP",
+    name: "math1",
+    parameters: { gain: 1, operation: "add" },
+  });
+  const getParameterMenu = vi.fn().mockRejectedValue(new Error("not a menu"));
+  const updateNodeParameters = vi.fn().mockImplementation(async (path, parameters) => ({
+    path,
+    type: "mathCHOP",
+    name: "math1",
+    parameters,
+  }));
+  const client = { getNode, getParameterMenu, updateNodeParameters, ...overrides };
+  return {
+    ctx: { ...makeCtx(), client } as unknown as ToolContext,
+    getNode,
+    getParameterMenu,
+    updateNodeParameters,
+  };
+}
+
 /** A scripted LLM that streams each queued assistant turn's text, then returns it. */
 function scriptedClient(turns: ChatMessage[]): LlmClient {
   let i = 0;
@@ -171,6 +199,106 @@ describe("local copilot — curated tool registry", () => {
 
     const badJson = await dispatchTool(makeCtx(), "get_td_classes", "{not json");
     expect(badJson.ok).toBe(false);
+  });
+
+  it("preflights live parameter names before dispatch without leaking values", async () => {
+    const fixture = parameterPreflightCtx();
+    const outcome = await dispatchTool(
+      fixture.ctx,
+      "update_td_node_parameters",
+      JSON.stringify({
+        path: "/project1/math1",
+        parameters: { not_in_this_build: "private-value-sentinel" },
+      }),
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.validationIssues).toEqual([
+      expect.objectContaining({
+        path: "parameters.not_in_this_build",
+        code: "unknown_parameter",
+      }),
+    ]);
+    expect(JSON.stringify(outcome)).not.toContain("private-value-sentinel");
+    expect(fixture.updateNodeParameters).not.toHaveBeenCalled();
+    expect(fixture.getNode).toHaveBeenCalledWith("/project1/math1", {
+      timeoutMs: 1000,
+      retryGet: false,
+      signal: undefined,
+    });
+  });
+
+  it("dispatches once when build-aware parameter preflight passes", async () => {
+    const fixture = parameterPreflightCtx();
+    const outcome = await dispatchTool(
+      fixture.ctx,
+      "update_td_node_parameters",
+      '{"path":"/project1/math1","parameters":{"gain":0.5}}',
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(fixture.updateNodeParameters).toHaveBeenCalledOnce();
+    expect(fixture.getParameterMenu).not.toHaveBeenCalled();
+  });
+
+  it("blocks invalid live menu choices but never echoes the rejected value", async () => {
+    const getParameterMenu = vi.fn().mockResolvedValue({
+      names: ["add", "multiply"],
+      labels: ["Add", "Multiply"],
+    });
+    const fixture = parameterPreflightCtx({ getParameterMenu });
+    const outcome = await dispatchTool(
+      fixture.ctx,
+      "update_td_node_parameters",
+      '{"path":"/project1/math1","parameters":{"operation":"private-menu-sentinel"}}',
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.payload).toContain('"operation":["add","multiply"]');
+    expect(JSON.stringify(outcome)).not.toContain("private-menu-sentinel");
+    expect(fixture.updateNodeParameters).not.toHaveBeenCalled();
+  });
+
+  it("preserves dispatch when an optional menu probe is unavailable", async () => {
+    const fixture = parameterPreflightCtx();
+    const outcome = await dispatchTool(
+      fixture.ctx,
+      "update_td_node_parameters",
+      '{"path":"/project1/math1","parameters":{"operation":"multiply"}}',
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(fixture.getParameterMenu).toHaveBeenCalledOnce();
+    expect(fixture.updateNodeParameters).toHaveBeenCalledOnce();
+  });
+
+  it("bounds parameter preflight and honors cancellation before any read or mutation", async () => {
+    const tooMany = parameterPreflightCtx();
+    const parameters = Object.fromEntries(
+      Array.from({ length: 17 }, (_, index) => [`parameter${index}`, index]),
+    );
+    const bounded = await dispatchTool(
+      tooMany.ctx,
+      "update_td_node_parameters",
+      JSON.stringify({ path: "/project1/math1", parameters }),
+    );
+    expect(bounded.ok).toBe(false);
+    expect(bounded.payload).toContain("at most 16");
+    expect(tooMany.getNode).not.toHaveBeenCalled();
+
+    const cancelled = parameterPreflightCtx();
+    const controller = new AbortController();
+    controller.abort();
+    const stopped = await dispatchTool(
+      cancelled.ctx,
+      "update_td_node_parameters",
+      '{"path":"/project1/math1","parameters":{"gain":0.5}}',
+      LLM_TOOLS,
+      { signal: controller.signal },
+    );
+    expect(stopped.ok).toBe(false);
+    expect(cancelled.getNode).not.toHaveBeenCalled();
+    expect(cancelled.updateNodeParameters).not.toHaveBeenCalled();
   });
 });
 
@@ -312,6 +440,23 @@ describe("local copilot — agent loop", () => {
         structuredContent: { node: { path: "/project1/noise1", parameter_warnings: [] } },
       })),
     };
+    const focusEditor = vi.fn().mockResolvedValue({
+      status: "applied",
+      action: "create",
+      animate: true,
+      requested_paths: ["/project1/noise1"],
+      resolved_paths: ["/project1/noise1"],
+      missing_paths: [],
+      focused: ["/project1/noise1"],
+      pane: "pane1",
+      final: {
+        owner: "/project1",
+        current: "/project1/noise1",
+        selected: ["/project1/noise1"],
+        viewport: { x: 0, y: 0, zoom: 1 },
+      },
+      warnings: [],
+    });
     const bridge = {
       getEditorContext: vi.fn().mockResolvedValue({
         project: {},
@@ -340,6 +485,7 @@ describe("local copilot — agent loop", () => {
       sampleGrid: vi.fn(),
       getInfo: vi.fn(),
       getNodes: vi.fn(),
+      focusEditor,
     };
     const ctx = { ...makeCtx(), client: bridge } as unknown as ToolContext;
     const turns: ChatMessage[] = [
@@ -381,8 +527,149 @@ describe("local copilot — agent loop", () => {
     expect(done?.verification?.status).toBe("PASS");
     const toolResult = secondStep.find((message) => message.role === "tool");
     expect(toolResult?.content).toContain('"status":"PASS"');
+    expect(toolResult?.content).toContain('"follow":{"status":"applied"');
     expect(bridge.getNode).toHaveBeenCalledOnce();
     expect(mutationTool.run).toHaveBeenCalledOnce();
+    expect(focusEditor).toHaveBeenCalledWith(["/project1/noise1"], true, {
+      action: "create",
+      framing: "auto",
+      enabled: true,
+    });
+  });
+
+  it.each([
+    { label: "explicit opt-out", performMode: false, autoFollow: false },
+    { label: "Perform mode", performMode: true, autoFollow: true },
+  ])("does not auto-follow in $label", async ({ performMode, autoFollow }) => {
+    const focusEditor = vi.fn();
+    const ctx = {
+      ...makeCtx(),
+      client: {
+        getEditorContext: vi.fn().mockResolvedValue({
+          project: {},
+          touchdesigner: {},
+          perform_mode: performMode,
+          ui_available: true,
+          panes: [{ type: "NETWORKEDITOR", active: true, name: "pane1" }],
+          active_network_editor: {
+            pane: { type: "NETWORKEDITOR", name: "pane1" },
+            owner: "/project1",
+            current: "/project1/noise1",
+            selected: [],
+            rollover_operator: null,
+            rollover_parameter: null,
+            viewport: null,
+          },
+          warnings: [],
+        }),
+        focusEditor,
+      },
+    } as unknown as ToolContext;
+    const tool = {
+      name: "synthetic_mutation",
+      description: "synthetic mutation",
+      schema: z.object({ path: z.string() }),
+      mutates: true,
+      run: vi.fn(async () => ({
+        content: [{ type: "text" as const, text: "updated" }],
+      })),
+    };
+
+    await runAgentTurn(
+      ctx,
+      scriptedClient([
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [
+            {
+              id: "follow-skip",
+              type: "function",
+              function: {
+                name: tool.name,
+                arguments: '{"path":"/project1/noise1"}',
+              },
+            },
+          ],
+        },
+        { role: "assistant", content: "done" },
+      ]),
+      [{ role: "user", content: "update it" }],
+      () => {},
+      { tools: [tool], autoFollow },
+    );
+
+    expect(focusEditor).not.toHaveBeenCalled();
+  });
+
+  it("keeps mutation success when automatic follow itself fails", async () => {
+    const focusEditor = vi.fn().mockRejectedValue(new Error("pane raced away"));
+    const ctx = {
+      ...makeCtx(),
+      client: {
+        getEditorContext: vi.fn().mockResolvedValue({
+          project: {},
+          touchdesigner: {},
+          perform_mode: false,
+          ui_available: true,
+          panes: [{ type: "NETWORKEDITOR", active: true, name: "pane1" }],
+          active_network_editor: {
+            pane: { type: "NETWORKEDITOR", name: "pane1" },
+            owner: "/project1",
+            current: "/project1/noise1",
+            selected: [],
+            rollover_operator: null,
+            rollover_parameter: null,
+            viewport: null,
+          },
+          warnings: [],
+        }),
+        focusEditor,
+      },
+    } as unknown as ToolContext;
+    const tool = {
+      name: "synthetic_mutation",
+      description: "synthetic mutation",
+      schema: z.object({ path: z.string() }),
+      mutates: true,
+      run: vi.fn(async () => ({
+        content: [{ type: "text" as const, text: "updated" }],
+      })),
+    };
+    const events: AgentEvent[] = [];
+    const messages = await runAgentTurn(
+      ctx,
+      scriptedClient([
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [
+            {
+              id: "follow-fails",
+              type: "function",
+              function: {
+                name: tool.name,
+                arguments: '{"path":"/project1/noise1"}',
+              },
+            },
+          ],
+        },
+        { role: "assistant", content: "done" },
+      ]),
+      [{ role: "user", content: "update it" }],
+      (event) => events.push(event),
+      { tools: [tool] },
+    );
+
+    const done = events.find(
+      (event): event is Extract<AgentEvent, { type: "tool"; status: "done" }> =>
+        event.type === "tool" && event.status === "done",
+    );
+    expect(done?.ok).toBe(true);
+    expect(done?.follow).toMatchObject({ status: "failed", focused: [] });
+    expect(messages.find((message) => message.role === "tool")?.content).toContain(
+      "Automatic result follow failed",
+    );
   });
 
   it("returns bounded validation recovery evidence without dispatching the tool", async () => {

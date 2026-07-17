@@ -34,14 +34,19 @@ re-implement building.
 
 ## Execution policy — read it from `ledger.policy`, do not assume
 
-The ledger carries the policy the user chose; honor it literally. For the current
-campaign (`beyond_20260530`):
+The ledger carries the policy the user chose; honor it literally. Every campaign must
+store one canonical `ledger.policy.release_policy` object with independent booleans:
+`{ version_bump, commit, push, tag, publish, deploy }`. Missing fields are false.
+Legacy strings are input compatibility only: normalize `commit-and-push-NO-tag` to
+`version_bump:true, commit:true, push:true, tag:false, publish:false, deploy:false`,
+persist the object through the merge-safe generator, and never authorize from the
+string again. Other campaign controls remain alongside that object:
 
 | Policy | Value | Meaning |
 |---|---|---|
 | `scope` | `staged-by-priority` | Run waves in order; **pause after `checkpoint_after_wave`** for a go/no-go before continuing. |
 | `checkpoint_after_wave` | `1` | After wave 1 (P0 + Top-12) ships, **stop and report**; wait for the user to say continue. |
-| `release` | `commit-and-push-NO-tag` | The releaser writes CHANGELOG + bumps version + commits + **pushes the branch**, but must **NOT `git tag`** (the repo's tags diverged; tagging is held). |
+| `release_policy` | explicit booleans | Only true actions may run; all false means a QA-complete unreleased checkpoint. |
 | `td_required_before_build_waves` | `true` | A wave touching `needs_td` features only runs when `get_td_info` reports connected. If offline, hold those features (`blocked-td`) and say so; never fake a live pass. |
 | `builder_retry` | `1` | One retry per failing builder/feature. |
 | `on_repeat_fail` | `quarantine-and-continue` | After the retry, mark `quarantined`, record the gap, and **keep the wave moving** — one stuck tool never blocks the rest. |
@@ -53,9 +58,11 @@ campaign (`beyond_20260530`):
 | Campaign brain / ledger steward | `tdmcp-backlog-planner` | **NEW** |
 | Per-feature design spec | `td-architect` (`td-feature-design`) | reused |
 | Isolated tool builder (×N parallel) | `td-builder` / `tdmcp-tool-builder` | reused |
+| Existing-surface extension builder (leased) | `td-extension-builder` / `td-feature-extend` | reused |
+| Bridge vertical slice (×1 serial) | `tdmcp-bridge-engineer` / `tdmcp-bridge-endpoint` | reused |
 | Single-writer integrator | `td-integrator` (`td-feature-integrate`) | reused |
 | Live + gate QA (incremental) | `td-qa` (`td-feature-qa`) | reused |
-| Release (CHANGELOG/bump/commit/push) | `td-releaser` (`td-feature-release`) | reused |
+| Optional policy-gated release | `td-releaser` (`td-feature-release`) | reused |
 
 All `Agent` calls use `model: "opus"` for design/integrate/QA/release/planner;
 **builders** follow the project convention — `sonnet` for prescriptive tools, `opus`
@@ -86,7 +93,8 @@ Spawn **`tdmcp-backlog-planner`** (`model: "opus"`). It reconciles the ledger ag
 the tree, computes the next ready wave (deps + shared-schema-first satisfied,
 `needs_td` honored against live bridge state), and writes `wave_<N>_manifest.json` +
 `wave_<N>_planner_report.md`. Read the manifest; respect its `foundations` →
-`parallel` sub-batch order and its `blocked[]` exclusions.
+`parallel` → `serial` order, `build_mode`/`ownership[]` routing, and `blocked[]`
+exclusions.
 
 ### Phase 2 — TD gate
 
@@ -100,18 +108,23 @@ and never claim a live pass you could not observe.
 
 For the **foundations** sub-batch (shared schemas / promoted primitives), run them
 **first and serially-ish** so their contract is fixed before dependents consume it:
-`td-architect` spec → 1 builder → integrate → QA → mark `shipped`. Update the ledger
-after each transition.
+`td-architect` spec → the mode-appropriate builder → integrate → QA → mark
+`shipped`. Update the ledger after each transition.
 
-Then the **parallel** sub-batch, exactly the `tdmcp-pipeline` Phase 2–4 loop:
+Then run the mode-routed `tdmcp-pipeline` in `through_qa_only` campaign mode; the
+child pipeline must not release, commit, push, tag, publish, deploy, or bump versions:
 1. `td-architect` fan-out (one per feature, `run_in_background`), specs to
-   `_workspace/01_design_<id>.md`. Resolve any flagged cross-feature contention
-   (especially shared-schema consumers) before building.
-2. `td-builder` fan-out in a **single message** (~4–6 at a time; a larger ready set
-   becomes ordered sub-batches). Each: **new files only**, green-in-isolation (vitest
-   + biome + typecheck). Set each feature `building`.
-3. `td-integrator` as the **single writer** wires every built tool into the layer
-   `index.ts` / `src/cli/agent.ts` / `src/prompts/index.ts`, then the four gates
+   `_workspace/01_design_<id>.md`. Each confirms `build_mode` and `ownership[]`.
+   Resolve all shared-file contention before building.
+2. Route implementation by mode:
+   - `new-tool`: `td-builder` fan-out, new files only, ~4–6 at a time;
+   - `extension`: `td-extension-builder`, parallel only for disjoint ownership
+     leases; serialize overlaps and preserve unknown dirty files;
+   - `bridge`: `tdmcp-bridge-engineer` one at a time, never parallel.
+   Each slice is focused-test + Biome + typecheck + build green before integration;
+   bridge slices additionally run `python3 -m py_compile` on every changed `td/**/*.py`.
+3. `td-integrator` as the **single convergence writer** wires new tools and checks
+   cross-surface coherence for extension/bridge work, then runs the four gates
    (`typecheck`, `build`, `./node_modules/.bin/biome check .`, `test`; +
    `validate:recipes` if a recipe changed). Set features `integrating`.
 4. `td-qa` **incrementally** as each feature integrates — gate pass + (TD up) live
@@ -124,14 +137,15 @@ Then the **parallel** sub-batch, exactly the `tdmcp-pipeline` Phase 2–4 loop:
 1. **Docs/CHANGELOG/ROADMAP** for everything that shipped this wave (the integrator/QA
    already do per `tdmcp-feature-lead`; confirm `docs/reference/tools.md` is generated
    not hand-edited, build the docs).
-2. **Release under policy** — spawn `td-releaser` with the explicit override:
-   *write the CHANGELOG entry, bump to `version_target`, commit, **push the branch** —
-   but do **NOT** create a git tag.* (Honor `commit-and-push-NO-tag`.)
+2. **Apply release policy literally.** Read only `ledger.policy.release_policy`. If
+   every boolean is false, skip `td-releaser` and record a QA-complete unreleased
+   checkpoint. Otherwise spawn `td-releaser` with that exact object; never inherit a
+   prior campaign's permissions or infer one action from another.
 3. **Fold outcomes** — re-spawn `tdmcp-backlog-planner` to apply this wave's results
    (`shipped` / `quarantined` / `blocked`) to the ledger and compute the next wave.
 4. **Checkpoint** — if this wave == `checkpoint_after_wave`, **stop**: report shipped /
-   quarantined / blocked-td, the new version + pushed SHA (no tag), and what wave 2
-   holds. Wait for the user to continue. Otherwise loop to Phase 1.
+   quarantined / blocked-td, any release action that actually occurred, and what wave
+   `checkpoint_after_wave + 1` holds. Wait for the user to continue. Otherwise loop to Phase 1.
 
 ## Idempotency rules (never redo finished work)
 
@@ -152,6 +166,9 @@ Then the **parallel** sub-batch, exactly the `tdmcp-pipeline` Phase 2–4 loop:
 | Situation | Strategy |
 |---|---|
 | Builder fails in isolation | One retry (re-spawn with the precise failure). Then `quarantined` + continue; ship the rest of the wave. |
+| Two extensions own the same existing file | Planner places them in serial sub-batches; never merge by concurrent editing. |
+| Extension sees dirty work | Preserve and continue when it is outside the lease. Block/quarantine only when the dirty path intersects this lease and is unowned or owned by another active slice. |
+| Feature needs bridge/client/validator changes | Route to one bridge engineer; bridge slices are always serial. |
 | Integrate breaks the build | Integrator bisects, wires the rest, sends the offender a fix; campaign continues with the green subset. |
 | QA finds a boundary bug | Fix request to **both** sides; re-validate; cap ~3 rounds, else `quarantined` with the blocker noted. |
 | Bridge offline mid-wave | `needs_td` features → `blocked-td`, ship offline-safe ones, report; resume the blocked set next time TD is up. |
@@ -159,21 +176,21 @@ Then the **parallel** sub-batch, exactly the `tdmcp-pipeline` Phase 2–4 loop:
 | A whole wave regresses on re-run | Treat feedback as a diff: re-spawn only affected builders / re-touch only affected shared files; don't rebuild green tools. |
 | Context window fills mid-campaign | The ledger IS the handoff. A fresh session re-enters at Phase 0 and resumes exactly where it stopped. |
 
-## Release specifics — NO tag
+## Release specifics — policy-scoped authority
 
-The releaser's default tags; for this campaign it must not. Pass it: *"Per campaign
-policy `commit-and-push-NO-tag`: do CHANGELOG + version bump + commit + `git push` the
-branch; skip `git tag` entirely. Honor the repo's hard git safety rails otherwise."*
-If the user later flips the policy to allow tags, update `ledger.policy.release` and
-the releaser brief together.
+`ledger.policy.release_policy` is the complete release authority. Legacy strings are
+normalized once and then ignored. When all booleans are false, do not spawn the
+releaser. If the user later changes policy, update the ledger generator and releaser
+brief together, regenerate merge-safely, and report only actions actually performed.
 
 ## Starting a campaign for a new backlog
 
 If pointed at a backlog file with no campaign yet: create `_workspace/campaign_<slug>/`,
 author a `build-ledger.mjs` that encodes that backlog's features (id, surface, priority,
-`probe_live`, `needs_td`, `depends_on`, `shared_schema`, `wave`, `version_target`) and
-its `policy`, run it, then enter Phase 0. Mirror the `beyond_20260530` generator's
-shape; keep merge-safe seeding so re-runs preserve progress.
+`build_mode`, `ownership[]`, `probe_live`, `needs_td`, `depends_on`, `shared_schema`,
+`wave`, `version_target`) and
+its policy, including a complete `release_policy` object, run it, then enter Phase 0.
+Keep merge-safe seeding so re-runs preserve progress.
 
 ## Data flow
 
@@ -181,22 +198,22 @@ shape; keep merge-safe seeding so re-runs preserve progress.
 ledger.json ──▶ planner ──▶ wave_N_manifest.json
                                   │ foundations first
         ┌─────────────────────────┴───────────────────────────┐
-        │ architect(s) → builders(∥) → integrator(1) → qa(∥)   │  ← per wave
-        │      ↑ fix (file:line) ↓   gates + live (TD up)       │     = tdmcp-pipeline
+        │ architect(s) → new-tool(∥) / extension(leased)       │
+        │                / bridge(serial) → integrator → QA    │  ← per wave
         └─────────────────────────┬───────────────────────────┘
                                   ▼
-        releaser (CHANGELOG/bump/commit/PUSH, NO tag) ──▶ planner folds results
+        policy gate (optional releaser; otherwise QA checkpoint) ──▶ planner folds
                                   ▼
               ledger.json updated ──▶ checkpoint? stop : next wave
 ```
 
 ## Test scenarios
 
-**Normal (resume):** session 2 opens, reads `ledger.json` — 9 of wave 1 `shipped`, 3
-`building` with files present, 4 `pending`. Planner reconciles: the 3 `building`+green
-→ `shipped`; computes the remaining 4 ready. Campaign builds the 4, integrates, QA
-PASS, releaser commits+pushes v0.7.0 (no tag), planner folds, wave 1 == checkpoint →
-stop and report. No shipped feature was rebuilt.
+**Normal (mixed resume):** session 2 opens a wave containing a new tool, two
+existing-file extensions, and one bridge slice. Planner emits disjoint leases,
+serializes the extensions if needed, and puts the bridge slice in `serial`. The new
+tool and one disjoint extension run together, bridge runs alone, integrator converges,
+QA passes, policy is applied, and no shipped feature is rebuilt.
 
 **Error (quarantine + offline TD):** wave 1, `create_euclidean_sequencer` cooks to a TD
 error QA catches; builder-fixer's two rounds don't clear it → `quarantined`, gap

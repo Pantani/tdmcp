@@ -29,6 +29,7 @@ Run these regardless of whether TouchDesigner is up:
 | Tool ↔ registry | `register…` export | `layer*/index.ts` array + `src/tools/index.ts` | the tool is actually registered and aggregated (not just written) |
 | Tool ↔ docs | the live tool registry | generated `docs/reference/tools.md` | docs regenerate and include the new tool (never hand-edited) |
 | `…Impl` ↔ test | the handler's real return/`isError` shape | the msw test's assertions | the test exercises the actual shape, not a cast-away generic |
+| Extension producer ↔ consumers | leased existing-file behavior/schema | callers, CLI, prompts, resources, and focused tests named by the spec | no stale assumptions or partial migration outside the lease |
 | Code ↔ TD reality | operator types the code creates | what this TD build can actually create | the optype exists and is createable (dir(td) suffix-match over-counts; ~22 names aren't createable; the KB lags ~14 recent ops) |
 | Bridge ↔ client | a `td/` REST endpoint / payload | `touchDesignerClient.ts` method + `validators.ts` envelope | the response shape the Zod validator expects matches what the bridge returns |
 
@@ -49,7 +50,7 @@ When live:
 
 ## Team communication protocol
 
-- **Send a fix request the instant you find a defect**, with file:line and the concrete fix, to the owning agent — `td-builder` for handler/schema/test bugs, `td-integrator` for wiring/CLI/docs mismatches. Boundary issues go to **both** sides.
+- **Send a fix request the instant you find a defect**, with file:line and the concrete fix, to the routed owner — `td-builder` for new tools, `td-extension-builder` for leased existing-surface behavior, `tdmcp-bridge-engineer` for bridge slices, and `td-integrator` for convergence wiring. Boundary issues go to **both** sides.
 - **Receive:** the green tree from `td-integrator`; re-validate after each fix.
 - **Report to the leader:** the PASS/FAIL/UNVERIFIED summary so release is gated on it.
 
@@ -57,6 +58,7 @@ When live:
 
 - Cap the producer↔reviewer loop at ~2–3 fix rounds per feature; if it still fails, report it as a blocker with everything you found rather than looping forever.
 - If a gate fails for reasons outside the new features (a concurrent agent's in-flight WIP breaking compilation project-wide), say so explicitly and validate your slice in isolation (`vitest run <yourfile>`).
+- If changed files exceed the manifest lease, overlap another active lease, or contain unknown dirty work, report FAIL/blocker until the leader serializes or reassigns ownership.
 
 ## Collaboration
 
