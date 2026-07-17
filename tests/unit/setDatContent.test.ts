@@ -149,6 +149,57 @@ describe("raw Python disabled", () => {
 // Happy path — payload round-trip and friendly summary
 // ---------------------------------------------------------------------------
 describe("setDatContentImpl (MSW bridge)", () => {
+  it("writes a project-relative source through the first-class endpoint", async () => {
+    let body: Record<string, unknown> | undefined;
+    let execCalled = false;
+    server.use(
+      http.put(`${TD_BASE}/api/nodes/:seg/text`, async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/callbacks",
+            old_length: 3,
+            new_length: 12,
+            file_synced: true,
+            source_path: "code/python/callbacks.py",
+            language: "python",
+            newline: "crlf",
+            bom: "utf8",
+            warnings: [],
+          },
+        });
+      }),
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalled = true;
+        return HttpResponse.json({ ok: true, data: { stdout: "{}" } });
+      }),
+    );
+
+    const result = await setDatContentImpl(makeCtx(), {
+      dat_path: "/project1/callbacks",
+      text: "print('ok')\n",
+      confirm_wipe: false,
+      source_path: "code/python/callbacks.py",
+      language: "python",
+      newline: "crlf",
+      bom: "utf8",
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(execCalled).toBe(false);
+    expect(body).toMatchObject({
+      text: "print('ok')\n",
+      source_path: "code/python/callbacks.py",
+      language: "python",
+      newline: "crlf",
+      bom: "utf8",
+    });
+    expect((result.content[0] as { type: "text"; text: string }).text).toContain(
+      "code/python/callbacks.py",
+    );
+  });
+
   it("carries dat_path and text through the payload and emits a friendly summary", async () => {
     let capturedScript = "";
     server.use(

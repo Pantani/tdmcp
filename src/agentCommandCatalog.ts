@@ -3150,7 +3150,8 @@ export const AGENT_COMMAND_CATALOG = [
   },
   {
     command: "set-expr",
-    summary: "Set a parameter to an expression/bind/constant without raw Python.",
+    summary:
+      "Set a parameter mode; expression/bind require raw Python, while constant/reset/unbind work in restricted mode.",
     mutates: true,
     unsafe: false,
     source: "tool",

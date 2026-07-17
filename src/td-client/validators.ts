@@ -810,6 +810,51 @@ export const ParameterMenuSchema = z.object({
 });
 export type TdParameterMenu = z.infer<typeof ParameterMenuSchema>;
 
+export const ParameterSequenceParameterSchema = z.object({
+  name: z.string(),
+  value: z.unknown(),
+  mode: z.string().default("UNKNOWN"),
+});
+
+export const ParameterSequenceSchema = z.object({
+  name: z.string(),
+  num_blocks: z.number().int().min(0).max(256),
+  parameters: z.array(ParameterSequenceParameterSchema).default([]),
+});
+
+export const ParameterSequencesSchema = z.object({
+  path: z.string(),
+  sequences: z.array(ParameterSequenceSchema).default([]),
+  truncated: z.boolean().default(false),
+  warnings: z.array(z.string()).default([]),
+});
+export type TdParameterSequences = z.infer<typeof ParameterSequencesSchema>;
+
+export const ParameterSequenceUpdateSchema = z.object({
+  path: z.string(),
+  resized: z
+    .array(
+      z.object({
+        name: z.string(),
+        was: z.number().int().min(0).max(256),
+        num_blocks: z.number().int().min(1).max(256),
+      }),
+    )
+    .default([]),
+  applied: z
+    .array(
+      z.object({
+        name: z.string(),
+        value: z.unknown(),
+      }),
+    )
+    .default([]),
+  sequences: z.array(ParameterSequenceSchema).default([]),
+  rolled_back: z.boolean(),
+  warnings: z.array(z.string()).default([]),
+});
+export type TdParameterSequenceUpdate = z.infer<typeof ParameterSequenceUpdateSchema>;
+
 const MetadataFieldResultSchema = z.object({
   requested: z.unknown(),
   actual: z.unknown().optional(),
@@ -1329,6 +1374,12 @@ export const DatTextSchema = z.object({
   is_table: z.boolean().default(false),
   num_rows: z.number().int().default(0),
   num_cols: z.number().int().default(0),
+  file_synced: z.boolean().default(false),
+  source_path: z.string().optional(),
+  language: z.string().optional(),
+  newline: z.enum(["lf", "crlf"]).optional(),
+  bom: z.enum(["none", "utf8"]).optional(),
+  warnings: z.array(z.string()).default([]),
 });
 export type TdDatText = z.infer<typeof DatTextSchema>;
 
@@ -1336,8 +1387,22 @@ export const DatTextWriteSchema = z.object({
   path: z.string(),
   old_length: z.number().int().default(0),
   new_length: z.number().int().default(0),
+  file_synced: z.boolean().default(false),
+  source_path: z.string().optional(),
+  language: z.string().optional(),
+  newline: z.enum(["lf", "crlf"]).optional(),
+  bom: z.enum(["none", "utf8"]).optional(),
+  warnings: z.array(z.string()).default([]),
 });
 export type TdDatTextWrite = z.infer<typeof DatTextWriteSchema>;
+
+export const DatTextEditSchema = DatTextWriteSchema.extend({
+  dat: z.string(),
+  occurrences: z.number().int().nonnegative(),
+  replacements: z.number().int().nonnegative(),
+  replace_all: z.boolean(),
+});
+export type TdDatTextEdit = z.infer<typeof DatTextEditSchema>;
 
 // --- Structured bridge logs (GET /api/logs) ---
 export const BridgeLogLineSchema = z.object({

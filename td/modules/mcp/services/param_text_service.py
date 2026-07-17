@@ -18,6 +18,8 @@ fell into an except branch every time.
 """
 
 import math
+import os
+import tempfile
 
 import td
 
@@ -26,6 +28,15 @@ from mcp.services import api_service
 # TouchDesigner injects globals (op, ParMode, operator classes) only into
 # DAT/Textport scope, not into imported modules — so reach them via `td`.
 op = td.op
+
+_SOURCE_LANGUAGES = {
+    "python": (".py", "python"),
+    "glsl": (".glsl", "glsl"),
+    "text": (".txt", "text"),
+    "json": (".json", "json"),
+}
+_LANGUAGE_BY_EXTENSION = {ext: name for name, (ext, _td_name) in _SOURCE_LANGUAGES.items()}
+_UTF8_BOM = b"\xef\xbb\xbf"
 
 
 def _json_safe(value):
@@ -290,35 +301,288 @@ def is_dat(path):
     return bool(getattr(op(path), "isDAT", False))  # noqa: F821 - TD global
 
 
+def _require_dat(path):
+    node = op(path)  # noqa: F821 - TD global
+    if node is None:
+        raise LookupError("Node not found: %s" % path)
+    if not getattr(node, "isDAT", False):
+        raise ValueError("%s is not a DAT." % path)
+    return node
+
+
+def _par_value(par):
+    if par is None:
+        return None
+    try:
+        return par.eval()
+    except Exception:  # noqa: BLE001
+        return getattr(par, "val", None)
+
+
+def _source_pars(node):
+    pars = getattr(node, "par", None)
+    return {
+        name: getattr(pars, name, None) if pars is not None else None
+        for name in ("file", "syncfile", "language")
+    }
+
+
+def _project_root():
+    folder = getattr(getattr(td, "project", None), "folder", None)
+    if not folder:
+        raise RuntimeError("TouchDesigner project folder is unavailable.")
+    return os.path.realpath(str(folder))
+
+
+def _safe_source_path(relative_path, create_parent=False):
+    if not isinstance(relative_path, str) or not relative_path.strip():
+        raise ValueError("source_path must be a non-empty project-relative path.")
+    if any(ch in relative_path for ch in ("\x00", "\n", "\r")):
+        raise ValueError("source_path contains an invalid control character.")
+    normalized = relative_path.replace("\\", "/")
+    if normalized.startswith("/") or os.path.isabs(normalized):
+        raise ValueError("source_path must be relative to the TouchDesigner project folder.")
+    parts = [part for part in normalized.split("/") if part not in ("", ".")]
+    if not parts or any(part == ".." for part in parts):
+        raise ValueError("source_path traversal is not allowed.")
+    relative = "/".join(parts)
+    root = _project_root()
+    candidate = os.path.realpath(os.path.join(root, *parts))
+    try:
+        contained = os.path.commonpath([root, candidate]) == root
+    except ValueError:
+        contained = False
+    if not contained:
+        raise ValueError("source_path escapes the TouchDesigner project folder.")
+    parent = os.path.dirname(candidate)
+    if create_parent:
+        os.makedirs(parent, exist_ok=True)
+        if os.path.commonpath([root, os.path.realpath(parent)]) != root:
+            raise ValueError("source_path parent escapes through a symlink.")
+    return relative, candidate
+
+
+def _decode_source(raw):
+    has_bom = raw.startswith(_UTF8_BOM)
+    body = raw[len(_UTF8_BOM) :] if has_bom else raw
+    try:
+        text = body.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("Source file must be valid UTF-8: %s" % exc)
+    newline = "crlf" if b"\r\n" in body else "lf"
+    return text, ("utf8" if has_bom else "none"), newline
+
+
+def _encode_source(text, newline, bom):
+    normalized = str(text).replace("\r\n", "\n").replace("\r", "\n")
+    if newline == "crlf":
+        normalized = normalized.replace("\n", "\r\n")
+    raw = normalized.encode("utf-8")
+    return (_UTF8_BOM + raw) if bom == "utf8" else raw
+
+
+def _source_metadata(node, require_file=False):
+    pars = _source_pars(node)
+    file_value = _par_value(pars["file"])
+    sync_value = bool(_par_value(pars["syncfile"]))
+    if not file_value or not sync_value:
+        if require_file:
+            raise ValueError("DAT is not linked to a synced project source file.")
+        return None
+    relative, absolute = _safe_source_path(str(file_value))
+    if not os.path.isfile(absolute):
+        if require_file:
+            raise ValueError("Synced DAT source file does not exist: %s" % relative)
+        return None
+    return relative, absolute, pars
+
+
+def _resolve_language(source_path, language):
+    extension = os.path.splitext(source_path)[1].lower()
+    inferred = _LANGUAGE_BY_EXTENSION.get(extension)
+    chosen = language or inferred or "text"
+    if chosen not in _SOURCE_LANGUAGES:
+        raise ValueError("language must be one of: %s" % ", ".join(sorted(_SOURCE_LANGUAGES)))
+    expected_extension = _SOURCE_LANGUAGES[chosen][0]
+    if language and extension and extension != expected_extension:
+        raise ValueError(
+            "source_path extension %s does not match language %s (%s)."
+            % (extension, chosen, expected_extension)
+        )
+    return chosen, _SOURCE_LANGUAGES[chosen][1]
+
+
+def _snapshot_source_pars(pars):
+    return {name: _par_value(par) for name, par in pars.items() if par is not None}
+
+
+def _restore_source_pars(pars, snapshot):
+    for name, value in snapshot.items():
+        par = pars.get(name)
+        if par is not None:
+            par.val = value
+
+
+def _atomic_source_write(node, source_path, text, language=None, newline="preserve", bom="preserve"):
+    if newline not in ("preserve", "lf", "crlf"):
+        raise ValueError("newline must be preserve, lf, or crlf.")
+    if bom not in ("preserve", "none", "utf8"):
+        raise ValueError("bom must be preserve, none, or utf8.")
+    relative, absolute = _safe_source_path(source_path, create_parent=True)
+    chosen_language, td_language = _resolve_language(relative, language)
+    previous = None
+    old_text = ""
+    old_bom = "none"
+    old_newline = "lf"
+    if os.path.isfile(absolute):
+        with open(absolute, "rb") as source:
+            previous = source.read()
+        old_text, old_bom, old_newline = _decode_source(previous)
+    resolved_newline = old_newline if newline == "preserve" else newline
+    resolved_bom = old_bom if bom == "preserve" else bom
+    payload = _encode_source(text, resolved_newline, resolved_bom)
+    pars = _source_pars(node)
+    if pars["file"] is None or pars["syncfile"] is None:
+        raise ValueError("DAT does not expose file/syncfile parameters required for source sync.")
+    par_snapshot = _snapshot_source_pars(pars)
+    temp_path = None
+    warnings = []
+    try:
+        with tempfile.NamedTemporaryFile("wb", dir=os.path.dirname(absolute), delete=False) as tmp:
+            temp_path = tmp.name
+            tmp.write(payload)
+        os.replace(temp_path, absolute)
+        temp_path = None
+        pars["file"].val = relative
+        pars["syncfile"].val = True
+        if pars["language"] is not None:
+            pars["language"].val = td_language
+        else:
+            warnings.append("DAT language parameter is unavailable; source language was not assigned.")
+    except Exception:
+        if temp_path and os.path.exists(temp_path):
+            os.unlink(temp_path)
+        if previous is None:
+            if os.path.exists(absolute):
+                os.unlink(absolute)
+        else:
+            with open(absolute, "wb") as source:
+                source.write(previous)
+        _restore_source_pars(pars, par_snapshot)
+        raise
+    return {
+        "path": node.path,
+        "old_length": len(old_text),
+        "new_length": len(str(text)),
+        "file_synced": True,
+        "source_path": relative,
+        "language": chosen_language,
+        "newline": resolved_newline,
+        "bom": resolved_bom,
+        "warnings": warnings,
+    }
+
+
 def get_dat_text(path):
     """Return {path, text, is_table, num_rows, num_cols} for a DAT.
 
     Raises LookupError if the node is missing, ValueError if it is not a DAT.
     """
-    node = op(path)  # noqa: F821 - TD global
-    if node is None:
-        raise LookupError("Node not found: %s" % path)
-    if not getattr(node, "isDAT", False):
-        raise ValueError("%s is not a DAT." % path)
-    return {
+    node = _require_dat(path)
+    result = {
         "path": path,
         "text": node.text,
         "is_table": bool(getattr(node, "isTable", False)),
         "num_rows": int(getattr(node, "numRows", 0) or 0),
         "num_cols": int(getattr(node, "numCols", 0) or 0),
+        "file_synced": False,
+        "warnings": [],
     }
+    try:
+        source = _source_metadata(node)
+        if source is not None:
+            relative, absolute, pars = source
+            with open(absolute, "rb") as handle:
+                text, bom, newline = _decode_source(handle.read())
+            result.update(
+                {
+                    "text": text,
+                    "file_synced": True,
+                    "source_path": relative,
+                    "language": str(_par_value(pars["language"]) or ""),
+                    "newline": newline,
+                    "bom": bom,
+                }
+            )
+    except ValueError as exc:
+        result["warnings"].append(str(exc))
+    return result
 
 
-def put_dat_text(path, text):
+def put_dat_text(path, text, source_path=None, language=None, newline="preserve", bom="preserve"):
     """Overwrite a DAT's whole `.text`. Returns {path, old_length, new_length}.
 
     Raises LookupError if the node is missing, ValueError if it is not a DAT.
     """
-    node = op(path)  # noqa: F821 - TD global
-    if node is None:
-        raise LookupError("Node not found: %s" % path)
-    if not getattr(node, "isDAT", False):
-        raise ValueError("%s is not a DAT." % path)
+    node = _require_dat(path)
+    if source_path is not None:
+        return _atomic_source_write(node, source_path, text, language, newline, bom)
     old_length = len(node.text)
     node.text = text
-    return {"path": path, "old_length": old_length, "new_length": len(text)}
+    return {
+        "path": path,
+        "old_length": old_length,
+        "new_length": len(text),
+        "file_synced": False,
+        "warnings": [],
+    }
+
+
+def edit_dat_text(path, old_string, new_string, replace_all=False, source="auto"):
+    """Replace text atomically in the DAT or its safe project-backed source file."""
+    if not old_string:
+        raise ValueError("old_string must not be empty.")
+    if source not in ("auto", "dat", "file"):
+        raise ValueError("source must be auto, dat, or file.")
+    node = _require_dat(path)
+    source_info = None if source == "dat" else _source_metadata(node, require_file=source == "file")
+    if source_info is not None:
+        relative, absolute, pars = source_info
+        with open(absolute, "rb") as handle:
+            current, current_bom, current_newline = _decode_source(handle.read())
+        current_language = _LANGUAGE_BY_EXTENSION.get(os.path.splitext(relative)[1].lower())
+    else:
+        current = node.text
+        current_bom = "none"
+        current_newline = "lf"
+        current_language = None
+    occurrences = current.count(old_string)
+    if occurrences == 0:
+        raise ValueError("old_string not found in %s." % path)
+    if occurrences > 1 and not replace_all:
+        raise ValueError(
+            "old_string matches %d times in %s; pass replace_all:true or add context."
+            % (occurrences, path)
+        )
+    replacements = occurrences if replace_all else 1
+    updated = current.replace(old_string, new_string, -1 if replace_all else 1)
+    if source_info is not None:
+        write = _atomic_source_write(
+            node,
+            relative,
+            updated,
+            current_language,
+            current_newline,
+            current_bom,
+        )
+    else:
+        write = put_dat_text(path, updated)
+    write.update(
+        {
+            "dat": path,
+            "occurrences": occurrences,
+            "replacements": replacements,
+            "replace_all": bool(replace_all),
+        }
+    )
+    return write

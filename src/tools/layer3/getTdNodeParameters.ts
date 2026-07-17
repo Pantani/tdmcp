@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { NodeDetailSchema } from "../../td-client/validators.js";
+import { tryEndpoint } from "../../td-client/types.js";
+import { NodeDetailSchema, ParameterSequenceSchema } from "../../td-client/validators.js";
 import { guardTd, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -13,13 +14,39 @@ export const getTdNodeParametersSchema = z.object({
     .boolean()
     .default(false)
     .describe("Drop the inputs/outputs lists from the result to save context."),
+  include_sequences: z
+    .boolean()
+    .default(true)
+    .describe("Include bounded parameter-sequence names, block counts, values, and modes."),
 });
-type GetTdNodeParametersArgs = z.infer<typeof getTdNodeParametersSchema>;
+type GetTdNodeParametersArgs = z.input<typeof getTdNodeParametersSchema>;
+
+const GetTdNodeParametersOutputSchema = NodeDetailSchema.extend({
+  sequences: z.array(ParameterSequenceSchema).optional(),
+  sequences_inspected: z.boolean(),
+  sequences_truncated: z.boolean().optional(),
+  sequence_warnings: z.array(z.string()).optional(),
+});
 
 export async function getTdNodeParametersImpl(ctx: ToolContext, args: GetTdNodeParametersArgs) {
   return guardTd(
-    () => ctx.client.getNode(args.path),
-    (node) => {
+    async () => {
+      const node = await ctx.client.getNode(args.path);
+      if (args.include_sequences === false) return { node, sequenceReport: undefined };
+      const sequenceReport = await tryEndpoint(
+        () => ctx.client.getParameterSequences(args.path),
+        async () => ({
+          path: args.path,
+          sequences: [],
+          truncated: false,
+          warnings: [
+            "This bridge predates structured parameter-sequence discovery; reinstall or reload it to include sequences.",
+          ],
+        }),
+      );
+      return { node, sequenceReport };
+    },
+    ({ node, sequenceReport }) => {
       let parameters = node.parameters;
       if (args.keys && args.keys.length > 0) {
         const wanted = new Set(args.keys);
@@ -37,8 +64,24 @@ export async function getTdNodeParametersImpl(ctx: ToolContext, args: GetTdNodeP
         data.inputs = node.inputs;
         data.outputs = node.outputs;
       }
+      if (sequenceReport) {
+        data.sequences = sequenceReport.sequences;
+        data.sequences_inspected = true;
+        data.sequences_truncated = sequenceReport.truncated;
+        if (sequenceReport.warnings.length > 0) {
+          data.sequence_warnings = sequenceReport.warnings;
+        }
+      } else {
+        data.sequences_inspected = false;
+      }
       const count = Object.keys(parameters).length;
-      return structuredResult(`${count} parameter(s) for ${node.path} (${node.type}).`, data);
+      const sequenceSummary = sequenceReport
+        ? `${sequenceReport.sequences.length} sequence(s)${sequenceReport.truncated ? " (truncated)" : ""}`
+        : "sequence inspection skipped";
+      return structuredResult(
+        `${count} parameter(s) and ${sequenceSummary} for ${node.path} (${node.type}).`,
+        data,
+      );
     },
   );
 }
@@ -49,9 +92,9 @@ export const registerGetTdNodeParameters: ToolRegistrar = (server, ctx) => {
     {
       title: "Get node parameters",
       description:
-        "Read-only: read the current parameters (and inputs/outputs) of one node. Returns {path, type, name, parameters, inputs, outputs}. Pass `keys` to project specific parameters or `omit_io:true` to drop the inputs/outputs lists. Use compare_td_nodes to diff two nodes' parameters at once. Token economy: pass `keys` to fetch only the parameters you care about and `omit_io:true` to drop inputs/outputs — a full parameter dump is large.",
+        "Read-only: read current parameters, bounded sequence block metadata, and inputs/outputs for one node. Returns {path, type, name, parameters, sequences, inputs, outputs}. Pass `keys` to project specific parameters, `include_sequences:false` to skip sequence discovery, or `omit_io:true` to drop I/O. Use compare_td_nodes to diff two nodes' parameters at once.",
       inputSchema: getTdNodeParametersSchema.shape,
-      outputSchema: NodeDetailSchema.shape,
+      outputSchema: GetTdNodeParametersOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
     (args) => getTdNodeParametersImpl(ctx, args),

@@ -101,6 +101,126 @@ describe("TouchDesignerClient", () => {
     ).resolves.toMatchObject({ names: ["add", "multiply"], current: "add" });
   });
 
+  it("writes and edits source-backed DAT content with validated metadata", async () => {
+    server.use(
+      http.put(`${TD_BASE}/api/nodes/:path/text`, async ({ request }) => {
+        expect(await request.json()).toEqual({
+          text: "one\ntwo\n",
+          source_path: "code/python/callbacks.py",
+          language: "python",
+          newline: "crlf",
+          bom: "utf8",
+        });
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/callbacks",
+            old_length: 0,
+            new_length: 8,
+            file_synced: true,
+            source_path: "code/python/callbacks.py",
+            language: "python",
+            newline: "crlf",
+            bom: "utf8",
+            warnings: [],
+          },
+        });
+      }),
+      http.post(`${TD_BASE}/api/nodes/:path/text/edit`, async ({ request }) => {
+        expect(await request.json()).toEqual({
+          old_string: "two",
+          new_string: "three",
+          replace_all: false,
+          source: "file",
+        });
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/callbacks",
+            dat: "/project1/callbacks",
+            old_length: 8,
+            new_length: 10,
+            occurrences: 1,
+            replacements: 1,
+            replace_all: false,
+            file_synced: true,
+            source_path: "code/python/callbacks.py",
+            warnings: [],
+          },
+        });
+      }),
+    );
+
+    await expect(
+      client().putDatText("/project1/callbacks", "one\ntwo\n", {
+        sourcePath: "code/python/callbacks.py",
+        language: "python",
+        newline: "crlf",
+        bom: "utf8",
+      }),
+    ).resolves.toMatchObject({ file_synced: true, newline: "crlf", bom: "utf8" });
+    await expect(
+      client().editDatText("/project1/callbacks", {
+        oldString: "two",
+        newString: "three",
+        source: "file",
+      }),
+    ).resolves.toMatchObject({ replacements: 1, source_path: "code/python/callbacks.py" });
+  });
+
+  it("reads and atomically updates parameter sequences", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/nodes/:path/params/sequences`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/constant1",
+            sequences: [
+              {
+                name: "const",
+                num_blocks: 1,
+                parameters: [{ name: "const0value", value: 1, mode: "CONSTANT" }],
+              },
+            ],
+            truncated: false,
+            warnings: [],
+          },
+        }),
+      ),
+      http.patch(`${TD_BASE}/api/nodes/:path/params/sequences`, async ({ request }) => {
+        expect(await request.json()).toEqual({
+          sequences: { const: 2 },
+          parameters: { const1value: 7.5 },
+        });
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/constant1",
+            resized: [{ name: "const", was: 1, num_blocks: 2 }],
+            applied: [{ name: "const1value", value: 7.5 }],
+            sequences: [{ name: "const", num_blocks: 2, parameters: [] }],
+            rolled_back: false,
+            warnings: [],
+          },
+        });
+      }),
+    );
+
+    await expect(client().getParameterSequences("/project1/constant1")).resolves.toMatchObject({
+      sequences: [{ name: "const", num_blocks: 1 }],
+    });
+    await expect(
+      client().updateParameterSequences("/project1/constant1", {
+        sequences: { const: 2 },
+        parameters: { const1value: 7.5 },
+      }),
+    ).resolves.toMatchObject({
+      resized: [{ name: "const", was: 1, num_blocks: 2 }],
+      applied: [{ name: "const1value", value: 7.5 }],
+      rolled_back: false,
+    });
+  });
+
   it("getHealth returns the parsed liveness report", async () => {
     server.use(
       http.get(`${TD_BASE}/api/health`, () =>

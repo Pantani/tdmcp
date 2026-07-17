@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { tryEndpoint } from "../../td-client/types.js";
+import { TdApiError, tryEndpoint } from "../../td-client/types.js";
 import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
@@ -24,8 +24,14 @@ export const editDatContentSchema = z.object({
       "When false (default), requires exactly one match — 0 or >1 occurrences is an error. " +
         "Set true to replace every occurrence.",
     ),
+  source: z
+    .enum(["auto", "dat", "file"])
+    .default("auto")
+    .describe(
+      "Choose the mutation source. auto edits a safe synced project file when present; dat forces DAT-local text; file requires a safe synced file.",
+    ),
 });
-type EditDatContentArgs = z.infer<typeof editDatContentSchema>;
+type EditDatContentArgs = z.input<typeof editDatContentSchema>;
 
 interface EditDatReport {
   dat: string;
@@ -33,6 +39,8 @@ interface EditDatReport {
   replacements: number;
   replace_all: boolean;
   warnings: string[];
+  file_synced?: boolean;
+  source_path?: string;
   fatal?: string;
 }
 
@@ -82,49 +90,81 @@ export async function editDatContentImpl(ctx: ToolContext, args: EditDatContentA
   }
   return guardTd(
     async () => {
-      // 1) first-class endpoint path (survives ALLOW_EXEC=0): read the DAT text,
-      //    run the exhaustively-tested pure replace, write it back. A compute error
-      //    (0 matches / >1 without replace_all / not-a-DAT) becomes report.fatal so
-      //    the shared onOk turns it into an errorResult and NO write happens.
-      // 2) Fall back to exec ONLY when an endpoint is absent on an older bridge;
-      //    validation 400s surface unchanged via tryEndpoint.
+      // Current bridges perform source-aware read/replace/write atomically in one
+      // first-class endpoint call. The controller still requires ALLOW_EXEC because
+      // DAT text is code-bearing. Older bridges retain the existing DAT-local path.
       return tryEndpoint<EditDatReport>(
         async () => {
-          const cur = await ctx.client.getDatText(args.dat_path);
-          const res = computeDatTextReplace(
-            cur.text,
-            args.old_string,
-            args.new_string,
-            args.replace_all,
-          );
-          if (res.error || res.text === undefined) {
-            return {
-              dat: args.dat_path,
-              occurrences: res.occurrences,
-              replacements: res.replacements,
-              replace_all: args.replace_all,
-              warnings: [],
-              fatal: res.error ?? "edit_dat_content: nothing to replace.",
-            };
+          if (typeof ctx.client.editDatText !== "function") {
+            throw new TdApiError("Unsupported POST DAT text edit endpoint", { status: 404 });
           }
-          await ctx.client.putDatText(args.dat_path, res.text);
+          const edited = await ctx.client.editDatText(args.dat_path, {
+            oldString: args.old_string,
+            newString: args.new_string,
+            replaceAll: args.replace_all ?? false,
+            source: args.source ?? "auto",
+          });
           return {
             dat: args.dat_path,
-            occurrences: res.occurrences,
-            replacements: res.replacements,
-            replace_all: args.replace_all,
-            warnings: [],
+            occurrences: edited.occurrences,
+            replacements: edited.replacements,
+            replace_all: args.replace_all ?? false,
+            warnings: edited.warnings,
+            file_synced: edited.file_synced,
+            source_path: edited.source_path,
           };
         },
         async () => {
-          const script = buildEditDatContentScript({
-            dat: args.dat_path,
-            old: args.old_string,
-            new: args.new_string,
-            replace_all: args.replace_all,
-          });
-          const exec = await ctx.client.executePythonScript(script, true);
-          return parsePythonReport<EditDatReport>(exec.stdout);
+          if (args.source === "file") {
+            return {
+              dat: args.dat_path,
+              occurrences: 0,
+              replacements: 0,
+              replace_all: args.replace_all ?? false,
+              warnings: [],
+              fatal:
+                "Source-aware DAT edits require the current tdmcp bridge. Reinstall or reload the bridge and retry.",
+            };
+          }
+          return tryEndpoint<EditDatReport>(
+            async () => {
+              const cur = await ctx.client.getDatText(args.dat_path);
+              const res = computeDatTextReplace(
+                cur.text,
+                args.old_string,
+                args.new_string,
+                args.replace_all ?? false,
+              );
+              if (res.error || res.text === undefined) {
+                return {
+                  dat: args.dat_path,
+                  occurrences: res.occurrences,
+                  replacements: res.replacements,
+                  replace_all: args.replace_all ?? false,
+                  warnings: [],
+                  fatal: res.error ?? "edit_dat_content: nothing to replace.",
+                };
+              }
+              await ctx.client.putDatText(args.dat_path, res.text);
+              return {
+                dat: args.dat_path,
+                occurrences: res.occurrences,
+                replacements: res.replacements,
+                replace_all: args.replace_all ?? false,
+                warnings: [],
+              };
+            },
+            async () => {
+              const script = buildEditDatContentScript({
+                dat: args.dat_path,
+                old: args.old_string,
+                new: args.new_string,
+                replace_all: args.replace_all ?? false,
+              });
+              const exec = await ctx.client.executePythonScript(script, true);
+              return parsePythonReport<EditDatReport>(exec.stdout);
+            },
+          );
         },
       );
     },
@@ -132,7 +172,8 @@ export async function editDatContentImpl(ctx: ToolContext, args: EditDatContentA
       if (report.fatal) {
         return errorResult(report.fatal, report);
       }
-      const summary = `Replaced ${report.replacements} occurrence(s) in ${report.dat} (${report.occurrences} match(es) found).`;
+      const sourceSuffix = report.source_path ? ` via ${report.source_path}` : "";
+      const summary = `Replaced ${report.replacements} occurrence(s) in ${report.dat}${sourceSuffix} (${report.occurrences} match(es) found).`;
       return jsonResult(summary, report);
     },
   );
@@ -148,6 +189,7 @@ export const registerEditDatContent: ToolRegistrar = (server, ctx) => {
         "Surgically replace a substring inside a Text or Table DAT's `.text`. " +
         "Without `replace_all`, requires exactly one match — 0 or >1 occurrences is an error, " +
         "forcing the caller to add context or set `replace_all`. " +
+        "With `source:auto`, a safely project-backed DAT is edited in its source file atomically. " +
         "Use `set_dat_content` to overwrite an entire DAT's text in place; use this to make a targeted edit. " +
         "Because DAT text can become executable callbacks, this tool is hidden when " +
         "TDMCP_RAW_PYTHON=off and the bridge also requires TDMCP_BRIDGE_ALLOW_EXEC=1 for writes.",

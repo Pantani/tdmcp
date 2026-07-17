@@ -14,6 +14,7 @@ Stdlib only. Run: `python3 -m unittest discover -s td/tests` (or
 import enum
 import os
 import sys
+import tempfile
 import types
 import unittest
 from unittest import mock
@@ -99,6 +100,18 @@ class FakeDat:
         self.isTable = is_table
         self.numRows = num_rows
         self.numCols = num_cols
+
+
+class FakeSourceDat(FakeDat):
+    def __init__(self, path, text=""):
+        super().__init__(path, text=text)
+        self.par = FakeParCollection(
+            [
+                FakePar("file", val=""),
+                FakePar("syncfile", val=False),
+                FakePar("language", val="text"),
+            ]
+        )
 
 
 class FakeNonDat:
@@ -290,6 +303,69 @@ class DatTextTests(unittest.TestCase):
         with _patch_op(FakeNonDat("/project1/noise1")):
             with self.assertRaises(ValueError):
                 pme.put_dat_text("/project1/noise1", "x")
+
+    def test_source_write_is_project_relative_and_preserves_requested_bytes(self):
+        dat = FakeSourceDat("/project1/callbacks")
+        with tempfile.TemporaryDirectory() as folder, _patch_op(dat), mock.patch.object(
+            pme.td, "project", types.SimpleNamespace(folder=folder)
+        ):
+            result = pme.put_dat_text(
+                dat.path,
+                "one\ntwo\n",
+                "code/python/callbacks.py",
+                "python",
+                "crlf",
+                "utf8",
+            )
+            source_path = os.path.join(folder, "code", "python", "callbacks.py")
+            with open(source_path, "rb") as handle:
+                raw = handle.read()
+        self.assertTrue(raw.startswith(pme._UTF8_BOM))
+        self.assertIn(b"one\r\ntwo\r\n", raw)
+        self.assertEqual(dat.par.file.val, "code/python/callbacks.py")
+        self.assertTrue(dat.par.syncfile.val)
+        self.assertEqual(dat.par.language.val, "python")
+        self.assertTrue(result["file_synced"])
+        self.assertEqual(result["newline"], "crlf")
+        self.assertEqual(result["bom"], "utf8")
+
+    def test_source_write_rejects_traversal_before_file_creation(self):
+        dat = FakeSourceDat("/project1/callbacks")
+        with tempfile.TemporaryDirectory() as folder, _patch_op(dat), mock.patch.object(
+            pme.td, "project", types.SimpleNamespace(folder=folder)
+        ):
+            with self.assertRaises(ValueError):
+                pme.put_dat_text(dat.path, "x", "../outside.py", "python")
+
+    def test_source_aware_edit_updates_the_file_and_preserves_crlf_bom(self):
+        dat = FakeSourceDat("/project1/callbacks")
+        with tempfile.TemporaryDirectory() as folder, _patch_op(dat), mock.patch.object(
+            pme.td, "project", types.SimpleNamespace(folder=folder)
+        ):
+            pme.put_dat_text(
+                dat.path,
+                "one\ntwo\n",
+                "code/python/callbacks.py",
+                "python",
+                "crlf",
+                "utf8",
+            )
+            result = pme.edit_dat_text(dat.path, "two", "three", source="auto")
+            with open(os.path.join(folder, "code", "python", "callbacks.py"), "rb") as handle:
+                raw = handle.read()
+            readback = pme.get_dat_text(dat.path)
+        self.assertEqual(result["replacements"], 1)
+        self.assertTrue(result["file_synced"])
+        self.assertTrue(raw.startswith(pme._UTF8_BOM))
+        self.assertIn(b"one\r\nthree\r\n", raw)
+        self.assertTrue(readback["file_synced"])
+        self.assertIn("three", readback["text"])
+
+    def test_file_edit_requires_a_safe_synced_source(self):
+        dat = FakeSourceDat("/project1/callbacks", text="one")
+        with _patch_op(dat):
+            with self.assertRaises(ValueError):
+                pme.edit_dat_text(dat.path, "one", "two", source="file")
 
 
 # --- read_param_modes_batch ----------------------------------------------------

@@ -1361,6 +1361,26 @@ class StructuredEndpointTests(unittest.TestCase):
                 )
         self.assertEqual(ac.param_text_service.set_param_mode.call_count, 3)
 
+    def test_parameter_sequences_dispatch_with_exec_disabled(self):
+        ac._route(
+            "GET",
+            "/api/nodes/project1/constant1/params/sequences",
+            {},
+            {},
+        )
+        ac._route(
+            "PATCH",
+            "/api/nodes/project1/constant1/params/sequences",
+            {},
+            {"sequences": {"const": 2}, "parameters": {"const1value": 7.5}},
+        )
+        ac.parameter_service.read_parameter_sequences.assert_called_once_with(
+            "/project1/constant1"
+        )
+        ac.parameter_service.update_parameter_sequences.assert_called_once_with(
+            "/project1/constant1", {"const": 2}, {"const1value": 7.5}
+        )
+
     def test_dat_text_get_dispatches_with_exec_disabled(self):
         ac.param_text_service.is_dat.return_value = True
         ac._route("GET", "/api/nodes/project1/text1/text", {}, {})
@@ -1371,6 +1391,16 @@ class StructuredEndpointTests(unittest.TestCase):
             ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
         ac.param_text_service.put_dat_text.assert_not_called()
 
+    def test_dat_text_edit_is_blocked_with_exec_disabled(self):
+        with self.assertRaises(PermissionError):
+            ac._route(
+                "POST",
+                "/api/nodes/project1/text1/text/edit",
+                {},
+                {"old_string": "hello", "new_string": "world"},
+            )
+        ac.param_text_service.edit_dat_text.assert_not_called()
+
     def test_code_bearing_routes_dispatch_when_exec_is_enabled(self):
         with mock.patch.dict(os.environ, {"TDMCP_BRIDGE_ALLOW_EXEC": "1"}):
             ac._route(
@@ -1379,12 +1409,42 @@ class StructuredEndpointTests(unittest.TestCase):
                 {},
                 {"mode": "expression", "expr": "absTime.seconds"},
             )
-            ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
+            ac._route(
+                "PUT",
+                "/api/nodes/project1/text1/text",
+                {},
+                {
+                    "text": "hello",
+                    "source_path": "code/python/text1.py",
+                    "language": "python",
+                    "newline": "crlf",
+                    "bom": "utf8",
+                },
+            )
+            ac._route(
+                "POST",
+                "/api/nodes/project1/text1/text/edit",
+                {},
+                {
+                    "old_string": "hello",
+                    "new_string": "world",
+                    "replace_all": True,
+                    "source": "file",
+                },
+            )
         ac.param_text_service.set_param_mode.assert_called_once_with(
             "/project1/noise1", "tx", "expression", "absTime.seconds", None
         )
         ac.param_text_service.put_dat_text.assert_called_once_with(
-            "/project1/text1", "hello"
+            "/project1/text1",
+            "hello",
+            "code/python/text1.py",
+            "python",
+            "crlf",
+            "utf8",
+        )
+        ac.param_text_service.edit_dat_text.assert_called_once_with(
+            "/project1/text1", "hello", "world", True, "file"
         )
 
     def test_exec_is_still_blocked_in_this_mode(self):

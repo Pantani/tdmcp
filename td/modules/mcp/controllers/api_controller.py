@@ -1094,7 +1094,18 @@ def _custom_params_contains_caller_code(body):
     return any(_custom_param_operation_contains_caller_code(item) for item in operations)
 
 
-def _route_node_parameter_primitive(method, rest):
+def _route_node_parameter_primitive(method, rest, body):
+    if len(rest) >= 4 and rest[-2:] == ["params", "sequences"]:
+        node_path = _node_path(rest[1:-2])
+        if method == "GET":
+            return parameter_service.read_parameter_sequences(node_path)
+        if method == "PATCH":
+            return parameter_service.update_parameter_sequences(
+                node_path,
+                body.get("sequences", {}),
+                body.get("parameters", {}),
+            )
+        return None
     if (
         method == "GET"
         and len(rest) >= 5
@@ -1120,7 +1131,7 @@ def _route_node_editor_primitive(method, rest, body):
     routed = _route_node_mutation_primitive(method, rest, body)
     if routed is not None:
         return routed
-    return _route_node_parameter_primitive(method, rest)
+    return _route_node_parameter_primitive(method, rest, body)
 
 
 def _route_node_param_mode(method, rest, body):
@@ -1212,6 +1223,22 @@ def _route_nodes(method, rest, query, body):
 
 
 def _route_dat_text(method, rest, body):
+    if len(rest) >= 4 and rest[-2:] == ["text", "edit"]:
+        if method != "POST":
+            return None
+        if not _exec_allowed():
+            raise _Forbidden(
+                "Forbidden: DAT text mutation is disabled "
+                "(TDMCP_BRIDGE_ALLOW_EXEC=0)."
+            )
+        _require(body, "old_string", "new_string")
+        return param_text_service.edit_dat_text(
+            _node_path(rest[1:-2]),
+            body["old_string"],
+            body["new_string"],
+            _as_bool(body.get("replace_all", False), "replace_all"),
+            body.get("source", "auto"),
+        )
     if rest[-1] != "text":
         return None
     if method == "GET":
@@ -1224,7 +1251,14 @@ def _route_dat_text(method, rest, body):
             "(TDMCP_BRIDGE_ALLOW_EXEC=0)."
         )
     _require(body, "text")
-    return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
+    return param_text_service.put_dat_text(
+        _node_path(rest[1:-1]),
+        body["text"],
+        body.get("source_path"),
+        body.get("language"),
+        body.get("newline", "preserve"),
+        body.get("bom", "preserve"),
+    )
 
 
 def _route_dat_text_get(rest):

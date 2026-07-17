@@ -88,9 +88,12 @@ export const tdHandlers = [
   // the legacy /api/exec path (which the existing tests mock). Tests asserting the
   // endpoint path override these per-test.
   http.get(`${TD_BASE}/api/nodes/:seg/params`, notFound),
+  http.get(`${TD_BASE}/api/nodes/:seg/params/sequences`, notFound),
+  http.patch(`${TD_BASE}/api/nodes/:seg/params/sequences`, notFound),
   http.patch(`${TD_BASE}/api/nodes/:seg/params/:param/mode`, notFound),
   http.get(`${TD_BASE}/api/nodes/:seg/text`, notFound),
   http.put(`${TD_BASE}/api/nodes/:seg/text`, notFound),
+  http.post(`${TD_BASE}/api/nodes/:seg/text/edit`, notFound),
   http.post(`${TD_BASE}/api/connect`, notFound),
   http.post(`${TD_BASE}/api/disconnect`, notFound),
   http.get(`${TD_BASE}/api/logs`, notFound),

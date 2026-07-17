@@ -184,6 +184,96 @@ describe("layer 3 tool handlers", () => {
     expect(textOf(result)).toContain("/project1/noise1");
   });
 
+  it("get_td_node_parameters includes bounded sequence discovery", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/nodes/:seg/params/sequences`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/constant1",
+            sequences: [
+              {
+                name: "const",
+                num_blocks: 2,
+                parameters: [{ name: "const1value", value: 7.5, mode: "CONSTANT" }],
+              },
+            ],
+            truncated: true,
+            warnings: [],
+          },
+        }),
+      ),
+    );
+
+    const result = await getTdNodeParametersImpl(makeCtx(), {
+      path: "/project1/constant1",
+      omit_io: true,
+      include_sequences: true,
+    });
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain("1 sequence(s)");
+    expect(result.structuredContent).toMatchObject({
+      sequences: [{ name: "const", num_blocks: 2 }],
+      sequences_inspected: true,
+      sequences_truncated: true,
+    });
+    expect(textOf(result)).toContain("truncated");
+  });
+
+  it("get_td_node_parameters distinguishes skipped sequence inspection", async () => {
+    const result = await getTdNodeParametersImpl(makeCtx(), {
+      path: "/project1/noise1",
+      omit_io: true,
+      include_sequences: false,
+    });
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({ sequences_inspected: false });
+    expect(result.structuredContent).not.toHaveProperty("sequences");
+    expect(textOf(result)).toContain("sequence inspection skipped");
+  });
+
+  it("update_td_node_parameters resizes and writes an indexed sequence atomically", async () => {
+    server.use(
+      http.patch(`${TD_BASE}/api/nodes/:seg/params/sequences`, async ({ request }) => {
+        expect(await request.json()).toEqual({
+          sequences: { const: 2 },
+          parameters: { const1value: 7.5 },
+        });
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/constant1",
+            resized: [{ name: "const", was: 1, num_blocks: 2 }],
+            applied: [{ name: "const1value", value: 7.5 }],
+            sequences: [{ name: "const", num_blocks: 2, parameters: [] }],
+            rolled_back: false,
+            warnings: [],
+          },
+        });
+      }),
+    );
+
+    const result = await updateTdNodeParametersImpl(makeCtx(), {
+      path: "/project1/constant1",
+      parameters: { const1value: 7.5 },
+      sequences: { const: 2 },
+    });
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain("Resized 1 sequence(s)");
+    expect(result.structuredContent).toMatchObject({
+      sequence_update: { rolled_back: false, applied: [{ name: "const1value", value: 7.5 }] },
+    });
+  });
+
+  it("update_td_node_parameters rejects an empty mutation before the bridge", async () => {
+    const result = await updateTdNodeParametersImpl(makeCtx(), {
+      path: "/project1/constant1",
+      parameters: {},
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("at least one parameter value or sequence resize");
+  });
+
   it("delete_td_node removes a node by path", async () => {
     const result = await deleteTdNodeImpl(makeCtx(), { path: "/project1/noise1", mode: "delete" });
     expect(result.isError).toBeFalsy();

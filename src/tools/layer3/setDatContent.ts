@@ -25,8 +25,28 @@ export const setDatContentSchema = z.object({
       "Set true to allow writing empty or whitespace-only text, which clears the DAT. " +
         "When false (default), the tool refuses to write blank content to prevent silent data loss.",
     ),
+  source_path: z
+    .string()
+    .optional()
+    .describe(
+      "Optional project-relative UTF-8 source file. The bridge rejects absolute paths, traversal, and symlink escape, then links the DAT to this file.",
+    ),
+  language: z
+    .enum(["python", "glsl", "text", "json"])
+    .optional()
+    .describe(
+      "Content language for a source-backed DAT; inferred from the file extension when omitted.",
+    ),
+  newline: z
+    .enum(["preserve", "lf", "crlf"])
+    .default("preserve")
+    .describe("Newline policy for a source-backed file."),
+  bom: z
+    .enum(["preserve", "none", "utf8"])
+    .default("preserve")
+    .describe("UTF-8 BOM policy for a source-backed file."),
 });
-type SetDatContentArgs = z.infer<typeof setDatContentSchema>;
+type SetDatContentArgs = z.input<typeof setDatContentSchema>;
 
 interface SetDatReport {
   dat: string;
@@ -34,6 +54,11 @@ interface SetDatReport {
   new_length: number;
   wiped: boolean;
   warnings: string[];
+  file_synced?: boolean;
+  source_path?: string;
+  language?: string;
+  newline?: "lf" | "crlf";
+  bom?: "none" | "utf8";
   fatal?: string;
 }
 
@@ -80,23 +105,47 @@ export async function setDatContentImpl(ctx: ToolContext, args: SetDatContentArg
   }
   return guardTd(
     async () => {
-      // 1) first-class endpoint (survives ALLOW_EXEC=0): PUT the whole text. The
+      // 1) first-class endpoint: PUT the whole text without arbitrary /api/exec.
+      //    The bridge still enforces ALLOW_EXEC for code-bearing DAT writes.
       //    endpoint returns old_length/new_length, so no extra read round-trip.
       // 2) Fall back to exec ONLY when the endpoint is absent on an older bridge;
       //    a current bridge's validation 400 (not-a-DAT, node not found) surfaces
       //    unchanged via tryEndpoint.
       return tryEndpoint<SetDatReport>(
         async () => {
-          const w = await ctx.client.putDatText(args.dat_path, args.text);
+          const w = args.source_path
+            ? await ctx.client.putDatText(args.dat_path, args.text, {
+                sourcePath: args.source_path,
+                language: args.language,
+                newline: args.newline,
+                bom: args.bom,
+              })
+            : await ctx.client.putDatText(args.dat_path, args.text);
           return {
             dat: args.dat_path,
             old_length: w.old_length,
             new_length: w.new_length,
             wiped: args.text.trim() === "",
-            warnings: [],
+            warnings: w.warnings,
+            file_synced: w.file_synced,
+            source_path: w.source_path,
+            language: w.language,
+            newline: w.newline,
+            bom: w.bom,
           };
         },
         async () => {
+          if (args.source_path) {
+            return {
+              dat: args.dat_path,
+              old_length: 0,
+              new_length: 0,
+              wiped: false,
+              warnings: [],
+              fatal:
+                "Source-backed DAT files require the current tdmcp bridge. Reinstall or reload the bridge and retry.",
+            };
+          }
           const script = buildSetDatContentScript({ dat: args.dat_path, text: args.text });
           const exec = await ctx.client.executePythonScript(script, true);
           return parsePythonReport<SetDatReport>(exec.stdout);
@@ -108,7 +157,8 @@ export async function setDatContentImpl(ctx: ToolContext, args: SetDatContentArg
         return errorResult(report.fatal, report);
       }
       const wipedSuffix = report.wiped ? ", wiped" : "";
-      const summary = `Wrote ${report.new_length} char(s) to ${report.dat} (was ${report.old_length})${wipedSuffix}.`;
+      const sourceSuffix = report.source_path ? ` via ${report.source_path}` : "";
+      const summary = `Wrote ${report.new_length} char(s) to ${report.dat}${sourceSuffix} (was ${report.old_length})${wipedSuffix}.`;
       return jsonResult(summary, report);
     },
   );
@@ -125,7 +175,9 @@ export const registerSetDatContent: ToolRegistrar = (server, ctx) => {
         "Unlike `edit_dat_content` (which makes a surgical find-and-replace), this replaces " +
         "everything in one shot — use it to deploy a full script or template. " +
         "Refuses to write empty/whitespace-only text unless `confirm_wipe:true` is passed, " +
-        "preventing silent data loss. Because DAT text can become executable callbacks, " +
+        "preventing silent data loss. Set `source_path` to atomically maintain a project-relative " +
+        "UTF-8 source file with newline/BOM preservation and DAT language assignment. " +
+        "Because DAT text can become executable callbacks, " +
         "this tool is hidden when TDMCP_RAW_PYTHON=off and the bridge also requires " +
         "TDMCP_BRIDGE_ALLOW_EXEC=1 for text writes.",
       inputSchema: setDatContentSchema.shape,

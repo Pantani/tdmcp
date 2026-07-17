@@ -315,6 +315,58 @@ describe("edit_dat_content", () => {
   });
 
   describe("endpoint-first path (GET/PUT …/text)", () => {
+    it("uses the atomic source-aware edit endpoint on a current bridge", async () => {
+      let body: Record<string, unknown> | undefined;
+      let legacyCalled = false;
+      server.use(
+        http.post(`${TD_BASE}/api/nodes/:seg/text/edit`, async ({ request }) => {
+          body = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json({
+            ok: true,
+            data: {
+              path: "/project1/mydat1",
+              dat: "/project1/mydat1",
+              old_length: 11,
+              new_length: 13,
+              occurrences: 1,
+              replacements: 1,
+              replace_all: false,
+              file_synced: true,
+              source_path: "code/python/mydat1.py",
+              warnings: [],
+            },
+          });
+        }),
+        http.get(`${TD_BASE}/api/nodes/:seg/text`, () => {
+          legacyCalled = true;
+          return HttpResponse.error();
+        }),
+        http.put(`${TD_BASE}/api/nodes/:seg/text`, () => {
+          legacyCalled = true;
+          return HttpResponse.error();
+        }),
+      );
+
+      const result = await editDatContentImpl(makeCtx(), {
+        dat_path: "/project1/mydat1",
+        old_string: "hello",
+        new_string: "goodbye",
+        replace_all: false,
+        source: "file",
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(legacyCalled).toBe(false);
+      expect(body).toEqual({
+        old_string: "hello",
+        new_string: "goodbye",
+        replace_all: false,
+        source: "file",
+      });
+      const text = result.content.find((item) => item.type === "text");
+      expect(text?.type === "text" ? text.text : "").toContain("code/python/mydat1.py");
+    });
+
     it("reads via the text endpoint, replaces in TS, PUTs back, and never calls exec", async () => {
       let putBody: { text?: string } | null = null;
       let execCalled = false;

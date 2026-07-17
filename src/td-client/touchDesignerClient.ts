@@ -46,6 +46,7 @@ import {
   CreateNodeInputSchema,
   CustomParameterLifecycleResultSchema,
   CustomParamsSchema,
+  DatTextEditSchema,
   DatTextSchema,
   DatTextWriteSchema,
   DeleteResultSchema,
@@ -72,6 +73,8 @@ import {
   PackageNamespacePlanSchema,
   ParameterMenuSchema,
   ParameterSearchResultSchema,
+  ParameterSequencesSchema,
+  ParameterSequenceUpdateSchema,
   ParamModesBatchSchema,
   ParamModesSchema,
   ParamWatchListSchema,
@@ -873,6 +876,29 @@ export class TouchDesignerClient {
       options.timeoutMs,
       options.retryGet ?? true,
       options.signal,
+    );
+  }
+
+  getParameterSequences(path: string) {
+    return this.request(
+      "GET",
+      `/api/nodes/${segment(path)}/params/sequences`,
+      ParameterSequencesSchema,
+    );
+  }
+
+  updateParameterSequences(
+    path: string,
+    input: { sequences?: Record<string, number>; parameters?: Record<string, unknown> },
+  ) {
+    return this.request(
+      "PATCH",
+      `/api/nodes/${segment(path)}/params/sequences`,
+      ParameterSequenceUpdateSchema,
+      {
+        sequences: input.sequences ?? {},
+        parameters: input.parameters ?? {},
+      },
     );
   }
 
@@ -2095,8 +2121,40 @@ export class TouchDesignerClient {
     return this.request("GET", `/api/nodes/${segment(path)}/text`, DatTextSchema);
   }
 
-  putDatText(path: string, text: string) {
-    return this.request("PUT", `/api/nodes/${segment(path)}/text`, DatTextWriteSchema, { text });
+  putDatText(
+    path: string,
+    text: string,
+    options?: {
+      sourcePath?: string;
+      language?: "python" | "glsl" | "text" | "json";
+      newline?: "preserve" | "lf" | "crlf";
+      bom?: "preserve" | "none" | "utf8";
+    },
+  ) {
+    return this.request("PUT", `/api/nodes/${segment(path)}/text`, DatTextWriteSchema, {
+      text,
+      source_path: options?.sourcePath,
+      language: options?.language,
+      newline: options?.newline,
+      bom: options?.bom,
+    });
+  }
+
+  editDatText(
+    path: string,
+    input: {
+      oldString: string;
+      newString: string;
+      replaceAll?: boolean;
+      source?: "auto" | "dat" | "file";
+    },
+  ) {
+    return this.request("POST", `/api/nodes/${segment(path)}/text/edit`, DatTextEditSchema, {
+      old_string: input.oldString,
+      new_string: input.newString,
+      replace_all: input.replaceAll ?? false,
+      source: input.source ?? "auto",
+    });
   }
 
   // --- Timeline transport (survives ALLOW_EXEC=0) ---
