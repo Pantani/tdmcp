@@ -6,7 +6,7 @@ REST call. Pure functions; reach TD globals via ``import td`` INSIDE the
 function so the module imports cleanly off-TD (mirrors
 ``mcp/services/transport_service.py``).
 
-Best-effort by section: if `td.gpu`, `app.monitors`, or `project.performMode`
+Best-effort by section: if `td.gpu`, `app.monitors`, or the UI/project Perform Mode flag
 isn't available on this TD build, that section degrades to ``{"error": "..."}``
 (monitors/gpu) or ``None`` (performMode) rather than failing the whole endpoint.
 
@@ -60,13 +60,16 @@ def _read_monitors(td):
 
 def _read_perform_mode(td):
     """Snapshot Perform Mode flag. Returns bool or None on failure."""
-    try:
-        project = getattr(td, "project", None)
-        if project is None:
-            return None
-        return bool(project.performMode)
-    except Exception:  # noqa: BLE001
-        return None
+    # Current TD builds expose the authoritative native flag on ``ui``. Keep the
+    # project attribute as a compatibility fallback for older builds and mocks.
+    for source in (getattr(td, "ui", None), getattr(td, "project", None)):
+        if source is None:
+            continue
+        try:
+            return bool(getattr(source, "performMode"))
+        except Exception:  # noqa: BLE001
+            continue
+    return None
 
 
 def set_perform_mode(enabled):

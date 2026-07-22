@@ -63,6 +63,8 @@ drifting:
 | Commands | `tdmcp://commands` | The CLI verbs, generated from the actual dispatcher (safe / mutating / unsafe). |
 | Prompts | `tdmcp://prompts` | The MCP prompts tdmcp offers, generated from the prompt registry. |
 | Session profile | `tdmcp://session/profile` | Your persistent cross-session profile — see [Session profile & corpus learning](/guide/session-profile). |
+| Project brief | `tdmcp://project/brief` | The bounded, versioned brief owned by the selected project; external hosts must read it explicitly. |
+| Turn receipts | `tdmcp://session/receipts{?limit,status}` | Newest-first, redacted built-in-copilot receipts. Persistence is opt-in and queries are bounded. |
 
 ## Live project (needs the bridge)
 
@@ -94,3 +96,5 @@ result.
   served.
 - [Session profile & corpus learning](/guide/session-profile) for the
   session-profile and RAG resources in depth.
+- [Project context & turn receipts](/guide/project-context-receipts) for project
+  root resolution, optimistic revisions and audit-retention policy.

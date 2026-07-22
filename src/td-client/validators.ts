@@ -12,10 +12,15 @@ export const NodeRefSchema = z.object({
   path: z.string(),
   type: z.string().default(""),
   name: z.string().default(""),
+  /** Stable runtime operator identity when the bridge can expose it. */
+  operator_id: z.string().optional(),
   /** Parameters that could not be applied at create time (unknown name or bad value). */
   parameter_warnings: z.array(z.string()).optional(),
   /** True when an identically-named+typed operator already existed and was reused (idempotent create). */
   already_existed: z.boolean().optional(),
+  nodeX: z.number().optional(),
+  nodeY: z.number().optional(),
+  viewer: z.boolean().optional(),
 });
 export type TdNodeRef = z.infer<typeof NodeRefSchema>;
 
@@ -59,6 +64,79 @@ export type TdNodeDetail = z.infer<typeof NodeDetailSchema>;
 
 export const NodeListSchema = z.object({ nodes: z.array(NodeRefSchema).default([]) });
 export type TdNodeList = z.infer<typeof NodeListSchema>;
+
+export const TdOperatorFamilySchema = z.enum(["TOP", "CHOP", "SOP", "DAT", "COMP", "MAT", "POP"]);
+export type TdOperatorFamily = z.infer<typeof TdOperatorFamilySchema>;
+
+export const NodeSearchHitSchema = z.object({
+  path: z.string(),
+  name: z.string(),
+  type: z.string(),
+  family: TdOperatorFamilySchema,
+});
+export type TdNodeSearchHit = z.infer<typeof NodeSearchHitSchema>;
+
+export const BoundedSearchMetadataSchema = z.object({
+  scanned: z.number().int().nonnegative(),
+  matched: z.number().int().nonnegative(),
+  returned: z.number().int().nonnegative(),
+  truncated: z.boolean(),
+  scan_truncated: z.boolean(),
+  count_complete: z.boolean(),
+  stop_reason: z.enum(["completed", "node_scan_limit", "parameter_scan_limit", "time_limit"]),
+});
+export type TdBoundedSearchMetadata = z.infer<typeof BoundedSearchMetadataSchema>;
+
+export const NodeSearchResultSchema = z.object({
+  root: z.string(),
+  nodes: z.array(NodeSearchHitSchema),
+  metadata: BoundedSearchMetadataSchema,
+});
+export type TdNodeSearchResult = z.infer<typeof NodeSearchResultSchema>;
+
+export const ParameterSearchModeSchema = z.enum([
+  "CONSTANT",
+  "EXPRESSION",
+  "EXPORT",
+  "BIND",
+  "UNKNOWN",
+]);
+export type TdParameterSearchMode = z.infer<typeof ParameterSearchModeSchema>;
+
+export const ParameterSearchHitSchema = z.object({
+  op: z.string(),
+  type: z.string(),
+  family: z.enum(["TOP", "CHOP", "SOP", "DAT", "COMP", "MAT", "POP", "UNKNOWN"]),
+  par: z.string(),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+  expr: z.string().optional(),
+  mode: ParameterSearchModeSchema,
+  non_default: z.boolean(),
+  redacted: z.literal(true).optional(),
+  value_truncated: z.literal(true).optional(),
+  expr_truncated: z.literal(true).optional(),
+});
+export type TdParameterSearchHit = z.infer<typeof ParameterSearchHitSchema>;
+
+export const ParameterSearchResultSchema = z.object({
+  root_path: z.string(),
+  max_depth: z.number().int().min(1).max(32),
+  results: z.array(ParameterSearchHitSchema),
+  scanned_nodes: z.number().int().nonnegative(),
+  scanned_parameters: z.number().int().nonnegative(),
+  matched: z.number().int().nonnegative(),
+  returned: z.number().int().nonnegative(),
+  limit: z.number().int().min(1).max(200),
+  truncated: z.boolean(),
+  scan_truncated: z.boolean(),
+  count_complete: z.boolean(),
+  unreadable_parameters: z.number().int().nonnegative(),
+  skipped_parameters: z.number().int().nonnegative(),
+  redacted_parameters: z.number().int().nonnegative(),
+  stop_reason: z.enum(["completed", "node_scan_limit", "parameter_scan_limit", "time_limit"]),
+  elapsed_ms: z.number().int().nonnegative(),
+});
+export type TdParameterSearchResult = z.infer<typeof ParameterSearchResultSchema>;
 
 export const InfoSchema = z.object({
   td_version: z.string().optional(),
@@ -167,12 +245,112 @@ export const PreviewJobSchema = z.object({
 export type TdPreviewJob = z.infer<typeof PreviewJobSchema>;
 
 /** Result of pointing the Network Editor at some operators (a UI-only follow move). */
-export const EditorFocusSchema = z.object({
-  focused: z.array(z.string()).default([]),
-  pane: z.string().nullable().optional(),
-  animate: z.boolean().default(true),
+const EditorFocusSnapshotSchema = z.object({
+  owner: z.string().nullable(),
+  current: z.string().nullable(),
+  selected: z.array(z.string()).default([]),
+  viewport: z
+    .object({ x: z.number().optional(), y: z.number().optional(), zoom: z.number().optional() })
+    .nullable(),
 });
+
+export const EditorFocusSchema = z
+  .object({
+    operation_id: z.string().optional(),
+    status: z
+      .enum(["scheduled", "applied", "suppressed", "cancelled", "failed", "expired"])
+      .optional(),
+    action: z.enum(["create", "edit", "inspect", "view", "layout", "delete"]).optional(),
+    animate: z.boolean().default(true),
+    requested_paths: z.array(z.string()).default([]),
+    resolved_paths: z.array(z.string()).default([]),
+    missing_paths: z.array(z.string()).default([]),
+    focused: z.array(z.string()).default([]),
+    pane: z.string().nullable().optional(),
+    pane_strategy: z
+      .enum(["owner_active", "owner_existing", "active", "first_compatible"])
+      .nullable()
+      .optional(),
+    framing: z
+      .object({
+        requested: z.enum(["auto", "selection", "owner", "none"]),
+        applied: z.enum(["selection", "owner", "none"]).nullable(),
+        animation: z.enum(["scheduled", "stepped", "instant", "none"]).nullable(),
+      })
+      .optional(),
+    previous: EditorFocusSnapshotSchema.nullable().optional(),
+    final: EditorFocusSnapshotSchema.nullable().optional(),
+    suppression_reason: z
+      .enum([
+        "follow_disabled",
+        "perform_mode",
+        "ui_unavailable",
+        "no_network_editor",
+        "target_not_found",
+        "different_parents",
+        "superseded",
+      ])
+      .nullable()
+      .optional(),
+    highlight: z
+      .object({
+        status: z.literal("held"),
+        token: z.null(),
+        reason: z.string(),
+      })
+      .optional(),
+    warnings: z.array(z.string()).default([]),
+    undo_label: z.null().optional(),
+  })
+  .superRefine((receipt, ctx) => {
+    if (receipt.status === "applied" && receipt.final == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["final"],
+        message: "Applied editor follow requires final UI readback.",
+      });
+    }
+  });
 export type TdEditorFocus = z.infer<typeof EditorFocusSchema>;
+
+const EditorInsertEdgeSchema = z
+  .object({
+    from_path: z.string(),
+    out_index: z.number().int().nonnegative(),
+    to_path: z.string(),
+    in_index: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export const EditorInsertResultSchema = z
+  .object({
+    status: z.enum(["applied", "replayed"]),
+    idempotency_key: z.string().min(16).max(128),
+    context: z
+      .object({
+        owner_path: z.string(),
+        selected_path: z.string(),
+        current_path: z.string(),
+      })
+      .strict(),
+    node: z
+      .object({
+        path: z.string(),
+        type: z.string(),
+        name: z.string(),
+        nodeX: z.number().int(),
+        nodeY: z.number().int(),
+        viewer: z.boolean().optional(),
+      })
+      .strict(),
+    before: z.object({ edges: z.array(EditorInsertEdgeSchema).max(128) }).strict(),
+    after: z.object({ edges: z.array(EditorInsertEdgeSchema).max(128) }).strict(),
+    rollback: z.object({ attempted: z.boolean(), succeeded: z.boolean() }).strict(),
+    warnings: z.array(z.string()).max(64),
+    undo_label: z.string().max(256).optional(),
+  })
+  .strict();
+export type TdEditorInsertResult = z.infer<typeof EditorInsertResultSchema>;
 
 export const ExecResultSchema = z.object({
   result: z.unknown().optional(),
@@ -188,8 +366,748 @@ export const DeleteResultSchema = z.object({
   deleted: z.string().optional(),
   bypassed: z.string().optional(),
   mode: z.enum(["delete", "bypass"]).default("delete"),
+  decision: z.enum(["Delete", "Bypass", "Keep"]),
+  original_path: z.string(),
+  final_path: z.string().nullable(),
+  action_applied: z.enum(["delete", "bypass", "keep"]),
+  applied: z.boolean(),
+  request_id: z.string().nullable().optional(),
+  confirmation_policy: z.enum(["native", "yolo", "explicit_mode"]),
+  undo_label: z.string().optional(),
 });
 export type TdDeleteResult = z.infer<typeof DeleteResultSchema>;
+
+export const InteractionStateSchema = z.enum([
+  "pending",
+  "resolved",
+  "expired",
+  "cancelled",
+  "failed",
+]);
+export const InteractionStatusSchema = z.object({
+  request_id: z.string(),
+  kind: z.enum([
+    "delete_node",
+    "save_overwrite",
+    "artifact_overwrite",
+    "oauth_client_consent",
+    "visual_parameter_apply",
+  ]),
+  state: InteractionStateSchema,
+  choices: z.array(z.string()),
+  created_at: z.number(),
+  expires_at: z.number(),
+  consumed: z.boolean(),
+  result: z.object({ choice: z.string(), reason: z.string(), at: z.number() }).nullable(),
+  accepted: z.boolean().optional(),
+  deduplicated: z.boolean().optional(),
+});
+export type TdInteractionStatus = z.infer<typeof InteractionStatusSchema>;
+
+const VisualParameterTargetSchema = z
+  .object({
+    id: z.string().regex(/^t[1-6]$/),
+    path: z.string().min(1).max(240),
+    parameter: z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/),
+    type: z.enum(["Float", "Int"]),
+    mode: z.literal("CONSTANT"),
+    value: z.number().finite(),
+    minimum: z.number().finite(),
+    maximum: z.number().finite(),
+  })
+  .strict();
+
+export const VisualParameterInspectionSchema = z
+  .object({
+    scope_path: z.string().min(1).max(240),
+    output_top_path: z.string().min(1).max(240),
+    fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+    targets: z.array(VisualParameterTargetSchema).min(1).max(6),
+  })
+  .strict();
+export type TdVisualParameterInspection = z.infer<typeof VisualParameterInspectionSchema>;
+
+const VisualUndoFields = {
+  replayed: z.boolean(),
+  undo_label: z.string().max(256).optional(),
+  undo_wrapper_label: z.string().max(256).optional(),
+};
+
+export const VisualParameterCommitSchema = z.discriminatedUnion("status", [
+  z
+    .object({
+      status: z.literal("conflict"),
+      reason: z.string().max(64).optional(),
+      ...VisualUndoFields,
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("failed"),
+      reason: z.string().max(64).optional(),
+      ...VisualUndoFields,
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("committed"),
+      applied: z.literal(true),
+      verified: z.literal(true),
+      final_fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+      restore_token: z.string().min(43).max(128),
+      readback: z
+        .array(
+          z
+            .object({
+              target_id: z.string().regex(/^t[1-6]$/),
+              value: z.number().finite(),
+            })
+            .strict(),
+        )
+        .min(1)
+        .max(3),
+      ...VisualUndoFields,
+    })
+    .strict(),
+]);
+export type TdVisualParameterCommit = z.infer<typeof VisualParameterCommitSchema>;
+
+export const VisualParameterRestoreSchema = z
+  .object({
+    restored: z.boolean(),
+    verified: z.boolean(),
+    restored_fingerprint: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/)
+      .optional(),
+    reason: z.string().max(64).nullable().optional(),
+    ...VisualUndoFields,
+  })
+  .strict();
+export type TdVisualParameterRestore = z.infer<typeof VisualParameterRestoreSchema>;
+
+export const OAuthConsentConsumeSchema = z.object({
+  request_id: z.string(),
+  state: InteractionStateSchema,
+  accepted: z.boolean(),
+  decision: z.enum(["Allow", "Deny"]),
+  error: z.string().nullable().optional(),
+});
+export type TdOAuthConsentConsume = z.infer<typeof OAuthConsentConsumeSchema>;
+
+export const InteractionSummarySchema = z
+  .object({
+    pending_count: z.number().int().nonnegative(),
+    pending_limit: z.number().int().positive(),
+    active: z.boolean(),
+    delivery_configured: z.boolean(),
+  })
+  .strict();
+export type TdInteractionSummary = z.infer<typeof InteractionSummarySchema>;
+
+const NullableTextSchema = z.string().nullable().optional();
+const NullableNumberOrTextSchema = z.union([z.number(), z.string()]).nullable().optional();
+export const EditorContextSchema = z.object({
+  project: z.object({
+    name: NullableTextSchema,
+    folder: NullableTextSchema,
+    save_version: NullableNumberOrTextSchema,
+    save_build: NullableNumberOrTextSchema,
+  }),
+  touchdesigner: z.object({
+    build: NullableNumberOrTextSchema,
+    version: NullableNumberOrTextSchema,
+  }),
+  perform_mode: z.boolean().nullable(),
+  ui_available: z.boolean(),
+  panes: z.array(
+    z.object({
+      type: NullableTextSchema,
+      active: z.boolean(),
+      name: z.string().optional(),
+      owner: z.string().optional(),
+    }),
+  ),
+  active_network_editor: z
+    .object({
+      pane: z.record(z.string(), z.unknown()),
+      owner: z.string().nullable(),
+      current: z.string().nullable(),
+      selected: z.array(z.string()),
+      rollover_operator: z.string().nullable(),
+      rollover_parameter: z.object({ name: z.string(), owner: z.string().optional() }).nullable(),
+      viewport: z
+        .object({ x: z.number().optional(), y: z.number().optional(), zoom: z.number().optional() })
+        .nullable(),
+    })
+    .nullable(),
+  warnings: z.array(z.string()),
+});
+export type TdEditorContext = z.infer<typeof EditorContextSchema>;
+
+export const ProjectSaveResultSchema = z.object({
+  requested_path: z.string().nullable().optional(),
+  final_path: z.string().nullable(),
+  decision: z.string(),
+  verified_exists: z.boolean(),
+  saved: z.boolean(),
+  action_applied: z.boolean(),
+  request_id: z.string().optional(),
+  project: z.record(z.string(), z.unknown()).optional(),
+});
+export type TdProjectSaveResult = z.infer<typeof ProjectSaveResultSchema>;
+
+export const ToxExportPhaseSchema = z.object({
+  name: z.string(),
+  status: z.enum(["pending", "pass", "fail"]),
+  duration_ms: z.number().int().nonnegative().optional(),
+  error: z.string().optional(),
+});
+
+export const ToxExportResultSchema = z.object({
+  operation_id: z.string(),
+  status: z.enum([
+    "queued",
+    "snapshotting",
+    "sanitizing",
+    "saving",
+    "restoring",
+    "verifying",
+    "promoting",
+    "cancel_requested",
+    "succeeded",
+    "failed",
+    "cancelled",
+    "expired",
+  ]),
+  verdict: z.enum(["PASS", "FAIL", "UNVERIFIED"]).nullable().optional(),
+  source_path: z.string().optional(),
+  target_path: z.string().optional(),
+  mode: z.enum(["as_is", "portable"]).optional(),
+  decision: z.enum(["Overwrite", "Keep", "not_required"]).optional(),
+  interaction_id: z.string().nullable().optional(),
+  action_applied: z.boolean(),
+  phases: z.array(ToxExportPhaseSchema).default([]),
+  live_state: z
+    .object({
+      snapshot_count: z.number().int().nonnegative(),
+      restored: z.boolean(),
+      verified: z.boolean(),
+    })
+    .optional(),
+  cleanup: z.object({ temp_removed: z.boolean(), pending: z.boolean() }).optional(),
+  verification: z
+    .object({
+      level: z.string(),
+      portable_links_at_save: z.number().int().nonnegative().nullable().optional(),
+    })
+    .optional(),
+  artifact: z
+    .object({
+      path: z.string(),
+      size_bytes: z.number().int().positive(),
+      sha256: z.string().regex(/^[a-f0-9]{64}$/),
+      td_build: z.union([z.string(), z.number()]).nullable().optional(),
+      td_version: z.union([z.string(), z.number()]).nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+  error: z.object({ code: z.string(), message: z.string() }).nullable().optional(),
+  deduplicated: z.boolean().optional(),
+  accepted: z.boolean().optional(),
+  idempotency_key: z.string().optional(),
+});
+export type TdToxExportResult = z.infer<typeof ToxExportResultSchema>;
+
+const ToxRoundtripCheckSchema = z.object({
+  name: z.enum([
+    "artifact_hash",
+    "load",
+    "root_type",
+    "node_bounds",
+    "node_count",
+    "type_counts",
+    "custom_parameters",
+    "connectors",
+    "external_references",
+    "cook_errors",
+    "cleanup",
+  ]),
+  verdict: z.enum(["PASS", "FAIL", "UNVERIFIED"]),
+  code: z.string().max(64),
+  summary: z.string().max(256),
+  expected: z.unknown().optional(),
+  actual: z.unknown().optional(),
+});
+
+export const ToxRoundtripResultSchema = z.object({
+  operation_id: z.string().min(16).max(128),
+  status: z.enum([
+    "queued",
+    "hashing",
+    "loading",
+    "settling",
+    "inspecting",
+    "succeeded",
+    "failed",
+    "cancelled",
+    "expired",
+  ]),
+  verdict: z.enum(["PASS", "FAIL", "UNVERIFIED"]),
+  artifact: z
+    .object({
+      path: z.string().max(4096),
+      size_bytes: z
+        .number()
+        .int()
+        .min(0)
+        .max(256 * 1024 * 1024),
+      sha256: z.string().max(64),
+    })
+    .partial(),
+  runtime: z.object({
+    td_version: z.string().max(64).optional(),
+    td_build: z.union([z.string().max(64), z.number().int()]).optional(),
+    frames_waited: z.number().int().min(0).max(120),
+  }),
+  observed: z
+    .object({
+      root_type: z.string().max(128).optional(),
+      node_count: z.number().int().min(0).max(2000).optional(),
+      type_counts: z.record(z.string(), z.number().int()).optional(),
+      custom_parameters: z
+        .array(
+          z.object({
+            page: z.string().max(128),
+            name: z.string().max(128),
+            style: z.string().max(128),
+          }),
+        )
+        .max(256)
+        .optional(),
+      connectors: z.object({ inputs: z.number().int(), outputs: z.number().int() }).optional(),
+      external_references: z
+        .object({
+          total: z.number().int().nonnegative(),
+          classifications: z.record(z.string(), z.number().int().nonnegative()),
+          fingerprints: z.array(z.string().regex(/^[0-9a-f]{64}$/)).max(200),
+          truncated: z.boolean(),
+        })
+        .optional(),
+      cook_error_count: z.number().int().nonnegative().optional(),
+      cook_errors: z.array(z.string().max(256)).max(100).optional(),
+      cook_errors_truncated: z.boolean().optional(),
+    })
+    .passthrough(),
+  checks: z.array(ToxRoundtripCheckSchema).max(16),
+  cleanup: z.object({
+    attempted: z.boolean(),
+    removed: z.boolean(),
+    verified: z.boolean(),
+    scratch_path: z.string().max(4096).nullable().optional(),
+  }),
+  error: z
+    .object({
+      code: z.string().max(64),
+      phase: z.string().max(64),
+      message: z.string().max(256),
+      retryable: z.boolean(),
+    })
+    .nullable(),
+});
+export type TdToxRoundtripResult = z.infer<typeof ToxRoundtripResultSchema>;
+
+const PackageClassificationSchema = z.enum([
+  "aligned_owned",
+  "renamed_owned",
+  "missing_live",
+  "foreign_target",
+  "marker_missing",
+  "marker_unreadable",
+  "marker_mismatch",
+  "duplicate_owned",
+]);
+
+export const PackageNamespacePlanSchema = z.object({
+  status: z.literal("planned"),
+  plan_id: z.string().min(16).max(128),
+  expires_at: z.number(),
+  package_id: z.string(),
+  scope: z.enum(["user", "project"]),
+  intent: z.enum(["prune", "replace"]),
+  classification: PackageClassificationSchema,
+  actionable: z.boolean(),
+  resolved_target_path: z.string().nullable(),
+  marker: z.object({ matched: z.boolean(), schema_version: z.number().int().nullable() }),
+  candidates: z.array(
+    z.object({
+      path: z.string(),
+      marker_status: z.enum(["match", "missing", "unreadable", "mismatch", "foreign"]),
+      marker_schema_version: z.number().int().nullable(),
+    }),
+  ),
+  warnings: z.array(z.string()),
+  deduplicated: z.boolean(),
+});
+export type TdPackageNamespacePlan = z.infer<typeof PackageNamespacePlanSchema>;
+
+export const PackageNamespaceApplyResultSchema = z.object({
+  status: z.enum(["applied", "kept", "replayed"]),
+  plan_id: z.string(),
+  package_id: z.string(),
+  classification: z.enum(["aligned_owned", "renamed_owned"]),
+  resolved_target_path: z.string(),
+  decision: z.enum(["Keep", "Bypass", "Delete"]),
+  action_applied: z.enum(["keep", "bypass", "delete"]),
+  final_path: z.string().nullable(),
+  confirmation_policy: z.enum(["explicit_mode", "native", "yolo"]),
+  request_id: z.string().nullable(),
+  marker: z.object({ matched: z.literal(true), schema_version: z.number().int().nullable() }),
+  warnings: z.array(z.string()),
+  undo_label: z.string().optional(),
+});
+export type TdPackageNamespaceApplyResult = z.infer<typeof PackageNamespaceApplyResultSchema>;
+
+export const CustomParameterLifecycleResultSchema = z.object({
+  status: z.enum([
+    "applied",
+    "unchanged",
+    "replayed",
+    "held",
+    "failed",
+    "rolled_back",
+    "partial_failure",
+  ]),
+  comp_path: z.string(),
+  results: z.array(z.record(z.string(), z.unknown())),
+  rollback: z.object({ attempted: z.boolean(), succeeded: z.boolean() }),
+  warnings: z.array(z.string()),
+  request_fingerprint: z.string(),
+  undo_label: z.string().optional(),
+  replayed: z.boolean().optional(),
+  remediation: z.string().optional(),
+  error: z.object({ code: z.string(), message: z.string() }).optional(),
+});
+export type TdCustomParameterLifecycleResult = z.infer<typeof CustomParameterLifecycleResultSchema>;
+
+export const PulseParameterResultSchema = z.object({
+  path: z.string(),
+  parameter: z.string(),
+  style: z.string(),
+  pulsed: z.boolean(),
+  undo_label: z.string().optional(),
+});
+export type TdPulseParameterResult = z.infer<typeof PulseParameterResultSchema>;
+
+export const ParameterMenuSchema = z.object({
+  path: z.string(),
+  parameter: z.string(),
+  style: z.string(),
+  names: z.array(z.string()).max(64),
+  labels: z.array(z.string()).max(64),
+  current: z.string().nullable(),
+});
+export type TdParameterMenu = z.infer<typeof ParameterMenuSchema>;
+
+const MetadataFieldResultSchema = z.object({
+  requested: z.unknown(),
+  actual: z.unknown().optional(),
+  status: z.string(),
+  error: z.string().optional(),
+});
+export const EditNodeMetadataResultSchema = z.object({
+  original_path: z.string(),
+  final_path: z.string().nullable(),
+  applied: z.boolean(),
+  rolled_back: z.boolean(),
+  fields: z.record(z.string(), MetadataFieldResultSchema),
+  error: z.string().optional(),
+  undo_label: z.string().optional(),
+});
+export type TdEditNodeMetadataResult = z.infer<typeof EditNodeMetadataResultSchema>;
+
+export const AnnotationEditInputSchema = z
+  .object({
+    title: z.string().max(512).optional(),
+    body: z.string().max(8192).optional(),
+    color: z
+      .tuple([
+        z.number().finite().min(0).max(1),
+        z.number().finite().min(0).max(1),
+        z.number().finite().min(0).max(1),
+        z.number().finite().min(0).max(1),
+      ])
+      .optional(),
+    x: z.number().int().min(-1_000_000).max(1_000_000).optional(),
+    y: z.number().int().min(-1_000_000).max(1_000_000).optional(),
+    w: z.number().int().min(10).max(1_000_000).optional(),
+    h: z.number().int().min(10).max(1_000_000).optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "At least one annotation field is required.",
+  });
+export type TdAnnotationEditInput = z.infer<typeof AnnotationEditInputSchema>;
+
+const AnnotationEditFieldResultSchema = z.object({
+  status: z.enum(["applied", "unchanged", "unsupported", "failed"]),
+  requested: z.unknown(),
+  actual: z.unknown().optional(),
+  binding: z.union([z.string(), z.array(z.string()).max(4)]).optional(),
+  error: z.object({ code: z.string(), message: z.string() }).optional(),
+  rollback: z.enum(["not_needed", "restored", "failed"]).optional(),
+});
+
+export const AnnotationEditResultSchema = z.object({
+  action: z.literal("edit"),
+  original_path: z.string(),
+  final_path: z.string().nullable(),
+  node_type: z.string(),
+  applied: z.boolean(),
+  rolled_back: z.boolean(),
+  fields: z.record(z.string(), AnnotationEditFieldResultSchema),
+  error: z.object({ code: z.string(), message: z.string() }).optional(),
+  undo_label: z.string().optional(),
+  undo_wrapper_label: z.string().optional(),
+});
+export type TdAnnotationEditResult = z.infer<typeof AnnotationEditResultSchema>;
+
+const AnnotationLayoutRectSchema = z.object({
+  path: z.string(),
+  x: z.number().int(),
+  y: z.number().int(),
+  w: z.number().int().positive(),
+  h: z.number().int().positive(),
+});
+
+export const AnnotationLayoutContextSchema = z.object({
+  root_path: z.string(),
+  recursive: z.boolean(),
+  fingerprint: z.string().regex(/^[0-9a-f]{64}$/),
+  networks: z
+    .array(
+      z.object({
+        path: z.string(),
+        nodes: z.array(AnnotationLayoutRectSchema).max(512),
+        annotations: z
+          .array(
+            AnnotationLayoutRectSchema.extend({
+              enclosed_paths: z.array(z.string()).max(512),
+            }),
+          )
+          .max(64),
+        docked: z.array(AnnotationLayoutRectSchema.extend({ host_path: z.string() })).max(1024),
+        edges: z.array(z.object({ from: z.string(), to: z.string() })).max(4096),
+      }),
+    )
+    .max(16),
+});
+export type TdAnnotationLayoutContext = z.infer<typeof AnnotationLayoutContextSchema>;
+
+export const AnnotationLayoutApplyResultSchema = z.object({
+  applied: z.boolean(),
+  rolled_back: z.boolean(),
+  root_path: z.string().optional(),
+  fingerprint: z.string().optional(),
+  moved: z.number().int().nonnegative(),
+  resized_annotations: z.number().int().nonnegative(),
+  networks: z.number().int().nonnegative().optional(),
+  rollback_errors: z.array(z.object({ path: z.string(), message: z.string() })).default([]),
+  error: z.object({ code: z.string(), message: z.string() }).optional(),
+  undo_label: z.string().optional(),
+  undo_wrapper_label: z.string().optional(),
+});
+export type TdAnnotationLayoutApplyResult = z.infer<typeof AnnotationLayoutApplyResultSchema>;
+
+const WorkspacePathSchema = z
+  .string()
+  .min(1)
+  .max(1_024)
+  .refine((value) => value.startsWith("/") && !/[\0\r\n]/.test(value));
+const WorkspaceIdSchema = z
+  .string()
+  .min(16)
+  .max(128)
+  .regex(/^[A-Za-z0-9_-]+$/);
+const WorkspaceFingerprintSchema = z
+  .object({
+    pane_count: z.number().int().min(0).max(16),
+    fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+  })
+  .strict();
+const WorkspaceCleanupSchema = z
+  .object({
+    attempted: z.boolean(),
+    owned_pane_closed: z.boolean(),
+    source_restored: z.boolean(),
+    baseline_verified: z.boolean(),
+  })
+  .strict();
+
+function validateActiveWorkspaceReceipt(
+  receipt: {
+    status: string;
+    source_pane: unknown;
+    owned_pane: unknown;
+    baseline: unknown;
+    workspace: unknown;
+  },
+  refineCtx: z.RefinementCtx,
+) {
+  if (
+    receipt.status === "active" &&
+    (!receipt.source_pane || !receipt.owned_pane || !receipt.baseline || !receipt.workspace)
+  ) {
+    refineCtx.addIssue({
+      code: "custom",
+      message: "active requires source, owned, baseline and workspace readback",
+    });
+  }
+}
+
+function validateVerifiedWorkspaceCleanup(
+  receipt: {
+    status: string;
+    cleanup: z.infer<typeof WorkspaceCleanupSchema>;
+  },
+  refineCtx: z.RefinementCtx,
+) {
+  if (receipt.status !== "restored" && receipt.status !== "expired") return;
+  const cleanup = receipt.cleanup;
+  if (
+    cleanup.attempted &&
+    cleanup.owned_pane_closed &&
+    cleanup.source_restored &&
+    cleanup.baseline_verified
+  ) {
+    return;
+  }
+  refineCtx.addIssue({
+    code: "custom",
+    message: `${receipt.status} requires verified later-frame cleanup`,
+  });
+}
+
+function validateCancelledWorkspaceReceipt(
+  receipt: {
+    status: string;
+    source_pane: unknown;
+    owned_pane: unknown;
+    baseline: unknown;
+    workspace: unknown;
+    cleanup: z.infer<typeof WorkspaceCleanupSchema>;
+  },
+  refineCtx: z.RefinementCtx,
+) {
+  if (receipt.status !== "cancelled") return;
+  if (receipt.cleanup.attempted && !receipt.cleanup.baseline_verified) {
+    refineCtx.addIssue({
+      code: "custom",
+      message: "post-apply cancelled requires verified later-frame cleanup",
+    });
+  }
+  if (
+    !receipt.cleanup.attempted &&
+    (receipt.source_pane || receipt.owned_pane || receipt.baseline || receipt.workspace)
+  ) {
+    refineCtx.addIssue({
+      code: "custom",
+      message: "pre-apply cancelled cannot claim an applied workspace snapshot",
+    });
+  }
+}
+
+/** Strict, bounded receipt for the main-thread temporary workspace lifecycle. */
+export const ArtistWorkspaceReceiptSchema = z
+  .object({
+    workspace_id: WorkspaceIdSchema,
+    action: z.enum(["open", "status", "restore", "cancel"]),
+    status: z.enum([
+      "scheduled",
+      "active",
+      "restore_scheduled",
+      "cancel_scheduled",
+      "cleanup_scheduled",
+      "restored",
+      "cancelled",
+      "expired",
+      "suppressed",
+      "conflicted",
+      "failed",
+    ]),
+    deduplicated: z.boolean(),
+    created_at: z.number().finite().nonnegative(),
+    expires_at: z.number().finite().nonnegative().nullable(),
+    targets: z
+      .object({
+        network_path: WorkspacePathSchema.nullable(),
+        viewer_path: WorkspacePathSchema.nullable(),
+        viewer_mode: z.enum(["top_output", "panel_controls"]).nullable(),
+        split_ratio: z.number().finite().min(0.35).max(0.75).nullable(),
+      })
+      .strict(),
+    source_pane: z
+      .object({
+        id: z.number().int().nonnegative(),
+        name: z.string().max(256).nullable(),
+        type: z.literal("NETWORKEDITOR"),
+      })
+      .strict()
+      .nullable(),
+    owned_pane: z
+      .object({
+        id: z.number().int().nonnegative(),
+        name: z.string().min(1).max(256),
+        type: z.enum(["TOPVIEWER", "PANEL"]),
+      })
+      .strict()
+      .nullable(),
+    baseline: WorkspaceFingerprintSchema.nullable(),
+    workspace: WorkspaceFingerprintSchema.nullable(),
+    cleanup: WorkspaceCleanupSchema,
+    reason: z
+      .enum([
+        "perform_mode",
+        "ui_unavailable",
+        "no_active_network_editor",
+        "source_pane_unavailable",
+        "target_not_found",
+        "wrong_target_family",
+        "cross_project",
+        "pane_limit",
+        "workspace_capacity",
+        "stale_target",
+        "artist_layout_changed",
+        "owned_pane_missing",
+        "scheduling_error",
+        "apply_timeout",
+        "lease_expired",
+        "client_cancelled",
+        "callback_error",
+      ])
+      .nullable(),
+    warnings: z.array(z.string().max(512)).max(16),
+    undo_label: z.null(),
+  })
+  .strict()
+  .superRefine((receipt, refineCtx) => {
+    validateActiveWorkspaceReceipt(receipt, refineCtx);
+    validateVerifiedWorkspaceCleanup(receipt, refineCtx);
+    validateCancelledWorkspaceReceipt(receipt, refineCtx);
+  });
+export type TdArtistWorkspaceReceipt = z.infer<typeof ArtistWorkspaceReceiptSchema>;
+
+export type TdArtistWorkspaceRequest =
+  | {
+      action: "open";
+      network_path: string;
+      viewer_path: string;
+      viewer_mode: "top_output" | "panel_controls";
+      split_ratio?: number;
+      lease_seconds?: number;
+    }
+  | { action: "status"; workspace_id: string }
+  | { action: "restore" | "cancel"; workspace_id: string };
 
 export const ConnectionSchema = z.object({
   source_path: z.string(),
@@ -231,12 +1149,39 @@ export const BatchResultSchema = z.object({ results: z.array(BatchOpResultSchema
 export type TdBatchResult = z.infer<typeof BatchResultSchema>;
 
 /** Input shape for creating a node (used by the client and Layer 3 tool). */
-export const CreateNodeInputSchema = z.object({
-  parent_path: z.string(),
-  type: z.string(),
-  name: z.string().optional(),
-  parameters: z.record(z.string(), z.unknown()).optional(),
-});
+export const CreateNodeInputSchema = z
+  .object({
+    parent_path: z.string(),
+    type: z.string(),
+    name: z.string().optional(),
+    parameters: z.record(z.string(), z.unknown()).optional(),
+    placement: z.enum(["auto", "explicit"]).optional(),
+    node_x: z.number().finite().min(-1_000_000).max(1_000_000).optional(),
+    node_y: z.number().finite().min(-1_000_000).max(1_000_000).optional(),
+    viewer: z.boolean().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (
+      value.placement === "explicit" &&
+      (value.node_x === undefined || value.node_y === undefined)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "placement='explicit' requires both node_x and node_y",
+        path: ["placement"],
+      });
+    }
+    if (
+      value.placement !== "explicit" &&
+      (value.node_x !== undefined || value.node_y !== undefined)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "node_x/node_y require placement='explicit'",
+        path: ["placement"],
+      });
+    }
+  });
 export type CreateNodeInput = z.infer<typeof CreateNodeInputSchema>;
 
 /** One parameter to pulse in the same bridge tick immediately before an advanced capture. */
@@ -266,7 +1211,12 @@ export const BatchOperationSchema = z.discriminatedUnion("action", [
     path: z.string(),
     parameters: z.record(z.string(), z.unknown()),
   }),
-  z.object({ action: z.literal("delete"), path: z.string() }),
+  z.object({
+    action: z.literal("delete"),
+    path: z.string(),
+    mode: z.enum(["delete", "bypass"]).optional(),
+    confirmation_policy: z.literal("yolo").optional(),
+  }),
   z.object({
     action: z.literal("connect"),
     source_path: z.string(),

@@ -15,6 +15,7 @@ import { registerOperatorConnectionsResource } from "./operatorConnectionsResour
 import { registerOperatorExamplesResource } from "./operatorExamplesResource.js";
 import { registerOperatorResource } from "./operatorResource.js";
 import { registerPatternResource } from "./patternResource.js";
+import { registerProjectBriefResource } from "./projectBrief.js";
 import { registerProjectRagResource } from "./projectRagResource.js";
 import { registerProjectRagSourcesResource } from "./projectRagSourcesResource.js";
 import { registerPromptCatalogResource } from "./promptCatalogResource.js";
@@ -23,6 +24,7 @@ import { registerRaytkOperatorCatalogResource } from "./raytkOperatorCatalog.js"
 import { registerRecipeResource } from "./recipeResource.js";
 import { registerSceneSummaryResource } from "./sceneSummary.js";
 import { registerSessionProfileResource } from "./sessionProfile.js";
+import { registerSessionReceiptsResource } from "./sessionReceipts.js";
 import type { ResourceContext } from "./shared.js";
 import { registerTdClassResource } from "./tdClassResource.js";
 import { registerTdVersionResource } from "./tdVersionResource.js";
@@ -55,6 +57,8 @@ export function registerAllResources(server: McpServer, ctx: ResourceContext): v
   registerPromptCatalogResource(server, ctx);
   registerTouchDesignerLearningResource(server, ctx);
   registerSessionProfileResource(server, ctx);
+  registerProjectBriefResource(server, ctx);
+  registerSessionReceiptsResource(server, ctx);
   // Campaign BEYOND Wave 3 (backlog 2026-05-30 — v0.7.0):
   registerSceneSummaryResource(server, ctx);
   // Wave 2026-06-02 — compact, token-bounded graph digest:

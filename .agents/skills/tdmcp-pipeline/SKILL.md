@@ -101,6 +101,14 @@ Form the team and run the convergence loop:
 | QA = FAIL on a feature | Releaser holds it for next cycle; ships only PASS features; report what was held. |
 | Concurrent agent's WIP breaks compile project-wide | Validate the slice in isolation (`vitest run <file>`); wait for their tree to go green before the full build/release. |
 
+## macOS TouchDesigner process safety
+
+- Inventory every running TouchDesigner PID, project path and listening bridge port before live work. Bind probes to one explicitly disposable PID and re-check that binding before and after each mutation.
+- Never pass discovery flags such as `--help`, `--version` or guessed headless/project flags to the TouchDesigner app binary. This binary does not provide a conventional CLI contract; an unknown flag opens a modal and exits. Use verified Derivative documentation or inspect the app bundle without launching it.
+- Never use Accessibility, menu clicks, clipboard paste or Textport automation when more than one TouchDesigner process exists. PID-targeted Accessibility can still resolve a window from the artist process. Use authenticated structured bridge routes or a PID-guarded disposable bootstrap.
+- Never save, quit, kill, focus or mutate the artist process while a disposable sandbox is available. Teardown must target the exact disposable PID, verify its listener disappeared and verify the artist PID remains alive.
+- A source reload is mandatory after bridge Python changes. Prove the loaded controller/service file paths and `TDMCP_BRIDGE_ALLOW_EXEC=0` before product probes; temporary exec is permitted only for authenticated disposable bootstrap and must be disabled before structured feature validation.
+
 ## Test scenarios
 
 **Normal:** user asks to build the cue-sequencer feature → Phase 1 lists 1 feature → architect writes the spec → 1 builder produces a green tool+test → team forms → integrator wires + builds green → QA validates live (preview + post-cook errors clean) = PASS → releaser bumps minor, writes CHANGELOG, commits/tags/pushes → report names the new version.

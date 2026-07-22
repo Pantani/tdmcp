@@ -33,9 +33,11 @@ COMP** so it becomes a self-contained, reusable widget.
 > pulse."*
 
 This appends a custom-parameter page so the component exposes a clean control
-surface instead of forcing the next user to dig into the internal nodes. An
-existing parameter is **skipped with a warning**, never overwritten, so re-running
-it to add one more knob is safe.
+surface instead of forcing the next user to dig into the internal nodes. The
+operation is transactional: exact existing definitions are `unchanged`, a
+conflicting definition fails before replacement, and any later failure restores
+the complete custom-page snapshot. The same tool can edit/delete parameters,
+sort or rename a page, and delete a page. Built-in parameters are protected.
 
 ::: tip Bind the knobs to the work
 The knobs are just inputs until you point them at something. Ask to
@@ -87,6 +89,53 @@ class. Drop it into any project:
 
 A live-linked instance (`externaltox`) re-reads the file whenever it changes, so
 fixing the component once updates every show that uses it.
+
+Saving now uses a deferred verified transaction: a unique same-directory
+temporary is written, hashed/read back, then atomically promoted. Existing files
+are refused by default; use `overwrite_policy: "ask"` for a target-bound native
+**Overwrite / Keep** decision. `make_portable_tox` uses the same primitive in
+portable mode and always restores temporary DAT/external-TOX state in `finally`.
+Portable mode is enabled automatically only on the live-proven 2025.32820 build;
+other builds require an explicit, separately validated bridge opt-in.
+
+### Trust the portable package
+
+`make_portable_tox` records a versioned `.provenance.json` sidecar by default.
+It binds the final `.tox` SHA-256 to the canonical package manifest, the source
+COMP identity, the TD/tdmcp build and the Git commit/dirty bit. Sensitive project
+content, tokens, environment values, diffs and repository roots are excluded.
+The default `provenance_policy:"record"` keeps artist exports practical. Use
+`"require_clean"`, optionally with `expected_git_commit`, when producing a
+release candidate; a dirty, unavailable or mismatched repository is rejected
+before the bridge starts an export.
+
+For load-independent validation, call `validate_library_asset` with
+`validation_mode:"deep_roundtrip"` and an explicit quarantine bridge port other
+than the artist port `9980`. The authenticated structured route loads the
+artifact into a unique scratch holder, compares the declared component
+contract, waits for delayed cook errors and cleans the holder in `finally`.
+Results are `PASS`, `FAIL` or `UNVERIFIED`; an offline quarantine bridge is never
+treated as proof.
+
+Opt into an installed exact-build help package with `help_snapshot`, for example:
+
+```json
+{
+  "python_apis": ["COMP"],
+  "max_operator_types": 32,
+  "max_sections_per_page": 2,
+  "max_chars_per_section": 3000,
+  "max_total_bytes": 262144,
+  "quarantine_port": 9981
+}
+```
+
+The snapshot inventories bounded operator types plus only the Python APIs named
+in the request, reads installed OfflineHelp without web fallback, writes a
+deterministic `docs/td-help` index/README and reruns the quarantine round-trip.
+Missing pages, build mismatch or caps produce `UNVERIFIED`. A later
+`attach_docs_as_assets` call can refresh the help snapshot and keeps an existing
+provenance record in sync with the promoted manifest.
 
 ## The same thing from the shell
 

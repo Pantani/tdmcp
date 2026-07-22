@@ -146,7 +146,9 @@ class QuarantineLoadGateTests(unittest.TestCase):
         saved = ac.project_load_service
         ac.project_load_service = mock.MagicMock(name="project_load_service")
         try:
-            ac._route("POST", "/api/project/load", {}, {"path": "/x.toe", "timeout_ms": 5000})
+            ac._route(
+                "POST", "/api/project/load", {}, {"path": "/x.toe", "timeout_ms": 5000}
+            )
             ac.project_load_service.load.assert_called_once_with("/x.toe", 5000)
         finally:
             ac.project_load_service = saved
@@ -161,23 +163,50 @@ class RoutingTests(unittest.TestCase):
             "api": ac.api_service,
             "batch": ac.batch_service,
             "analysis": ac.analysis_service,
+            "annotation": ac.annotation_service,
+            "annotation_layout": ac.annotation_layout_service,
             "preview": ac.preview_service,
             "editor": ac.editor_service,
+            "editor_insert": ac.editor_insert_service,
+            "search": ac.search_service,
+            "parameter_search": ac.parameter_search_service,
+            "tox_export": ac.tox_export_service,
+            "tox_roundtrip": ac.tox_roundtrip_service,
+            "package_namespace": ac.package_namespace_service,
+            "custom_params": ac.custom_params_service,
         }
         self._saved["watch"] = ac.watch_service
         ac.api_service = mock.MagicMock(name="api_service")
         ac.batch_service = mock.MagicMock(name="batch_service")
         ac.analysis_service = mock.MagicMock(name="analysis_service")
+        ac.annotation_service = mock.MagicMock(name="annotation_service")
+        ac.annotation_layout_service = mock.MagicMock(name="annotation_layout_service")
         ac.preview_service = mock.MagicMock(name="preview_service")
         ac.editor_service = mock.MagicMock(name="editor_service")
+        ac.editor_insert_service = mock.MagicMock(name="editor_insert_service")
+        ac.search_service = mock.MagicMock(name="search_service")
+        ac.parameter_search_service = mock.MagicMock(name="parameter_search_service")
+        ac.tox_export_service = mock.MagicMock(name="tox_export_service")
+        ac.tox_roundtrip_service = mock.MagicMock(name="tox_roundtrip_service")
+        ac.package_namespace_service = mock.MagicMock(name="package_namespace_service")
+        ac.custom_params_service = mock.MagicMock(name="custom_params_service")
         ac.watch_service = mock.MagicMock(name="watch_service")
 
     def tearDown(self):
         ac.api_service = self._saved["api"]
         ac.batch_service = self._saved["batch"]
         ac.analysis_service = self._saved["analysis"]
+        ac.annotation_service = self._saved["annotation"]
+        ac.annotation_layout_service = self._saved["annotation_layout"]
         ac.preview_service = self._saved["preview"]
         ac.editor_service = self._saved["editor"]
+        ac.editor_insert_service = self._saved["editor_insert"]
+        ac.search_service = self._saved["search"]
+        ac.parameter_search_service = self._saved["parameter_search"]
+        ac.tox_export_service = self._saved["tox_export"]
+        ac.tox_roundtrip_service = self._saved["tox_roundtrip"]
+        ac.package_namespace_service = self._saved["package_namespace"]
+        ac.custom_params_service = self._saved["custom_params"]
         ac.watch_service = self._saved["watch"]
 
     def test_get_info(self):
@@ -190,14 +219,154 @@ class RoutingTests(unittest.TestCase):
         ac.api_service.get_health.assert_called_once_with(webserver)
 
     def test_create_node(self):
-        ac._route("POST", "/api/nodes", {}, {"parent_path": "/project1", "type": "noiseTOP"})
+        ac._route(
+            "POST", "/api/nodes", {}, {"parent_path": "/project1", "type": "noiseTOP"}
+        )
         ac.api_service.create_node.assert_called_once()
         self.assertEqual(ac.api_service.create_node.call_args.args[0], "/project1")
         self.assertEqual(ac.api_service.create_node.call_args.args[1], "noiseTOP")
 
+    def test_annotation_edit_uses_structured_route(self):
+        changes = {"title": "private title", "x": -200}
+        ac._route(
+            "PATCH",
+            "/api/nodes/%2Fproject1%2Fnote/annotation",
+            {},
+            changes,
+        )
+        ac.annotation_service.edit_annotation.assert_called_once_with(
+            "/project1/note", changes
+        )
+
+    def test_annotation_layout_context_and_apply_use_structured_routes(self):
+        ac._route(
+            "POST",
+            "/api/editor/annotation-layout/context",
+            {},
+            {"root_path": "/project1/show", "recursive": True},
+        )
+        ac.annotation_layout_service.get_layout_context.assert_called_once_with(
+            "/project1/show", recursive=True
+        )
+
+        body = {
+            "root_path": "/project1/show",
+            "recursive": False,
+            "fingerprint": "a" * 64,
+            "networks": [],
+        }
+        ac._route("POST", "/api/editor/annotation-layout/apply", {}, body)
+        ac.annotation_layout_service.apply_layout.assert_called_once_with(body)
+        self.assertIsNone(
+            ac._undo_label("POST", "/api/editor/annotation-layout/context")
+        )
+        self.assertEqual(
+            ac._undo_label("POST", "/api/editor/annotation-layout/apply", body),
+            "MCP arrange_network annotation-aware /project1/show",
+        )
+
+    def test_create_node_forwards_structured_placement(self):
+        ac._route(
+            "POST",
+            "/api/nodes",
+            {},
+            {
+                "parent_path": "/project1",
+                "type": "noiseTOP",
+                "placement": "explicit",
+                "node_x": 100,
+                "node_y": -200,
+                "viewer": True,
+            },
+        )
+        kwargs = ac.api_service.create_node.call_args.kwargs
+        self.assertEqual(kwargs["placement"], "explicit")
+        self.assertEqual((kwargs["node_x"], kwargs["node_y"]), (100, -200))
+        self.assertTrue(kwargs["viewer"])
+
     def test_list_nodes_uses_parent_query(self):
         ac._route("GET", "/api/nodes", {"parent": ["/project1"]}, {})
         ac.api_service.get_nodes.assert_called_once_with("/project1")
+
+    def test_node_search_route_precedes_generic_node_lookup(self):
+        ac._route(
+            "GET",
+            "/api/nodes/search",
+            {
+                "root": ["/project1/show"],
+                "pattern": ["*noise*"],
+                "type": ["TOP"],
+                "type_match": ["partial"],
+                "family": ["TOP"],
+                "max_depth": ["3"],
+                "limit": ["12"],
+                "node_scan_limit": ["800"],
+                "time_limit_ms": ["400"],
+            },
+            {},
+        )
+        ac.search_service.search_nodes.assert_called_once_with(
+            "/project1/show",
+            pattern="*noise*",
+            name_glob=None,
+            path_glob=None,
+            type_filter="TOP",
+            type_match="partial",
+            family="TOP",
+            max_depth=3,
+            limit=12,
+            node_scan_limit=800,
+            time_limit_ms=400,
+        )
+        ac.api_service.get_node.assert_not_called()
+
+    def test_parameter_search_route_forwards_bounded_filters(self):
+        ac._route(
+            "POST",
+            "/api/params/search",
+            {},
+            {
+                "root_path": "/project1/show",
+                "max_depth": 4,
+                "node_pattern": "noise*",
+                "node_name_glob": "noise*",
+                "node_path_glob": "*/noise1",
+                "type": "noiseTOP",
+                "type_match": "exact",
+                "family": "TOP",
+                "parameter_glob": "amp*",
+                "value_glob": "0.*",
+                "expression_glob": "*absTime*",
+                "mode": "EXPRESSION",
+                "non_default_only": True,
+                "limit": 20,
+                "node_scan_limit": 900,
+                "parameter_scan_limit": 12000,
+                "time_budget_ms": 800,
+            },
+        )
+        ac.parameter_search_service.search_parameters.assert_called_once_with(
+            "/project1/show",
+            max_depth=4,
+            node_pattern="noise*",
+            node_name_glob="noise*",
+            node_path_glob="*/noise1",
+            type_filter="noiseTOP",
+            type_match="exact",
+            family="TOP",
+            parameter_glob="amp*",
+            value_glob="0.*",
+            expression_glob="*absTime*",
+            mode="EXPRESSION",
+            non_default_only=True,
+            limit=20,
+            node_scan_limit=900,
+            parameter_scan_limit=12000,
+            time_budget_ms=800,
+        )
+
+    def test_parameter_search_is_read_only_for_undo_wrapper(self):
+        self.assertIsNone(ac._undo_label("POST", "/api/params/search"))
 
     def test_exec_dispatch_when_allowed(self):
         os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "1"
@@ -213,15 +382,37 @@ class RoutingTests(unittest.TestCase):
         ac._route("GET", "/api/nodes/project1/noise1", {}, {})
         ac.api_service.get_node.assert_called_once_with("/project1/noise1")
 
-        ac._route("PATCH", "/api/nodes/project1/noise1", {}, {"parameters": {"period": 4}})
-        ac.api_service.update_parameters.assert_called_once_with("/project1/noise1", {"period": 4})
+        ac._route(
+            "PATCH", "/api/nodes/project1/noise1", {}, {"parameters": {"period": 4}}
+        )
+        ac.api_service.update_parameters.assert_called_once_with(
+            "/project1/noise1", {"period": 4}
+        )
 
         ac._route("DELETE", "/api/nodes/project1/noise1", {}, {})
-        ac.api_service.delete_node.assert_called_once_with("/project1/noise1", "delete")
+        ac.api_service.delete_node.assert_called_once_with(
+            "/project1/noise1", mode="delete", confirmation_policy="native"
+        )
+
+    def test_custom_parameter_lifecycle_uses_structured_node_route(self):
+        body = {
+            "page": "Controls",
+            "params": [{"name": "Gain", "type": "Float"}],
+        }
+        ac._route("POST", "/api/nodes/project1/widget/custom_params", {}, body)
+        ac.custom_params_service.apply_custom_parameter_lifecycle.assert_called_once_with(
+            "/project1/widget", body
+        )
+        self.assertEqual(
+            ac._undo_label("POST", "/api/nodes/project1/widget/custom_params"),
+            "MCP custom_parameter_lifecycle /project1/widget",
+        )
 
     def test_node_delete_bypass_mode(self):
         ac._route("DELETE", "/api/nodes/project1/noise1", {"mode": ["bypass"]}, {})
-        ac.api_service.delete_node.assert_called_once_with("/project1/noise1", "bypass")
+        ac.api_service.delete_node.assert_called_once_with(
+            "/project1/noise1", mode="bypass", confirmation_policy="explicit_mode"
+        )
 
     def test_node_method_dispatch(self):
         os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "1"
@@ -231,14 +422,23 @@ class RoutingTests(unittest.TestCase):
             {},
             {"method": "cook", "args": [1], "kwargs": {"force": True}},
         )
-        ac.api_service.call_method.assert_called_once_with("/project1/geo1", "cook", [1], {"force": True})
+        ac.api_service.call_method.assert_called_once_with(
+            "/project1/geo1", "cook", [1], {"force": True}
+        )
 
     def test_node_errors_dispatch(self):
         ac._route("GET", "/api/nodes/project1/geo1/errors", {}, {})
-        ac.api_service.get_node_errors.assert_called_once_with("/project1/geo1", recursive=False)
+        ac.api_service.get_node_errors.assert_called_once_with(
+            "/project1/geo1", recursive=False
+        )
 
     def test_preview_dispatch_with_dimensions(self):
-        ac._route("GET", "/api/preview/project1/out1", {"width": ["800"], "height": ["600"]}, {})
+        ac._route(
+            "GET",
+            "/api/preview/project1/out1",
+            {"width": ["800"], "height": ["600"]},
+            {},
+        )
         ac.preview_service.capture.assert_called_once_with("/project1/out1", 800, 600)
 
     def test_preview_sample_grid_dispatch(self):
@@ -268,14 +468,184 @@ class RoutingTests(unittest.TestCase):
         ac.preview_service.collect_preview_job.assert_called_once_with("abc123")
 
     def test_editor_focus_dispatch(self):
-        ac._route("POST", "/api/editor/focus", {}, {"paths": ["/project1/noise1"], "animate": True})
-        ac.editor_service.focus.assert_called_once_with(["/project1/noise1"], True)
+        ac._route(
+            "POST",
+            "/api/editor/focus",
+            {},
+            {"paths": ["/project1/noise1"], "animate": True},
+        )
+        ac.editor_service.start_follow.assert_called_once_with(
+            ["/project1/noise1"],
+            animate=True,
+            action="view",
+            framing="auto",
+            enabled=True,
+            request_id=None,
+        )
+
+    def test_editor_focus_status_and_cancel_dispatch(self):
+        ac._route("GET", "/api/editor/focus/opaque", {}, {})
+        ac.editor_service.get_follow_status.assert_called_once_with("opaque")
+        ac._route("POST", "/api/editor/focus/opaque/cancel", {}, {})
+        ac.editor_service.cancel_follow.assert_called_once_with("opaque")
+
+    def test_all_editor_focus_routes_stay_outside_graph_undo(self):
+        self.assertIsNone(ac._undo_label("POST", "/api/editor/focus"))
+        self.assertIsNone(ac._undo_label("GET", "/api/editor/focus/opaque"))
+        self.assertIsNone(ac._undo_label("POST", "/api/editor/focus/opaque/cancel"))
+
+    def test_tox_export_start_status_cancel_and_recovery_routes(self):
+        body = {
+            "source_path": "/project1/widget",
+            "target_path": "/tmp/widget.tox",
+            "mode": "as_is",
+            "create_folders": True,
+            "idempotency_key": "opaque_retry_key_1234",
+        }
+        ac._route("POST", "/api/artifacts/tox/exports", {}, body)
+        ac.tox_export_service.start_export.assert_called_once_with(
+            "/project1/widget",
+            "/tmp/widget.tox",
+            mode="as_is",
+            create_folders=True,
+            idempotency_key="opaque_retry_key_1234",
+            overwrite_approval=None,
+        )
+
+        ac._route("GET", "/api/artifacts/tox/exports/opaque_op", {}, {})
+        ac.tox_export_service.get_export.assert_called_once_with("opaque_op")
+        ac._route("GET", "/api/artifacts/tox/exports/by-key/opaque_key", {}, {})
+        ac.tox_export_service.get_export_by_key.assert_called_once_with("opaque_key")
+        ac._route("POST", "/api/artifacts/tox/exports/opaque_op/cancel", {}, {})
+        ac.tox_export_service.cancel_export.assert_called_once_with(
+            "opaque_op", "client_cancelled"
+        )
+
+    def test_tox_export_routes_never_create_graph_undo_items(self):
+        for method, path in (
+            ("POST", "/api/artifacts/tox/exports"),
+            ("GET", "/api/artifacts/tox/exports/opaque"),
+            ("POST", "/api/artifacts/tox/exports/opaque/cancel"),
+        ):
+            self.assertIsNone(ac._undo_label(method, path))
+
+    def test_tox_roundtrip_start_status_cancel_routes_are_quarantine_only(self):
+        body = {
+            "path": "/tmp/widget.tox",
+            "artifact_sha256": "a" * 64,
+            "settle_frames": 4,
+            "max_nodes": 100,
+            "max_errors": 10,
+            "max_external_refs": 10,
+            "timeout_ms": 5000,
+        }
+        _clear_quarantine_env()
+        with self.assertRaises(PermissionError):
+            ac._route("POST", "/api/artifacts/tox/roundtrip", {}, body)
+        os.environ["TDMCP_PROJECT_RAG_QUARANTINE"] = "1"
+        try:
+            ac._route("POST", "/api/artifacts/tox/roundtrip", {}, body)
+            ac.tox_roundtrip_service.start_roundtrip.assert_called_once_with(
+                "/tmp/widget.tox",
+                expected_contract=None,
+                artifact_sha256="a" * 64,
+                settle_frames=4,
+                max_nodes=100,
+                max_errors=10,
+                max_external_refs=10,
+                timeout_ms=5000,
+            )
+            ac._route("GET", "/api/artifacts/tox/roundtrip/opaque_op", {}, {})
+            ac.tox_roundtrip_service.get_roundtrip.assert_called_once_with("opaque_op")
+            ac._route(
+                "POST",
+                "/api/artifacts/tox/roundtrip/opaque_op/cancel",
+                {},
+                {"reason": "timeout"},
+            )
+            ac.tox_roundtrip_service.cancel_roundtrip.assert_called_once_with(
+                "opaque_op", "timeout"
+            )
+        finally:
+            _clear_quarantine_env()
+
+    def test_tox_roundtrip_routes_never_create_graph_undo_items(self):
+        for method, path in (
+            ("POST", "/api/artifacts/tox/roundtrip"),
+            ("GET", "/api/artifacts/tox/roundtrip/opaque"),
+            ("POST", "/api/artifacts/tox/roundtrip/opaque/cancel"),
+        ):
+            self.assertIsNone(ac._undo_label(method, path))
+
+    def test_package_reconcile_check_and_apply_routes(self):
+        check = {
+            "project_path": "/project1",
+            "package_id": "package-a",
+            "source_url": "https://example.invalid/package-a",
+            "recorded_ref": "v1",
+            "recorded_target_path": "/project1/tdmcp_packages/package_a",
+            "scope": "project",
+            "intent": "prune",
+        }
+        ac._route("POST", "/api/packages/reconcile/check", {}, check)
+        ac.package_namespace_service.check_package_namespace.assert_called_once_with(
+            **check
+        )
+
+        apply = {
+            "plan_id": "plan_00000000000000000001",
+            "choice": "Bypass",
+            "confirmation_policy": "explicit_mode",
+        }
+        ac._route("POST", "/api/packages/reconcile/apply", {}, apply)
+        ac.package_namespace_service.apply_package_namespace.assert_called_once_with(
+            **apply, interaction_id=None
+        )
+
+    def test_package_check_is_read_only_and_apply_has_specific_undo_label(self):
+        self.assertIsNone(ac._undo_label("POST", "/api/packages/reconcile/check"))
+        ac.package_namespace_service.package_namespace_undo_label.return_value = (
+            "MCP reconcile_package_namespace package-a"
+        )
+        label = ac._undo_label(
+            "POST",
+            "/api/packages/reconcile/apply",
+            {"plan_id": "plan_00000000000000000001"},
+        )
+        self.assertEqual(label, "MCP reconcile_package_namespace package-a")
+
+    def test_editor_insert_is_structured_exec_independent_and_has_specific_undo(self):
+        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
+        body = {
+            "type": "nullTOP",
+            "expected_context": {
+                "owner_path": "/project1",
+                "selected_path": "/project1/source",
+                "current_path": "/project1/source",
+            },
+            "idempotency_key": "opaque_insert_key_1234",
+        }
+        ac._route("POST", "/api/editor/insert", {}, body)
+        ac.editor_insert_service.insert_operator_at_selection.assert_called_once_with(
+            body
+        )
+        self.assertEqual(
+            ac._undo_label("POST", "/api/editor/insert", body),
+            "MCP insert_operator_at_selection /project1/source",
+        )
 
     def test_watch_register_dispatch(self):
         # Registration routes straight to watch_service; the onFrameEnd poller (not
         # a DAT installed here) is what later emits the events.
-        ac._route("POST", "/api/params/watch", {}, {"path": "/project1/level1", "pars": ["opacity"]})
-        ac.watch_service.register.assert_called_once_with("/project1/level1", ["opacity"])
+        ac._route(
+            "POST",
+            "/api/params/watch",
+            {},
+            {"path": "/project1/level1", "pars": ["opacity"]},
+        )
+        ac.watch_service.register.assert_called_once_with(
+            "/project1/level1", ["opacity"]
+        )
 
     def test_watch_register_survives_exec_disabled(self):
         os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
@@ -297,7 +667,9 @@ class RoutingTests(unittest.TestCase):
 
     def test_network_topology_dispatch(self):
         ac._route("GET", "/api/network/project1/topology", {"recursive": ["true"]}, {})
-        ac.analysis_service.topology.assert_called_once_with("/project1", recursive=True)
+        ac.analysis_service.topology.assert_called_once_with(
+            "/project1", recursive=True
+        )
 
     def test_unknown_route_raises(self):
         with self.assertRaises(ValueError):
@@ -339,7 +711,9 @@ class ParsingTests(unittest.TestCase):
 
     def test_find_header_accepts_list_value(self):
         # A repeated/multi-value header may arrive as a list; take the first str.
-        self.assertEqual(ac._find_header({"Origin": ["http://x", "http://y"]}, "origin"), "http://x")
+        self.assertEqual(
+            ac._find_header({"Origin": ["http://x", "http://y"]}, "origin"), "http://x"
+        )
         self.assertIsNone(ac._find_header({"Origin": []}, "origin"))
         self.assertIsNone(ac._find_header({"Origin": [123]}, "origin"))
 
@@ -360,7 +734,11 @@ class OriginTests(unittest.TestCase):
             ac._check_origin({"Origin": origin})  # must not raise
 
     def test_cross_origin_rejected(self):
-        for origin in ("http://evil.com", "https://attacker.example:8443", "http://192.168.1.5"):
+        for origin in (
+            "http://evil.com",
+            "https://attacker.example:8443",
+            "http://192.168.1.5",
+        ):
             with self.assertRaises(PermissionError, msg=origin):
                 ac._check_origin({"Origin": origin})
 
@@ -373,13 +751,17 @@ class OriginTests(unittest.TestCase):
             ac._check_origin({"headers": {"origin": "http://evil.com"}})
 
     def test_handle_rejects_cross_origin_with_403(self):
-        resp = ac.handle({"method": "GET", "uri": "/api/info", "Origin": "http://evil.com"}, {})
+        resp = ac.handle(
+            {"method": "GET", "uri": "/api/info", "Origin": "http://evil.com"}, {}
+        )
         self.assertEqual(resp["statusCode"], 403)
         self.assertIn("cross-origin", resp["data"])
 
     def test_handle_rejects_list_valued_cross_origin(self):
         # Some TD builds surface a header as a list; it must not slip the guard.
-        resp = ac.handle({"method": "GET", "uri": "/api/info", "Origin": ["http://evil.com"]}, {})
+        resp = ac.handle(
+            {"method": "GET", "uri": "/api/info", "Origin": ["http://evil.com"]}, {}
+        )
         self.assertEqual(resp["statusCode"], 403)
         self.assertIn("cross-origin", resp["data"])
 
@@ -433,9 +815,7 @@ class HostTests(unittest.TestCase):
 
     def test_handle_rejects_non_loopback_host_with_403(self):
         _clear_token_env()
-        resp = ac.handle(
-            {"method": "GET", "uri": "/api/info", "Host": "evil.com"}, {}
-        )
+        resp = ac.handle({"method": "GET", "uri": "/api/info", "Host": "evil.com"}, {})
         self.assertEqual(resp["statusCode"], 403)
         self.assertIn("Host", resp["data"])
 
@@ -560,7 +940,8 @@ class HandleTests(unittest.TestCase):
         _clear_token_env()
         with mock.patch.object(ac, "_route", return_value={"hello": "world"}):
             resp = ac.handle(
-                {"method": "GET", "uri": "/api/info", "Host": "127.0.0.1:9980"}, self._resp()
+                {"method": "GET", "uri": "/api/info", "Host": "127.0.0.1:9980"},
+                self._resp(),
             )
         self.assertEqual(resp["statusCode"], 200)
         self.assertIn('"ok": true', resp["data"])
@@ -581,7 +962,8 @@ class HandleTests(unittest.TestCase):
     def test_exec_disabled_surfaces_as_403_with_message(self):
         os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
         resp = ac.handle(
-            {"method": "POST", "uri": "/api/exec", "data": '{"script": "1"}'}, self._resp()
+            {"method": "POST", "uri": "/api/exec", "data": '{"script": "1"}'},
+            self._resp(),
         )
         self.assertEqual(resp["statusCode"], 403)
         self.assertIn("disabled", resp["data"])
@@ -589,7 +971,9 @@ class HandleTests(unittest.TestCase):
     def test_missing_required_field_surfaces_as_400_with_name(self):
         # A POST with valid JSON but a missing field gets a descriptive 400,
         # not a bare KeyError message of just the key name.
-        resp = ac.handle({"method": "POST", "uri": "/api/nodes", "data": "{}"}, self._resp())
+        resp = ac.handle(
+            {"method": "POST", "uri": "/api/nodes", "data": "{}"}, self._resp()
+        )
         self.assertEqual(resp["statusCode"], 400)
         self.assertIn("parent_path", resp["data"])
         self.assertIn("Missing required field", resp["data"])
@@ -643,42 +1027,93 @@ class UndoBlockTests(unittest.TestCase):
 
     def test_mutating_request_is_wrapped_in_a_single_undo_block(self):
         ui = mock.MagicMock(name="ui")
-        with mock.patch.object(ac, "_get_ui", return_value=ui), mock.patch.object(
-            ac, "_route", return_value={"path": "/project1/noise1"}
+        with (
+            mock.patch.object(ac, "_get_ui", return_value=ui),
+            mock.patch.object(ac, "_route", return_value={"path": "/project1/noise1"}),
         ):
             ac.handle(
-                {"method": "POST", "uri": "/api/nodes", "data": '{"parent_path":"/p","type":"noiseTOP"}'},
+                {
+                    "method": "POST",
+                    "uri": "/api/nodes",
+                    "data": '{"parent_path":"/p","type":"noiseTOP"}',
+                },
                 self._resp(),
             )
         ui.undo.startBlock.assert_called_once()
         (label,), _ = ui.undo.startBlock.call_args
-        self.assertTrue(label.startswith("MCP POST /api/nodes"))
+        self.assertEqual(label, "MCP create_td_node")
         ui.undo.endBlock.assert_called_once()
+
+    def test_mutation_receipt_uses_actual_native_top_and_preserves_wrapper_name(self):
+        undo_stack = ["Older item"]
+        undo = types.SimpleNamespace(
+            undoStack=undo_stack,
+            startBlock=mock.Mock(),
+            endBlock=mock.Mock(side_effect=lambda: undo_stack.insert(0, "Delete Node")),
+        )
+        ui = types.SimpleNamespace(undo=undo)
+        with (
+            mock.patch.object(ac, "_get_ui", return_value=ui),
+            mock.patch.object(ac, "_route", return_value={"deleted": "/p/x"}),
+        ):
+            response = ac.handle(
+                {"method": "DELETE", "uri": "/api/nodes/p/x"}, self._resp()
+            )
+
+        data = json.loads(response["data"])["data"]
+        self.assertEqual(data["undo_label"], "Delete Node")
+        self.assertEqual(data["undo_wrapper_label"], "MCP delete_td_node /p/x")
+
+    def test_empty_wrapper_does_not_claim_a_stale_service_undo_label(self):
+        undo = types.SimpleNamespace(
+            undoStack=["Older item"], startBlock=mock.Mock(), endBlock=mock.Mock()
+        )
+        ui = types.SimpleNamespace(undo=undo)
+        with (
+            mock.patch.object(ac, "_get_ui", return_value=ui),
+            mock.patch.object(
+                ac, "_route", return_value={"decision": "Keep", "undo_label": "stale"}
+            ),
+        ):
+            response = ac.handle(
+                {"method": "DELETE", "uri": "/api/nodes/p/x"}, self._resp()
+            )
+
+        self.assertNotIn("undo_label", json.loads(response["data"])["data"])
 
     def test_endblock_runs_even_when_the_route_raises(self):
         ui = mock.MagicMock(name="ui")
-        with mock.patch.object(ac, "_get_ui", return_value=ui), mock.patch.object(
-            ac, "_route", side_effect=ValueError("boom")
+        with (
+            mock.patch.object(ac, "_get_ui", return_value=ui),
+            mock.patch.object(ac, "_route", side_effect=ValueError("boom")),
         ):
-            resp = ac.handle({"method": "DELETE", "uri": "/api/nodes/p/x"}, self._resp())
+            resp = ac.handle(
+                {"method": "DELETE", "uri": "/api/nodes/p/x"}, self._resp()
+            )
         self.assertEqual(resp["statusCode"], 400)
         ui.undo.startBlock.assert_called_once()
         ui.undo.endBlock.assert_called_once()  # finally guarantees the block closes
 
     def test_read_only_get_is_not_wrapped(self):
         ui = mock.MagicMock(name="ui")
-        with mock.patch.object(ac, "_get_ui", return_value=ui), mock.patch.object(
-            ac, "_route", return_value={"ok": 1}
+        with (
+            mock.patch.object(ac, "_get_ui", return_value=ui),
+            mock.patch.object(ac, "_route", return_value={"ok": 1}),
         ):
             ac.handle({"method": "GET", "uri": "/api/info"}, self._resp())
         ui.undo.startBlock.assert_not_called()
 
     def test_missing_ui_does_not_break_a_mutating_request(self):
-        with mock.patch.object(ac, "_get_ui", return_value=None), mock.patch.object(
-            ac, "_route", return_value={"path": "/p/x"}
+        with (
+            mock.patch.object(ac, "_get_ui", return_value=None),
+            mock.patch.object(ac, "_route", return_value={"path": "/p/x"}),
         ):
             resp = ac.handle(
-                {"method": "POST", "uri": "/api/nodes", "data": '{"parent_path":"/p","type":"noiseTOP"}'},
+                {
+                    "method": "POST",
+                    "uri": "/api/nodes",
+                    "data": '{"parent_path":"/p","type":"noiseTOP"}',
+                },
                 self._resp(),
             )
         self.assertEqual(resp["statusCode"], 200)
@@ -707,6 +1142,7 @@ class StructuredEndpointTests(unittest.TestCase):
             "system": ac.system_service,
             "project_analysis": ac.project_analysis_service,
             "custom_params": ac.custom_params_service,
+            "parameter": ac.parameter_service,
         }
         ac.connect_service = mock.MagicMock(name="connect_service")
         ac.log_service = mock.MagicMock(name="log_service")
@@ -715,6 +1151,7 @@ class StructuredEndpointTests(unittest.TestCase):
         ac.transport_service = mock.MagicMock(name="transport_service")
         ac.system_service = mock.MagicMock(name="system_service")
         ac.custom_params_service = mock.MagicMock(name="custom_params_service")
+        ac.parameter_service = mock.MagicMock(name="parameter_service")
 
     def tearDown(self):
         ac.connect_service = self._saved["connect"]
@@ -725,6 +1162,7 @@ class StructuredEndpointTests(unittest.TestCase):
         ac.system_service = self._saved["system"]
         ac.project_analysis_service = self._saved["project_analysis"]
         ac.custom_params_service = self._saved["custom_params"]
+        ac.parameter_service = self._saved["parameter"]
         _clear_exec_env()
 
     def test_connect_dispatches_with_exec_disabled(self):
@@ -732,7 +1170,12 @@ class StructuredEndpointTests(unittest.TestCase):
             "POST",
             "/api/connect",
             {},
-            {"source_path": "/p/a", "target_path": "/p/b", "source_output": 1, "target_input": 2},
+            {
+                "source_path": "/p/a",
+                "target_path": "/p/b",
+                "source_output": 1,
+                "target_input": 2,
+            },
         )
         ac.connect_service.connect.assert_called_once_with("/p/a", "/p/b", 1, 2)
 
@@ -811,7 +1254,9 @@ class StructuredEndpointTests(unittest.TestCase):
 
     def test_custom_params_dispatches_with_exec_disabled(self):
         ac._route("GET", "/api/nodes/project1/comp1/custom_params", {}, {})
-        ac.custom_params_service.get_custom_params.assert_called_once_with("/project1/comp1")
+        ac.custom_params_service.get_custom_params.assert_called_once_with(
+            "/project1/comp1"
+        )
 
     def test_custom_params_encoded_path_round_trips(self):
         ac._route(
@@ -822,6 +1267,17 @@ class StructuredEndpointTests(unittest.TestCase):
         )
         ac.custom_params_service.get_custom_params.assert_called_once_with(
             "/project1/sub/deep/comp"
+        )
+
+    def test_parameter_menu_dispatches_with_exec_disabled(self):
+        ac._route(
+            "GET",
+            "/api/nodes/project1/sub/math1/params/Combine/menu",
+            {},
+            {},
+        )
+        ac.parameter_service.read_parameter_menu.assert_called_once_with(
+            "/project1/sub/math1", "Combine"
         )
 
     def test_logs_dispatches_with_exec_disabled(self):
@@ -860,13 +1316,37 @@ class StructuredEndpointTests(unittest.TestCase):
 
     def test_dat_text_put_dispatches_with_exec_disabled(self):
         ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
-        ac.param_text_service.put_dat_text.assert_called_once_with("/project1/text1", "hello")
+        ac.param_text_service.put_dat_text.assert_called_once_with(
+            "/project1/text1", "hello"
+        )
 
     def test_exec_is_still_blocked_in_this_mode(self):
         # Sanity: the gate IS active here, so the routes above pass because they are
         # ungated — not because exec happens to be enabled.
         with self.assertRaises(PermissionError):
             ac._route("POST", "/api/exec", {}, {"script": "1"})
+
+
+class EditorInsertErrorEnvelopeTests(unittest.TestCase):
+    def test_typed_code_and_sanitized_rollback_report_are_preserved(self):
+        report = {
+            "status": "failed",
+            "rollback": {"attempted": True, "succeeded": True},
+        }
+        exc = ac.editor_insert_service.EditorInsertError(
+            "rewire_failed", "rewire failed and was compensated", report
+        )
+        self.assertEqual(
+            ac._error_payload(exc),
+            {
+                "ok": False,
+                "error": {
+                    "code": "rewire_failed",
+                    "message": "rewire failed and was compensated",
+                    "details": report,
+                },
+            },
+        )
 
 
 if __name__ == "__main__":

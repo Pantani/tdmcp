@@ -230,6 +230,12 @@ describe("runPackageCli — doctor", () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain("deferred");
   });
+
+  it("supports the explicit packages doctor namespace", async () => {
+    const result = await runPackageCli(["packages", "doctor", "shader-park-td", "--json"]);
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ package: { id: "shader-park-td" } });
+  });
 });
 
 describe("runPackageCli — packages path", () => {
@@ -260,6 +266,28 @@ describe("runPackageCli — packages path", () => {
       expect(doc).toHaveProperty("root");
     } finally {
       cleanup(root);
+    }
+  });
+
+  it("resolves an explicit project-scoped package root", async () => {
+    const project = tempRoot();
+    try {
+      const result = await runPackageCli([
+        "packages",
+        "path",
+        "--scope",
+        "project",
+        "--project-dir",
+        project,
+        "--json",
+      ]);
+      expect(result.code).toBe(0);
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        root: join(project, ".tdmcp", "packages"),
+        storage: { scope: "project" },
+      });
+    } finally {
+      cleanup(project);
     }
   });
 });

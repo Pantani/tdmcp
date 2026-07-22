@@ -39,6 +39,7 @@ import {
   TelegramShowPollOnceSchema,
 } from "../automation/telegramShowGateway.js";
 import { capturePreview } from "../feedback/previewCapture.js";
+import { createLazyLlmClient } from "../llm/resolve.js";
 import { buildToolContext } from "../server/context.js";
 import { type TdEventHandler, TdEventStream } from "../td-client/eventStream.js";
 import { friendlyTdError } from "../td-client/types.js";
@@ -46,6 +47,10 @@ import {
   loadSessionProfileImpl,
   loadSessionProfileSchema,
 } from "../tools/ai/loadSessionProfile.js";
+import {
+  manageProjectBriefImpl,
+  manageProjectBriefSchema,
+} from "../tools/ai/manageProjectBrief.js";
 import { narrateSetImpl, narrateSetSchema } from "../tools/ai/narrateSet.js";
 import { oneSourceFiveWaysImpl, oneSourceFiveWaysSchema } from "../tools/ai/oneSourceFiveWays.js";
 // Campaign BEYOND Wave 4 (backlog 2026-05-30 — v0.7.0):
@@ -1134,8 +1139,16 @@ import {
   focusNetworkEditorImpl,
   focusNetworkEditorSchema,
 } from "../tools/layer2/focusNetworkEditor.js";
+import {
+  insertOperatorAtSelectionImpl,
+  insertOperatorAtSelectionSchema,
+} from "../tools/layer2/insertOperatorAtSelection.js";
 import { learnControlImpl, learnControlSchema } from "../tools/layer2/learnControl.js";
 import { manageAnnotationImpl, manageAnnotationSchema } from "../tools/layer2/manageAnnotation.js";
+import {
+  manageArtistWorkspaceImpl,
+  manageArtistWorkspaceSchema,
+} from "../tools/layer2/manageArtistWorkspace.js";
 import { manageCheckpointImpl, manageCheckpointSchema } from "../tools/layer2/manageCheckpoint.js";
 import { manageComponentImpl, manageComponentSchema } from "../tools/layer2/manageComponent.js";
 import { manageCueImpl, manageCueSchema } from "../tools/layer2/manageCue.js";
@@ -1241,6 +1254,10 @@ import {
   editShaderLiveLoopSchema,
 } from "../tools/layer3/editShaderLiveLoop.js";
 import {
+  editTdNodeMetadataImpl,
+  editTdNodeMetadataSchema,
+} from "../tools/layer3/editTdNodeMetadata.js";
+import {
   elicitMissingArgsImpl,
   elicitMissingArgsSchema,
 } from "../tools/layer3/elicitMissingArgs.js";
@@ -1256,10 +1273,12 @@ import {
 import { exportSopToSvgImpl, exportSopToSvgSchema } from "../tools/layer3/exportSopToSvg.js";
 import { extractPaletteImpl, extractPaletteSchema } from "../tools/layer3/extractPalette.js";
 import { findTdNodesImpl, findTdNodesSchema } from "../tools/layer3/findTdNodes.js";
+import { findTdParametersImpl, findTdParametersSchema } from "../tools/layer3/findTdParameters.js";
 import { generateMusicImpl, generateMusicSchema } from "../tools/layer3/generateMusic.js";
 import { generateReadmeImpl, generateReadmeSchema } from "../tools/layer3/generateReadme.js";
 import { getBridgeLogsImpl, getBridgeLogsSchema } from "../tools/layer3/getBridgeLogs.js";
 import { getDatContentImpl, getDatContentSchema } from "../tools/layer3/getDatContent.js";
+import { getEditorContextImpl, getEditorContextSchema } from "../tools/layer3/getEditorContext.js";
 import { getInlinePreviewImpl, getInlinePreviewSchema } from "../tools/layer3/getInlinePreview.js";
 import { getModuleHelpImpl, getModuleHelpSchema } from "../tools/layer3/getModuleHelp.js";
 import { getMusicJobImpl, getMusicJobSchema } from "../tools/layer3/getMusicJob.js";
@@ -1277,6 +1296,7 @@ import {
   getTdClassDetailsSchema,
 } from "../tools/layer3/getTdClassDetails.js";
 import { getTdClassesImpl, getTdClassesSchema } from "../tools/layer3/getTdClasses.js";
+import { getTdDocsImpl, getTdDocsSchema } from "../tools/layer3/getTdDocs.js";
 import { getTdInfoImpl } from "../tools/layer3/getTdInfo.js";
 import { getTdNodeErrorsImpl, getTdNodeErrorsSchema } from "../tools/layer3/getTdNodeErrors.js";
 import { getTdNodeFlagsImpl, getTdNodeFlagsSchema } from "../tools/layer3/getTdNodeFlags.js";
@@ -1302,6 +1322,10 @@ import {
   lintRecipeLibrarySchema,
 } from "../tools/layer3/lintRecipeLibrary.js";
 import {
+  manageAgentSkillsImpl,
+  manageAgentSkillsSchema,
+} from "../tools/layer3/manageAgentSkills.js";
+import {
   manageComponentStorageImpl,
   manageComponentStorageSchema,
 } from "../tools/layer3/manageComponentStorage.js";
@@ -1319,6 +1343,7 @@ import {
   projectDocumentationSiteImpl,
   projectDocumentationSiteSchema,
 } from "../tools/layer3/projectDocumentationSite.js";
+import { pulseTdParameterImpl, pulseTdParameterSchema } from "../tools/layer3/pulseTdParameter.js";
 import {
   readParameterModesImpl,
   readParameterModesSchema,
@@ -1327,6 +1352,7 @@ import { recordMovieImpl, recordMovieSchema } from "../tools/layer3/recordMovie.
 import { reloadBridgeImpl, reloadBridgeSchema } from "../tools/layer3/reloadBridge.js";
 import { renderOutputImpl, renderOutputSchema } from "../tools/layer3/renderOutput.js";
 import { repairNetworkImpl, repairNetworkSchema } from "../tools/layer3/repairNetwork.js";
+import { saveTdProjectImpl, saveTdProjectSchema } from "../tools/layer3/saveTdProject.js";
 import { scoreBuildImpl, scoreBuildSchema } from "../tools/layer3/scoreBuild.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { searchPythonApiImpl, searchPythonApiSchema } from "../tools/layer3/searchPythonApi.js";
@@ -1434,6 +1460,7 @@ import {
   marketplaceIndexSeedSchema,
 } from "../tools/library/marketplaceIndexSeed.js";
 import { provenanceStampImpl, provenanceStampSchema } from "../tools/library/provenanceStamp.js";
+import { collectRuntimeToolMetadata } from "../tools/registry.js";
 import type { ToolContext } from "../tools/types.js";
 import {
   applyShaderFromVaultImpl,
@@ -1606,6 +1633,11 @@ const COMMANDS: Record<string, Command> = {
     "List a COMP's child nodes (summary by default).",
   ),
   "nodes find": r(findTdNodesSchema, findTdNodesImpl, "Search nodes by name pattern and/or type."),
+  "params find": r(
+    findTdParametersSchema,
+    findTdParametersImpl,
+    "Search live parameters by node, name, value, expression, mode, or default state.",
+  ),
   "nodes get": r(getTdNodeParametersSchema, getTdNodeParametersImpl, "Read a node's parameters."),
   "nodes errors": r(getTdNodeErrorsSchema, getTdNodeErrorsImpl, "Check a node/network for errors."),
   "nodes flags": r(
@@ -1629,7 +1661,43 @@ const COMMANDS: Record<string, Command> = {
     { mutates: true },
   ),
   "nodes create": r(createTdNodeSchema, createTdNodeImpl, "Create an operator.", { mutates: true }),
-  "nodes delete": r(deleteTdNodeSchema, deleteTdNodeImpl, "Delete a node.", { mutates: true }),
+  "nodes delete": r(
+    deleteTdNodeSchema,
+    deleteTdNodeImpl,
+    "Confirm Delete / Bypass / Keep for a node.",
+    { mutates: true },
+  ),
+  "nodes metadata": r(
+    editTdNodeMetadataSchema,
+    editTdNodeMetadataImpl,
+    "Atomically edit node metadata and placement.",
+    { mutates: true },
+  ),
+  "parameters pulse": r(
+    pulseTdParameterSchema,
+    pulseTdParameterImpl,
+    "Validate and pulse one Pulse parameter.",
+    { mutates: true },
+  ),
+  "editor context": r(
+    getEditorContextSchema,
+    getEditorContextImpl,
+    "Read compact active editor context.",
+  ),
+  "docs get": r(
+    getTdDocsSchema,
+    getTdDocsImpl,
+    "Read bounded build-aware TouchDesigner documentation.",
+  ),
+  "skills manage": r(
+    manageAgentSkillsSchema,
+    manageAgentSkillsImpl,
+    "Inspect or manage bundled manifest-owned agent skills.",
+    { mutates: true },
+  ),
+  "project save": r(saveTdProjectSchema, saveTdProjectImpl, "Save or safely Save As.", {
+    mutates: true,
+  }),
   "errors summarize": r(
     summarizeTdErrorsSchema,
     summarizeTdErrorsImpl,
@@ -1947,6 +2015,12 @@ const COMMANDS: Record<string, Command> = {
   arrange: r(arrangeNetworkSchema, arrangeNetworkImpl, "Auto-arrange a network left→right.", {
     mutates: true,
   }),
+  "artist-workspace": r(
+    manageArtistWorkspaceSchema,
+    manageArtistWorkspaceImpl,
+    "Open, inspect, restore, or cancel one temporary TouchDesigner editor workspace.",
+    { mutates: true },
+  ),
   connect: r(connectNodesSchema, connectNodesImpl, "Wire two nodes together.", { mutates: true }),
   container: r(createContainerSchema, createContainerImpl, "Create a COMP container.", {
     mutates: true,
@@ -4281,6 +4355,12 @@ const COMMANDS: Record<string, Command> = {
     "Pan/zoom TouchDesigner's Network Editor to frame given operators (UI-only).",
     { mutates: true },
   ),
+  insert_operator_at_selection: r(
+    insertOperatorAtSelectionSchema,
+    insertOperatorAtSelectionImpl,
+    "Atomically insert one same-family operator downstream of the exact active selection.",
+    { mutates: true },
+  ),
   copilot_vision: r(
     copilotVisionSchema,
     copilotVisionImpl,
@@ -4335,6 +4415,12 @@ const COMMANDS: Record<string, Command> = {
     loadSessionProfileSchema,
     loadSessionProfileImpl,
     "Load (or initialise) the persistent ~/.tdmcp session profile snapshot.",
+    { mutates: true },
+  ),
+  manage_project_brief: r(
+    manageProjectBriefSchema,
+    manageProjectBriefImpl,
+    "Read or atomically replace the bounded project-owned agent brief.",
     { mutates: true },
   ),
   "one-source-five-ways": r(
@@ -4946,9 +5032,14 @@ function buildCtx(
   opts: RunCliOptions,
   loadOpts: LoadConfigOptions = { useFiles: true },
 ): ToolContext {
-  return opts.makeCtx
-    ? opts.makeCtx()
-    : buildToolContext(loadConfig(process.env, loadOpts), { logger: silentLogger });
+  if (opts.makeCtx) return opts.makeCtx();
+  const config = loadConfig(process.env, loadOpts);
+  const ctx = buildToolContext(config, { logger: silentLogger });
+  // The MCP server wires the same lazy client after its handshake. The CLI has
+  // no sampling peer, so the lazy resolver selects the configured local/OpenAI
+  // endpoint only when an opt-in command actually requests a completion.
+  ctx.llm = createLazyLlmClient(config, undefined);
+  return ctx;
 }
 
 /** Config key → TDMCP_* env var name, for the `config --write-env` exporter. */
@@ -4960,18 +5051,34 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   requestTimeoutMs: "TDMCP_REQUEST_TIMEOUT_MS",
   httpHost: "TDMCP_HTTP_HOST",
   httpPort: "TDMCP_HTTP_PORT",
+  httpAuthMode: "TDMCP_HTTP_AUTH_MODE",
+  httpBodyMaxBytes: "TDMCP_HTTP_MAX_BODY_BYTES",
   events: "TDMCP_EVENTS",
   rawPython: "TDMCP_RAW_PYTHON",
   yolo: "TDMCP_YOLO",
   toolProfile: "TDMCP_TOOL_PROFILE",
   bridgeToken: "TDMCP_BRIDGE_TOKEN",
   httpAuthToken: "TDMCP_HTTP_AUTH_TOKEN",
+  publicBaseUrl: "TDMCP_PUBLIC_BASE_URL",
+  oauthAllowInsecureLoopback: "TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK",
+  oauthRedirectOrigins: "TDMCP_OAUTH_REDIRECT_ORIGINS",
+  oauthTrustedProxyHops: "TDMCP_OAUTH_TRUSTED_PROXY_HOPS",
+  oauthStateDir: "TDMCP_OAUTH_STATE_DIR",
+  oauthAccessTtlSeconds: "TDMCP_OAUTH_ACCESS_TTL_SECONDS",
+  oauthRefreshTtlSeconds: "TDMCP_OAUTH_REFRESH_TTL_SECONDS",
+  oauthConsentTtlSeconds: "TDMCP_OAUTH_CONSENT_TTL_SECONDS",
   llmBaseUrl: "TDMCP_LLM_BASE_URL",
   llmModel: "TDMCP_LLM_MODEL",
   llmApiKey: "TDMCP_LLM_API_KEY",
   llmTier: "TDMCP_LLM_TIER",
   llmMaxSteps: "TDMCP_LLM_MAX_STEPS",
   llmTemperature: "TDMCP_LLM_TEMPERATURE",
+  llmCalibrationMode: "TDMCP_LLM_CALIBRATION_MODE",
+  llmCalibrationTtlMs: "TDMCP_LLM_CALIBRATION_TTL_MS",
+  llmCalibrationCachePath: "TDMCP_LLM_CALIBRATION_CACHE",
+  projectRoot: "TDMCP_PROJECT_ROOT",
+  copilotReceipts: "TDMCP_COPILOT_RECEIPTS",
+  copilotReceiptsPath: "TDMCP_COPILOT_RECEIPTS_PATH",
   chatPort: "TDMCP_CHAT_PORT",
   telegramBotToken: "TDMCP_TELEGRAM_BOT_TOKEN",
   telegramAllowedChats: "TDMCP_TELEGRAM_ALLOWED_CHATS",
@@ -6377,6 +6484,16 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
         code: 2,
       };
     }
+  }
+
+  if (
+    key === "plan" &&
+    (args.data as { planner?: unknown }).planner === "llm" &&
+    ctx.plannerToolCatalog === undefined
+  ) {
+    // Ground the CLI planner against the same filtered registrar set as the MCP
+    // runtime without starting a server or exposing executable callbacks.
+    ctx.plannerToolCatalog = collectRuntimeToolMetadata(ctx);
   }
 
   const result = await cmd.run(ctx, args.data);

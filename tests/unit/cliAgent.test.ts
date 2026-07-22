@@ -41,6 +41,49 @@ describe("tdmcp-agent CLI", () => {
     expect(r.stdout).toContain("Unsafe escape hatches:");
   });
 
+  it("wires the explicit LLM planner to the configured backend and registration-derived catalog", async () => {
+    const priorBaseUrl = process.env.TDMCP_LLM_BASE_URL;
+    let completions = 0;
+    process.env.TDMCP_LLM_BASE_URL = "http://planner.test/v1";
+    server.use(
+      http.get(`${TD_BASE}/api/editor/context`, () =>
+        HttpResponse.json({
+          project: { name: "show.toe", folder: "/show", save_version: 1, save_build: "test" },
+          touchdesigner: { build: "test", version: "test" },
+          perform_mode: false,
+          ui_available: true,
+          panes: [],
+          active_network_editor: null,
+          warnings: [],
+        }),
+      ),
+      http.post("http://planner.test/v1/chat/completions", () => {
+        completions += 1;
+        return HttpResponse.json({
+          model: "planner-test",
+          choices: [{ message: { content: "{}" }, finish_reason: "stop" }],
+        });
+      }),
+    );
+    try {
+      const r = await runCli([
+        "plan",
+        "--params",
+        JSON.stringify({ description: "feedback tunnel", planner: "llm" }),
+      ]);
+      expect(r.code).toBe(0);
+      expect(completions, r.stdout).toBe(1);
+      expect(JSON.parse(r.stdout)).toMatchObject({
+        planner_requested: "llm",
+        planner_used: "deterministic",
+        fallback_reason: "response_invalid",
+      });
+    } finally {
+      if (priorBaseUrl === undefined) delete process.env.TDMCP_LLM_BASE_URL;
+      else process.env.TDMCP_LLM_BASE_URL = priorBaseUrl;
+    }
+  });
+
   it("emits a JSON Schema for `schema <command>`", async () => {
     const r = await runCli(["schema", "nodes", "list"]);
     expect(r.code).toBe(0);
@@ -607,6 +650,7 @@ describe("tdmcp-agent CLI", () => {
       writeFileSync(
         config,
         JSON.stringify({
+          oauthTrustedProxyHops: ["127.0.0.1", "::1"],
           telegramAllowedChats: ["111", "222"],
           telegramAllowedUsers: ["5", "6"],
         }),
@@ -622,6 +666,7 @@ describe("tdmcp-agent CLI", () => {
       expect(r.stdout).toContain("TDMCP_LLM_MAX_STEPS");
       expect(r.stdout).toContain("TDMCP_LLM_TEMPERATURE");
       expect(r.stdout).toContain('export TDMCP_PROJECT_RAG_SCORE_WEIGHTS="0.45:0.25:0.15:0.15"');
+      expect(r.stdout).toContain('export TDMCP_OAUTH_TRUSTED_PROXY_HOPS="127.0.0.1,::1"');
       expect(r.stdout).not.toContain("[object Object]");
       expect(r.stdout).toContain("# export TDMCP_TELEGRAM_ALLOWED_CHATS=<set manually>");
       expect(r.stdout).toContain("# export TDMCP_TELEGRAM_ALLOWED_USERS=<set manually>");

@@ -40,6 +40,7 @@ describe("tdmcp chat CLI flags", () => {
       "--prompt",
       "Inspect /project1",
       "--no-ollama",
+      "--no-receipt-persist",
       "--profile",
       "club",
       "--config",
@@ -50,6 +51,7 @@ describe("tdmcp chat CLI flags", () => {
     expect(opts.creative).toBe(true);
     expect(opts.prompt).toBe("Inspect /project1");
     expect(opts.autoStartOllama).toBe(false);
+    expect(opts.noReceiptPersist).toBe(true);
     expect(opts.profile).toBe("club");
     expect(opts.configPath).toBe("/tmp/tdmcp.json");
   });

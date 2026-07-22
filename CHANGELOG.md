@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+The public install baseline remains **v0.13.1** (npm, GitHub Release and tag,
+published 2026-07-09). The entries below describe source-tree work after that
+release; the TD-native discovery campaign through Wave 16 exists only in the
+dirty worktree on top of local HEAD `fd7282ed` and is not published or assigned
+to a release.
+
 ### Added
 
 - **ACE-Step music generation (P0 slice, opt-in, off by default).** New Layer 3
@@ -58,6 +64,325 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Internal: tool `…Impl` handlers can now opt into the SDK's per-call `extra`
     (`ToolExtra` in `src/tools/types.ts`) — a type-only, backwards-compatible
     addition; existing tools are unchanged.
+- **Authenticated one-request operation closure (Wave 16, unreleased source
+  tree)** — live QA on the isolated TouchDesigner 099 build 2025.32820 process
+  at PID 62916 passed A0–A13 with bridge exec disabled: authenticated operation
+  preview/commit/receipt, exact journal observation, native Undo/Redo, induced
+  rollback, artist-drift refusal, response-loss/timeout/disconnect replay,
+  same- and different-key concurrency, reload authority loss, preservation of
+  the legacy per-REST undo wrapper, final cleanup and health checks. The first
+  A4 run exposed that created-node intrinsic position was missing from the
+  journal snapshot; journal v2 now includes final created intrinsic state, and
+  the repeated A4 correctly reports `drifted` and refuses the guarded Undo. An
+  earlier phase-2 harness run also recorded a port-reuse `OSError`; the bounded
+  per-phase-port rerun passed A5–A9. The receipt-authorized exact-state safe-
+  revert core passed direct live apply/revert/replay, native Undo/Redo of the
+  compensating operation and zero-write drift refusal, but remains internal and
+  unregistered: no route, typed client, broker approval or MCP tool was added.
+  Selection-to-component is a live **NO-GO** because Redo was not exact and an
+  induced failure left an orphan redo item; the artist-facing agent turn remains
+  **HOLD** pending operation-specific Apply/Keep authority binding. This proves
+  one bounded structured request only: arbitrary multi-request MCP atomicity and
+  any default migration remain blocked, and no release, commit, push, tag,
+  publish, deploy or version bump was performed.
+
+- **Receipt-authorized operation boundary (Wave 15, unreleased source tree)** —
+  added token-required structured bridge/client methods for bounded operation
+  preview, one-request commit and capability-authorized terminal receipt lookup
+  with fresh exact journal observation. The route family works with
+  `TDMCP_BRIDGE_ALLOW_EXEC=0`, is excluded from the generic per-REST undo wrapper,
+  never exposes an idempotency key as recovery authority and retains no bearer
+  token. TypeScript/Python receipts now agree on `receipt_capability`; shared
+  golden tests cover the complete authority envelope, and journal capacity fails
+  before mutation instead of evicting a still-authorized record. No MCP tool,
+  CLI command, generic undo/redo or receipt-bound revert was registered. A
+  disposable second TD process remained in application loading without a bridge
+  listener and was terminated by exact PID while the artist process stayed
+  alive, so public controller response-loss/reload/concurrency and the proposed
+  compensation journal remain **UNVERIFIED**. Generic native undo/redo is a
+  permanent no-go because repeatable stack labels cannot prevent same-label ABA;
+  selection-to-component and plan/preview/commit agent orchestration remain
+  probe-gated.
+
+- **Live closure and trust-boundary hardening (Wave 14, unreleased source
+  tree)** — live QA on a separately identified disposable TD 099 build
+  2025.32820 passed `tdmcp show` Perform entry, already-on idempotency and
+  ambiguous-readback rollback; OAuth's TD callback transport passed Allow,
+  Deny, timeout, close and disconnect fail-closed behavior with bridge exec
+  disabled. The internal, still-unregistered one-request operation adapter
+  passed commit, one callback-journal entry, native undo/redo and reverse
+  rollback after an induced incompatible connection. This does **not** promote a
+  public operation route or change the per-REST undo default: timeout,
+  cancellation, disconnect/reload and multi-request composition remain held,
+  and public one-item undo/redo still lacks a stable native history identity.
+  The optional `enhance_build.visualCritique` product path is integrated with
+  exact model/fixture gates, bounded preview, Apply/Keep consent,
+  proposal-bound CAS and compensating restore. Live exact-model QA proposed and
+  committed `fontsizex` `16 -> 32`, verified the same-model after-preview and
+  native undo label, then separately committed `32 -> 48` and restored to `32`
+  without logging the restore capability. Invalid model output and interaction
+  timeout/Keep both remained zero-write fail-closed paths. Release
+  automation now separates read-only validation from optional publication,
+  gives GitHub CLI explicit repository context, gates npm publication at job
+  scope and shares one `release:check` lifecycle. Additional closures add a
+  shared TypeScript/Python operation corpus, direct 413 bridge-body tests and
+  live Web Server DAT evidence, nav-derived EN/PT availability with package-
+  version provenance, bounded OAuth per-source fairness under a global ceiling,
+  complete vision-egress allow/deny/redaction tests, and PID/project/port safety
+  rules that forbid guessed TouchDesigner flags and ambiguous multi-process GUI
+  automation. Production OAuth HTTPS, a physical UI click, headless/other-build
+  TD, other model/build combinations and hosted workflow execution remain
+  explicit follow-ups.
+
+- **Vision runtime proof (Wave 13, unreleased source tree)** — installed the
+  explicitly approved local `qwen3-vl:8b-instruct-q4_K_M` runtime model and
+  recorded its exact Ollama digest, Q4_K_M quantization and native `vision` /
+  `tools` capabilities. After hardening the synthetic contract, calibration
+  suite `2026-07-15.3` passed every tool capability plus `image_input`, producing
+  an exact mutation-eligible cache entry. The hardened contract uses a valid
+  non-answer-bearing split-color PNG, bounded streamed native metadata and typed
+  timeout/capability failures. A strict offline good/bad surrogate then passed 6/6
+  with locally derived scores 91 versus 43 under unchanged weights and thresholds.
+  This is still pre-product evidence: authenticated TD-generated fixture TOPs and
+  a disposable TouchDesigner bridge remain unverified, so no visual mutation tool
+  or route was registered.
+- **Internal operation-plan hardening (Wave 13, unreleased source tree)** — the
+  unregistered whole-operation foundation now derives an exact scalar CAS
+  contract for requested parameter style/mode/value/writability, metadata
+  values/writability and bilateral connector occupancy, including ordered
+  connect/disconnect simulation. Missing, extra, readonly or drifted facts fail
+  before adapter eligibility or writes. Snapshot build/project/owner identities
+  are bounded and collision-checked; terminal receipts require contiguous result
+  coverage, unique in-scope paths, exact rollback-error/result correspondence and
+  coherent journal/replay state. Public text/body accounting is aligned to UTF-8
+  bytes across TypeScript and Python, including rejection of lone surrogates, and
+  the design now reflects the
+  adapter-less `unverified_for_allowlist` / `journal_eligible=false` default and
+  private process-local adapter identity. No route, public client, tool or undo
+  default was added; the live snapshot/transaction/journal/replay matrix and
+  authority-bound receipt lookup remain **UNVERIFIED**.
+
+- **TD-native Interaction & Safety Wave 12 (unreleased source tree)** — extended
+  the existing read-only `plan_visual` tool with an explicit `planner: "llm"`
+  mode. The deterministic planner remains the default and fallback. The opt-in
+  path makes at most one bounded completion, supplies only compact redacted
+  editor/project/recipe/operator evidence, validates every proposed tool,
+  recipe and operator against the actual registries, and never mutates
+  TouchDesigner. Added the source-tree-only `tdmcp show <profile>` command: it
+  binds one exact profile/config, runs runtime status, doctor and preflight,
+  requires separate consent for WARN and optional UNVERIFIED results, and uses
+  one Perform Mode write plus bounded readback/rollback without loading a
+  project or falling back to raw Python. Its offline contract passes; live
+  TouchDesigner entry/readback/rollback is **UNVERIFIED — pending a safe
+  disposable sandbox**, so this command is not claimed as released or live-
+  proven.
+- **OAuth DCR lifecycle hardening (Wave 12, unreleased source tree)** — public
+  registered clients now have a seven-day default inactivity lifetime; inactive
+  tokenless rows are pruned, capacity pressure evicts the oldest tokenless row,
+  and clients with live security-relevant token rows are retained. The global
+  unauthenticated registration limiter is now a continuously refilling token
+  bucket instead of a fixed window. Per-source fairness remains intentionally
+  unclaimed until the HTTP deployment has a trusted-proxy client-identity
+  contract; spoofed forwarded headers are not trusted.
+- **Internal operation-plan foundation (Wave 12, unreleased source tree)** —
+  added bounded plan/preview/commit validation, stateless HMAC preview
+  capabilities, commit-time compare-and-swap, callback-journal receipts and
+  rollback invariants for a future one-request mutation boundary. It has no
+  controller route, TD client method, CLI command, MCP registry entry or public
+  tool, and commit fails closed with `unverified_live_boundary` without the
+  exact live-verified in-process adapter. Whole-tool undo remains held; this
+  internal offline foundation is not a live or public capability.
+
+- **Remote Connection Trust Wave 11 (unreleased source tree)** — added opt-in
+  Streamable HTTP OAuth authorization-code flow with required S256 PKCE,
+  path-specific protected-resource discovery, bounded public-client DCR,
+  rotating refresh tokens and exact resource/scope binding. The co-located Node
+  process owns codes/tokens and binds each MCP session to its authenticated
+  client principal; TouchDesigner receives only one bounded **Allow / Deny**
+  display transaction through authenticated structured routes that remain usable
+  with `TDMCP_BRIDGE_ALLOW_EXEC=0`. Close, timeout, disconnect, duplicate
+  consumption, Perform/headless UI and bridge errors deny. Owner-private durable
+  state stores token HMAC digests, never raw tokens. Existing HTTP behavior stays
+  compatible through `TDMCP_HTTP_AUTH_MODE=auto`; OAuth is opt-in, invalid auth
+  combinations fail startup, and legacy bearer coexistence requires explicit
+  `hybrid`. Offline unit/integration, auth-downgrade and session-isolation tests
+  pass. Final integrated TD-native and production-HTTPS evidence remains
+  **UNVERIFIED**; DCR is supported, while CIMD and multi-user/federated identity
+  remain follow-ups.
+
+- **Artist Workspace Control & Exact Placement Wave 10 (unreleased source
+  tree)** — extended `arrange_network` with additive
+  `layout_mode: "explicit"` for bounded, fingerprinted exact placement with
+  dock-host precedence, one-request readback/rollback and legacy-compatible
+  automatic defaults. Added `manage_artist_workspace` for one temporary,
+  bridge-owned Network Editor plus TOP/PANEL viewer lifecycle with next-frame
+  main-thread scheduling, bounded polling, idempotency, lease/capacity limits
+  and compare-and-swap restoration. Both structured paths work with
+  `TDMCP_BRIDGE_ALLOW_EXEC=0`, and integrated offline schemas, route contracts,
+  rollback/state-machine tests and generated catalogs pass. Authenticated live
+  QA on TD 099 build 2025.32820 passed placement apply/replay/undo/redo, TOP
+  workspace open/active/restore and PANEL workspace open/active/cancel, with
+  verified cleanup, `undo_label: null`, auth refusal and bounded-input refusal.
+  The first three-readback workspace attempt failed closed and compensated; a
+  12-readback window then exposed later drift from an animated Network Editor
+  `home()`. The final path removes that unnecessary animation, keeps the bounded
+  stable-fingerprint guard, and passed a fresh TOP restore whose baseline
+  viewport remained unchanged after one second. Terminal no-op restore keys did
+  not grow the idempotency map, and no new `THREAD CONFLICT` appeared. Live
+  conflict, timeout/lease/Perform edges, headless TD, other builds and platforms
+  remain **UNVERIFIED**.
+  The bounded visual-critique loop remains **HOLD / UNVERIFIED**. Wave 13 later
+  added an explicitly approved, exact-digest vision runtime and synthetic
+  calibration PASS, but the feature-specific perceptual and disposable-TD gates
+  remain incomplete; no visual tool, route or mutation path was added.
+
+- **Portable Artifact Trust & Annotation-Aware Composition Wave 9 (unreleased
+  source tree)** — extended five existing surfaces without increasing the tool
+  count. `validate_library_asset` can perform an authenticated quarantine-only
+  deep TOX round-trip with bounded PASS/FAIL/UNVERIFIED contract, delayed-cook
+  and cleanup evidence. `make_portable_tox` records canonical non-self-
+  referential provenance by default, adds an opt-in clean-Git policy and exact-
+  build installed help snapshots, and promotes artifact/provenance recoverably
+  after native overwrite consent. `attach_docs_as_assets` can refresh that help
+  snapshot and its provenance manifest hash. `manage_annotation action:"edit"`
+  adds structured transactional Annotate COMP title/body/RGBA/bounds edits, and
+  `arrange_network annotation_aware:true` preserves annotated groups, docked
+  deltas and optional exact padded bounds through fingerprinted structured
+  context/apply routes. Authenticated live QA passed on TD 099 build 2025.32820
+  with `TDMCP_BRIDGE_ALLOW_EXEC=0`; actual headless TD and other builds remain
+  **UNVERIFIED**.
+
+- **Live Closure & Native History Safety Wave 8 (unreleased source tree)** —
+  closed the authenticated current-build route matrix for editor insertion,
+  transactional TOX export, package reconciliation and custom-parameter
+  lifecycle with `TDMCP_BRIDGE_ALLOW_EXEC=0`. Live fixes use structural
+  connector/ParGroup identity, resolve the imported parameter mode enum without
+  `td.ParMode`, order clamp/value edits deterministically, align package consent
+  fingerprints on `OPType`, treat TD stacks as newest-first, and report actual
+  native undo names separately from requested wrapper labels. A final identity
+  probe rejected public `undo_redo_td_action`: the native stack returns fresh
+  plain strings, repeated labels are indistinguishable, and same-label ABA could
+  undo an intervening artist action. One-item automation and whole-tool undo
+  across requests therefore remain **FAIL / HELD**; actual headless TD and other
+  builds remain **UNVERIFIED**.
+
+- **TD-native Interaction & Safety Wave 1 (unreleased source tree)** — added an
+  authenticated, bounded, exactly-once native decision broker with a next-frame,
+  non-modal TouchDesigner inbox; `delete_td_node` now offers explicit
+  **Delete / Bypass / Keep**, and `save_td_project` requires **Overwrite / Keep**
+  consent before replacing an existing Save As target. Timeout, close, UI loss,
+  disconnect and duplicate consumption all fail closed to Keep; explicit YOLO
+  remains separately reported and missing UI is never approval.
+- Added structured `get_editor_context`, `pulse_td_parameter`,
+  `edit_td_node_metadata`, and Save/Save As bridge routes that work with
+  `TDMCP_BRIDGE_ALLOW_EXEC=0`; extended `create_td_node` with legacy-preserving
+  auto/explicit placement and viewer state.
+- **Build-aware Agent Enablement & Runtime Readiness Wave 2 (unreleased source
+  tree)** — added bounded local-first `get_td_docs`, manifest-owned
+  `manage_agent_skills`, dry-run-first `tdmcp skills`, deterministic local
+  Codex/Claude skill bundles, and redacted `tdmcp status`. Added the authenticated,
+  content-free `GET /api/interactions/status` readiness route; all new structured
+  bridge reads remain independent of `TDMCP_BRIDGE_ALLOW_EXEC`.
+- **Project-scoped Ownership & Reversible Setup Wave 3 (unreleased source
+  tree)** — added explicit user/project package storage, native Claude Code and
+  Cursor project/user client-registration targets, Codex user registration,
+  dry-run/check/redacted-diff/owned-entry removal, atomic verified writes with
+  concurrent-change and symlink guards, and project-aware `tdmcp status`
+  observations. Bare `tdmcp doctor` now diagnoses the environment while package
+  diagnostics move to `tdmcp packages doctor`; known legacy package-doctor calls
+  remain temporarily compatible with a deprecation warning. Codex project scope
+  fails closed because no supported native target was verified.
+- **Grounded, Verified & Calibrated Local Copilot Wave 4 (unreleased source
+  tree)** — local copilot turns now receive one ephemeral, bounded editor-context
+  read; can invoke canonical registered prompts through a schema-validated local
+  adapter; verify supported mutations with bounded read-only evidence before
+  reporting completion; and spend at most one read-only recovery action without
+  retrying ambiguous mutations, authorization failures, panic, blackout or other
+  emergency commands. Menu-value recovery uses a bounded authenticated
+  structured read that remains available with bridge exec disabled. Added
+  sandbox-only `tdmcp copilot-calibrate`, exact model-build cache identity, and
+  compatibility-preserving `recommend` / fail-closed `enforce` tier policy across
+  ask, headless/browser chat and Telegram. TouchDesigner-live grounding and
+  mutation verification remain unverified pending a safe bridge. Wave 13 later
+  passed exact synthetic real-model calibration, including native vision
+  capability and image input; the separate bounded visual-critique rubric/TD
+  fixture gate remains FAIL/UNVERIFIED and does not authorize mutation.
+- **Project-Owned Context & Auditable Copilot Turns Wave 5 (unreleased source
+  tree)** — added the optimistic, atomic `manage_project_brief` tool and explicit
+  `tdmcp://project/brief` resource for a bounded
+  `<project-root>/.tdmcp/agent-brief.json`; the built-in copilot injects that
+  brief once per turn as ephemeral untrusted evidence and never persists it in
+  chat history. Added one exactly-once, allowlist-only receipt across ask,
+  browser/headless chat and Telegram terminal paths, with compact adapter output
+  and the bounded `tdmcp://session/receipts{?limit,status}` resource. Receipt
+  persistence is opt-in, private and retention-bounded; perform mode, emergency
+  tools and per-turn `noPersist` skip writes. Neither feature records raw tool
+  payloads, transcripts, images, RAG excerpts or secrets, expands a tool tier, or
+  requires bridge exec. Live project-root inference and live mutation evidence
+  remain unverified until the bridge/model endpoints are available.
+- **Bounded Live Project Discovery Wave 6 (unreleased source tree)** — promoted
+  `find_td_nodes` to an authenticated compact bridge-side search while keeping
+  its legacy structured fallback, and added `find_td_parameters` with bounded
+  node/parameter/time budgets, stable ordering, point-in-time value/expression/
+  mode/non-default filters, secret redaction, anti-oracle behavior, and
+  skip-forward counters for unreadable parameters. Both routes work with
+  `TDMCP_BRIDGE_ALLOW_EXEC=0`; live QA passed on TD 099 build 2025.32820. A live
+  undo probe proved ordinary nested undo/redo but found that `annotateCOMP`
+  closes/replaces an outer block, so whole-tool undo remains intentionally held
+  while the existing per-mutating-request wrapper is preserved. Wave 8 later
+  also holds automated one-item undo after proving that repeated native string
+  labels do not provide a safe action identity.
+- **Action-aware, Transactional Editor Workflows Wave 7 (unreleased source
+  tree)** — extended existing surfaces without adding duplicate tools:
+  - `focus_network_editor` now accepts action/framing/enabled policy, requires a
+    same-parent target group, reuses an active/already-owning compatible pane,
+    replaces stale selection, assigns current, performs bounded generation-aware
+    follow and returns typed suppression in Perform/UI-unavailable states. Core
+    pane/selection/framing behavior passed live on TD 099 build 2025.32820;
+    actual headless TD, other builds and unusual pane layouts remain
+    **UNVERIFIED**, and transient colour highlight remains **HELD**.
+  - Added `insert_operator_at_selection`, a narrow Layer 2 editor primitive that
+    compare-and-swaps the exact active owner/current/single selection, creates one
+    live-allowlisted same-family operator, places it explicitly without overlap,
+    rewires one deterministic downstream edge while preserving siblings, and
+    returns bounded topology/idempotency/rollback receipts. Wave 8's fresh
+    main-thread-only authenticated route passed connector, placement, replay,
+    conflict, rollback and one-item undo/redo on 2025.32820 without reproducing
+    the earlier probe-driver thread conflict.
+  - `manage_component` save and `make_portable_tox` now share one authenticated,
+    idempotent TOX export job: refuse overwrite by default, optionally request
+    exact **Overwrite / Keep** consent, save to a same-directory temporary,
+    verify and atomically promote it, restore portable DAT/`externaltox` state in
+    `finally`, and expose bounded polling/cancellation receipts. `as_is`,
+    `portable` and induced restoration failure passed a service-level live probe
+    on 2025.32820. The legacy component-load path is unchanged and remains
+    exec-gated; filesystem artifacts are not TouchDesigner undo.
+  - `manage_packages action:"reconcile"` adds dry-run-first marker ownership,
+    stable expiring plans and **Delete / Bypass / Keep** apply. Local staged
+    content is quarantined before registry commit and restored on failure; a
+    legacy uninstall with a live target now returns a safe plan instead of
+    deleting local state first. Wave 8 passed the authenticated Keep,
+    Bypass/Delete, explicit YOLO, stale-plan, quarantine/registry, undo/redo and
+    cleanup matrix against disposable TD and local storage.
+  - `add_custom_parameters` moved add off raw Python to the structured bridge and
+    preserves legacy `{ comp_path, page, params }` while adding transactional
+    edit/delete/sort/page lifecycle operations, rich live-proven styles,
+    EXPRESSION/BIND, built-in protection, exact rollback and bounded
+    idempotency. Old warning-only partial add is now all-or-rollback; exact
+    matches are `unchanged` and conflicts are not replaced. Wave 8 passed the
+    authenticated final route for lifecycle, exact undo/redo, replay/conflict,
+    induced rollback and rollback undo safety on 2025.32820; parameter **EXPORT
+    mode is HELD**.
+  - A real multi-request live probe confirmed whole-MCP native undo as **FAIL /
+    HELD**: TD terminates a dangling block when a Web Server DAT callback
+    returns, so later requests cannot join it. One named block per mutating REST
+    request remains the default.
+  - The reported macOS external-plugin alert was diagnosed as a local trust
+    **FAIL**, not a bridge failure: this TouchDesigner bundle has an invalid code
+    seal and FreenectTOP is ad-hoc signed/Gatekeeper-rejected. Plugin registration
+    and cooking remain **UNVERIFIED**; no security settings or install state were
+    changed.
+
 - **External-integration Wave 1** — five new artist-facing bridge/scaffold tools:
   - **`create_raytk_sdf_graph`** (Layer 1, CLI `raytk-sdf-graph`) builds a deeper
     RayTK SDF graph with optional secondary SDF, `simpleUnion`, `basicMat`,
@@ -399,6 +724,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     scene. `create_raytk_op` connects an existing op into a new op's input. Wiring uses
     connector-to-connector (`dst.inputConnectors[i].connect(src.outputConnectors[0])`) —
     RayTK COMP connectors reject `.connect(op)`.
+
+### Changed
+
+- Workspace `restore` and `cancel` now perform exactly one same-key replay after
+  an ambiguous initial connection/timeout loss, matching the existing `open`
+  recovery boundary. Deterministic 4xx authorization/input failures are not
+  retried, and a second ambiguous loss stops without starting a new transition.
+- Corrected `delete_td_node` undo documentation: the final mutation is covered by
+  the existing per-REST `ui.undo` wrapper. Whole-MCP-tool undo and explicit
+  undo/redo remain **UNVERIFIED — pending bridge** and are not enabled by default.
+- Existing `{ path, mode }` delete calls remain valid, but `mode: "delete"` now
+  waits for native consent and safely returns Keep when no decision is available;
+  `mode: "bypass"` remains immediate and reversible.
 
 ### Fixed
 
@@ -1112,10 +1450,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `focus_network_editor` (Layer 2): pan/zoom TouchDesigner's Network Editor to
   frame given operators — a "follow" move so the artist sees what the agent just
   built. UI-only; new `POST /api/editor/focus` bridge endpoint.
-- OAuth-style bearer auth on the Streamable HTTP transport: set
+- Legacy pre-shared bearer auth on the Streamable HTTP transport: set
   `TDMCP_HTTP_AUTH_TOKEN` to require `Authorization: Bearer <token>` on every
   request; missing/invalid credentials get a 401 with a `WWW-Authenticate: Bearer`
-  challenge (the enforcement half of an MCP OAuth2 Resource Server). Off by default.
+  challenge. This static credential is not OAuth. Off by default.
 - `npm run smoke`: an offline smoke harness that boots the server, completes a real
   in-memory MCP handshake, and verifies the tool surface + graceful offline
   degradation without a running TouchDesigner.

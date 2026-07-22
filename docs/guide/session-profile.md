@@ -83,6 +83,14 @@ Both are read-only and always carry source URL, license and rights notes on ever
 result. They are documented in full on their own pages; this guide covers the
 always-on session-profile path.
 
+## Profile versus project brief
+
+The session profile is user-scoped taste shared across projects. The project brief
+is project-scoped intent stored inside that project's `.tdmcp` directory, with an
+optimistic revision required for replacement. The local copilot can use both as
+untrusted evidence, but neither can override the current request or safety policy.
+See [Project context & turn receipts](/guide/project-context-receipts).
+
 ## See also
 
 - [Working from your own notes (Obsidian vault)](/guide/prompt-cookbook#working-from-your-own-notes-obsidian-vault)

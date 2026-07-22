@@ -34,8 +34,11 @@ COMP** para que ele vire um widget autônomo e reutilizável.
 
 Isso adiciona uma página de parâmetros customizados para que o componente exponha
 uma superfície de controle limpa, em vez de obrigar o próximo a fuçar nos nós
-internos. Um parâmetro que já existe é **pulado com um aviso**, nunca
-sobrescrito, então rodar de novo para acrescentar mais um knob é seguro.
+internos. A operação é transacional: definições idênticas existentes ficam
+`unchanged`, uma definição conflitante falha antes de substituir, e qualquer
+falha posterior restaura o snapshot completo da página customizada. A mesma tool
+pode editar/deletar parâmetros, ordenar ou renomear uma página e deletar a página.
+Parâmetros built-in são protegidos.
 
 ::: tip Conecte os knobs ao trabalho
 Os knobs são só entradas até você apontá-los para algo. Peça para
@@ -89,6 +92,53 @@ extensão. Solte em qualquer projeto:
 
 Uma instância com link ao vivo (`externaltox`) relê o arquivo sempre que ele muda,
 então corrigir o componente uma vez atualiza todo show que o usa.
+
+O save agora usa uma transação adiada e verificada: escreve um temporário único
+no mesmo diretório, faz hash/readback e só então promove atomicamente. Arquivos
+existentes são recusados por default; use `overwrite_policy: "ask"` para uma
+decisão nativa **Overwrite / Keep** vinculada ao alvo. `make_portable_tox` usa a
+mesma primitive em modo portable e sempre restaura estado temporário de
+DAT/external TOX no `finally`. O modo portable só é habilitado automaticamente no
+build live-proven 2025.32820; outros builds exigem opt-in explícito e validação
+separada no bridge.
+
+### Confie no pacote portátil
+
+`make_portable_tox` grava por default um sidecar `.provenance.json` versionado.
+Ele liga o SHA-256 final do `.tox` ao manifest canônico do pacote, à identidade
+do COMP de origem, ao build do TD/tdmcp e ao commit/bit dirty do Git. Conteúdo
+sensível do projeto, tokens, variáveis de ambiente, diffs e raízes do repositório
+ficam de fora. O default `provenance_policy:"record"` mantém exports de artista
+práticos. Use `"require_clean"`, opcionalmente com `expected_git_commit`, para um
+candidato a release; repositório dirty, indisponível ou divergente é recusado
+antes de o bridge iniciar qualquer export.
+
+Para validação independente do save, chame `validate_library_asset` com
+`validation_mode:"deep_roundtrip"` e uma porta explícita de bridge em quarantine
+diferente da porta `9980` do artista. A route estruturada e autenticada carrega o
+artefato num holder scratch único, compara o contrato declarado, espera erros de
+cook atrasados e limpa o holder no `finally`. Os resultados são `PASS`, `FAIL` ou
+`UNVERIFIED`; bridge de quarantine offline nunca vira prova.
+
+Ative um pacote de ajuda exact-build instalado com `help_snapshot`, por exemplo:
+
+```json
+{
+  "python_apis": ["COMP"],
+  "max_operator_types": 32,
+  "max_sections_per_page": 2,
+  "max_chars_per_section": 3000,
+  "max_total_bytes": 262144,
+  "quarantine_port": 9981
+}
+```
+
+O snapshot inventaria tipos de operadores com limites mais somente as APIs
+Python nomeadas na request, lê OfflineHelp instalado sem fallback web, escreve
+índice/README determinísticos em `docs/td-help` e roda novamente o round-trip em
+quarantine. Páginas ausentes, build divergente ou caps produzem `UNVERIFIED`.
+Uma chamada posterior a `attach_docs_as_assets` pode atualizar o help snapshot e
+mantém uma provenance existente em sincronia com o manifest promovido.
 
 ## A mesma coisa pelo terminal
 

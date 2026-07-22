@@ -29,12 +29,18 @@ export class TdTimeoutError extends TdError {
 export class TdApiError extends TdError {
   readonly status: number | undefined;
   readonly apiCode: string | undefined;
+  /** Route-specific, schema-validated failure evidence (never arbitrary bridge data). */
+  readonly details: unknown;
 
-  constructor(message: string, options?: { status?: number; apiCode?: string; cause?: unknown }) {
+  constructor(
+    message: string,
+    options?: { status?: number; apiCode?: string; details?: unknown; cause?: unknown },
+  ) {
     super(message, "TD_API", options);
     this.name = "TdApiError";
     this.status = options?.status;
     this.apiCode = options?.apiCode;
+    this.details = options?.details;
   }
 }
 
@@ -55,6 +61,9 @@ export class TdBackpressureError extends TdError {
 
 /** Produces a human-friendly, single-line description of any error. */
 export function friendlyTdError(err: unknown): string {
+  if (err instanceof TdApiError && err.apiCode) {
+    return `[${err.apiCode}] ${err.message}`;
+  }
   if (err instanceof TdError) return err.message;
   if (err instanceof Error) return err.message;
   return String(err);
@@ -114,6 +123,7 @@ export type {
   CreateNodeInput,
   TdBatchOperation,
   TdBatchResult,
+  TdBoundedSearchMetadata,
   TdConnection,
   TdDeleteResult,
   TdExecResult,
@@ -124,6 +134,12 @@ export type {
   TdNodeErrors,
   TdNodeList,
   TdNodeRef,
+  TdNodeSearchHit,
+  TdNodeSearchResult,
+  TdOperatorFamily,
+  TdParameterSearchHit,
+  TdParameterSearchMode,
+  TdParameterSearchResult,
   TdPerformance,
   TdPreview,
   TdTopology,

@@ -95,6 +95,10 @@ jobs:
         if: steps.escape.outputs.skip != 'true'
         run: |
           KNOWN_IDS="artic cleveland europeana met rijksmuseum smithsonian wikimedia"
+          PUBLIC_IDS="artic cleveland met wikimedia"
+          CREDENTIALED_IDS="europeana rijksmuseum smithsonian"
+
+          DIFF_RANGE="origin/${{ github.base_ref }}...HEAD"
 
           # If a shared live-fetch helper changed, probe ALL sources (safer default).
           # errors.ts is intentionally excluded: it is a pure error-type/message module
@@ -102,15 +106,15 @@ jobs:
           # change to it cannot alter how any adapter talks to its upstream API and must
           # not force re-probing unrelated key-gated sources. http.ts (the fetch helper)
           # and types.ts (shared response shapes) genuinely can, so they stay.
-          SHARED_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- \
+          SHARED_CHANGED=$(git diff --name-only "$DIFF_RANGE" -- \
             src/creativeRag/sources/http.ts src/creativeRag/sources/types.ts \
             | wc -l | tr -d ' ')
 
           if [ "$SHARED_CHANGED" -gt "0" ]; then
             echo "Shared helper changed — probing all live sources."
-            echo "ids=$KNOWN_IDS" >> "$GITHUB_OUTPUT"
+            IDS="$KNOWN_IDS"
           else
-            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- src/creativeRag/sources/)
+            CHANGED_FILES=$(git diff --name-only "$DIFF_RANGE" -- src/creativeRag/sources/)
             IDS=""
             for ID in $KNOWN_IDS; do
               if echo "$CHANGED_FILES" | grep -q "${ID}.ts"; then
@@ -118,40 +122,39 @@ jobs:
               fi
             done
             IDS=$(echo "$IDS" | xargs)
-            echo "ids=$IDS" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Probe each changed source
-        if: steps.escape.outputs.skip != 'true' && steps.changed.outputs.ids != ''
-        env:
-          # The adapters read TDMCP_RAG_*_KEY (see
-          # src/creativeRag/sources/europeana.ts, smithsonian.ts). Source each from
-          # EITHER the canonical TDMCP_RAG_*_KEY secret OR the legacy *_API_KEY
-          # alias so a repo that stores secrets under either convention keeps
-          # working (a missing secret evaluates to "" and falls through).
-          TDMCP_RAG_EUROPEANA_KEY: ${{ secrets.TDMCP_RAG_EUROPEANA_KEY || secrets.EUROPEANA_API_KEY }}
-          TDMCP_RAG_SMITHSONIAN_KEY: ${{ secrets.TDMCP_RAG_SMITHSONIAN_KEY || secrets.SMITHSONIAN_API_KEY }}
-          TDMCP_RAG_RIJKSMUSEUM_KEY: ${{ secrets.TDMCP_RAG_RIJKSMUSEUM_KEY || secrets.RIJKSMUSEUM_API_KEY }}
-          EUROPEANA_API_KEY: ${{ secrets.TDMCP_RAG_EUROPEANA_KEY || secrets.EUROPEANA_API_KEY }}
-          SMITHSONIAN_API_KEY: ${{ secrets.TDMCP_RAG_SMITHSONIAN_KEY || secrets.SMITHSONIAN_API_KEY }}
-          RIJKSMUSEUM_API_KEY: ${{ secrets.TDMCP_RAG_RIJKSMUSEUM_KEY || secrets.RIJKSMUSEUM_API_KEY }}
+          PR_PUBLIC=""
+          PR_CREDENTIALED=""
+          for ID in $IDS; do
+            if echo " $PUBLIC_IDS " | grep -q " $ID "; then
+              PR_PUBLIC="$PR_PUBLIC $ID"
+            elif echo " $CREDENTIALED_IDS " | grep -q " $ID "; then
+              PR_CREDENTIALED="$PR_CREDENTIALED $ID"
+            fi
+          done
+          {
+            echo "ids=$(echo "$IDS" | xargs)"
+            echo "public_ids=$(echo "$PR_PUBLIC" | xargs)"
+            echo "credentialed_ids=$(echo "$PR_CREDENTIALED" | xargs)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Probe changed public sources (no secrets)
+        if: steps.escape.outputs.skip != 'true' && steps.changed.outputs.public_ids != ''
         run: |
           FAILED=""
-          for id in ${{ steps.changed.outputs.ids }}; do
-            echo "--- Probing source: $id ---"
+          for id in ${{ steps.changed.outputs.public_ids }}; do
+            echo "--- Probing public source: $id ---"
             EXIT_CODE=0
             npx tsx scripts/probe-creative-source.ts "$id" --json || EXIT_CODE=$?
-            if [ "$EXIT_CODE" -eq "3" ]; then
-              echo "::error::Source '$id' has missing credentials in CI (exit 3). Configure the repo secret before this adapter can land."
-              FAILED="$FAILED $id(missing-credential)"
-            elif [ "$EXIT_CODE" -eq "4" ]; then
+            if [ "$EXIT_CODE" -eq "4" ]; then
               echo "::error::Upstream for '$id' is unreachable (exit 4). Use the escape hatch if the upstream has been down > 24h."
               FAILED="$FAILED $id(unreachable)"
             elif [ "$EXIT_CODE" -ne "0" ]; then
-              echo "::error::Probe FAILED for source '$id' (exit $EXIT_CODE)."
+              echo "::error::Probe FAILED for public source '$id' (exit $EXIT_CODE)."
               FAILED="$FAILED $id(failed)"
             else
-              echo "Probe PASSED for source '$id'."
+              echo "Probe PASSED for public source '$id'."
             fi
           done
 
@@ -159,6 +162,12 @@ jobs:
             echo "::error::probe-live FAILED for:$FAILED"
             exit 2
           fi
+
+      - name: Defer credentialed sources to trusted main
+        if: steps.escape.outputs.skip != 'true' && steps.changed.outputs.credentialed_ids != ''
+        run: |
+          echo "Credentialed sources changed: ${{ steps.changed.outputs.credentialed_ids }}"
+          echo "Repository secrets are never exposed to pull-request workflows. These adapters will be probed by the separate trusted post-merge workflow."
 
       - name: No sources changed
         if: steps.escape.outputs.skip != 'true' && steps.changed.outputs.ids == ''

@@ -56,41 +56,47 @@ class _FakeProject:
 
 
 class _TdPatch:
-    """Swap ``td.gpu``, ``td.app``, ``td.project`` for a test's lifetime."""
+    """Swap ``td.gpu``, ``td.app``, ``td.ui``, ``td.project`` for a test's lifetime."""
 
-    def __init__(self, gpu=None, app=None, project=None):
+    def __init__(self, gpu=None, app=None, ui=None, project=None):
         self.gpu = gpu
         self.app = app
+        self.ui = ui
         self.project = project
 
     def __enter__(self):
         self._saved = (
             getattr(_TD, "gpu", None),
             getattr(_TD, "app", None),
+            getattr(_TD, "ui", None),
             getattr(_TD, "project", None),
         )
         # Remove attrs first so getattr-with-default branches actually fire when
         # the test wants the section unavailable.
-        for name in ("gpu", "app", "project"):
+        for name in ("gpu", "app", "ui", "project"):
             if hasattr(_TD, name):
                 delattr(_TD, name)
         if self.gpu is not None:
             _TD.gpu = self.gpu
         if self.app is not None:
             _TD.app = self.app
+        if self.ui is not None:
+            _TD.ui = self.ui
         if self.project is not None:
             _TD.project = self.project
         return self
 
     def __exit__(self, *a):
-        for name in ("gpu", "app", "project"):
+        for name in ("gpu", "app", "ui", "project"):
             if hasattr(_TD, name):
                 delattr(_TD, name)
-        saved_gpu, saved_app, saved_project = self._saved
+        saved_gpu, saved_app, saved_ui, saved_project = self._saved
         if saved_gpu is not None:
             _TD.gpu = saved_gpu
         if saved_app is not None:
             _TD.app = saved_app
+        if saved_ui is not None:
+            _TD.ui = saved_ui
         if saved_project is not None:
             _TD.project = saved_project
 
@@ -154,6 +160,14 @@ class SystemInfoTests(unittest.TestCase):
 
     def test_perform_mode_true(self):
         with _TdPatch(project=_FakeProject(perform_mode=True)):
+            out = ss.get_system_info(include=["performMode"])
+        self.assertEqual(out["performMode"], True)
+
+    def test_perform_mode_prefers_ui_when_project_flag_is_missing(self):
+        with _TdPatch(
+            ui=types.SimpleNamespace(performMode=True),
+            project=types.SimpleNamespace(),
+        ):
             out = ss.get_system_info(include=["performMode"])
         self.assertEqual(out["performMode"], True)
 

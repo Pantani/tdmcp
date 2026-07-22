@@ -121,7 +121,7 @@ describe("doctor --fix: bridge_token repair", () => {
     expect(r.report.fixes?.some((f) => f.id === "bridge_token")).toBe(true);
   });
 
-  it("fix suggestions reference `tdmcp-agent doctor`, never the package `tdmcp doctor` (U1)", async () => {
+  it("fix suggestions use the top-level `tdmcp doctor` surface", async () => {
     server.use(llmModels("qwen2.5:3b"));
     const r = await runDoctor({
       config: makeConfig({ bridgeToken: undefined }),
@@ -132,13 +132,8 @@ describe("doctor --fix: bridge_token repair", () => {
       },
     });
     const commands = (r.report.fixes ?? []).map((f) => f.command);
-    // The health doctor lives in the `tdmcp-agent` binary; `tdmcp doctor` routes
-    // to the package-library doctor (`tdmcp doctor [lib]`). A remediation that
-    // says "run `tdmcp doctor --fix`" sends a failing user in a circle.
-    expect(commands.some((c) => c.includes("tdmcp-agent doctor"))).toBe(true);
-    // "tdmcp-agent doctor" does not contain the substring "tdmcp doctor", so this
-    // catches any regression back to the wrong binary.
-    for (const c of commands) expect(c).not.toContain("tdmcp doctor");
+    expect(commands.some((c) => c.includes("tdmcp doctor --fix"))).toBe(true);
+    for (const c of commands) expect(c).not.toContain("tdmcp-agent doctor");
   });
 
   it("does not write a token without --fix", async () => {
@@ -212,9 +207,8 @@ describe("doctor --fix: bridge repair", () => {
     expect(r.stdout).toContain("Failed fixes");
   });
 
-  it("--fix attempts Textport auto-install when install-bridge returns a manual command", async () => {
+  it("--fix never auto-applies a returned Textport command", async () => {
     server.use(offlineInfoHandler, llmModels("qwen2.5:3b"));
-    const attempted: string[] = [];
     const command =
       'import sys; sys.path.insert(0, "/tmp/tdmcp-bridge/modules")\nfrom mcp import install; install.run(modules_dir="/tmp/tdmcp-bridge/modules")';
 
@@ -227,62 +221,34 @@ describe("doctor --fix: bridge repair", () => {
         detail: "manual Textport step required",
         noPrefsTextportCommand: command,
       }),
-      runTextportInstall: async (textportCommand) => {
-        attempted.push(textportCommand);
-        server.use(
-          http.get(`${TD_BASE}/api/info`, () =>
-            HttpResponse.json({
-              ok: true,
-              data: {
-                td_version: "2023.12000",
-                python_version: "3.11.1",
-                bridge_version: "0.8.1",
-              },
-            }),
-          ),
-        );
-        return { ok: true, detail: "Textport command sent" };
-      },
     });
 
-    expect(attempted).toEqual([command]);
     expect(r.report.repairs).toContainEqual(
-      expect.objectContaining({ id: "bridge", status: "applied" }),
+      expect.objectContaining({ id: "bridge", status: "failed" }),
     );
-    expect(r.stdout).toContain("Textport command sent");
+    expect(r.stdout).toContain("was not applied automatically");
+    expect(r.stdout).toContain("PID/project/port/disposable-sandbox binding");
+    expect(r.stdout).toContain(command);
   });
 
-  it("--fix does not mark Textport auto-install applied until the bridge verifies", async () => {
+  it("--fix keeps a manual Textport command fail-closed even if bridge state changes later", async () => {
     server.use(offlineInfoHandler, llmModels("qwen2.5:3b"));
-    const prevTimeout = process.env.TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS;
-    const prevInterval = process.env.TDMCP_TEXTPORT_VERIFY_INTERVAL_MS;
-    process.env.TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS = "1";
-    process.env.TDMCP_TEXTPORT_VERIFY_INTERVAL_MS = "1";
-    try {
-      const r = await runDoctor({
-        config: makeConfig({ bridgeToken: "set" }),
-        makeCtx,
-        fix: true,
-        runInstallBridge: async () => ({
-          ok: false,
-          detail: "manual Textport step required",
-          noPrefsTextportCommand:
-            'import sys; sys.path.insert(0, "/tmp/tdmcp-bridge/modules")\nfrom mcp import install; install.run(modules_dir="/tmp/tdmcp-bridge/modules")',
-        }),
-        runTextportInstall: async () => ({ ok: true, detail: "Textport command sent" }),
-      });
+    const r = await runDoctor({
+      config: makeConfig({ bridgeToken: "set" }),
+      makeCtx,
+      fix: true,
+      runInstallBridge: async () => ({
+        ok: false,
+        detail: "manual Textport step required",
+        noPrefsTextportCommand:
+          'import sys; sys.path.insert(0, "/tmp/tdmcp-bridge/modules")\nfrom mcp import install; install.run(modules_dir="/tmp/tdmcp-bridge/modules")',
+      }),
+    });
 
-      expect(r.report.repairs).toContainEqual(
-        expect.objectContaining({ id: "bridge", status: "failed" }),
-      );
-      expect(r.stdout).toContain("Textport command sent");
-      expect(r.stdout).toContain("Bridge did not verify");
-    } finally {
-      if (prevTimeout === undefined) delete process.env.TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS;
-      else process.env.TDMCP_TEXTPORT_VERIFY_TIMEOUT_MS = prevTimeout;
-      if (prevInterval === undefined) delete process.env.TDMCP_TEXTPORT_VERIFY_INTERVAL_MS;
-      else process.env.TDMCP_TEXTPORT_VERIFY_INTERVAL_MS = prevInterval;
-    }
+    expect(r.report.repairs).toContainEqual(
+      expect.objectContaining({ id: "bridge", status: "failed" }),
+    );
+    expect(r.stdout).toContain("not applied automatically");
   });
 
   it("--fix passes the configured TouchDesigner port to the bridge repair runner", async () => {

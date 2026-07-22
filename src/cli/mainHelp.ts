@@ -4,7 +4,11 @@ const TOP_LEVEL_COMPLETION_WORDS = [
   "ask",
   "install-bridge",
   "install-client",
+  "skills",
+  "status",
+  "show",
   "chat",
+  "copilot-calibrate",
   "llm-run",
   "telegram",
   "creative-rag",
@@ -40,7 +44,7 @@ const TOP_LEVEL_COMPLETION_WORDS = [
   "--version",
   "--help",
 ];
-const PACKAGE_COMPLETION_WORDS = ["path", "--help", "-h"];
+const PACKAGE_COMPLETION_WORDS = ["path", "doctor", "--help", "-h"];
 const UNSUPPORTED_COMPLETION_SHELL_MESSAGE =
   'Unsupported shell for completion. Use "bash", "zsh", or "fish".';
 
@@ -62,7 +66,12 @@ export function renderMainHelp(): string {
     "  ask <prompt>            One-shot local copilot turn; reads stdin if no prompt is given.",
     "  install-bridge          Copy bridge modules; --palette exports a TD package; --verify/--wait probes /api/info.",
     "  install-client          Print a Claude/Codex/Cursor MCP client config snippet.",
+    "  skills                  Inspect/manage bundled agent skills; mutations default to dry-run.",
+    "  status                  Print build-aware runtime readiness without mutating TD.",
+    "  show <profile>          Run fail-closed show gates, then enter Perform Mode (source-only; TD 2025.32820 live QA passed).",
+    "  doctor                  Diagnose config, bridge, LLM and local runtime readiness.",
     "  chat                    Start the local browser copilot.",
+    "  copilot-calibrate       Benchmark the configured model with synthetic tools only.",
     "  llm-run                 Run a one-shot local copilot task.",
     "  telegram                Start the allowlisted Telegram bridge to the local copilot.",
     "  creative-rag            Manage the local creative reference RAG store.",
@@ -79,8 +88,8 @@ export function renderMainHelp(): string {
     "  info <lib>              Show package metadata.",
     "  install <lib>           Stage/import a package integration.",
     "  uninstall <lib>         Remove package state for an installed integration.",
-    "  doctor [lib]            Show package dependency/manual setup guidance.",
-    "  packages path           Print the local package cache root.",
+    "  packages doctor [lib]   Show package dependency/manual setup guidance.",
+    "  packages path           Print the selected project/user package cache root.",
     "",
     "Companion binary:",
     "  tdmcp-agent --help      Tool-oriented CLI for direct calls, run files and automation.",

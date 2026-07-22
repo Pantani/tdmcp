@@ -200,7 +200,7 @@ describe("layer 3 tool handlers", () => {
   it("delete_td_node surfaces YOLO mode in its report", async () => {
     const ctx = { ...makeCtx(), yolo: true };
     const result = await deleteTdNodeImpl(ctx, { path: "/project1/noise1", mode: "delete" });
-    expect(textOf(result)).toContain("TDMCP_YOLO on");
+    expect(textOf(result)).toContain("explicit TDMCP_YOLO policy");
   });
 
   it("delete_td_node returns a friendly error when offline", async () => {

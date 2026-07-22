@@ -55,6 +55,21 @@ class _FakeParGroup:
         return self._pars[name]
 
 
+class _TouchDesignerLikeCreatedParGroup:
+    """Models Page.append*() returning a ParGroup with forbidden truthiness."""
+
+    def __init__(self, par):
+        self._par = par
+
+    def __bool__(self):
+        raise RuntimeError("bool(ParGroup) is not supported")
+
+    def __getitem__(self, index):
+        if index != 0:
+            raise IndexError(index)
+        return self._par
+
+
 class _FakePage:
     def __init__(self, owner, name):
         self.owner = owner
@@ -76,6 +91,9 @@ class _FakePage:
 
     def appendToggle(self, name, label=None):
         return self._append("Toggle", name, False, label)
+
+    def appendMenu(self, name, label=None):
+        return self._append("Menu", name, "Keep", label)
 
 
 class _FakeOp:
@@ -120,6 +138,9 @@ class _FakeTd:
     executeDAT = "executeDAT"
     errorDAT = "errorDAT"
 
+    def run(self, _script, callback, delayFrames=1):
+        callback()
+
     def __init__(self):
         self.root = _FakeOp("/", "root")
         self.project1 = _FakeOp("/project1")
@@ -147,6 +168,7 @@ class _TdPatch:
             "webserverDAT",
             "executeDAT",
             "errorDAT",
+            "run",
         ):
             self._saved[name] = getattr(_TD, name, None)
             setattr(_TD, name, getattr(self.fake_td, name))
@@ -161,6 +183,7 @@ class _TdPatch:
             "webserverDAT",
             "executeDAT",
             "errorDAT",
+            "run",
         ):
             if self._saved[name] is None and hasattr(_TD, name):
                 delattr(_TD, name)
@@ -169,6 +192,20 @@ class _TdPatch:
 
 
 class InstallPackageHelperTests(unittest.TestCase):
+    def test_first_created_par_does_not_coerce_touchdesigner_par_group_to_bool(self):
+        par = _FakePar("Keep")
+        created = _TouchDesignerLikeCreatedParGroup(par)
+
+        self.assertIs(install._first_created_par(created), par)
+
+    def test_interaction_callbacks_clear_sensitive_copy_after_terminal_state(self):
+        source = install._interaction_callbacks_source()
+        self.assertIn("def _clear():", source)
+        self.assertIn("_set('Interactiontitle', '')", source)
+        self.assertIn("_set('Interactionprompt', '')", source)
+        self.assertIn("menuNames = ['Keep']", source)
+        self.assertIn("interaction_service.cancel_interaction", source)
+
     def test_event_hooks_source_caches_heartbeat_service_after_first_import(self):
         source = install._event_hooks_source()
 
@@ -179,6 +216,67 @@ class InstallPackageHelperTests(unittest.TestCase):
         self.assertIn("_api_service.mark_heartbeat()", source)
         self.assertIn("        _mark_heartbeat()", source)
 
+    def test_webserver_stop_fails_pending_interactions_closed(self):
+        source = install._callbacks_source()
+        self.assertIn("def onServerStop(webServerDAT):", source)
+        self.assertIn("interaction_service.disconnect_interactions()", source)
+        self.assertIn("tox_export_service.cancel_all('disconnect')", source)
+        self.assertIn("tox_roundtrip_service.cancel_all('disconnect')", source)
+
+    def test_interaction_inbox_prefers_ui_perform_mode_when_project_flag_is_absent(
+        self,
+    ):
+        comp = _FakeOp("/project1/tdmcp_bridge")
+        for name in (
+            "Interactionchoice",
+            "Interactionid",
+            "Interactionstatus",
+            "Interactiontitle",
+            "Interactionprompt",
+        ):
+            comp.par.add(name)
+        td_like = types.SimpleNamespace(
+            ui=types.SimpleNamespace(performMode=False),
+            project=types.SimpleNamespace(),
+        )
+
+        shown = install._present_interaction(
+            td_like,
+            comp,
+            {
+                "request_id": "opaque-id",
+                "choices": ["Delete", "Bypass", "Keep"],
+                "default_choice": "Keep",
+                "title": "Delete node?",
+                "prompt": "/project1/noise1",
+            },
+        )
+
+        self.assertTrue(shown)
+        self.assertEqual(comp.par.Interactionstatus.val, "pending")
+        self.assertEqual(comp.par.Interactionchoice.val, "Keep")
+
+    def test_interaction_inbox_is_fail_closed_in_ui_perform_mode(self):
+        comp = _FakeOp("/project1/tdmcp_bridge")
+        td_like = types.SimpleNamespace(
+            ui=types.SimpleNamespace(performMode=True),
+            project=types.SimpleNamespace(performMode=False),
+        )
+
+        self.assertFalse(
+            install._present_interaction(
+                td_like,
+                comp,
+                {
+                    "request_id": "opaque-id",
+                    "choices": ["Delete", "Bypass", "Keep"],
+                    "default_choice": "Keep",
+                    "title": "Delete node?",
+                    "prompt": "/project1/noise1",
+                },
+            )
+        )
+
     def test_palette_package_path_defaults_to_derivative_palette_folder(self):
         path = install.palette_package_path(home="/Users/artist")
         self.assertEqual(
@@ -186,7 +284,9 @@ class InstallPackageHelperTests(unittest.TestCase):
             "/Users/artist/Documents/Derivative/Palette/tdmcp/tdmcp_bridge_package.tox",
         )
 
-    def test_palette_package_path_accepts_custom_palette_folder_and_adds_tox_suffix(self):
+    def test_palette_package_path_accepts_custom_palette_folder_and_adds_tox_suffix(
+        self,
+    ):
         path = install.palette_package_path(
             "show_bridge",
             palette_dir="/tmp/Palette/tdmcp",
@@ -197,7 +297,9 @@ class InstallPackageHelperTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"\.tox"):
             install.palette_package_path("bridge.txt", palette_dir="/tmp/Palette")
 
-    def test_package_callbacks_source_wires_controls_to_existing_install_functions(self):
+    def test_package_callbacks_source_wires_controls_to_existing_install_functions(
+        self,
+    ):
         source = install.package_callbacks_source(modules_dir="/opt/td/modules")
         self.assertIn("sys.path.insert(0, '/opt/td/modules')", source)
         self.assertIn("install.run(", source)
@@ -221,7 +323,9 @@ class InstallPackageHelperTests(unittest.TestCase):
         archive = io.BytesIO()
         with zipfile.ZipFile(archive, "w") as zf:
             zf.writestr("tdmcp-v1/td/modules/mcp/__init__.py", "")
-            zf.writestr("tdmcp-v1/td/modules/utils/version.py", "BRIDGE_VERSION = 'test'\n")
+            zf.writestr(
+                "tdmcp-v1/td/modules/utils/version.py", "BRIDGE_VERSION = 'test'\n"
+            )
             zf.writestr("tdmcp-v1/README.md", "ignored")
 
         with tempfile.TemporaryDirectory() as dest:
@@ -255,9 +359,15 @@ class InstallPackageHelperTests(unittest.TestCase):
                 self.assertEqual(opts["modules_dir"], modules_dir)
                 self.assertIn((owner.par.Repozip.val, 30), calls)
                 self.assertIn(modules_dir, sys.path)
-                self.assertTrue(os.path.exists(os.path.join(modules_dir, "mcp", "__init__.py")))
-                self.assertTrue(os.path.exists(os.path.join(modules_dir, "utils", "version.py")))
-                self.assertFalse(os.path.exists(os.path.join(dest, "modules", "README.md")))
+                self.assertTrue(
+                    os.path.exists(os.path.join(modules_dir, "mcp", "__init__.py"))
+                )
+                self.assertTrue(
+                    os.path.exists(os.path.join(modules_dir, "utils", "version.py"))
+                )
+                self.assertFalse(
+                    os.path.exists(os.path.join(dest, "modules", "README.md"))
+                )
             finally:
                 namespace["urllib"].request.urlopen = previous_urlopen
                 sys.path[:] = previous_path
@@ -321,7 +431,9 @@ class InstallPackageHelperTests(unittest.TestCase):
             else:
                 os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = previous_allow_exec
 
-    def test_build_package_creates_controls_and_callback_dat_without_installing_bridge(self):
+    def test_build_package_creates_controls_and_callback_dat_without_installing_bridge(
+        self,
+    ):
         fake_td = _FakeTd()
         with _TdPatch(fake_td):
             comp = install.build_package(
@@ -350,8 +462,12 @@ class InstallPackageHelperTests(unittest.TestCase):
         self.assertEqual(comp.par.Parentpath.val, "/project1")
         self.assertEqual(comp.par.Container.val, "show_bridge")
         self.assertEqual(comp.par.Modulesdir.val, "/opt/td/modules")
-        self.assertEqual(comp.par.Repozip.val, install.DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP)
-        self.assertEqual(comp.par.Bootstrapdest.val, install.DEFAULT_PACKAGE_BOOTSTRAP_DEST)
+        self.assertEqual(
+            comp.par.Repozip.val, install.DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP
+        )
+        self.assertEqual(
+            comp.par.Bootstrapdest.val, install.DEFAULT_PACKAGE_BOOTSTRAP_DEST
+        )
         self.assertEqual(comp.par.Allowexec.val, False)
 
     def test_run_lays_out_runtime_bridge_nodes_without_overlap(self):
@@ -366,6 +482,7 @@ class InstallPackageHelperTests(unittest.TestCase):
 
         expected = {
             "callbacks": (-320, 120),
+            "interaction_callbacks": (-320, -80),
             "webserver": (0, 120),
             "events_hook": (0, -80),
             "error_log": (320, 120),
@@ -379,6 +496,9 @@ class InstallPackageHelperTests(unittest.TestCase):
             self.assertEqual((child.nodeX, child.nodeY), coord)
             coords.append(coord)
         self.assertEqual(len(coords), len(set(coords)))
+        self.assertIn("Interactions", comp.custom_pages)
+        self.assertEqual(comp.par.Interactionchoice.val, "Keep")
+        self.assertIn("Interactionresolve", comp.children["interaction_callbacks"].text)
 
     def test_export_package_rejects_non_tox_path_before_touchdesigner_save(self):
         with self.assertRaisesRegex(ValueError, r"\.tox"):

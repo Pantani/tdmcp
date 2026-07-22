@@ -33,8 +33,35 @@ export const manageComponentSchema = z.object({
     .boolean()
     .default(false)
     .describe("(save) Create the parent folders if they do not exist."),
+  overwrite_policy: z
+    .enum(["refuse", "ask"])
+    .default("refuse")
+    .describe(
+      "(save) Refuse an existing target, or ask through the native TouchDesigner broker before overwrite.",
+    ),
+  confirmation_timeout_ms: z
+    .number()
+    .int()
+    .min(5_000)
+    .max(120_000)
+    .default(30_000)
+    .describe("(save) Bounded wait for native overwrite consent."),
+  operation_timeout_ms: z
+    .number()
+    .int()
+    .min(1_000)
+    .max(120_000)
+    .default(60_000)
+    .describe("(save) Bounded polling deadline for the deferred export job."),
+  idempotency_key: z
+    .string()
+    .min(16)
+    .max(128)
+    .regex(/^[A-Za-z0-9_-]+$/)
+    .optional()
+    .describe("(save) Opaque retry key for response-loss recovery."),
 });
-type ManageComponentArgs = z.infer<typeof manageComponentSchema>;
+type ManageComponentArgs = z.input<typeof manageComponentSchema>;
 
 interface ComponentReport {
   action: string;
@@ -49,27 +76,15 @@ interface ComponentReport {
   fatal?: string;
 }
 
-// .tox save/load is a COMP file operation with no structured bridge endpoint.
-// `loadTox` drops an independent copy under the parent; `externaltox` makes a
-// live-linked instance that re-reads the file. The file runs inside TouchDesigner,
-// so paths are on the machine running TD.
+// Load remains the legacy path in this wave. Save is deliberately absent here:
+// every export goes through the structured, broker-aware transaction above.
 const COMPONENT_SCRIPT = `
 import json, base64, traceback, os
 _p = json.loads(base64.b64decode("__PAYLOAD_B64__").decode("utf-8"))
 report = {"action": _p["action"], "file_path": _p["file_path"], "warnings": []}
 try:
     _action = _p["action"]; _fp = _p["file_path"]
-    if _action == "save":
-        _c = op(_p.get("comp"))
-        if _c is None:
-            report["fatal"] = "COMP not found: " + str(_p.get("comp"))
-        elif not _c.isCOMP:
-            report["fatal"] = str(_p.get("comp")) + " is not a COMP, so it cannot be saved as a .tox."
-        else:
-            _saved = _c.save(_fp, createFolders=bool(_p.get("create_folders")))
-            report["saved"] = str(_saved)
-            report["size"] = os.path.getsize(_fp) if os.path.isfile(_fp) else None
-    elif _action == "load":
+    if _action == "load":
         if not os.path.isfile(_fp):
             report["fatal"] = "File not found: " + _fp
         else:
@@ -94,7 +109,7 @@ try:
                     report["loaded"] = _new.path; report["linked"] = False
                     report["type"] = _new.type; report["children"] = sorted([c.name for c in _new.children])
     else:
-        report["fatal"] = "Unknown action: " + str(_action)
+        report["fatal"] = "Unsupported legacy component action: " + str(_action)
 except Exception:
     report["fatal"] = traceback.format_exc().splitlines()[-1]
 print(json.dumps(report))
@@ -104,9 +119,43 @@ export function buildComponentScript(payload: object): string {
   return buildPayloadScript(COMPONENT_SCRIPT, payload);
 }
 
-export async function manageComponentImpl(ctx: ToolContext, args: ManageComponentArgs) {
+export async function manageComponentImpl(ctx: ToolContext, rawArgs: ManageComponentArgs) {
+  const args = manageComponentSchema.parse(rawArgs);
   if (args.action === "save" && !args.comp_path) {
     return errorResult("A `comp_path` is required to save a component.");
+  }
+  if (args.action === "save") {
+    return guardTd(
+      () =>
+        ctx.client.exportToxTransaction({
+          source_path: args.comp_path as string,
+          target_path: args.file_path,
+          mode: "as_is",
+          create_folders: args.create_folders,
+          overwrite_policy: args.overwrite_policy,
+          confirmation_timeout_ms: args.confirmation_timeout_ms,
+          operation_timeout_ms: args.operation_timeout_ms,
+          idempotency_key: args.idempotency_key,
+        }),
+      (report) => {
+        if (report.status === "succeeded" && report.artifact) {
+          return jsonResult(
+            `Saved ${args.comp_path} to ${report.artifact.path} (${report.artifact.size_bytes} bytes).`,
+            report,
+          );
+        }
+        if (report.status === "cancelled" && report.decision === "Keep") {
+          return jsonResult(
+            `Kept the existing file at ${args.file_path}; no export was applied.`,
+            report,
+          );
+        }
+        return errorResult(
+          `Component save did not complete: ${report.error?.message ?? report.status}.`,
+          report,
+        );
+      },
+    );
   }
   return guardTd(
     async () => {
@@ -155,7 +204,7 @@ export const registerManageComponent: ToolRegistrar = (server, ctx) => {
     {
       title: "Save / load component (.tox)",
       description:
-        "Build a reusable component library by moving COMPs to/from .tox files on disk. Two actions: 'save' writes the COMP at comp_path to file_path as a .tox (overwriting any existing file, optionally creating parent folders) and returns the saved path and byte size; 'load' reads file_path back into parent_path, either as an independent copy or a live-linked instance (via `linked`) that re-reads the file on change, returning the loaded node's path, type, and child names. Paths are on the machine running TouchDesigner. Marked destructive because 'save' can overwrite an existing file.",
+        "Build a reusable component library by moving COMPs to/from .tox files on disk. 'save' uses a deferred, verified same-directory temporary export and refuses overwrite by default; set overwrite_policy='ask' for native Overwrite/Keep consent. 'load' keeps its legacy behavior and reads file_path into parent_path. Paths are on the machine running TouchDesigner.",
       inputSchema: manageComponentSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

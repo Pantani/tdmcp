@@ -23,6 +23,7 @@ import { registerDraftRecipeFromTechnique } from "./draftRecipeFromTechnique.js"
 import { registerDraftRecipeFromTutorial } from "./draftRecipeFromTutorial.js";
 import { registerEditDatContent } from "./editDatContent.js";
 import { registerEditShaderLiveLoop } from "./editShaderLiveLoop.js";
+import { registerEditTdNodeMetadata } from "./editTdNodeMetadata.js";
 import { registerElicitMissingArgs } from "./elicitMissingArgs.js";
 import { registerExecNodeMethod } from "./execNodeMethod.js";
 import { registerExecutePythonScript } from "./executePythonScript.js";
@@ -30,10 +31,12 @@ import { registerExportRenderPreset } from "./exportRenderPreset.js";
 import { registerExportSopToSvg } from "./exportSopToSvg.js";
 import { registerExtractPalette } from "./extractPalette.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
+import { registerFindTdParameters } from "./findTdParameters.js";
 import { registerGenerateMusic } from "./generateMusic.js";
 import { registerGenerateReadme } from "./generateReadme.js";
 import { registerGetBridgeLogs } from "./getBridgeLogs.js";
 import { registerGetDatContent } from "./getDatContent.js";
+import { registerGetEditorContext } from "./getEditorContext.js";
 import { registerGetInlinePreview } from "./getInlinePreview.js";
 import { registerGetModuleHelp } from "./getModuleHelp.js";
 import { registerGetMusicJob } from "./getMusicJob.js";
@@ -42,6 +45,7 @@ import { registerGetOperatorWorkflowGuide } from "./getOperatorWorkflowGuide.js"
 import { registerGetParameterMenu } from "./getParameterMenu.js";
 import { registerGetTdClassDetails } from "./getTdClassDetails.js";
 import { registerGetTdClasses } from "./getTdClasses.js";
+import { registerGetTdDocs } from "./getTdDocs.js";
 import { registerGetTdInfo } from "./getTdInfo.js";
 import { registerGetTdNodeErrors } from "./getTdNodeErrors.js";
 import { registerGetTdNodeFlags } from "./getTdNodeFlags.js";
@@ -54,17 +58,20 @@ import { registerGetTutorial } from "./getTutorial.js";
 import { registerInspectComponent } from "./inspectComponent.js";
 import { registerInspectGpuAndDisplays } from "./inspectGpuAndDisplays.js";
 import { registerLintRecipeLibrary } from "./lintRecipeLibrary.js";
+import { registerManageAgentSkills } from "./manageAgentSkills.js";
 import { registerManageComponentStorage } from "./manageComponentStorage.js";
 import { registerManagePackages } from "./managePackages.js";
 import { registerOptimizePerformance } from "./optimizePerformance.js";
 import { registerPlanTdVersionMigration } from "./planTdVersionMigration.js";
 import { registerProfileCookCost } from "./profileCookCost.js";
 import { registerProjectDocumentationSite } from "./projectDocumentationSite.js";
+import { registerPulseTdParameter } from "./pulseTdParameter.js";
 import { registerReadParameterModes } from "./readParameterModes.js";
 import { registerRecordMovie } from "./recordMovie.js";
 import { registerReloadBridge } from "./reloadBridge.js";
 import { registerRenderOutput } from "./renderOutput.js";
 import { registerRepairNetwork } from "./repairNetwork.js";
+import { registerSaveTdProject } from "./saveTdProject.js";
 import { registerScoreBuild } from "./scoreBuild.js";
 import { registerSearchOperators } from "./searchOperators.js";
 import { registerSearchPythonApi } from "./searchPythonApi.js";
@@ -86,11 +93,16 @@ import { registerWriteAgentGuide } from "./writeAgentGuide.js";
 
 export const layer3Registrars: ToolRegistrar[] = [
   registerGetTdInfo,
+  registerGetTdDocs,
   registerShowPreflightReport,
   // RayTK integration (Wave W3) — instance a RayTK ROP master by category/op-name:
   registerCreateRaytkOp,
   registerCreateTdNode,
   registerDeleteTdNode,
+  registerGetEditorContext,
+  registerSaveTdProject,
+  registerPulseTdParameter,
+  registerEditTdNodeMetadata,
   registerUpdateTdNodeParameters,
   registerGetTdNodes,
   registerGetTdNodeParameters,
@@ -104,6 +116,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerGetTdPerformance,
   registerGetTdTopology,
   registerFindTdNodes,
+  registerFindTdParameters,
   registerSummarizeTdErrors,
   registerCompareTdNodes,
   registerSnapshotTdGraph,
@@ -167,6 +180,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerDiagnoseHardwareEnvironment,
   // Campaign BEYOND Wave 5 (backlog 2026-05-30 — v0.7.0):
   registerManageComponentStorage,
+  registerManageAgentSkills,
   registerElicitMissingArgs,
   // Ingest-extend Wave 3 sub-batch B (2026-06-01 — v0.9.0):
   registerExtractPalette,

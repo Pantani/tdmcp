@@ -181,8 +181,10 @@ import { registerDiagnoseTdabletonMapper } from "./diagnoseTdabletonMapper.js";
 import { registerDuplicateNetwork } from "./duplicateNetwork.js";
 import { registerExtendDataSourceFabric } from "./extendDataSourceFabric.js";
 import { registerFocusNetworkEditor } from "./focusNetworkEditor.js";
+import { registerInsertOperatorAtSelection } from "./insertOperatorAtSelection.js";
 import { registerLearnControl } from "./learnControl.js";
 import { registerManageAnnotation } from "./manageAnnotation.js";
+import { registerManageArtistWorkspace } from "./manageArtistWorkspace.js";
 import { registerManageCheckpoint } from "./manageCheckpoint.js";
 import { registerManageComponent } from "./manageComponent.js";
 import { registerManageCue } from "./manageCue.js";
@@ -207,6 +209,7 @@ import { registerSyncTimecode } from "./syncTimecode.js";
 
 export const layer2Registrars: ToolRegistrar[] = [
   registerFocusNetworkEditor,
+  registerInsertOperatorAtSelection,
   registerCreateNodeChain,
   registerConnectNodes,
   registerCreateGlslShader,
@@ -365,6 +368,7 @@ export const layer2Registrars: ToolRegistrar[] = [
   registerConnectNoiseLevelBus,
   registerDuplicateNetwork,
   registerArrangeNetwork,
+  registerManageArtistWorkspace,
   // Wave 4 — live-performance ergonomics:
   registerCreatePanic,
   registerCreateClipLauncher,

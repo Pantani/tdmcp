@@ -19,14 +19,18 @@ The package installs two binaries: `tdmcp` (the MCP server + utilities) and
 | `tdmcp init` | One-shot onboarding: stage the bridge, write a client config (Claude / Cursor / Codex), seed a profile and optional bridge token. See [Onboarding](#onboarding) below. |
 | `tdmcp ask "your prompt"` | Non-interactive copilot turn — one prompt in, one answer out (machine-readable with `--json`). See [Onboarding](#onboarding) below. |
 | `tdmcp chat` _(alias `tdmcp llm-run`)_ | Start the local LLM copilot UI (see below). |
+| `tdmcp copilot-calibrate` | Run a synthetic, sandbox-only capability suite for the configured model; never contacts TouchDesigner. |
 | `tdmcp telegram` | Start an allowlisted Telegram Bot API long-poll bridge into the local Ollama copilot. See [Telegram copilot](#telegram-copilot) below. |
 | `tdmcp creative-rag sync\|index\|search` | Manage the opt-in Creative RAG reference store. See [Creative RAG](/creative-rag). |
 | `tdmcp project-rag sources\|sync\|index\|search\|info\|analyze\|bridge` | Manage the opt-in TouchDesigner project RAG store and quarantine analyzer. See [Project RAG](/project-rag). |
 | `tdmcp install-bridge` | Stage the TouchDesigner bridge to `~/tdmcp-bridge` and print the runtime Textport command for `/project1/tdmcp_bridge`. Add `--palette` to also print a Palette package export command for draggable `tdmcp_bridge_package.tox`; `--palette-dir <path>` and `--package-name <name>` imply `--palette`. Add `--verify` to check `/api/info` once, `--wait` to poll until it is up, and `--port <port>` for non-default bridges. For the Palette package, `/api/info` can only pass after the package's **Install** button creates the runtime bridge. See [Bridge & REST API](/reference/bridge-api). |
-| `tdmcp install-client <claude\|codex\|cursor>` | Print a client-specific MCP config snippet for the current package. Add `--write --path <file>` to deep-merge and verify an explicit client config file (JSON for Claude/Cursor, TOML for Codex). |
+| `tdmcp install-client <claude\|codex\|cursor>` | Print the legacy ready-to-paste snippet, or safely plan/check/reconcile one named registration at project/user scope. See [Scoped client registration](#scoped-client-registration). |
+| `tdmcp status [--json]` | Print one redacted, read-only snapshot of config, bridge, TD, interaction, skill, and supported project/user client-registration state. |
+| `tdmcp doctor [--json] [--fix]` | Diagnose the effective tdmcp environment. Package-specific diagnostics live at `tdmcp packages doctor [lib]`. |
+| `tdmcp show <profile>` | Run exact-profile show gates and, only after they pass, enter Perform Mode with bounded readback/rollback. Source-tree only; live PASS is scoped to TD 2025.32820. See [Show mode](#show-mode). |
 | `tdmcp completion bash` | Print a shell completion snippet for the primary binary. Supports `bash`, `zsh`, and `fish`, including package-manager shortcuts and common flags. |
 | `tdmcp --version` | Print the package version. |
-| `tdmcp search/list/info/install/uninstall/doctor/packages path` | Manage TouchDesigner community packages. See [Package manager](/reference/packages). |
+| `tdmcp search/list/info/install/uninstall/packages doctor/packages path` | Manage TouchDesigner community packages at explicit user/project storage scope. See [Package manager](/reference/packages). |
 
 Common package-manager examples:
 
@@ -35,10 +39,101 @@ tdmcp search shader
 tdmcp list --available
 tdmcp info shader-park-td --json
 tdmcp install mediapipe-touchdesigner --dry-run --json
-tdmcp doctor comfyui-td --json
+tdmcp doctor --json
+tdmcp packages doctor comfyui-td --json
 tdmcp packages --help
 tdmcp packages path
 tdmcp completion bash
+```
+
+## Scoped client registration {#scoped-client-registration}
+
+Calling `install-client` with only the client name keeps the existing snippet
+output. Scoped actions resolve a native host target, plan by default, and only
+mutate with `--write`:
+
+```bash
+# Claude Code project target: <project>/.mcp.json
+tdmcp install-client claude --scope project --project-dir "$PWD" --diff --json
+tdmcp install-client claude --scope project --project-dir "$PWD" --write --json
+
+# Read-only reconciliation and owned-entry removal
+tdmcp install-client cursor --scope user --check --json
+tdmcp install-client cursor --scope user --remove --diff --json
+tdmcp install-client cursor --scope user --remove --write --json
+```
+
+`--profile` and `--config` resolve the effective TD host, port, and bridge-token
+presence. Results never print the token value. JSON configs preserve unrelated
+keys; Codex TOML preserves unrelated sections. Writes reject symlinks, files
+over 1 MiB, invalid configs, and concurrent changes, then use an atomic sibling
+file plus read-back verification. `--dry-run`, `--diff`, and `--check` never
+write. Codex project scope is rejected because no project-level target was
+verified; use Codex user scope or the compatibility-only explicit `--path`.
+
+`tdmcp status` observes only the default `tdmcp` entry in the five native
+targets supported by this contract (`claude` and `cursor` project/user, `codex`
+user). It does not scan arbitrary named entries and never returns their paths or
+secret values.
+
+## Show mode (`tdmcp show`) {#show-mode}
+
+::: warning Unreleased; live evidence is build-scoped
+`tdmcp show <profile>` exists in the Wave 12 source tree, not in the public
+v0.13.1 package. A disposable TD 2025.32820 sandbox passed Perform entry,
+already-on idempotence, exact readback and rollback after an induced ambiguous
+readback. Other builds, TouchPlayer and actual headless execution remain
+**UNVERIFIED**.
+:::
+
+The command binds one exact named profile and optional exact config file. It
+does not search for a "close enough" venue configuration. It then runs this
+bounded sequence:
+
+1. read redacted runtime status and require the resolved profile, bridge origin,
+   saved project and TouchDesigner availability to match;
+2. run the top-level environment doctor against the same resolved config;
+3. run the read-only show preflight for the requested root and target FPS;
+4. read Perform Mode and reject missing or contradictory state;
+5. stop on FAIL, require explicit and separate acceptance for WARN and optional
+   UNVERIFIED evidence, or report the dry-run result;
+6. if Perform Mode is not already on, make one structured entry request and
+   confirm it by readback. If entry is not confirmed, make at most one OFF
+   rollback request and read back the result.
+
+```bash
+# Inspect the exact gates without mutating Perform Mode
+tdmcp show club --config ./tdmcp.json --dry-run
+
+# Machine-readable result for one project root and frame target
+tdmcp show club --root-path /project1/show --target-fps 60 --json
+
+# These accept different evidence classes; review them independently
+tdmcp show club --allow-warn --allow-unverified
+```
+
+| Flag | Purpose |
+| --- | --- |
+| `--config <file>` | Bind the exact config file as well as the positional profile. |
+| `--root-path <path>` | Preflight root; default `/project1`. |
+| `--target-fps <1..240>` | Performance target; default `60`. |
+| `--timeout-ms <100..5000>` | Bounded bridge/readback timeout; default `1500`. |
+| `--allow-warn` | Accept non-critical WARN gates after review; it does not accept UNVERIFIED evidence. |
+| `--allow-unverified` | Accept optional UNVERIFIED preflight/runtime evidence; an unknown or contradictory Perform state still fails closed. |
+| `--dry-run` | Run all read-only gates and report whether Perform entry would be attempted. |
+| `--json` | Emit one bounded structured report with gates, action, rollback and exit code. |
+
+Exit `0` means gates passed, including a dry-run or an already-on no-op. Exit
+`2` is invalid usage, `3` is a failed gate or unconfirmed mutation, and `4` is
+unresolved evidence. The command never loads or switches a `.toe`, never calls
+`project.load()`, and never falls back to `/api/exec` or raw Python.
+
+Example evidence:
+
+```text
+PASS       TD 2025.32820 confirmed entry/readback and bounded rollback
+FAIL       Perform entry was not confirmed; bounded OFF rollback was attempted
+UNVERIFIED another TD build, TouchPlayer or headless runtime has not been tested
 ```
 
 ## Onboarding & one-shot ask {#onboarding}
@@ -86,6 +181,7 @@ tdmcp ask "what TOPs are cooking the slowest right now?" --json
 | `--creative` | Use the creative tier and a warmer sampling preset. |
 | `--with-creative` | Inject Creative RAG cards into the prompt context when Creative RAG is enabled. |
 | `--no-ollama` | Don't auto-start local Ollama (remote endpoint or self-managed daemon). |
+| `--no-receipt-persist` | Keep this turn's receipt in memory even when bounded receipt persistence is enabled. |
 | `--timeout <ms>` | Wall-clock cap on the turn (default 120000). Exits 124 on hit. |
 
 ## `tdmcp-agent` — command-line agent
@@ -97,6 +193,7 @@ useful for scripts and CI.
 tdmcp-agent --help                 # list commands
 tdmcp-agent info                   # health check + TD/bridge info
 tdmcp-agent nodes find --params '{"parent_path":"/project1","type":"TOP"}'
+tdmcp-agent params find --params '{"root_path":"/project1","parameter_glob":"gain*","non_default_only":true}'
 tdmcp-agent nodes create --dry-run --params '{"parent_path":"/project1","type":"noiseTOP"}'
 tdmcp-agent commands --json       # discover commands + mutating/unsafe flags
 tdmcp-agent help nodes find       # focused help + input schema
@@ -151,12 +248,14 @@ subcommands surfaced by the parity sweep:
 | `get_preview` | Capture a TOP's current output as an inline PNG image (read-only). |
 | `watch_node` | Sample one operator over a short interval: runtime state, params, CHOP channels (read-only). |
 | `watch_parameter_changes` | Subscribe to (or list/unsubscribe) `param.changed` events for an operator's parameters. |
-| `manage_packages` | List/install/manage Python packages available to the TD bridge. |
+| `manage_packages` | List/install packages and run dry-run-first live namespace reconciliation. |
+| `insert_operator_at_selection` | Context-check and atomically insert one same-family operator downstream of the exact active selection. |
 | `swap_operator` | Swap one operator for another type while preserving wiring and parameters. |
 | `copilot_vision` | Capture a TOP and ask the configured multimodal LLM a question about it. |
 | `auto_repair_loop` | Iteratively check a network for errors and apply automatic repairs. |
 | `create_glsl_material` | Create a GLSL MAT material with custom shader code. |
 | `publish_recipe_bundle` | Publish a signed/versioned recipe bundle artifact to disk. |
+
 
 The 21 Obsidian **vault** tools are available as subcommands too (all need
 `TDMCP_VAULT_PATH`): `apply_shader_from_vault`, `auto_tag_library_asset`,
@@ -275,7 +374,9 @@ takes the model offline. Flags: **`--read-only`** (force the safe tool tier),
 **`--creative`** (use the creative tier and a warmer sampling preset),
 **`--prompt <text>`** (headless one-shot answer, no browser/server),
 **`--no-ollama`** (don't auto-start — for a remote endpoint or a self-managed
-daemon), **`--no-open`** (don't open the browser), **`--profile <name>`** /
+daemon), **`--no-open`** (don't open the browser),
+**`--no-receipt-persist`** (memory-only receipts for this process/turn),
+**`--profile <name>`** /
 **`--config <path>`** (select saved config), and **`--help`**.
 
 It is meant for the easy stuff — inspecting the project, reading errors, and
@@ -284,9 +385,15 @@ safe subset** of the tools (no Layer-1 system generators, no raw Python). For fu
 systems, click **Escalate ⇪** to copy a ready-to-paste prompt and hand off to
 Claude/Codex (they drive the same project, so nothing needs to move). The UI also
 has a **read-only** toggle, live **model switching** + endpoint settings, a
-one-click **model pull**, and persistent history. The copilot sees the registered
-MCP prompt catalog from `tdmcp://prompts`, so it can point users at the right
-Claude/Codex prompt when a request is better handled by a full MCP client.
+one-click **model pull**, and persistent history.
+
+Every local turn receives one ephemeral, bounded editor-context read when the
+bridge is available. The copilot can invoke the canonical registered MCP prompt
+catalog through a schema-validated local adapter, not merely list it. Mutating
+tools are followed by bounded read-only verification before completion is
+reported; `FAIL` and `UNVERIFIED` remain explicit and the mutation is never
+repeated automatically. Recovery is limited to one read-only evidence action and
+does not retry ambiguous mutations, authorization failures, panic or blackout.
 
 ::: tip Which local model?
 Benchmarked on the simple-task workload, **`qwen2.5:3b`** hit 100% tool-calling —
@@ -297,6 +404,39 @@ endpoint works via `TDMCP_LLM_BASE_URL` — local Ollama/LM Studio, or a cloud A
 Tune the default tool tier, loop budget and sampling with `TDMCP_LLM_TIER`,
 `TDMCP_LLM_MAX_STEPS` and `TDMCP_LLM_TEMPERATURE`.
 :::
+
+## Local model calibration (`tdmcp copilot-calibrate`)
+
+The calibrator exercises only synthetic fixture tools. It checks repeated schema
+adherence, tool selection, sequential/parallel calls, failed-call recovery,
+context retention and optional synthetic image input. It does not contact the TD
+bridge, inspect a project, start Ollama, pull a model, or accept an API key on the
+command line.
+
+```bash
+tdmcp copilot-calibrate
+tdmcp copilot-calibrate --mode enforce --samples 3 --vision auto --json
+tdmcp copilot-calibrate --refresh --no-cache
+```
+
+| Flag | Purpose |
+| --- | --- |
+| `--mode recommend\|enforce` | `recommend` preserves the requested tier; `enforce` caps it to fresh exact evidence and otherwise uses `safe`. |
+| `--samples 3..5` | Repeated samples per tier-gating capability. |
+| `--timeout <ms>` | Whole-suite deadline, bounded to `5000..300000`. |
+| `--vision auto\|off\|required` | Control the synthetic image probe. |
+| `--refresh` | Ignore a reusable cache entry and rerun the suite. |
+| `--no-cache` | Read and write no calibration cache. |
+| `--cache <absolute-path>` | Override the owner-controlled cache path. |
+| `--model <id>` | Override the configured model id. |
+| `--profile <name>` / `--config <path>` | Select the normal tdmcp configuration source. |
+| `--json` | Emit one bounded JSON manifest line. |
+
+Exit codes are `0` for a completed suite, `1` for a suite/protocol failure, `2`
+for usage, `3` for an unavailable endpoint/model, and `124` for timeout or
+cancellation. Cache reuse requires the exact redacted endpoint/model/build
+fingerprint, an unexpired entry, and stable build identity. Calibration never
+raises the caller's requested tier.
 
 ## Telegram copilot (`tdmcp telegram`) {#telegram-copilot}
 
@@ -326,6 +466,8 @@ immediately. `/standard` and `/creative` stage the next prompt and require
 `/approve` before any non-safe tool tier runs. `/cancel` clears pending/running
 work, `/status` shows tier/pending state, and `/panic` intentionally does not
 execute remotely in this MVP; use a trusted local shell for `tdmcp-agent panic`.
+`/private <prompt>` keeps that one turn's receipt in memory; standard/creative
+private prompts still require the same `/approve` step.
 
 Runtime flags: `--once` (poll once and exit), `--read-only`, `--creative`,
 `--tier <safe|standard|creative>`, `--poll-timeout <sec>`,

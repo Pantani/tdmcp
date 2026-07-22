@@ -14,6 +14,8 @@ import type { Vault } from "../vault/index.js";
 /** Shared dependencies injected into every tool handler (keeps handlers testable). */
 export interface ToolContext {
   client: TouchDesignerClient;
+  /** Private bridge credential from config. Never expose this in a tool schema or result. */
+  bridgeToken?: string;
   knowledge: KnowledgeBase;
   recipes: RecipeLibrary;
   logger: Logger;
@@ -36,6 +38,12 @@ export interface ToolContext {
    * Undefined means `"full"` (the default).
    */
   toolProfile?: "full" | "safe" | "directory";
+  /** Effective project root from env, config file, or selected profile. */
+  projectRoot?: string;
+  /** Effective local-copilot receipt policy from the loaded config. */
+  copilotReceipts?: "off" | "persist";
+  /** Effective private receipt-store path from the loaded config. */
+  copilotReceiptsPath?: string;
   /**
    * Best-effort LLM backend for tools that need vision/captioning/text completion
    * (e.g. caption_top, auto_tag_library_asset). Routed via `resolveLlmClient`:
@@ -43,6 +51,21 @@ export interface ToolContext {
    * Tools must degrade gracefully when this is undefined or unreachable.
    */
   llm?: LlmClientLike;
+  /**
+   * Metadata-only enabled-tool snapshot for planners running outside an MCP
+   * transport (for example `tdmcp-agent plan`). It contains no handlers and
+   * cannot execute a tool. MCP-hosted planners may instead inspect `server`.
+   */
+  plannerToolCatalog?: Readonly<
+    Record<
+      string,
+      {
+        title?: string;
+        description?: string;
+        enabled: boolean;
+      }
+    >
+  >;
   /**
    * The MCP server instance. Assigned by `createTdmcpServer` before tool
    * registration so a few tools (e.g. `elicit_missing_args`) can introspect the

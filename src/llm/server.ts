@@ -11,6 +11,7 @@ import {
 import { runAgentTurn } from "./agent.js";
 import { applySettings, type ChatMessage, LlmClient, type LlmConfig } from "./client.js";
 import { buildHandoffPrompt } from "./handoff.js";
+import { resolveRuntimeCalibration } from "./runtimeCalibration.js";
 import {
   type CopilotSession,
   loadCopilotSession,
@@ -131,9 +132,24 @@ async function handleChat(
   res: ServerResponse,
   ctx: ToolContext,
   client: LlmClient,
-  config: Pick<ChatServerConfig, "llmTier" | "llmMaxSteps" | "llmLockedTier">,
+  config: Pick<
+    ChatServerConfig,
+    | "llmTier"
+    | "llmMaxSteps"
+    | "llmLockedTier"
+    | "llmCalibrationMode"
+    | "llmCalibrationCachePath"
+    | "projectRoot"
+    | "copilotReceipts"
+    | "copilotReceiptsPath"
+  >,
+  settings: LlmConfig,
 ): Promise<void> {
-  const body = (await readJsonBody(req)) as { messages?: ChatMessage[]; tier?: string };
+  const body = (await readJsonBody(req)) as {
+    messages?: ChatMessage[];
+    tier?: string;
+    noPersist?: boolean;
+  };
   const history = Array.isArray(body.messages) ? body.messages : [];
   // safe (read-only) wins over creative in the browser UI; API callers can also
   // omit tier and use the configured default.
@@ -142,10 +158,24 @@ async function handleChat(
     config.llmTier ?? DEFAULT_LLM_TIER,
     config.llmLockedTier,
   );
-  const tools = resolveTools(tier, { projectRag: ctx.projectRag !== undefined });
-
   const controller = new AbortController();
   req.on("close", () => controller.abort());
+  const calibration = await resolveRuntimeCalibration(
+    {
+      llmBaseUrl: settings.llmBaseUrl,
+      llmModel: settings.llmModel,
+      llmApiKey: settings.llmApiKey,
+      llmCalibrationMode: config.llmCalibrationMode,
+      llmCalibrationCachePath: config.llmCalibrationCachePath,
+    },
+    tier,
+    controller.signal,
+  );
+  const tools = resolveTools(tier, {
+    projectRag: ctx.projectRag !== undefined,
+    calibration,
+    calibrationMode: config.llmCalibrationMode,
+  });
 
   res.writeHead(200, SSE_HEADERS);
   const sse = sseWriter(res);
@@ -154,6 +184,12 @@ async function handleChat(
     signal: controller.signal,
     tools,
     maxSteps: config.llmMaxSteps ?? DEFAULT_LLM_MAX_STEPS,
+    requestedTier: tier,
+    effectiveTier: calibration.effectiveTier,
+    projectRoot: config.projectRoot,
+    receiptPersistence: config.copilotReceipts,
+    receiptStorePath: config.copilotReceiptsPath,
+    noPersist: body.noPersist === true,
   });
   if (!controller.signal.aborted) sse({ type: "final", messages });
   if (!res.writableEnded) res.end();
@@ -265,6 +301,7 @@ async function handleHealth(
       lockedTier: config.llmLockedTier,
       maxSteps: config.llmMaxSteps ?? DEFAULT_LLM_MAX_STEPS,
       temperature: settings.llmTemperature ?? DEFAULT_LLM_TEMPERATURE,
+      calibrationMode: config.llmCalibrationMode,
       sessionPath,
       resumeSession: config.resumeSession === true,
     }),
@@ -315,7 +352,7 @@ async function dispatchPostRoute(
   if (path === "/settings") {
     settings = await handleSettings(req, res, settings);
   } else if (path === "/chat") {
-    await handleChat(req, res, ctx, clientFor(), config);
+    await handleChat(req, res, ctx, clientFor(), config, settings);
   } else if (path === "/pull") {
     await handlePull(req, res, clientFor());
   } else if (path === "/session/save") {

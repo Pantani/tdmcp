@@ -1,5 +1,12 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { friendlyTdError } from "../td-client/types.js";
+import {
+  friendlyTdError,
+  TdApiError,
+  TdBackpressureError,
+  TdConnectionError,
+  TdError,
+  TdTimeoutError,
+} from "../td-client/types.js";
 
 type Content = CallToolResult["content"];
 
@@ -25,6 +32,14 @@ export function errorResult(message: string, data?: unknown): CallToolResult {
 export function jsonResult(summary: string, data: unknown): CallToolResult {
   const text = `${summary}\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``;
   return { content: [{ type: "text", text }] };
+}
+
+/** Preserve the historic JSON code fence while also exposing the same data structurally. */
+export function jsonStructuredResult(summary: string, data: object): CallToolResult {
+  return {
+    ...jsonResult(summary, data),
+    structuredContent: data as { [key: string]: unknown },
+  };
 }
 
 /**
@@ -54,6 +69,32 @@ export function imageResult(
   return { content };
 }
 
+function apiErrorDetails(error: TdError): Record<string, unknown> {
+  if (!(error instanceof TdApiError)) return {};
+  const details: Record<string, unknown> = {};
+  if (error.apiCode) details.api_code = error.apiCode;
+  if (error.status !== undefined) details.status = error.status;
+  if (error.details !== undefined) details.details = error.details;
+  return details;
+}
+
+function backpressureDetails(error: TdError): Record<string, unknown> {
+  if (!(error instanceof TdBackpressureError)) return {};
+  return { retry_after_ms: Math.max(0, Math.min(60_000, error.retryAfterMs)) };
+}
+
+function structuredTdError(error: TdError): Record<string, unknown> {
+  return {
+    status: "failed",
+    error: {
+      code: error.code,
+      ...apiErrorDetails(error),
+      ...backpressureDetails(error),
+      ambiguous: error instanceof TdTimeoutError || error instanceof TdConnectionError,
+    },
+  };
+}
+
 /**
  * Runs a client call and formats the result, converting any TD error into a
  * friendly `isError` result instead of throwing out of the MCP handler.
@@ -65,6 +106,10 @@ export async function guardTd<T>(
   try {
     return onOk(await fn());
   } catch (err) {
-    return errorResult(friendlyTdError(err));
+    const result = errorResult(friendlyTdError(err));
+    if (err instanceof TdError) {
+      result.structuredContent = structuredTdError(err);
+    }
+    return result;
   }
 }

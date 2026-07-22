@@ -24,11 +24,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
-      contents: write # create the GitHub Release + upload the .mcpb asset
-      id-token: write # npm publish provenance, used only when explicitly enabled
+      contents: read
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -89,30 +89,39 @@ jobs:
       - name: Import knowledge base
         run: npm run import:bottobot
 
-      - name: Typecheck
-        run: npm run typecheck
+      - name: Run non-publishing release checks
+        run: npm run release:check
 
-      - name: Lint
-        run: npm run lint
+      - name: Pack the validated npm artifact
+        run: |
+          PACKAGE_TARBALL="$(npm pack --silent)"
+          mv "$PACKAGE_TARBALL" tdmcp-package.tgz
 
-      - name: Validate recipes
-        run: npm run validate:recipes
+      - name: Upload validated release artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: validated-release-artifacts
+          path: |
+            tdmcp.mcpb
+            tdmcp-package.tgz
+          if-no-files-found: error
 
-      - name: Test
-        run: npm test
-
-      - name: Build
-        run: npm run build
-
-      - name: Build .mcpb bundle
-        run: npm run build:mcpb
-
-      - name: Test bridge (Python)
-        run: npm run test:bridge
+  github-release:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download validated release artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: validated-release-artifacts
 
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           # A release may already exist if it was published from the GitHub UI
           # (publishing there creates the tag, which triggers this workflow). In
@@ -126,33 +135,35 @@ jobs:
               --verify-tag
           fi
 
-      - name: Check npm publish mode
-        id: npm_publish
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          AUTO_NPM_PUBLISH: ${{ vars.TDMCP_AUTO_NPM_PUBLISH }}
-        run: |
-          if [ "$AUTO_NPM_PUBLISH" = "true" ] && [ -n "$NPM_TOKEN" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            {
-              echo "### npm publish not run"
-              echo ""
-              if [ "$AUTO_NPM_PUBLISH" != "true" ]; then
-                echo "Automatic npm publishing is disabled. Publish \`@dpantani/tdmcp@${GITHUB_REF_NAME#v}\` manually after reviewing the GitHub release."
-              else
-                echo "\`NPM_TOKEN\` is not set. Publish \`@dpantani/tdmcp@${GITHUB_REF_NAME#v}\` manually after reviewing the GitHub release."
-              fi
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+  npm-publish:
+    needs: validate
+    if: vars.TDMCP_AUTO_NPM_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download validated npm artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: validated-release-artifacts
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 20.x
+          registry-url: "https://registry.npmjs.org"
 
       - name: Publish to npm
-        if: steps.npm_publish.outputs.enabled == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          npm publish --access public --provenance
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::TDMCP_AUTO_NPM_PUBLISH is enabled but NPM_TOKEN is not configured."
+            exit 1
+          fi
+          npm publish tdmcp-package.tgz --access public --provenance
           {
             echo "### ✅ Published to npm"
             echo ""

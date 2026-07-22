@@ -11,6 +11,13 @@ import { applyPostProcessingImpl, applyPostProcessingSchema } from "./applyPostP
 import { createColorGradeImpl, createColorGradeSchema } from "./createColorGrade.js";
 import { createFeedbackNetworkImpl, createFeedbackNetworkSchema } from "./createFeedbackNetwork.js";
 import { createFeedbackTunnelImpl, createFeedbackTunnelSchema } from "./createFeedbackTunnel.js";
+import {
+  runBoundedVisualCritique,
+  type VisualCritiqueDependencies,
+  visualCritiqueReceiptSchema,
+  visualCritiqueSchema,
+} from "./enhanceBuildVisualCritique.js";
+import { createVisualCritiqueDependencies } from "./enhanceBuildVisualRuntime.js";
 
 /** Returns true if `p` is `scope` itself or a descendant of `scope` (posix-ish TD paths). */
 function isUnderScope(p: string, scope: string): boolean {
@@ -21,7 +28,7 @@ function isUnderScope(p: string, scope: string): boolean {
   return a.startsWith(b === "/" ? "/" : `${b}/`);
 }
 
-export const enhanceBuildSchema = z.object({
+const enhanceBuildBaseSchema = z.object({
   scopePath: z
     .string()
     .default("/project1")
@@ -52,6 +59,20 @@ export const enhanceBuildSchema = z.object({
     .describe(
       "When autoApply=true, re-run score_build after dispatch and include after + delta. Ignored when autoApply=false.",
     ),
+  visualCritique: visualCritiqueSchema
+    .optional()
+    .describe(
+      "Opt-in bounded visual critique of one explicit TOP and 1-6 numeric constant parameters. Preview-only unless autoApply=true; every apply still requires native Apply/Keep approval.",
+    ),
+});
+export const enhanceBuildSchema = enhanceBuildBaseSchema.superRefine((value, ctx) => {
+  if (value.visualCritique && value.focusCriterion !== undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["focusCriterion"],
+      message: "focusCriterion cannot be combined with visualCritique",
+    });
+  }
 });
 type EnhanceBuildArgs = z.infer<typeof enhanceBuildSchema>;
 
@@ -85,6 +106,7 @@ export const enhanceBuildOutputSchema = z.object({
     })
     .optional(),
   warnings: z.array(z.string()),
+  visualCritique: visualCritiqueReceiptSchema.optional(),
 });
 
 type AllowEntry = {
@@ -393,17 +415,49 @@ export async function enhanceBuildImpl(ctx: ToolContext, args: EnhanceBuildArgs)
   });
 }
 
+async function enhanceBuildWithVisualImpl(
+  ctx: ToolContext,
+  args: EnhanceBuildArgs,
+  visualDependencies?: VisualCritiqueDependencies,
+) {
+  if (!args.visualCritique) return enhanceBuildImpl(ctx, args);
+  const visual = await runBoundedVisualCritique(
+    {
+      scopePath: args.scopePath,
+      autoApply: args.autoApply,
+      visualCritique: args.visualCritique,
+    },
+    visualDependencies ??
+      createVisualCritiqueDependencies(ctx, args.scopePath, args.visualCritique),
+  );
+  return structuredResult(
+    `enhance_build visual critique: ${visual.status} (${visual.iterations.length} iteration(s)).`,
+    {
+      scopePath: args.scopePath,
+      before: visual.iterations[0]?.before ?? null,
+      proposals: visual.iterations.flatMap((iteration) =>
+        iteration.proposal ? [iteration.proposal] : [],
+      ),
+      applied: visual.iterations.flatMap((iteration) => (iteration.apply ? [iteration.apply] : [])),
+      warnings: visual.warnings,
+      visualCritique: visual,
+    },
+  );
+}
+
+export { enhanceBuildWithVisualImpl };
+
 export const registerEnhanceBuild: ToolRegistrar = (server, ctx) => {
   server.registerTool(
     "enhance_build",
     {
       title: "Enhance a TouchDesigner build (LLM-planned)",
       description:
-        "Run score_build, ask the configured LLM for up to N allowlisted tool calls that would raise the weakest sub-scores, and optionally auto-apply them. autoApply mutates the project and is NOT idempotent (re-runs can stack effects). Allowlist: create_color_grade, apply_post_processing, create_feedback_network, create_feedback_tunnel, bind_to_channel, arrange_network. Returns before/after scores and a dispatch log.",
-      inputSchema: enhanceBuildSchema.shape,
+        "Run score_build and ask the configured LLM for bounded allowlisted improvements. Legacy calls are unchanged. Optional visualCritique uses the exact calibrated local vision receipt, explicit numeric targets, preview-only defaults, native Apply/Keep approval, CAS/readback, and compensating restore; autoApply never bypasses approval.",
+      inputSchema: enhanceBuildBaseSchema.shape,
       outputSchema: enhanceBuildOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    (args) => enhanceBuildImpl(ctx, args),
+    (args) => enhanceBuildWithVisualImpl(ctx, enhanceBuildSchema.parse(args)),
   );
 };

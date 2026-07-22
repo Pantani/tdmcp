@@ -11,6 +11,7 @@ import type {
   StreamOptions,
   TextPart,
 } from "./client.js";
+import { assertCompletionResponseSize, validatedMaxResponseBytes } from "./client.js";
 
 // Re-export the shared shapes so existing importers of samplingClient keep working.
 export type {
@@ -98,10 +99,19 @@ export function toMultimodal(messages: ChatMessage[]): MultimodalMessage[] {
 export class SamplingLlmClient implements LlmClientLike {
   constructor(private readonly server: Pick<Server, "createMessage">) {}
 
+  describe() {
+    return {
+      transport: "mcp_sampling" as const,
+      locality: "client_managed" as const,
+      calibration: "not_checked" as const,
+    };
+  }
+
   async complete(
     messages: MultimodalMessage[],
     opts: CompleteOptions = {},
   ): Promise<CompleteResult> {
+    const maxResponseBytes = validatedMaxResponseBytes(opts.maxResponseBytes);
     const system = pickSystem(messages, opts.system);
     const samplingMessages = toSamplingMessages(messages);
     const params: Record<string, unknown> = {
@@ -140,6 +150,10 @@ export class SamplingLlmClient implements LlmClientLike {
       result.content.type === "text" && typeof result.content.text === "string"
         ? result.content.text
         : "";
+    // MCP Sampling returns one already-materialized result in this SDK. We can
+    // enforce the same typed byte contract immediately after return, but unlike
+    // LlmClient's HTTP reader we cannot stop allocation mid-response here.
+    assertCompletionResponseSize(text, maxResponseBytes);
     return {
       text,
       ...(result.model ? { model: result.model } : {}),
