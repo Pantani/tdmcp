@@ -24,6 +24,7 @@ import { registerProjectRagContext } from "./projectRagContext.js";
 import { registerRecoverShow } from "./recoverShow.js";
 import { registerRemixVisual } from "./remixVisual.js";
 import { registerSetlistPlanner } from "./setlistPlanner.js";
+import { registerSongToShow } from "./songToShow.js";
 import { registerStyleReference } from "./styleReference.js";
 import { registerTeachTouchDesigner } from "./teachTouchDesigner.js";
 import { registerTextToRecipe } from "./textToRecipe.js";
@@ -63,6 +64,7 @@ export function registerAllPrompts(server: McpServer, ctx: PromptContext): void 
   registerExplainParam(server, ctx);
   registerVisualAbCompare(server, ctx);
   registerLyricShow(server, ctx);
+  registerSongToShow(server, ctx);
   registerGenreVisualLanguage(server, ctx);
   // Campaign Wave 6 — AI & LLM (backlog 2026-05-29):
   registerTeachTouchDesigner(server, ctx);

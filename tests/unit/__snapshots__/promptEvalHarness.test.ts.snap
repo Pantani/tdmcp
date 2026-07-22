@@ -26,6 +26,7 @@ exports[`prompt name list snapshot 1`] = `
   "recover_show",
   "remix_visual",
   "setlist_planner",
+  "song_to_show",
   "style_reference",
   "teach_touchdesigner",
   "text_to_recipe",

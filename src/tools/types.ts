@@ -1,4 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import type { ServerNotification, ServerRequest } from "@modelcontextprotocol/sdk/types.js";
+import type { AceStepClient } from "../ace-client/aceStepClient.js";
 import type { CreativeRagService } from "../creativeRag/index.js";
 import type { KnowledgeBase } from "../knowledge/index.js";
 import type { LlmClientLike } from "../llm/client.js";
@@ -83,7 +86,30 @@ export interface ToolContext {
    * client on a dedicated port.
    */
   projectRag?: ProjectRagService;
+  /**
+   * Optional local ACE-Step music-generation client (set when
+   * `TDMCP_ACE_ENABLED=1`); undefined when the feature is off. Backs the
+   * `generate_music` tool / `music generate` CLI verb.
+   */
+  aceClient?: AceStepClient;
 }
 
 /** A function that registers one tool against the MCP server. */
 export type ToolRegistrar = (server: McpServer, ctx: ToolContext) => void;
+
+/**
+ * The SDK's per-CALL context, handed to every tool callback as its 2nd argument.
+ * Carries `signal` (client cancellation), `_meta.progressToken`, `sendNotification`
+ * (per-call `notifications/progress`), `requestId` and `sessionId`.
+ *
+ * It is ALWAYS supplied by the SDK at runtime — a registrar arrow written as
+ * `(args) => xImpl(ctx, args)` simply does not name it. Tools opt in by taking a
+ * third `extra?: ToolExtra` parameter and having their registrar pass it:
+ *
+ *     (args, extra) => xImpl(ctx, args, extra)
+ *
+ * ALWAYS optional on an Impl: the agent/chat CLI calls Impls directly with
+ * `(ctx, args)` and has no MCP request in flight, so `extra` is `undefined` there.
+ * Never assume it exists; never cache it beyond the call (it is per-request).
+ */
+export type ToolExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;

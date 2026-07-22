@@ -1,6 +1,7 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
 import { registerBundleDependencies } from "./bundleDependencies.js";
+import { registerCancelMusicJob } from "./cancelMusicJob.js";
 // Campaign Waves 4 & 6 (backlog 2026-05-29):
 import { registerCaptionTop } from "./captionTop.js";
 import { registerCheckOperatorAvailability } from "./checkOperatorAvailability.js";
@@ -31,12 +32,14 @@ import { registerExportSopToSvg } from "./exportSopToSvg.js";
 import { registerExtractPalette } from "./extractPalette.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
 import { registerFindTdParameters } from "./findTdParameters.js";
+import { registerGenerateMusic } from "./generateMusic.js";
 import { registerGenerateReadme } from "./generateReadme.js";
 import { registerGetBridgeLogs } from "./getBridgeLogs.js";
 import { registerGetDatContent } from "./getDatContent.js";
 import { registerGetEditorContext } from "./getEditorContext.js";
 import { registerGetInlinePreview } from "./getInlinePreview.js";
 import { registerGetModuleHelp } from "./getModuleHelp.js";
+import { registerGetMusicJob } from "./getMusicJob.js";
 import { registerGetNodeStateRuntime } from "./getNodeStateRuntime.js";
 import { registerGetOperatorWorkflowGuide } from "./getOperatorWorkflowGuide.js";
 import { registerGetParameterMenu } from "./getParameterMenu.js";
@@ -78,6 +81,7 @@ import { registerSetDatContent } from "./setDatContent.js";
 import { registerSetParameterExpression } from "./setParameterExpression.js";
 import { registerShowPreflightReport } from "./showPreflightReport.js";
 import { registerSnapshotTdGraph } from "./snapshotTdGraph.js";
+import { registerSubmitMusicJob } from "./submitMusicJob.js";
 import { registerSuggestOperatorChain } from "./suggestOperatorChain.js";
 import { registerSummarizeTdErrors } from "./summarizeTdErrors.js";
 import { registerSwapOperator } from "./swapOperator.js";
@@ -191,4 +195,13 @@ export const layer3Registrars: ToolRegistrar[] = [
   // (patterns inspired by Derivative's official TouchDesigner TDMCP, Shared Use License):
   registerGetDatContent,
   registerGetParameterMenu,
+  // ACE-Step music generation (P0 2026-07-07 generate; P1 2026-07-11 job lifecycle).
+  // Opt-in and disabled-by-default: each registrar early-returns unless the BUILT
+  // context has `ctx.aceClient` (set when config.aceEnabled is true via env OR a
+  // config-file/profile). Gating on the context — not process.env at module load —
+  // is what makes the config-file path register these too.
+  registerGenerateMusic,
+  registerSubmitMusicJob,
+  registerGetMusicJob,
+  registerCancelMusicJob,
 ];
