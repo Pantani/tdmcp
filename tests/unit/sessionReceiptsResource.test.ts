@@ -15,6 +15,12 @@ import {
 
 const tempDirs: string[] = [];
 
+// Retention-sensitive fixtures must stay inside TURN_RECEIPT_STORE_MAX_AGE_MS (7d):
+// fileTurnReceiptStore.write() prunes against the real clock, so absolute dates
+// silently expire and make these tests fail by calendar date.
+const RECENT_BASE_MS = Date.now() - 60_000;
+const at = (offsetMs: number): string => new Date(RECENT_BASE_MS + offsetMs).toISOString();
+
 afterEach(() => {
   for (const path of tempDirs.splice(0)) rmSync(path, { recursive: true, force: true });
 });
@@ -59,28 +65,16 @@ describe("session receipts resource", () => {
 
   it("filters newest-first by bounded limit and terminal status", async () => {
     const path = tempStore();
-    const first = await receipt(
-      "00000000-0000-4000-8000-000000000021",
-      "success",
-      "2026-07-15T12:00:00.000Z",
-    );
-    const second = await receipt(
-      "00000000-0000-4000-8000-000000000022",
-      "failed",
-      "2026-07-15T12:00:01.000Z",
-    );
-    const third = await receipt(
-      "00000000-0000-4000-8000-000000000023",
-      "success",
-      "2026-07-15T12:00:02.000Z",
-    );
+    const first = await receipt("00000000-0000-4000-8000-000000000021", "success", at(0));
+    const second = await receipt("00000000-0000-4000-8000-000000000022", "failed", at(1000));
+    const third = await receipt("00000000-0000-4000-8000-000000000023", "success", at(2000));
     for (const item of [first, second, third]) {
       expect(await fileTurnReceiptStore.write(path, item)).toBe("written");
     }
 
     const result = readSessionReceipts(new URL("tdmcp://session/receipts?limit=1&status=success"), {
       env: { TDMCP_COPILOT_RECEIPTS: "persist", TDMCP_COPILOT_RECEIPTS_PATH: path },
-      now: Date.parse("2026-07-15T12:00:03.000Z"),
+      now: RECENT_BASE_MS + 3000,
     });
 
     expect(result.state).toBe("available");
@@ -91,17 +85,13 @@ describe("session receipts resource", () => {
 
   it("honors effective config values without requiring process env parity", async () => {
     const path = tempStore();
-    const item = await receipt(
-      "00000000-0000-4000-8000-000000000099",
-      "success",
-      "2026-07-15T12:00:00.000Z",
-    );
+    const item = await receipt("00000000-0000-4000-8000-000000000099", "success", at(0));
     expect(await fileTurnReceiptStore.write(path, item)).toBe("written");
     const result = readSessionReceipts(new URL("tdmcp://session/receipts?limit=1"), {
       env: {},
       persistence: "persist",
       storePath: path,
-      now: Date.parse("2026-07-15T12:00:01.000Z"),
+      now: RECENT_BASE_MS + 1000,
     });
     expect(result.state).toBe("available");
     expect(result.receipts.map((entry) => entry.receipt_id)).toEqual([item.receipt_id]);

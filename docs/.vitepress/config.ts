@@ -5,6 +5,8 @@ import availability from "./feature-availability.json";
 const GITHUB = "https://github.com/Pantani/tdmcp";
 const NPM = "https://www.npmjs.com/package/@dpantani/tdmcp";
 const HOSTNAME = "https://pantani.github.io/tdmcp/";
+const RAW_GITHUB = "https://raw.githubusercontent.com/Pantani/tdmcp/main/";
+const GENERATED_MARKDOWN_PAGES = new Set(["reference/tools.md"]);
 
 const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
 const sourceOnlyItems = (locale: "en" | "pt"): ArtistItem[] =>
@@ -245,6 +247,16 @@ export default defineConfig({
     ],
     ["meta", { name: "theme-color", content: "#0b0b0e" }],
     ["link", { rel: "icon", type: "image/svg+xml", href: "/tdmcp/favicon.svg" }],
+    ["link", { rel: "service-doc", href: `${HOSTNAME}reference/bridge-api` }],
+    [
+      "link",
+      {
+        rel: "alternate",
+        type: "application/json",
+        title: "tdmcp Agent Skills discovery index",
+        href: `${HOSTNAME}.well-known/agent-skills/index.json`,
+      },
+    ],
     ["meta", { property: "og:type", content: "website" }],
     ["meta", { property: "og:site_name", content: "tdmcp — TouchDesigner MCP server" }],
     ["meta", { property: "og:image", content: `${HOSTNAME}og-image.jpg` }],
@@ -280,6 +292,17 @@ export default defineConfig({
       ["meta", { name: "twitter:title", content: title }],
       ["meta", { name: "twitter:description", content: description }],
     ];
+    if (!GENERATED_MARKDOWN_PAGES.has(pageData.relativePath)) {
+      tags.push([
+        "link",
+        {
+          rel: "alternate",
+          type: "text/markdown",
+          title: `${title} — Markdown source`,
+          href: new URL(`docs/${pageData.relativePath}`, RAW_GITHUB).href,
+        },
+      ]);
+    }
     const isPt = pageData.relativePath.startsWith("pt/");
     tags.push(
       ["meta", { property: "og:locale", content: isPt ? "pt_BR" : "en_US" }],

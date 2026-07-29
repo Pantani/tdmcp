@@ -82,10 +82,11 @@ const recovery: RecoveryReport = {
   evidence: { node: "raw evidence must not be persisted" },
 };
 
-function offReceipt(
-  receiptId: string,
-  completedAtMs = Date.parse("2026-07-15T12:00:00.000Z"),
-): Promise<TurnReceiptV1> {
+// Kept relative to the real clock: fileTurnReceiptStore.write() prunes entries
+// older than TURN_RECEIPT_STORE_MAX_AGE_MS (7d) using Date.now().
+const RECENT_BASE_MS = Date.now() - 60_000;
+
+function offReceipt(receiptId: string, completedAtMs = RECENT_BASE_MS): Promise<TurnReceiptV1> {
   const collector = createTurnReceiptCollector({
     requestedTier: "standard",
     effectiveTier: "safe",
@@ -379,10 +380,7 @@ describe("turn receipt persistence", () => {
   it("writes private atomic stores and preserves concurrent receipts", async () => {
     const path = tempStore();
     const first = await offReceipt("00000000-0000-4000-8000-000000000011");
-    const second = await offReceipt(
-      "00000000-0000-4000-8000-000000000012",
-      Date.parse("2026-07-15T12:00:01.000Z"),
-    );
+    const second = await offReceipt("00000000-0000-4000-8000-000000000012", RECENT_BASE_MS + 1000);
 
     expect(
       await Promise.all([

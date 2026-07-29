@@ -14,6 +14,13 @@ to a release.
 
 ### Added
 
+- **Agent-oriented documentation discovery** — the VitePress site now generates a
+  SHA-256-verified Agent Skills index from canonical curated skills, advertises
+  page-level discovery and Markdown alternates, and registers read-only WebMCP
+  documentation search and lookup tools. Generated skill output is cleared and
+  rebuilt per build so renamed or removed skills cannot remain published, and
+  WebMCP executors enforce their closed input schemas.
+
 - **Authenticated one-request operation closure (Wave 16, unreleased source
   tree)** — live QA on the isolated TouchDesigner 099 build 2025.32820 process
   at PID 62916 passed A0–A13 with bridge exec disabled: authenticated operation
