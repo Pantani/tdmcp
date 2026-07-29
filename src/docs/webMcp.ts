@@ -121,7 +121,12 @@ function inputRecord(input: unknown): Record<string, unknown> {
 }
 
 function boundedString(input: unknown, key: string, maximum: number): string {
-  const value = inputRecord(input)[key];
+  const record = inputRecord(input);
+  const unexpectedKeys = Object.keys(record).filter((candidate) => candidate !== key);
+  if (unexpectedKeys.length > 0) {
+    throw new Error(`Unexpected WebMCP input properties: ${unexpectedKeys.join(", ")}.`);
+  }
+  const value = record[key];
   if (typeof value !== "string") throw new Error(`${key} must be a string.`);
   const normalized = value.trim();
   if (!normalized || normalized.length > maximum) {

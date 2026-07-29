@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCanonicalSkillCatalog } from "../src/skills/catalog.js";
@@ -58,6 +58,7 @@ export function generateAgentSkillsDiscovery(
   const repoRoot = resolve(options.repoRoot ?? defaultRepoRoot());
   const outputRoot = resolve(options.outputRoot ?? join(repoRoot, "docs/public"));
   const discoveryRoot = join(outputRoot, ".well-known", "agent-skills");
+  rmSync(discoveryRoot, { force: true, recursive: true });
   const catalog = buildCanonicalSkillCatalog({
     sourceRoot: join(repoRoot, "skills", "curated"),
   });

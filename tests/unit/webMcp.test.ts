@@ -47,6 +47,12 @@ describe("tdmcp docs WebMCP", () => {
       /Unknown tdmcp documentation topic/u,
     );
     expect(() => searchTool.execute({ query: "" })).toThrow(/between 1 and 120/u);
+    expect(() => searchTool.execute({ query: "bridge", extra: true })).toThrow(
+      /Unexpected WebMCP input properties: extra/u,
+    );
+    expect(() => lookupTool.execute({ topic: "install", extra: true })).toThrow(
+      /Unexpected WebMCP input properties: extra/u,
+    );
   });
 
   it("prefers the current document API and falls back to the legacy navigator API", () => {

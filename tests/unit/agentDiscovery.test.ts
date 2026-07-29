@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +21,10 @@ describe("Agent Skills discovery generator", () => {
     const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
     const outputRoot = mkdtempSync(join(tmpdir(), "tdmcp-agent-discovery-"));
     temporary.push(outputRoot);
+    const staleSkill = join(outputRoot, ".well-known", "agent-skills", "removed-skill", "SKILL.md");
+    mkdirSync(dirname(staleSkill), { recursive: true });
+    writeFileSync(staleSkill, "stale");
+
     const result = generateAgentSkillsDiscovery({ repoRoot, outputRoot });
     const index = JSON.parse(readFileSync(result.indexPath, "utf8")) as {
       $schema: string;
@@ -36,6 +40,7 @@ describe("Agent Skills discovery generator", () => {
     expect(index.$schema).toBe(AGENT_SKILLS_DISCOVERY_SCHEMA);
     expect(index.skills.map((skill) => skill.name)).toEqual([...CURATED_SKILL_NAMES]);
     expect(result.skillCount).toBe(CURATED_SKILL_NAMES.length);
+    expect(existsSync(staleSkill)).toBe(false);
 
     for (const skill of index.skills) {
       expect(skill).toMatchObject({

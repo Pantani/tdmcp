@@ -1,5 +1,4 @@
 User-agent: *
-Content-Signal: ai-train=no, search=yes, ai-input=yes
 Allow: /
 
 Sitemap: https://pantani.github.io/tdmcp/sitemap.xml

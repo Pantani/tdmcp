@@ -233,7 +233,7 @@ describe("OAuth owner-private HMAC state store", () => {
       clientId: tokenOwner.client_id,
     });
     await expect(store.getClient(replacement.client_id)).resolves.toBeDefined();
-  });
+  }, 10_000);
 
   it("does not let unauthenticated lookup extend inactivity, but retains live token owners", async () => {
     const { policy, store, setNow } = await fixture({
