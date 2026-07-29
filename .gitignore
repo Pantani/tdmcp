@@ -51,6 +51,10 @@ docs/.vitepress/cache/
 # build, locally and in CI), so it's a build artifact, not source.
 docs/reference/tools.md
 
+# Generated Agent Skills discovery index and public SKILL.md copies. The docs
+# build recreates these from the canonical skills/curated sources.
+docs/public/.well-known/agent-skills/
+
 # External Shader Park TouchDesigner plugin fetched on demand by
 # `npm run shader-park:tox`; do not vendor release binaries into source.
 vendor/shader-park/*.tox
