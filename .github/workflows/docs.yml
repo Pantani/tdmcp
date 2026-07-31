@@ -5,7 +5,10 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "skills/curated/**"
       - "src/tools/**"
+      - "src/docs/webMcp.ts"
+      - "scripts/gen-agent-discovery.ts"
       - "scripts/gen-tool-docs.ts"
       - "package.json"
       - ".github/workflows/docs.yml"
