@@ -1,3 +1,4 @@
+import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import { getPreviewImpl } from "../../src/tools/layer1/getPreview.js";
@@ -105,5 +106,33 @@ describe("getPreviewImpl", () => {
     // The mock echoes back the requested dimensions.
     expect((caption as { text?: string })?.text).toMatch(/1280/);
     expect((caption as { text?: string })?.text).toMatch(/720/);
+  });
+
+  it("labels native dimensions when advisory dimensions differ", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/preview/:seg`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            path: "/project1/portrait",
+            width: 360,
+            height: 640,
+            format: "png",
+            base64: Buffer.from("native-preview").toString("base64"),
+          },
+        }),
+      ),
+    );
+
+    const result = await getPreviewImpl(makeCtx(), {
+      node_path: "/project1/portrait",
+      width: 960,
+      height: 540,
+    });
+    const caption = result.content.find((content) => content.type === "text") as
+      | { text?: string }
+      | undefined;
+    expect(caption?.text).toContain("360×640 native");
+    expect(caption?.text).toContain("960×540 requested");
   });
 });
