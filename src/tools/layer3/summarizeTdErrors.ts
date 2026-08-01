@@ -4,39 +4,44 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
 import { parentOf } from "./nodeMatch.js";
 
 export const summarizeTdErrorsSchema = z.object({
-  path: z.string().default("/project1").describe("Network root to collect errors under."),
+  path: z.string().default("/project1").describe("Network root to collect diagnostics under."),
   group_by: z
     .enum(["message", "type", "parent"])
     .default("message")
     .describe(
-      "How to cluster errors: by exact message, by error type, or by parent container (to find a common upstream cause).",
+      "How to cluster diagnostics: by exact message, by severity type (error/warning), or by parent container.",
     ),
 });
 type SummarizeTdErrorsArgs = z.infer<typeof summarizeTdErrorsSchema>;
 
 export const summarizeTdErrorsOutputSchema = z.object({
-  path: z.string().describe("The network root errors were collected under, echoing the request."),
-  total: z.number().describe("Total number of errors found across the network (0 means clean)."),
-  group_by: z
-    .enum(["message", "type", "parent"])
-    .describe("How the errors were clustered, echoing the request."),
+  path: z.string().describe("The network root diagnostics were collected under."),
+  total: z
+    .number()
+    .describe("Total number of diagnostics found across the network (errors + warnings)."),
+  error_count: z.number().describe("Number of error-severity diagnostics."),
+  warning_count: z.number().describe("Number of warning-severity diagnostics."),
+  group_by: z.enum(["message", "type", "parent"]).describe("How the diagnostics were clustered."),
   groups: z
     .array(
       z.object({
         key: z.string().describe("The shared message, type, or parent path for this cluster."),
-        count: z.number().describe("How many errors fall into this cluster."),
+        count: z.number().describe("How many diagnostics fall into this cluster."),
         sample: z
           .object({
             path: z.string().describe("Path of one representative node in this cluster."),
-            message: z.string().describe("That node's error message, as a concrete example."),
+            message: z.string().describe("That node's diagnostic message, as a concrete example."),
+            type: z
+              .enum(["error", "warning"])
+              .describe("Severity of the representative diagnostic."),
           })
-          .describe("One representative error from the cluster."),
+          .describe("One representative diagnostic from the cluster."),
       }),
     )
-    .describe("Error clusters, largest first; fixing a big cluster's cause clears it at once."),
+    .describe("Diagnostic clusters, largest first."),
   suggestions: z
     .array(z.string())
-    .describe("Plain-language next steps, e.g. the common cause and which nodes to check first."),
+    .describe("Plain-language next steps, including which nodes to inspect first."),
 });
 
 export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdErrorsArgs) {
@@ -45,10 +50,14 @@ export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdE
     (result) => {
       const errors = result.errors;
       const total = errors.length;
+      const errorCount = errors.filter((diagnostic) => diagnostic.type === "error").length;
+      const warningCount = errors.filter((diagnostic) => diagnostic.type === "warning").length;
       if (total === 0) {
-        return structuredResult(`No errors found under ${args.path}.`, {
+        return structuredResult(`No errors or warnings found under ${args.path}.`, {
           path: args.path,
           total: 0,
+          error_count: 0,
+          warning_count: 0,
           group_by: args.group_by,
           groups: [],
           suggestions: [],
@@ -64,14 +73,23 @@ export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdE
 
       const grouped = new Map<
         string,
-        { count: number; sample: { path: string; message: string } }
+        { count: number; sample: { path: string; message: string; type: "error" | "warning" } }
       >();
       const byPath = new Map<string, number>();
       for (const e of errors) {
         const key = keyOf(e);
         const g = grouped.get(key);
         if (g) g.count += 1;
-        else grouped.set(key, { count: 1, sample: { path: e.path, message: e.message } });
+        else {
+          grouped.set(key, {
+            count: 1,
+            sample: {
+              path: e.path,
+              message: e.message,
+              type: e.type === "warning" ? "warning" : "error",
+            },
+          });
+        }
         byPath.set(e.path, (byPath.get(e.path) ?? 0) + 1);
       }
 
@@ -82,12 +100,12 @@ export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdE
       const worstNodes = [...byPath.entries()]
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
-        .map(([p, c]) => `${p} (${c} error${c === 1 ? "" : "s"})`);
+        .map(([p, c]) => `${p} (${c} diagnostic${c === 1 ? "" : "s"})`);
 
       const suggestions: string[] = [];
       if (groups[0] && groups[0].count > 1) {
         suggestions.push(
-          `${groups[0].count} errors share ${args.group_by} "${groups[0].key}" — fixing the common cause clears them at once.`,
+          `${groups[0].count} diagnostics share ${args.group_by} "${groups[0].key}"; inspect the representative sample and affected nodes together.`,
         );
       }
       if (worstNodes.length > 0) {
@@ -95,8 +113,16 @@ export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdE
       }
 
       return structuredResult(
-        `${total} error(s) under ${args.path} in ${groups.length} ${args.group_by} group(s).`,
-        { path: args.path, total, group_by: args.group_by, groups, suggestions },
+        `${total} diagnostic(s) under ${args.path}: ${errorCount} error(s), ${warningCount} warning(s), in ${groups.length} ${args.group_by} group(s).`,
+        {
+          path: args.path,
+          total,
+          error_count: errorCount,
+          warning_count: warningCount,
+          group_by: args.group_by,
+          groups,
+          suggestions,
+        },
       );
     },
   );
@@ -108,7 +134,7 @@ export const registerSummarizeTdErrors: ToolRegistrar = (server, ctx) => {
     {
       title: "Summarize network errors",
       description:
-        "Read-only: collect errors across a network and cluster them by message, type, or parent container, with the worst-offending nodes and a suggested order to investigate. Returns {total, groups[], suggestions[]}. Use this for network-wide triage instead of reading every node's errors one by one; use get_td_node_errors when you just want the raw error list for one node or sub-tree.",
+        "Read-only: collect errors and warnings across a network and cluster them by message, severity type, or parent container, with the nodes that have the most diagnostics and a suggested order to investigate. Returns {total, error_count, warning_count, groups[], suggestions[]}; each group sample retains its error/warning severity. Use this for network-wide triage instead of reading every node's diagnostics one by one; use get_td_node_errors when you want the raw list for one node or sub-tree.",
       inputSchema: summarizeTdErrorsSchema.shape,
       outputSchema: summarizeTdErrorsOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },

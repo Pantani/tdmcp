@@ -89,6 +89,8 @@ describe("summarize_td_errors", () => {
   it("returns an empty summary when there are no errors", async () => {
     const r = await summarizeTdErrorsImpl(makeCtx(), { path: "/project1", group_by: "message" });
     expect(sc(r).total).toBe(0);
+    expect(sc(r).error_count).toBe(0);
+    expect(sc(r).warning_count).toBe(0);
     expect(sc(r).groups).toEqual([]);
   });
 
@@ -109,8 +111,37 @@ describe("summarize_td_errors", () => {
     );
     const r = await summarizeTdErrorsImpl(makeCtx(), { path: "/project1", group_by: "message" });
     expect(sc(r).total).toBe(3);
-    expect(sc(r).groups[0]).toMatchObject({ key: "missing input", count: 2 });
+    expect(sc(r).error_count).toBe(2);
+    expect(sc(r).warning_count).toBe(1);
+    expect(sc(r).groups[0]).toMatchObject({
+      key: "missing input",
+      count: 2,
+      sample: { type: "error" },
+    });
     expect(sc(r).suggestions.join(" ")).toContain("/project1/a");
+  });
+
+  it("does not call warning-only diagnostics errors", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/network/:seg/errors`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            errors: [
+              { path: "/project1/a", message: "non-commercial resolution limit", type: "warning" },
+              { path: "/project1/b", message: "pscale is not available", type: "warning" },
+            ],
+          },
+        }),
+      ),
+    );
+    const r = await summarizeTdErrorsImpl(makeCtx(), { path: "/project1", group_by: "type" });
+    expect(sc(r)).toMatchObject({ total: 2, error_count: 0, warning_count: 2 });
+    expect(sc(r).groups[0]).toMatchObject({ key: "warning", sample: { type: "warning" } });
+    const text = r.content.find((content) => content.type === "text") as
+      | { text?: string }
+      | undefined;
+    expect(text?.text).toContain("0 error(s), 2 warning(s)");
   });
 });
 
