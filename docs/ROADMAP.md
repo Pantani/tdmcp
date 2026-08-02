@@ -140,9 +140,31 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   excerpt provenance and node/document/parameter/byte/time budgets. It uses the
   structured `POST /api/code/search` route with no raw-Python or embedding
   fallback and remains available when `ALLOW_EXEC=0`. Offline bridge and MCP
-  contract coverage is present; live TouchDesigner validation is **UNVERIFIED**.
+  contract coverage is present. Live validation passed on TD 099 build
+  2025.33070: a complete 233-node / 377-document / 8,079-parameter scan, truthful
+  forced-budget truncation, secret redaction, exec-gate rejection and authored
+  GLSL/expression retrieval. Identifier-aware tokenization preserves whole names
+  while splitting camelCase, acronym and letter/number boundaries; the live
+  `noise fbm` regression moved from 0 to 18 matches without embeddings.
   A short-lived corpus cache is held until live latency is measured and the
   public contract can expose cache age, a fresh bypass and mutation invalidation.
+  Open follow-ups from the #128/#149 audit:
+  - **P1 — structured-first `NetworkBuilder`:** route DAT text, expression mode,
+    editor placement and other already-supported mutations through structured
+    bridge endpoints; add narrowly scoped flag/storage primitives where missing.
+    The goal is to move the #128 generator family toward useful operation with
+    `ALLOW_EXEC=0` instead of multiplying per-tool Python escape hatches.
+  - **P1 — refresh the operator KB from live truth:** build 2025.33070 exposes
+    685 optypes; reconciliation found 626/629 documented entries creatable,
+    3 documented-but-unavailable entries and 59 live-only KB gaps. Automate the
+    delta/update workflow around `GET /api/optypes` and preflight unknown builder
+    operators with `check_operator_availability`.
+  - **P2 — code-search precision controls:** consider `match_mode: any|all`, plus
+    language/DAT-role/tool-provenance facets for generated Python, GLSL and
+    callback networks. Keep externalized-tree/file search separate from live TD.
+  - **P3 — parameter-watch wording:** remove the stale claim that
+    `param.changed` is a high-frequency client event; it is opt-in and coalesced
+    bridge-side but deliberately absent from the client's high-frequency gate.
 - **Action-aware, Transactional Editor Workflows Wave 7 (source tree,
   unreleased).** Existing tools now provide action/framing-aware Network Editor
   follow, broker-aware atomic `.tox` export, dry-run-first package namespace
