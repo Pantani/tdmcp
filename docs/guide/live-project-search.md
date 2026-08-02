@@ -1,5 +1,5 @@
 ---
-description: "Bounded, compact search across live TouchDesigner operators and parameters without transferring the whole network or enabling raw Python."
+description: "Bounded, compact search across live TouchDesigner operators, parameters, and authored code without transferring the whole network or enabling raw Python."
 ---
 
 # Live project search
@@ -7,7 +7,7 @@ description: "Bounded, compact search across live TouchDesigner operators and pa
 <FeatureAvailability status="source-only" locale="en" />
 
 tdmcp can search the running TouchDesigner project at the bridge instead of
-downloading a recursive topology and filtering it in the MCP process. The two
+downloading a recursive topology and filtering it in the MCP process. The three
 read-only tools are authenticated structured routes and continue working with
 `TDMCP_BRIDGE_ALLOW_EXEC=0`.
 
@@ -59,15 +59,38 @@ This tool requires the current structured bridge. An older bridge returns typed
 update/reinstall guidance; there is deliberately no raw-Python or full-parameter-
 dump fallback.
 
+## Search authored code
+
+`search_td_code` searches coherent code-bearing documents with
+`POST /api/code/search`: each DAT body and each parameter expression is ranked
+as one document. The default local ranking is BM25-style lexical retrieval with
+an explicit literal-match boost, so exact callback names and natural-language
+behavior queries both work without an embedding service.
+
+Results return only a short excerpt plus the operator path/type/family, source
+kind (`dat_text` or `parameter_expression`), field, one-based line and column,
+score, and ranking provenance. The route never exports whole DATs or falls back
+to raw Python. Likely secret assignments, bearer values, URL credentials, and
+private-key blocks are redacted before matching; sensitive DAT/parameter names
+are skipped, so secret-value guesses cannot match raw content.
+
+The default depth is 3, result limit 50, node scan limit 1,000, document scan
+limit 10,000, parameter scan limit 25,000, byte scan limit 2 MiB, and time
+budget 1,000 ms. Filters can scope node name/path/type/family and source kind.
+Hard limits remain explicit in the tool schema and incomplete scans report the
+budget that stopped them. Each call currently scans fresh live state. A future
+short-lived corpus cache must expose its age, support an explicit fresh bypass,
+and invalidate on tdmcp-authored mutations before it can become a safe default.
+
 ## Read completion metadata
 
 Do not claim “all matches” from `matched` alone. Check:
 
 - `truncated`: more matches existed in the scanned portion than were returned;
-- `scan_truncated`: node, parameter, or time work stopped early;
+- `scan_truncated`: node, document, parameter, byte, or time work stopped early;
 - `count_complete`: false whenever the total is only a lower bound;
-- `stop_reason`: `completed`, `node_scan_limit`, `parameter_scan_limit`, or
-  `time_limit`.
+- `stop_reason`: `completed` or the node/document/parameter/byte/time budget
+  that stopped the scan.
 
 ## Honest result examples
 
@@ -110,4 +133,5 @@ authenticated bridge on a disposable project: auth rejection, exec-disabled
 operation, depth, type/family, value/expression/mode/non-default filters,
 redaction, unreadable parameters, deterministic ordering, limits, typed invalid
 inputs, and no undo-stack change all passed. Treat other builds honestly until
-they receive the same probe.
+they receive the same probe. `search_td_code` currently has offline bridge and
+MCP contract coverage; live TouchDesigner validation remains **UNVERIFIED**.

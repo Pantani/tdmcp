@@ -76,6 +76,7 @@ import {
 } from "../tools/layer3/planTdVersionMigration.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { searchPythonApiImpl, searchPythonApiSchema } from "../tools/layer3/searchPythonApi.js";
+import { searchTdCodeImpl, searchTdCodeSchema } from "../tools/layer3/searchTdCode.js";
 import {
   searchTouchDesignerKnowledgeImpl,
   searchTouchDesignerKnowledgeSchema,
@@ -191,6 +192,12 @@ export const LLM_TOOLS: LlmTool[] = [
     "Search the project for nodes by name pattern and/or operator type.",
     findTdNodesSchema,
     findTdNodesImpl,
+  ),
+  t(
+    "search_td_code",
+    "Search authored DAT text and parameter expressions with bounded redacted excerpts.",
+    searchTdCodeSchema,
+    searchTdCodeImpl,
   ),
   t(
     "get_td_node_parameters",

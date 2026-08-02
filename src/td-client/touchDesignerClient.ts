@@ -41,6 +41,7 @@ import {
   BatchResultSchema,
   BridgeLogsSchema,
   type CaptureAdvancedInput,
+  CodeSearchResultSchema,
   ConnectResultSchema,
   type CreateNodeInput,
   CreateNodeInputSchema,
@@ -1734,6 +1735,57 @@ export class TouchDesignerClient {
         limit: input.limit,
         node_scan_limit: input.nodeScanLimit,
         parameter_scan_limit: input.parameterScanLimit,
+        time_budget_ms: input.timeBudgetMs,
+      },
+      undefined,
+      options.timeoutMs,
+      false,
+      options.signal,
+    );
+  }
+
+  /** Bounded bridge-side search across DAT text and parameter expressions. */
+  searchCode(
+    input: {
+      query: string;
+      rootPath: string;
+      maxDepth: number;
+      sourceKinds: Array<"dat_text" | "parameter_expression">;
+      nodePattern?: string;
+      nodeNameGlob?: string;
+      nodePathGlob?: string;
+      type?: string;
+      typeMatch: "partial" | "exact";
+      family?: "TOP" | "CHOP" | "SOP" | "DAT" | "COMP" | "MAT" | "POP";
+      limit: number;
+      nodeScanLimit: number;
+      documentScanLimit: number;
+      parameterScanLimit: number;
+      byteScanLimit: number;
+      timeBudgetMs: number;
+    },
+    options: TdReadRequestOptions = {},
+  ) {
+    return this.request(
+      "POST",
+      "/api/code/search",
+      CodeSearchResultSchema,
+      {
+        query: input.query,
+        root_path: input.rootPath,
+        max_depth: input.maxDepth,
+        source_kinds: input.sourceKinds,
+        node_pattern: input.nodePattern,
+        node_name_glob: input.nodeNameGlob,
+        node_path_glob: input.nodePathGlob,
+        type: input.type,
+        type_match: input.typeMatch,
+        family: input.family,
+        limit: input.limit,
+        node_scan_limit: input.nodeScanLimit,
+        document_scan_limit: input.documentScanLimit,
+        parameter_scan_limit: input.parameterScanLimit,
+        byte_scan_limit: input.byteScanLimit,
         time_budget_ms: input.timeBudgetMs,
       },
       undefined,

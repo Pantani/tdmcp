@@ -134,6 +134,15 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   secret redaction, anti-oracle behavior and unreadable counters. Both passed
   live auth, `ALLOW_EXEC=0`, limit, completeness and undo-stack checks on TD 099
   build 2025.32820; other builds remain unverified until probed.
+- **Bounded Authored-Code Discovery (source tree, unreleased).**
+  `search_td_code` adds local BM25-style retrieval across coherent DAT bodies and
+  parameter expressions, with literal boosts, redaction-before-match, precise
+  excerpt provenance and node/document/parameter/byte/time budgets. It uses the
+  structured `POST /api/code/search` route with no raw-Python or embedding
+  fallback and remains available when `ALLOW_EXEC=0`. Offline bridge and MCP
+  contract coverage is present; live TouchDesigner validation is **UNVERIFIED**.
+  A short-lived corpus cache is held until live latency is measured and the
+  public contract can expose cache age, a fresh bypass and mutation invalidation.
 - **Action-aware, Transactional Editor Workflows Wave 7 (source tree,
   unreleased).** Existing tools now provide action/framing-aware Network Editor
   follow, broker-aware atomic `.tox` export, dry-run-first package namespace
