@@ -65,6 +65,9 @@ completo de parâmetros.
 `POST /api/code/search`: cada corpo de DAT e cada expressão de parâmetro é
 ranqueado como um documento. O ranking local default usa recuperação lexical
 estilo BM25 com boost explícito para match literal, sem exigir embeddings.
+Identificadores completos são preservados, enquanto limites camelCase e entre
+letras/números adicionam tokens componentes; assim, nomes do TouchDesigner como
+`noiseTOP` e `noise1` também respondem a `noise`.
 
 Cada resultado contém apenas um excerpt curto, path/tipo/família do operador,
 source kind (`dat_text` ou `parameter_expression`), campo, linha e coluna

@@ -65,7 +65,9 @@ dump fallback.
 `POST /api/code/search`: each DAT body and each parameter expression is ranked
 as one document. The default local ranking is BM25-style lexical retrieval with
 an explicit literal-match boost, so exact callback names and natural-language
-behavior queries both work without an embedding service.
+behavior queries both work without an embedding service. Whole identifiers are
+retained while camelCase and letter/number boundaries add component tokens, so
+TouchDesigner names such as `noiseTOP` and `noise1` also match `noise`.
 
 Results return only a short excerpt plus the operator path/type/family, source
 kind (`dat_text` or `parameter_expression`), field, one-based line and column,

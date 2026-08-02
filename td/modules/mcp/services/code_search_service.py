@@ -34,7 +34,11 @@ _RESPONSE_HEADROOM_BYTES = 16 * 1_024
 
 SOURCE_KINDS = frozenset(("dat_text", "parameter_expression"))
 DEFAULT_SOURCE_KINDS = ("dat_text", "parameter_expression")
-_TOKEN = re.compile(r"[a-z0-9]+")
+_TOKEN = re.compile(r"[A-Za-z0-9]+")
+_IDENTIFIER_BOUNDARY = re.compile(
+    r"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z0-9])(?=[A-Z])|"
+    r"(?<=[A-Za-z])(?=[0-9])|(?<=[0-9])(?=[A-Za-z])"
+)
 _SENSITIVE_NAME = re.compile(
     r"(?:password|passwd|secret|token|api[_-]?key|credential|authorization|bearer|private[_-]?key)",
     re.IGNORECASE,
@@ -94,8 +98,15 @@ def _validate_source_kinds(source_kinds):
 
 def _tokenize(text):
     normalized = unicodedata.normalize("NFD", str(text))
-    ascii_text = normalized.encode("ascii", "ignore").decode("ascii").lower()
-    return _TOKEN.findall(ascii_text)
+    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
+    tokens = []
+    for identifier in _TOKEN.findall(ascii_text):
+        folded = identifier.lower()
+        tokens.append(folded)
+        parts = _IDENTIFIER_BOUNDARY.split(identifier)
+        if len(parts) > 1:
+            tokens.extend(part.lower() for part in parts if part.lower() != folded)
+    return tokens
 
 
 def _redact_text(text):
@@ -186,18 +197,24 @@ def _named_parameters(node):
     return parameters, unreadable
 
 
-def _safe_expression_document(record, name, par, remaining_bytes):
+def _read_expression(record, name, par):
     try:
         hit = record["hit"]
         sensitive_node = _SENSITIVE_NAME.search(hit["name"]) or _SENSITIVE_NAME.search(
             hit["path"]
         )
         if sensitive_node or parameter_search_service._is_sensitive(par, name):
-            return "redacted", None, 0
+            return "redacted", None
         expression = getattr(par, "expr", "")
-        expression = "" if expression is None else str(expression)
+        return "read", "" if expression is None else str(expression)
     except Exception:  # noqa: BLE001
-        return "unreadable", None, 0
+        return "unreadable", None
+
+
+def _safe_expression_document(record, name, par, remaining_bytes):
+    outcome, expression = _read_expression(record, name, par)
+    if outcome != "read":
+        return outcome, None, 0
     if not expression:
         return "not_applicable", None, 0
     redacted, changed = _redact_text(expression)

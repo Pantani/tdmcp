@@ -131,6 +131,29 @@ class CodeSearchRankingTests(unittest.TestCase):
         self.assertEqual(report["source_kinds"], ["dat_text"])
         self.assertEqual(report["scanned_parameters"], 0)
 
+    def test_indexes_whole_identifiers_and_their_case_and_number_components(self):
+        generator = _Node(
+            "/project1/search/noise1",
+            text="float fbmNoise = resetFeedbackBuffer(); // GLSLShader",
+            op_type="noiseTOP",
+            family="DAT",
+        )
+        root = _Root("/project1/search", [generator])
+
+        compound = _search(root, "noise fbm", source_kinds=["dat_text"])
+        self.assertEqual([hit["op"] for hit in compound["results"]], [generator.path])
+        self.assertIn("bm25", compound["results"][0]["rank_sources"])
+
+        camel_case = _search(root, "feedback buffer", source_kinds=["dat_text"])
+        self.assertEqual([hit["op"] for hit in camel_case["results"]], [generator.path])
+
+        acronym = _search(root, "glsl shader", source_kinds=["dat_text"])
+        self.assertEqual([hit["op"] for hit in acronym["results"]], [generator.path])
+
+        whole_identifier = _search(root, "noisetop operator", source_kinds=["dat_text"])
+        self.assertEqual([hit["op"] for hit in whole_identifier["results"]], [generator.path])
+        self.assertEqual(whole_identifier["results"][0]["rank_sources"], ["bm25"])
+
     def test_applies_node_filters_before_document_ranking(self):
         report = _search(
             self.root,
