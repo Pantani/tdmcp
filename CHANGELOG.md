@@ -715,6 +715,14 @@ to a release.
 - Hardened Glama and hosted-registry introspection with a compact directory tool
   profile, reachable container HTTP binding, accurate tool metadata, raw-Python
   macro replay gating, and schema-backed structured recipe-bundle results.
+- The `tdmcp://session/receipts` MCP resource now resolves for bare, partial and
+  reordered query reads. Under MCP SDK 1.30 the documented `{?limit,status}`
+  template resolves reliably only when both parameters appear in template order,
+  so valid reads such as the bare URI, `?limit=5`, or a reversed query order
+  could miss the resource handler entirely. The bare resource is now registered
+  explicitly alongside the documented template, with a bounded query fallback
+  for partial or reordered parameters; the shared parser still rejects unknown
+  paths and unknown query keys.
 
 ## [0.13.1] - 2026-07-09
 
