@@ -715,6 +715,15 @@ to a release.
 - Hardened Glama and hosted-registry introspection with a compact directory tool
   profile, reachable container HTTP binding, accurate tool metadata, raw-Python
   macro replay gating, and schema-backed structured recipe-bundle results.
+- **`get_preview`** no longer implies that a capture was scaled to the requested
+  size. The bridge may return a TOP at its native resolution, but `width` and
+  `height` were described as the captured image dimensions and the caption
+  printed the returned size as if it were the requested result — misleading for
+  artists and agents inspecting an output. Both parameters are now described as
+  requested dimensions, and when the returned size differs the caption reports
+  both (`1080×1920 native; 640×360 requested`) for ordinary and advanced image
+  captures alike. Result labelling only; bridge capture and scaling behaviour is
+  unchanged.
 
 ## [0.13.1] - 2026-07-09
 
