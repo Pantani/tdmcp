@@ -715,6 +715,13 @@ to a release.
 - Hardened Glama and hosted-registry introspection with a compact directory tool
   profile, reachable container HTTP binding, accurate tool metadata, raw-Python
   macro replay gating, and schema-backed structured recipe-bundle results.
+- **`summarize_td_errors`** now distinguishes warnings from errors. The bridge
+  returns both severities in `result.errors`, but the summary counted and
+  described every entry as an error, so a warning-only network appeared to be
+  failing and could send an agent down the wrong repair path. The response keeps
+  the existing `total` field and adds `error_count` and `warning_count`, each
+  grouped representative sample retains its severity, and the descriptions and
+  suggestions use accurate diagnostic terminology.
 
 ## [0.13.1] - 2026-07-09
 
