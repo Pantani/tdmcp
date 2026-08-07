@@ -42,6 +42,9 @@ type ReceiptFilters = {
 };
 
 function parseFilters(uri: URL): ReceiptFilters | undefined {
+  if (uri.protocol !== "tdmcp:" || uri.hostname !== "session" || uri.pathname !== "/receipts") {
+    return undefined;
+  }
   if ([...uri.searchParams.keys()].some((key) => key !== "limit" && key !== "status")) {
     return undefined;
   }
@@ -111,27 +114,37 @@ export function readSessionReceipts(
 
 /** Registers `tdmcp://session/receipts{?limit,status}` as a read-only MCP resource. */
 export const registerSessionReceiptsResource: ResourceRegistrar = (server, ctx) => {
-  const template = new ResourceTemplate("tdmcp://session/receipts{?limit,status}", {
-    list: undefined,
-  });
+  const metadata = {
+    title: "Structured local-copilot turn receipts",
+    description:
+      "Newest-first, redacted audit receipts for built-in copilot turns. " +
+      "Persistence is opt-in; query with bounded limit=1..50 and optional " +
+      "status=success|failed|cancelled|max_steps.",
+    mimeType: "application/json",
+  };
+  const read = async (uri: URL) =>
+    jsonContents(
+      uri,
+      readSessionReceipts(uri, {
+        persistence: ctx.copilotReceipts,
+        storePath: ctx.copilotReceiptsPath,
+      }),
+    );
+
+  // SDK 1.30 matches {?limit,status} only when both query parameters are present
+  // in template order. Register the bare URI separately and add a fallback for
+  // partial or reordered queries; parseFilters rejects unknown keys and paths.
+  server.registerResource("td-session-receipts", "tdmcp://session/receipts", metadata, read);
   server.registerResource(
-    "td-session-receipts",
-    template,
-    {
-      title: "Structured local-copilot turn receipts",
-      description:
-        "Newest-first, redacted audit receipts for built-in copilot turns. " +
-        "Persistence is opt-in; query with bounded limit=1..50 and optional " +
-        "status=success|failed|cancelled|max_steps.",
-      mimeType: "application/json",
-    },
-    async (uri) =>
-      jsonContents(
-        uri,
-        readSessionReceipts(uri, {
-          persistence: ctx.copilotReceipts,
-          storePath: ctx.copilotReceiptsPath,
-        }),
-      ),
+    "td-session-receipts-filtered",
+    new ResourceTemplate("tdmcp://session/receipts{?limit,status}", { list: undefined }),
+    metadata,
+    read,
+  );
+  server.registerResource(
+    "td-session-receipts-query-fallback",
+    new ResourceTemplate("tdmcp://session/receipts{+query}", { list: undefined }),
+    metadata,
+    read,
   );
 };
