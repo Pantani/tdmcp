@@ -14,6 +14,16 @@ to a release.
 
 ### Added
 
+- **Bounded live authored-code search** — added `search_td_code` and the
+  structured `POST /api/code/search` bridge route for deterministic lexical
+  discovery across DAT bodies and parameter expressions. Results use
+  redaction-before-match, bounded excerpts, explicit scan/completeness
+  metadata, and hard node/document/parameter/byte/time budgets; the read-only
+  path remains available with raw bridge execution disabled. The tool is also
+  exposed through the safe and directory profiles, local copilot, and
+  `tdmcp-agent code search`, with English and Portuguese documentation. Live
+  TouchDesigner validation remains explicitly pending.
+
 - **Agent-oriented documentation discovery** — the VitePress site now generates a
   SHA-256-verified Agent Skills index from canonical curated skills, advertises
   page-level discovery and Markdown alternates, and registers read-only WebMCP
