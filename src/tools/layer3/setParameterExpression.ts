@@ -288,7 +288,10 @@ export async function setParameterExpressionImpl(
   args: SetParameterExpressionArgs,
 ): Promise<import("@modelcontextprotocol/sdk/types.js").CallToolResult> {
   const hasCallerCode = args.assignments.some(
-    (assignment) => assignment.mode === "expression" || assignment.mode === "bind",
+    (assignment) =>
+      assignment.mode === "expression" ||
+      assignment.mode === "bind" ||
+      assignment.expr !== undefined,
   );
   if (!allowsCallerCode(ctx) && hasCallerCode) {
     return callerCodeDenied("Parameter expression and bind assignment");

@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
 import { guardTd, jsonStructuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -66,6 +71,10 @@ export const createTdNodeSchema = z
 type CreateTdNodeArgs = z.infer<typeof createTdNodeSchema>;
 
 export async function createTdNodeImpl(ctx: ToolContext, args: CreateTdNodeArgs) {
+  const codeSources = genericNodeCodeBearingSources(args.type, args.parameters);
+  if (!allowsCallerCode(ctx) && codeSources.length > 0) {
+    return callerCodeDenied(`Generic node creation with ${codeSources.join(", ")}`);
+  }
   const warnings: string[] = [];
   if (!ctx.knowledge.operatorExists(args.type)) {
     const suggestions = ctx.knowledge.searchOperators(args.type, 3).map((s) => s.name);

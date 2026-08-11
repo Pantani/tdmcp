@@ -1,6 +1,11 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { friendlyTdError } from "../../td-client/types.js";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
 import { computeDataflowLayout, type LayoutEdge, layoutScript } from "../layout.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -39,18 +44,33 @@ function reusedNote(created: CreatedNode[]): string {
   return ` (${reused} already existed and ${reused === 1 ? "was" : "were"} reused)`;
 }
 
+function callerCodeDenial(ctx: ToolContext, args: CreateNodeChainArgs): CallToolResult | undefined {
+  if (allowsCallerCode(ctx)) return undefined;
+  for (const node of args.nodes) {
+    const codeSources = genericNodeCodeBearingSources(node.type, node.parameters);
+    if (codeSources.length > 0) {
+      return callerCodeDenied(
+        `Node-chain creation with ${codeSources.join(", ")} on ${node.name ?? node.type}`,
+      );
+    }
+  }
+  return undefined;
+}
+
+function knowledgeWarnings(ctx: ToolContext, args: CreateNodeChainArgs): string[] {
+  return args.nodes
+    .filter((node) => !ctx.knowledge.operatorExists(node.type))
+    .map((node) => `Operator type "${node.type}" was not found in the knowledge base.`);
+}
+
 export async function createNodeChainImpl(
   ctx: ToolContext,
   args: CreateNodeChainArgs,
 ): Promise<CallToolResult> {
+  const denied = callerCodeDenial(ctx, args);
+  if (denied) return denied;
   const created: CreatedNode[] = [];
-  const warnings: string[] = [];
-
-  for (const node of args.nodes) {
-    if (!ctx.knowledge.operatorExists(node.type)) {
-      warnings.push(`Operator type "${node.type}" was not found in the knowledge base.`);
-    }
-  }
+  const warnings = knowledgeWarnings(ctx, args);
 
   for (const node of args.nodes) {
     try {

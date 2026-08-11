@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
@@ -59,6 +59,21 @@ void main(){ fragColor = vec4(vUV.s, vUV.t, 0.0, 1.0); }
 `;
 
 describe("applyShaderFromVaultImpl", () => {
+  it("rejects vault shader source before vault IO or bridge mutation in raw-off mode", async () => {
+    const context = { ...ctxNoVault(), allowRawPython: false };
+    const createNode = vi.spyOn(context.client, "createNode");
+    const exec = vi.spyOn(context.client, "executePythonScript");
+    const result = await applyShaderFromVaultImpl(context, {
+      note: "plasma",
+      parent_path: "/project1",
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(textOf(result)).not.toContain("TDMCP_VAULT_PATH");
+    expect(createNode).not.toHaveBeenCalled();
+    expect(exec).not.toHaveBeenCalled();
+  });
+
   it("errors with a TDMCP_VAULT_PATH hint when no vault is configured", async () => {
     const result = await applyShaderFromVaultImpl(ctxNoVault(), {
       note: "plasma",

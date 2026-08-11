@@ -714,6 +714,18 @@ post-v0.13.1 mainline work below.
   cross-request disclosure, and SSRF/trust-boundary advisories reported by
   `npm audit --omit=dev`. Development-only vulnerable transitive packages were
   refreshed in the same lockfile pass; the resulting full audit is clean.
+- Restricted raw-off sessions now reject caller-supplied code at both the MCP
+  and bridge boundaries, including recipe parameter expressions,
+  `python_code`, `glsl_code`, direct/imported GLSL and Shader Park sources, DAT
+  text/vault writes, custom-parameter expression/bind assignments, rebuild
+  specs, direct CLI implementation calls, and parameter expression/bind modes.
+  Generic create/update/batch/editor routes now preflight executable operator
+  types, DAT source files and callback/expression parameters before any mutation,
+  including for direct bridge HTTP clients. Safe and directory profiles enforce
+  the same caller-code policy. Safe constant/reset/unbind and read-only structured
+  paths remain available without falling back to `/api/exec`; constant-only rebuild
+  specs remain allowed by the MCP policy but retain their existing bridge-exec
+  transport requirement.
 - Operator knowledge responses now expose the imported snapshot provenance and
   distinguish `found_in_snapshot` from `not_in_snapshot`. Missing operator
   records and empty searches explicitly warn that snapshot absence does not

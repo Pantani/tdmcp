@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
 import { computeDataflowLayout } from "../layout.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
@@ -92,6 +97,22 @@ interface RebuildNetworkReport {
 }
 
 type SpecNode = RebuildNetworkArgs["spec"]["nodes"][number];
+
+function callerCodeSources(args: RebuildNetworkArgs): string[] {
+  const sources: string[] = [];
+  for (const node of args.spec.nodes) {
+    sources.push(...genericNodeCodeBearingSources(node.type, node.params));
+    if (
+      Object.values(node.params).some((param) => {
+        const mode = (param.mode ?? "").trim().toUpperCase();
+        return mode === "EXPRESSION" || mode === "BIND" || param.expr !== undefined;
+      })
+    ) {
+      sources.push(`parameter expression/bind on ${node.name}`);
+    }
+  }
+  return [...new Set(sources)];
+}
 
 // Compute nodeX/nodeY for every node from the spec's `inputs` dependency graph
 // (longest-path columns, left→right) and stamp them onto each node, overriding any
@@ -238,6 +259,10 @@ export function buildRebuildScript(payload: object): string {
 }
 
 export async function rebuildNetworkImpl(ctx: ToolContext, args: RebuildNetworkArgs) {
+  const codeSources = callerCodeSources(args);
+  if (!allowsCallerCode(ctx) && codeSources.length > 0) {
+    return callerCodeDenied(`Network rebuild with ${codeSources.join(", ")}`);
+  }
   return guardTd(
     async () => {
       const nodes = args.auto_layout ? applyAutoLayout(args.spec.nodes) : args.spec.nodes;
@@ -273,7 +298,7 @@ export const registerRebuildNetwork: ToolRegistrar = (server, ctx) => {
     {
       title: "Rebuild network from a spec",
       description:
-        "Reconstruct a live network inside a COMP from a serialize_network spec — the REBUILD half of a git-diffable round-trip. Takes a JSON spec of nodes (name, operator type, parameters as constants/expressions/binds, inbound wires by name, optional x/y) and, in one pass, creates every node, applies its parameters and expressions, then wires inputs by resolving each `from` reference to the freshly created node. Fail-forward: an unknown operator type, missing parameter, or unresolved wire becomes a warning and the rest still build, so a partial reconstruction still returns useful results. Set clear_existing to delete the parent's current children first (destructive). Set auto_layout to auto-position every node by dependency (longest-path columns, left→right) from the spec's inputs graph, overriding any manual x/y. Returns the created node names, wire count, parameters set, and any warnings.",
+        "Reconstruct a live network inside a COMP from a serialize_network spec — the REBUILD half of a git-diffable round-trip. Takes a JSON spec of nodes (name, operator type, parameters as constants/expressions/binds, inbound wires by name, optional x/y) and, in one pass, creates every node, applies its parameters and expressions, then wires inputs by resolving each `from` reference to the freshly created node. Caller expression/bind source requires TDMCP_RAW_PYTHON=on; constant-only specs remain allowed by the MCP caller-code policy. This tool's one-pass reconstruction still uses /api/exec, so every mode requires TDMCP_BRIDGE_ALLOW_EXEC=1. Fail-forward: an unknown operator type, missing parameter, or unresolved wire becomes a warning and the rest still build, so a partial reconstruction still returns useful results. Set clear_existing to delete the parent's current children first (destructive). Set auto_layout to auto-position every node by dependency (longest-path columns, left→right) from the spec's inputs graph, overriding any manual x/y. Returns the created node names, wire count, parameters set, and any warnings.",
       inputSchema: rebuildNetworkSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

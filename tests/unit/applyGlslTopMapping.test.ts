@@ -174,6 +174,31 @@ describe("glslTopMappingSchema", () => {
 });
 
 describe("applyGlslTopMappingImpl", () => {
+  it("rejects mapping fragment source in raw-off mode", async () => {
+    const result = await applyGlslTopMappingImpl(
+      { ...ctx(), allowRawPython: false },
+      {
+        mapping: {
+          fragment: "out vec4 fragColor; void main(){ fragColor = vec4(1.0); }",
+          uniforms: [],
+          channels: [],
+          controls: [],
+          provenance: { dialect: "raw" },
+          warnings: [],
+        },
+        parent_path: "/project1",
+        name: "glsl_mapping",
+        resolution: [1280, 720],
+        pixel_format: "rgba8",
+        expose_controls: true,
+        capture_preview: false,
+      },
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+  });
+
   it("errors when fragment is empty", async () => {
     const result = await applyGlslTopMappingImpl(ctx(), {
       mapping: {

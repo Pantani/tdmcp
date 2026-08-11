@@ -27,6 +27,23 @@ function textOf(result: CallToolResult): string {
 }
 
 describe("executePythonScriptImpl", () => {
+  it("rejects direct implementation calls before bridge execution in raw-off mode", async () => {
+    let execCalls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalls++;
+        return HttpResponse.json({ ok: true, data: {} });
+      }),
+    );
+    const result = await executePythonScriptImpl(
+      { ...makeCtx(), allowRawPython: false },
+      { script: "print('blocked')", return_output: true },
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(execCalls).toBe(0);
+  });
+
   it("runs the script and reports success", async () => {
     const result = await executePythonScriptImpl(makeCtx(), {
       script: "print('hi')",

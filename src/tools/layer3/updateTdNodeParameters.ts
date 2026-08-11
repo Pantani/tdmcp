@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { guardTd, jsonStructuredResult } from "../result.js";
+import { friendlyTdError } from "../../td-client/types.js";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
+import { errorResult, guardTd, jsonStructuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 export const updateTdNodeParametersSchema = z.object({
@@ -14,6 +20,21 @@ export async function updateTdNodeParametersImpl(
   ctx: ToolContext,
   args: UpdateTdNodeParametersArgs,
 ) {
+  if (!allowsCallerCode(ctx)) {
+    try {
+      const node = await ctx.client.getNode(args.path);
+      const codeSources = genericNodeCodeBearingSources(node.type, args.parameters);
+      if (codeSources.length > 0) {
+        return callerCodeDenied(
+          `Generic parameter update with ${codeSources.join(", ")} on ${args.path}`,
+        );
+      }
+    } catch (err) {
+      return errorResult(
+        `Could not safely inspect ${args.path} before updating it: ${friendlyTdError(err)}. No parameters were changed.`,
+      );
+    }
+  }
   return guardTd(
     () => ctx.client.updateNodeParameters(args.path, args.parameters),
     (node) =>

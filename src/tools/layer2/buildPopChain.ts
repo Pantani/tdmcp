@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -534,6 +539,14 @@ interface PopChainReport {
 // ---------------------------------------------------------------------------
 
 export async function buildPopChainImpl(ctx: ToolContext, args: BuildPopChainArgs) {
+  if (!allowsCallerCode(ctx)) {
+    const codeSources = args.chain.flatMap((entry) =>
+      genericNodeCodeBearingSources(POP_KIND_DEFAULTS[entry.type].optype, entry.params),
+    );
+    if (codeSources.length > 0) {
+      return callerCodeDenied(`POP chain with ${[...new Set(codeSources)].join(", ")}`);
+    }
+  }
   return guardTd(
     async () => {
       const script = buildPopChainScript({

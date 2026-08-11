@@ -80,8 +80,9 @@ export async function setDatContentImpl(ctx: ToolContext, args: SetDatContentArg
   }
   return guardTd(
     async () => {
-      // 1) first-class endpoint (survives ALLOW_EXEC=0): PUT the whole text. The
-      //    endpoint returns old_length/new_length, so no extra read round-trip.
+      // 1) first-class endpoint: PUT the whole text through the bridge's independently
+      //    exec-gated DAT route. The endpoint returns old_length/new_length, so no
+      //    extra read round-trip.
       // 2) Fall back to exec ONLY when the endpoint is absent on an older bridge;
       //    a current bridge's validation 400 (not-a-DAT, node not found) surfaces
       //    unchanged via tryEndpoint.

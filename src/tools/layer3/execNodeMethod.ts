@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -11,6 +12,9 @@ export const execNodeMethodSchema = z.object({
 type ExecNodeMethodArgs = z.infer<typeof execNodeMethodSchema>;
 
 export async function execNodeMethodImpl(ctx: ToolContext, args: ExecNodeMethodArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Calling an arbitrary node method");
+  }
   return guardTd(
     () => ctx.client.execNodeMethod(args.path, args.method, args.args, args.kwargs),
     (result) => jsonResult(`Called ${args.path}.${args.method}().`, result),
@@ -18,7 +22,7 @@ export async function execNodeMethodImpl(ctx: ToolContext, args: ExecNodeMethodA
 }
 
 export const registerExecNodeMethod: ToolRegistrar = (server, ctx) => {
-  if (ctx.allowRawPython === false) return;
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "exec_node_method",
     {

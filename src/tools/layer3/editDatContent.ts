@@ -82,8 +82,9 @@ export async function editDatContentImpl(ctx: ToolContext, args: EditDatContentA
   }
   return guardTd(
     async () => {
-      // 1) first-class endpoint path (survives ALLOW_EXEC=0): read the DAT text,
-      //    run the exhaustively-tested pure replace, write it back. A compute error
+      // 1) first-class endpoint path: read the DAT text, run the exhaustively-tested
+      //    pure replace, then write it through the bridge's independently exec-gated
+      //    DAT route. A compute error
       //    (0 matches / >1 without replace_all / not-a-DAT) becomes report.fatal so
       //    the shared onOk turns it into an errorResult and NO write happens.
       // 2) Fall back to exec ONLY when an endpoint is absent on an older bridge;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -175,6 +176,9 @@ export function buildAuthorScript(payload: object): string {
 }
 
 export async function authorScriptOperatorImpl(ctx: ToolContext, args: AuthorScriptOperatorArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Authoring a Script operator from caller-supplied Python");
+  }
   const opType = FAMILY_TYPE[args.family];
   const kbWarnings: string[] = [];
   if (!ctx.knowledge.operatorExists(opType)) {
@@ -230,7 +234,7 @@ export async function authorScriptOperatorImpl(ctx: ToolContext, args: AuthorScr
 export const registerAuthorScriptOperator: ToolRegistrar = (server, ctx) => {
   // This tool persists caller-supplied Python in a callbacks DAT, so it is a
   // raw-Python escape hatch and must obey TDMCP_RAW_PYTHON=off.
-  if (ctx.allowRawPython === false) return;
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "author_script_operator",
     {

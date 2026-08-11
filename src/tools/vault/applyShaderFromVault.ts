@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { extractFencedBlock } from "../../vault/frontmatter.js";
 import type { Vault } from "../../vault/index.js";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../layer2/createGlslShader.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -36,6 +37,9 @@ function resolveNotePath(vault: Vault, note: string): string | undefined {
 }
 
 export async function applyShaderFromVaultImpl(ctx: ToolContext, args: ApplyShaderFromVaultArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Applying GLSL source from a vault note");
+  }
   const v = requireVault(ctx);
   if ("error" in v) return v.error;
   const { vault } = v;
@@ -76,6 +80,7 @@ export async function applyShaderFromVaultImpl(ctx: ToolContext, args: ApplyShad
 }
 
 export const registerApplyShaderFromVault: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "apply_shader_from_vault",
     {

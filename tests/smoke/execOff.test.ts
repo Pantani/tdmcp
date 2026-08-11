@@ -1,9 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { buildToolContext } from "../../src/server/context.js";
+import { registerApplyGlslTopMapping } from "../../src/tools/foundation/glslTopMapping.js";
 import { layer1Registrars } from "../../src/tools/layer1/index.js";
 import { layer2Registrars } from "../../src/tools/layer2/index.js";
 import { registerEditDatContent } from "../../src/tools/layer3/editDatContent.js";
+import { registerEditShaderLiveLoop } from "../../src/tools/layer3/editShaderLiveLoop.js";
 import { registerSetDatContent } from "../../src/tools/layer3/setDatContent.js";
 import { registerSetParameterExpression } from "../../src/tools/layer3/setParameterExpression.js";
 import { registerToolRegistrars } from "../../src/tools/registry.js";
@@ -43,11 +45,17 @@ beforeAll(() => mock.listen({ onUnhandledRequest: "error" }));
 afterEach(() => mock.resetHandlers());
 afterAll(() => mock.close());
 
-/** The only Layer-1/Layer-2 tool gated by `allowRawPython` (raw client-authored
- * Python stored in a DAT). Must be ABSENT when exec is off. The other two raw
- * tools (execute_python_script, exec_node_method) live in Layer 3, out of this
- * smoke's Layer-1/2 scope but reported in the campaign notes. */
-const LAYER12_EXEC_ONLY = ["create_python_script", "author_script_operator"] as const;
+/** Layer-1/Layer-2 tools whose whole contract accepts untrusted executable
+ * source. They must be absent when caller code is disabled. */
+const LAYER12_EXEC_ONLY = [
+  "create_python_script",
+  "author_script_operator",
+  "create_glsl_shader",
+  "create_glsl_material",
+  "import_shadertoy",
+  "import_isf_shader",
+  "create_shader_park",
+] as const;
 
 /** A representative slice of ordinary build tools that MUST stay available with
  * exec off — they don't depend on raw Python and must register cleanly. */
@@ -68,6 +76,8 @@ const CODE_BEARING_STRUCTURED_REGISTRARS = [
   registerSetParameterExpression,
   registerSetDatContent,
   registerEditDatContent,
+  registerEditShaderLiveLoop,
+  registerApplyGlslTopMapping,
 ] as const;
 
 /**
@@ -172,5 +182,7 @@ describe("smoke: code-bearing structured tools with raw exec OFF", () => {
     expect(names).toContain("set_parameter_expression");
     expect(names).not.toContain("set_dat_content");
     expect(names).not.toContain("edit_dat_content");
+    expect(names).not.toContain("edit_shader_live_loop");
+    expect(names).not.toContain("apply_glsl_top_mapping");
   });
 });

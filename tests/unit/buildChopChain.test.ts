@@ -90,6 +90,22 @@ describe("buildChainScript", () => {
 });
 
 describe("buildChopChainImpl", () => {
+  it("rejects executable CHOP types before exec in raw-off mode", async () => {
+    const exec = vi.fn();
+    const ctx = fakeCtx(exec);
+    ctx.allowRawPython = false;
+    const result = await buildChopChainImpl(
+      ctx,
+      buildChopChainSchema.parse({
+        name: "blocked",
+        ops: [{ type: "expressionCHOP", params: { expr0: "me.time.seconds" } }],
+      }),
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(exec).not.toHaveBeenCalled();
+  });
+
   it("happy path — ordered build returns created list and output_path", async () => {
     const exec = okExec({
       container: "/project1",

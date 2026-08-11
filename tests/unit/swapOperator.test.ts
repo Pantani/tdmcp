@@ -40,6 +40,23 @@ function mockExecOnce(report: Record<string, unknown>) {
 }
 
 describe("swapOperatorImpl", () => {
+  it("rejects executable replacement types before exec in raw-off mode", async () => {
+    let execCalls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalls++;
+        return ok({ stdout: "{}" });
+      }),
+    );
+    const result = await swapOperatorImpl(
+      { ...makeCtx(), allowRawPython: false },
+      { node_path: "/project1/noise1", new_type: "scriptCHOP", preserve_parameters: true },
+    );
+    expect(result.isError).toBe(true);
+    expect((result.content[0] as { text: string }).text).toContain("raw Python is disabled");
+    expect(execCalls).toBe(0);
+  });
+
   it("reports preserved params and reconnected wires", async () => {
     mockExecOnce({
       node_path: "/project1/noise1",

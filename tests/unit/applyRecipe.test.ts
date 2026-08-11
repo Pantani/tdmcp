@@ -88,6 +88,18 @@ describe("applyRecipeImpl", () => {
         glsl_code: { out1: "out vec4 fragColor; void main(){ fragColor=vec4(1.0); }" },
       },
     },
+    {
+      label: "executable generic operator",
+      extra: {
+        nodes: [
+          {
+            name: "out1",
+            type: "executeDAT",
+            parameters: { file: "/tmp/payload.py", syncfile: 1, active: 1 },
+          },
+        ],
+      },
+    },
   ])("rejects recipe $label before creating any node when raw Python is disabled", async ({
     extra,
   }) => {

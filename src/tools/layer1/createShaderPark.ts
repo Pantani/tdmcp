@@ -3,6 +3,7 @@ import {
   compileShaderParkToTouchDesigner,
   type ShaderParkUniform,
 } from "../../integrations/shaderPark.js";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { type ControlSpec, toTdCustomParameterName } from "../layer2/createControlPanel.js";
 import { createSystemContainer, finalize, runBuild } from "../layer2/orchestration.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -276,6 +277,9 @@ function buildControls(
 }
 
 export async function createShaderParkImpl(ctx: ToolContext, args: CreateShaderParkArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Shader Park source");
+  }
   return runBuild(async () => {
     const compiled = await compileShaderParkToTouchDesigner(args.code);
     const builder = await createSystemContainer(ctx, args.parent_path, args.name);
@@ -354,12 +358,13 @@ export async function createShaderParkImpl(ctx: ToolContext, args: CreateShaderP
 }
 
 export const registerCreateShaderPark: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "create_shader_park",
     {
       title: "Create Shader Park sculpture",
       description:
-        "Compile Shader Park JavaScript sculpture code with shader-park-core and instantiate it as a self-contained TouchDesigner GLSL MAT scene with live controls. Use the companion shader-park:tox script when you specifically want the official Shader Park .tox plugin workflow.",
+        "Compile Shader Park JavaScript sculpture code with shader-park-core and instantiate it as a self-contained TouchDesigner GLSL MAT scene with live controls. Caller source requires TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1. Use the companion shader-park:tox script when you specifically want the official Shader Park .tox plugin workflow.",
       inputSchema: createShaderParkSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

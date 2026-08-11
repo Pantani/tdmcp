@@ -434,6 +434,26 @@ describe("setParameterExpressionImpl — raw Python disabled", () => {
     expect(executePythonScript).not.toHaveBeenCalled();
   });
 
+  it("rejects an expr field attached to constant mode before any bridge request", async () => {
+    const setParameterMode = vi.fn();
+    const executePythonScript = vi.fn();
+    const ctx = {
+      allowRawPython: false,
+      client: { setParameterMode, executePythonScript },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await setParameterExpressionImpl(ctx, {
+      path: "/project1/geo1",
+      assignments: [{ param: "tx", mode: "constant", value: 1, expr: "me.time.seconds" }],
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(setParameterMode).not.toHaveBeenCalled();
+    expect(executePythonScript).not.toHaveBeenCalled();
+  });
+
   it.each([
     { mode: "constant" as const, value: 2 },
     { mode: "reset" as const },

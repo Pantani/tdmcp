@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { friendlyTdError } from "../../td-client/types.js";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -200,6 +205,10 @@ print(json.dumps(report))
 `;
 
 export async function swapOperatorImpl(ctx: ToolContext, args: SwapOperatorArgs) {
+  const codeSources = genericNodeCodeBearingSources(args.new_type);
+  if (!allowsCallerCode(ctx) && codeSources.length > 0) {
+    return callerCodeDenied(`Operator swap with ${codeSources.join(", ")}`);
+  }
   // Soft validate the requested type against the KB.
   const warnings: string[] = [];
   if (!ctx.knowledge.operatorExists(args.new_type)) {

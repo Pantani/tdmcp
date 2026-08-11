@@ -285,7 +285,9 @@ export async function buildFromRecipe(
   if (!allowsCallerCode(ctx) && codeSources.length > 0) {
     throw new Error(
       `Recipe "${recipe.id}" contains ${codeSources.join(" and ")}, but raw Python is disabled ` +
-        "(TDMCP_RAW_PYTHON=off). No TouchDesigner node was created.",
+        "or the active tool profile forbids caller-supplied code " +
+        "(TDMCP_RAW_PYTHON=off; TDMCP_TOOL_PROFILE=safe/directory). " +
+        "No TouchDesigner node was created.",
     );
   }
   const builder = await createSystemContainer(ctx, parentPath, containerName);

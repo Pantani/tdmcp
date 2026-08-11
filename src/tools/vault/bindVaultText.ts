@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Vault } from "../../vault/index.js";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { requireVault } from "./shared.js";
@@ -43,6 +44,9 @@ function resolveNotePath(vault: Vault, note: string): string | undefined {
 }
 
 export async function bindVaultTextImpl(ctx: ToolContext, args: BindVaultTextArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Binding arbitrary vault text into a DAT");
+  }
   const v = requireVault(ctx);
   if ("error" in v) return v.error;
   const { vault } = v;
@@ -81,6 +85,7 @@ export async function bindVaultTextImpl(ctx: ToolContext, args: BindVaultTextArg
 }
 
 export const registerBindVaultText: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "bind_vault_text",
     {
