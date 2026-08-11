@@ -22,6 +22,23 @@ type GetOperatorWorkflowGuideArgs = z.input<typeof getOperatorWorkflowGuideSchem
 export const getOperatorWorkflowGuideOutputSchema = z.object({
   operator: z.string().describe("The operator string from the request."),
   found: z.boolean().describe("True when the embedded knowledge base has a workflow guide."),
+  lookup_status: z
+    .enum(["found_in_snapshot", "not_in_snapshot"])
+    .describe("Whether the operator is present in the imported knowledge snapshot."),
+  data_version: z
+    .object({
+      source: z.string(),
+      sourceVersion: z.string().optional(),
+      importedAt: z.string().optional(),
+      tdVersion: z.string().optional(),
+      tdMajor: z.number().optional(),
+    })
+    .optional()
+    .describe("Import source, source version, timestamp, and covered TouchDesigner version."),
+  snapshot_notice: z
+    .string()
+    .optional()
+    .describe("Caveat attached when an operator is absent from the imported snapshot."),
   guide: z.unknown().optional().describe("Operator connection guide, when found."),
   examples: z.unknown().optional().describe("Operator examples, when requested and available."),
   nextOperators: z.array(z.unknown()).describe("Suggested downstream operators."),
@@ -41,18 +58,26 @@ export function getOperatorWorkflowGuideImpl(
 
   const args = parsed.data;
   try {
+    const dataVersion = ctx.knowledge.dataVersion();
     const guide = ctx.knowledge.getOperatorConnections(args.operator);
 
     if (!guide) {
       const suggestions = ctx.knowledge
         .searchOperatorConnectionGuides(args.operator, 5)
         .map((suggestion) => suggestion.id);
-      return structuredResult(`No workflow guide found for "${args.operator}".`, {
-        operator: args.operator,
-        found: false,
-        nextOperators: [],
-        suggestions,
-      });
+      return structuredResult(
+        `"${args.operator}" is not present in the imported knowledge snapshot.`,
+        {
+          operator: args.operator,
+          found: false,
+          lookup_status: "not_in_snapshot",
+          snapshot_notice:
+            "Snapshot absence does not prove that the operator is absent from the current or connected TouchDesigner build. Verify against a live instance when possible.",
+          ...(dataVersion ? { data_version: dataVersion } : {}),
+          nextOperators: [],
+          suggestions,
+        },
+      );
     }
 
     const examples = args.include_examples
@@ -61,6 +86,8 @@ export function getOperatorWorkflowGuideImpl(
     return structuredResult(`Workflow guide for "${args.operator}".`, {
       operator: args.operator,
       found: true,
+      lookup_status: "found_in_snapshot",
+      ...(dataVersion ? { data_version: dataVersion } : {}),
       guide,
       examples,
       nextOperators: ctx.knowledge.suggestNextOperators(args.operator, args.next_limit),
@@ -79,7 +106,7 @@ export const registerGetOperatorWorkflowGuide: ToolRegistrar = (server, ctx) => 
     {
       title: "Get operator workflow guide",
       description:
-        "Read-only: return an embedded TouchDesigner operator workflow guide with common inputs, outputs, examples, and next-operator suggestions. For unknown operators, returns candidate guide ids instead of failing.",
+        "Read-only: return an embedded TouchDesigner operator workflow guide with common inputs, outputs, examples, next-operator suggestions, and snapshot provenance. When an operator is absent from the imported snapshot, returns candidate guide ids and an explicit snapshot caveat instead of claiming that the operator does not exist.",
       inputSchema: getOperatorWorkflowGuideSchema.shape,
       outputSchema: getOperatorWorkflowGuideOutputSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
