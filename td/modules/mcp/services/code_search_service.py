@@ -32,6 +32,14 @@ MAX_EXCERPT_LENGTH = 320
 MAX_RESPONSE_BYTES = 256 * 1_024
 _RESPONSE_HEADROOM_BYTES = 16 * 1_024
 
+# Okapi BM25 parameters and local ranking boosts. Keep these named so ranking
+# changes are deliberate and can be reviewed against the test corpus.
+_BM25_K1 = 1.2
+_BM25_B = 0.75
+_BM25_IDF_SMOOTHING = 0.5
+_LITERAL_MATCH_BOOST = 2.0
+_PATH_OR_FIELD_MATCH_BOOST = 1.0
+
 SOURCE_KINDS = frozenset(("dat_text", "parameter_expression"))
 DEFAULT_SOURCE_KINDS = ("dat_text", "parameter_expression")
 _TOKEN = re.compile(r"[A-Za-z0-9]+")
@@ -409,11 +417,13 @@ def _bm25_document_score(
             continue
         containing = document_frequency[token]
         inverse_frequency = math.log(
-            1.0 + (document_count - containing + 0.5) / (containing + 0.5)
+            1.0
+            + (document_count - containing + _BM25_IDF_SMOOTHING)
+            / (containing + _BM25_IDF_SMOOTHING)
         )
-        numerator = term_frequency * 2.2
-        denominator = term_frequency + 1.2 * (
-            0.25 + 0.75 * (length / average_length)
+        numerator = term_frequency * (_BM25_K1 + 1.0)
+        denominator = term_frequency + _BM25_K1 * (
+            (1.0 - _BM25_B) + _BM25_B * (length / average_length)
         )
         score += inverse_frequency * (numerator / denominator)
     return score
@@ -458,15 +468,14 @@ def _matching_column(line, query_folded, query_tokens):
 def _clip_excerpt(line, column):
     if len(line) <= MAX_EXCERPT_LENGTH:
         return line, False
-    start = max(0, column - (MAX_EXCERPT_LENGTH // 3))
-    end = min(len(line), start + MAX_EXCERPT_LENGTH)
-    if end - start < MAX_EXCERPT_LENGTH:
-        start = max(0, end - MAX_EXCERPT_LENGTH)
-    excerpt = line[start:end]
-    if start:
-        excerpt = "…" + excerpt[1:]
+    content_limit = MAX_EXCERPT_LENGTH - 2
+    start = max(0, column - (content_limit // 3))
+    end = min(len(line), start + content_limit)
+    if end - start < content_limit:
+        start = max(0, end - content_limit)
+    excerpt = ("…" if start else "") + line[start:end]
     if end < len(line):
-        excerpt = excerpt[:-1] + "…"
+        excerpt += "…"
     return excerpt, True
 
 
@@ -491,9 +500,9 @@ def _ranked_hit(document, bm25_score, query, query_tokens):
     literal = folded_query in document["searchable"].casefold()
     if bm25_score <= 0 and not literal:
         return None
-    score = bm25_score + (2.0 if literal else 0.0)
+    score = bm25_score + (_LITERAL_MATCH_BOOST if literal else 0.0)
     if folded_query in document["op"].casefold() or folded_query == document["field"].casefold():
-        score += 1.0
+        score += _PATH_OR_FIELD_MATCH_BOOST
     excerpt, line, column, excerpt_truncated = _best_excerpt(
         document["text"], query, query_tokens
     )

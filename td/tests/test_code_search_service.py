@@ -163,6 +163,19 @@ class CodeSearchRankingTests(unittest.TestCase):
         )
         self.assertEqual([hit["op"] for hit in report["results"]], [self.controller.path])
 
+    def test_excerpt_reserves_ellipsis_space_without_discarding_content(self):
+        line = "".join(chr(0x1000 + index) for index in range(700))
+        column = 350
+        content_limit = search.MAX_EXCERPT_LENGTH - 2
+        start = column - (content_limit // 3)
+        end = start + content_limit
+
+        excerpt, truncated = search._clip_excerpt(line, column)
+
+        self.assertTrue(truncated)
+        self.assertEqual(len(excerpt), search.MAX_EXCERPT_LENGTH)
+        self.assertEqual(excerpt, "…" + line[start:end] + "…")
+
 
 class CodeSearchSafetyTests(unittest.TestCase):
     def test_redacts_before_matching_so_secret_values_are_not_an_oracle(self):

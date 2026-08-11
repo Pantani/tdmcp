@@ -140,12 +140,10 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   excerpt provenance and node/document/parameter/byte/time budgets. It uses the
   structured `POST /api/code/search` route with no raw-Python or embedding
   fallback and remains available when `ALLOW_EXEC=0`. Offline bridge and MCP
-  contract coverage is present. Live validation passed on TD 099 build
-  2025.33070: a complete 233-node / 377-document / 8,079-parameter scan, truthful
-  forced-budget truncation, secret redaction, exec-gate rejection and authored
-  GLSL/expression retrieval. Identifier-aware tokenization preserves whole names
-  while splitting camelCase, acronym and letter/number boundaries; the live
-  `noise fbm` regression moved from 0 to 18 matches without embeddings.
+  contract coverage is present; live TouchDesigner validation remains
+  **UNVERIFIED**. Identifier-aware tokenization preserves whole names while
+  splitting camelCase, acronym and letter/number boundaries in the offline test
+  corpus.
   A short-lived corpus cache is held until live latency is measured and the
   public contract can expose cache age, a fresh bypass and mutation invalidation.
   Open follow-ups from the #128/#149 audit:
