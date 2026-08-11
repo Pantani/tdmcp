@@ -72,6 +72,7 @@ import { registerSaveTdProject } from "./saveTdProject.js";
 import { registerScoreBuild } from "./scoreBuild.js";
 import { registerSearchOperators } from "./searchOperators.js";
 import { registerSearchPythonApi } from "./searchPythonApi.js";
+import { registerSearchTdCode } from "./searchTdCode.js";
 import { registerSearchTouchDesignerKnowledge } from "./searchTouchDesignerKnowledge.js";
 import { registerSerializeNetwork } from "./serializeNetwork.js";
 import { registerSetDatContent } from "./setDatContent.js";
@@ -113,6 +114,7 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerGetTdTopology,
   registerFindTdNodes,
   registerFindTdParameters,
+  registerSearchTdCode,
   registerSummarizeTdErrors,
   registerCompareTdNodes,
   registerSnapshotTdGraph,

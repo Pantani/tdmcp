@@ -22,6 +22,7 @@ from mcp.services import (
     annotation_service,
     api_service,
     batch_service,
+    code_search_service,
     connect_service,
     custom_params_service,
     duplicate_service,
@@ -869,6 +870,39 @@ def _route_post_root_core(rest, body):
             ),
         )
 
+    if rest == ["code", "search"]:
+        _require(body, "query")
+        return code_search_service.search_code(
+            body["query"],
+            body.get("root_path", "/project1"),
+            max_depth=body.get("max_depth", code_search_service.DEFAULT_MAX_DEPTH),
+            source_kinds=body.get("source_kinds"),
+            node_pattern=body.get("node_pattern"),
+            node_name_glob=body.get("node_name_glob"),
+            node_path_glob=body.get("node_path_glob"),
+            type_filter=body.get("type"),
+            type_match=body.get("type_match", "partial"),
+            family=body.get("family"),
+            limit=body.get("limit", code_search_service.DEFAULT_LIMIT),
+            node_scan_limit=body.get(
+                "node_scan_limit", code_search_service.DEFAULT_NODE_SCAN_LIMIT
+            ),
+            document_scan_limit=body.get(
+                "document_scan_limit",
+                code_search_service.DEFAULT_DOCUMENT_SCAN_LIMIT,
+            ),
+            parameter_scan_limit=body.get(
+                "parameter_scan_limit",
+                code_search_service.DEFAULT_PARAMETER_SCAN_LIMIT,
+            ),
+            byte_scan_limit=body.get(
+                "byte_scan_limit", code_search_service.DEFAULT_BYTE_SCAN_LIMIT
+            ),
+            time_budget_ms=body.get(
+                "time_budget_ms", code_search_service.DEFAULT_TIME_BUDGET_MS
+            ),
+        )
+
     return None
 
 
@@ -1622,6 +1656,7 @@ def _attach_undo_receipt(data, wrapper_label, before, after):
 _UNDO_EXCLUDED_POST = (
     ["param_modes", "batch"],
     ["params", "search"],
+    ["code", "search"],
     ["editor", "focus"],
     ["editor", "annotation-layout", "context"],
     ["editor", "reposition", "context"],

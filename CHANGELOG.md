@@ -14,6 +14,16 @@ to a release.
 
 ### Added
 
+- **Bounded live authored-code search** — added `search_td_code` and the
+  structured `POST /api/code/search` bridge route for deterministic lexical
+  discovery across DAT bodies and parameter expressions. Results use
+  redaction-before-match, bounded excerpts, explicit scan/completeness
+  metadata, and hard node/document/parameter/byte/time budgets; the read-only
+  path remains available with raw bridge execution disabled. The tool is also
+  exposed through the safe and directory profiles, local copilot, and
+  `tdmcp-agent code search`, with English and Portuguese documentation. Live
+  TouchDesigner validation remains explicitly pending.
+
 - **Agent-oriented documentation discovery** — the VitePress site now generates a
   SHA-256-verified Agent Skills index from canonical curated skills, advertises
   page-level discovery and Markdown alternates, and registers read-only WebMCP
@@ -697,6 +707,11 @@ to a release.
 
 ### Fixed
 
+- Operator knowledge responses now expose the imported snapshot provenance and
+  distinguish `found_in_snapshot` from `not_in_snapshot`. Missing operator
+  records and empty searches explicitly warn that snapshot absence does not
+  prove absence from the current TouchDesigner build, and resource suggestions
+  use URI-ready operator slugs.
 - **`create_raytk_sdf_graph`** now sets the copied RayTK `raymarchRender3D`
   renderer to `1280x720` by default, avoiding TouchDesigner Non-Commercial
   resolution warnings during live QA while keeping the resolution configurable.
@@ -715,6 +730,31 @@ to a release.
 - Hardened Glama and hosted-registry introspection with a compact directory tool
   profile, reachable container HTTP binding, accurate tool metadata, raw-Python
   macro replay gating, and schema-backed structured recipe-bundle results.
+- **`get_preview`** no longer implies that a capture was scaled to the requested
+  size. The bridge may return a TOP at its native resolution, but `width` and
+  `height` were described as the captured image dimensions and the caption
+  printed the returned size as if it were the requested result — misleading for
+  artists and agents inspecting an output. Both parameters are now described as
+  requested dimensions, and when the returned size differs the caption reports
+  both (`1080×1920 native; 640×360 requested`) for ordinary, immediate advanced,
+  and deferred-job image captures alike. Deferred jobs now retain their original
+  requested dimensions for accurate collection captions. Bridge capture and
+  scaling behaviour is unchanged.
+- **`summarize_td_errors`** now distinguishes warnings from errors. The bridge
+  returns both severities in `result.errors`, but the summary counted and
+  described every entry as an error, so a warning-only network appeared to be
+  failing and could send an agent down the wrong repair path. The response keeps
+  the existing `total` field and adds `error_count` and `warning_count`, each
+  grouped representative sample retains its severity, and the descriptions and
+  suggestions use accurate diagnostic terminology.
+- The `tdmcp://session/receipts` MCP resource now resolves for bare, partial and
+  reordered query reads. Under MCP SDK 1.30 the documented `{?limit,status}`
+  template resolves reliably only when both parameters appear in template order,
+  so valid reads such as the bare URI, `?limit=5`, or a reversed query order
+  could miss the resource handler entirely. The bare resource is now registered
+  explicitly alongside the documented template, with a bounded query fallback
+  for partial or reordered parameters; the shared parser still rejects unknown
+  paths and unknown query keys.
 
 ## [0.13.1] - 2026-07-09
 

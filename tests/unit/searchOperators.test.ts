@@ -35,6 +35,7 @@ interface SearchData {
     summary?: string;
     matchedParameters?: Array<{ name: string }>;
   }>;
+  warnings?: string[];
 }
 
 function sc(result: CallToolResult): SearchData {
@@ -79,6 +80,19 @@ describe("searchOperatorsImpl menu catalog awareness (C12)", () => {
       semantic: false,
     });
     expect(meta(result).data_version?.source).toBe("bottobot");
+  });
+
+  it("describes zero matches as snapshot absence instead of operator nonexistence", async () => {
+    const result = await searchOperatorsImpl(makeCtx(), {
+      query: "definitely_not_in_the_imported_snapshot",
+      limit: 5,
+      semantic: false,
+      type: "exact",
+    });
+
+    expect(sc(result).operators).toEqual([]);
+    expect(sc(result).warnings?.[0]).toContain("imported knowledge snapshot");
+    expect(sc(result).warnings?.[0]).toContain("does not prove");
   });
 
   it("adds a stale_hint when a live TD reports a different major", async () => {

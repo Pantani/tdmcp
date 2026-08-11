@@ -418,23 +418,38 @@ describe("turn receipt persistence", () => {
   });
 
   it("prunes persisted receipts by age, count and total bytes", async () => {
-    const path = tempStore();
     const now = Date.now();
     const old = await offReceipt(
       "ffffffff-ffff-4fff-8fff-ffffffffffff",
       now - TURN_RECEIPT_STORE_MAX_AGE_MS - 1,
     );
-    expect(await fileTurnReceiptStore.write(path, old)).toBe("written");
-    for (let index = 0; index < 101; index += 1) {
-      const id = `00000000-0000-4000-8000-${index.toString(16).padStart(12, "0")}`;
-      const item = await offReceipt(id, now - index * 1000);
-      expect(await fileTurnReceiptStore.write(path, item)).toBe("written");
-    }
+    const agePath = tempStore("age.json");
+    writeFileSync(agePath, JSON.stringify({ schema_version: 1, receipts: [old] }), { mode: 0o600 });
+    const fresh = await offReceipt("00000000-0000-4000-8000-000000000100", now);
+    expect(await fileTurnReceiptStore.write(agePath, fresh)).toBe("written");
+    const ageLoaded = readTurnReceiptStore(agePath);
+    expect(ageLoaded.state).toBe("available");
+    if (ageLoaded.state !== "available") throw new Error("receipt store was not readable");
+    expect(ageLoaded.store.receipts.map((item) => item.receipt_id)).not.toContain(old.receipt_id);
+
+    const recent = await Promise.all(
+      Array.from({ length: 100 }, (_, index) => {
+        const id = `00000000-0000-4000-8000-${index.toString(16).padStart(12, "0")}`;
+        return offReceipt(id, now - index * 1000);
+      }),
+    );
+    const path = tempStore();
+    writeFileSync(path, JSON.stringify({ schema_version: 1, receipts: recent }), { mode: 0o600 });
+    const newest = await offReceipt("00000000-0000-4000-8000-0000000000ff", now + 1000);
+    expect(await fileTurnReceiptStore.write(path, newest)).toBe("written");
     const loaded = readTurnReceiptStore(path);
     expect(loaded.state).toBe("available");
     if (loaded.state !== "available") throw new Error("receipt store was not readable");
     expect(loaded.store.receipts).toHaveLength(100);
-    expect(loaded.store.receipts.map((item) => item.receipt_id)).not.toContain(old.receipt_id);
+    expect(loaded.store.receipts.map((item) => item.receipt_id)).toContain(newest.receipt_id);
+    expect(loaded.store.receipts.map((item) => item.receipt_id)).not.toContain(
+      recent.at(-1)?.receipt_id,
+    );
     expect(lstatSync(path).size).toBeLessThanOrEqual(TURN_RECEIPT_STORE_MAX_BYTES);
   });
 
