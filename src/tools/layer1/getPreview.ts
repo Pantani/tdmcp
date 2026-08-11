@@ -17,14 +17,18 @@ export const getPreviewSchema = z.object({
     .positive()
     .max(4096)
     .default(640)
-    .describe("Width of the captured preview image in pixels (1–4096; default 640)."),
+    .describe(
+      "Requested preview width (1–4096; default 640). The bridge may return a TOP's native output width; when it differs, the caption reports both native and requested sizes.",
+    ),
   height: z.coerce
     .number()
     .int()
     .positive()
     .max(4096)
     .default(360)
-    .describe("Height of the captured preview image in pixels (1–4096; default 360)."),
+    .describe(
+      "Requested preview height (1–4096; default 360). The bridge may return a TOP's native output height; when it differs, the caption reports both native and requested sizes.",
+    ),
   sample_grid: z.coerce
     .number()
     .int()
@@ -62,7 +66,25 @@ const MIME_BY_FORMAT: Record<string, string> = {
   jpeg: "image/jpeg",
 };
 
-function renderAdvanced(res: TdAdvancedCapture, path: string) {
+function previewCaption(
+  path: string,
+  actualWidth: number,
+  actualHeight: number,
+  requestedWidth: number,
+  requestedHeight: number,
+): string {
+  const actual = `${actualWidth}×${actualHeight}`;
+  const requested = `${requestedWidth}×${requestedHeight}`;
+  const dimensionNote = actual === requested ? actual : `${actual} native; ${requested} requested`;
+  return `Preview of ${path} (${dimensionNote}).`;
+}
+
+function renderAdvanced(
+  res: TdAdvancedCapture,
+  path: string,
+  requestedWidth: number,
+  requestedHeight: number,
+) {
   if ("status" in res) {
     return jsonResult(
       `Capturing ${path} in ${res.delay_frames} frame(s) (~${res.wait_ms}ms). ` +
@@ -73,7 +95,11 @@ function renderAdvanced(res: TdAdvancedCapture, path: string) {
   if ("samples" in res) {
     return jsonResult(`Sampled ${path} on a ${res.grid}×${res.grid} grid.`, res);
   }
-  return imageResult(res.base64, MIME_BY_FORMAT[res.format] ?? "image/png", `Preview of ${path}.`);
+  return imageResult(
+    res.base64,
+    MIME_BY_FORMAT[res.format] ?? "image/png",
+    previewCaption(path, res.width, res.height, requestedWidth, requestedHeight),
+  );
 }
 
 function renderJob(job: TdPreviewJob) {
@@ -97,7 +123,13 @@ function renderJob(job: TdPreviewJob) {
     return imageResult(
       preview.base64,
       MIME_BY_FORMAT[preview.format] ?? "image/png",
-      `Deferred preview (${job.job_id}).`,
+      previewCaption(
+        preview.path,
+        preview.width,
+        preview.height,
+        job.requested_width ?? preview.width,
+        job.requested_height ?? preview.height,
+      ),
     );
   }
   return jsonResult(`Deferred capture ${job.job_id} ready.`, job);
@@ -130,7 +162,7 @@ export async function getPreviewImpl(ctx: ToolContext, args: GetPreviewArgs) {
           prePulses: args.pre_pulses,
           delayFrames: args.delay_frames,
         }),
-      (res) => renderAdvanced(res, nodePath),
+      (res) => renderAdvanced(res, nodePath, args.width, args.height),
     );
   }
   if (args.sample_grid !== undefined) {
@@ -150,7 +182,7 @@ export async function getPreviewImpl(ctx: ToolContext, args: GetPreviewArgs) {
       imageResult(
         preview.base64,
         preview.mimeType,
-        `Preview of ${nodePath} (${preview.width}×${preview.height}).`,
+        previewCaption(nodePath, preview.width, preview.height, args.width, args.height),
       ),
   );
 }
@@ -161,7 +193,7 @@ export const registerGetPreview: ToolRegistrar = (server, ctx) => {
     {
       title: "Preview a TOP",
       description:
-        "Capture a TOP node's current output as an inline PNG image so you can see what was created — read-only, it creates and modifies nothing. Returns the image (scaled to width×height) plus a caption with the node path and actual dimensions; only TOPs can be previewed (CHOP/SOP/etc. have no image). For a much cheaper check (is it alive / roughly what colour?) pass sample_grid=N to get an N×N grid of RGBA samples + per-channel stats as JSON instead of an image.",
+        "Capture a TOP node's current output as an inline PNG image. This is read-only. The bridge may return the TOP's native output dimensions instead of the requested width×height; when they differ, the caption shows both. Only TOPs can be previewed (CHOP/SOP/etc. have no image). For a cheaper check of activity and approximate colour, pass sample_grid=N to return an N×N grid of RGBA samples and per-channel statistics instead of an image.",
       inputSchema: getPreviewSchema.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     },
