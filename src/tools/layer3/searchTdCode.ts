@@ -60,7 +60,9 @@ export const searchTdCodeSchema = z.object({
     .optional()
     .describe("Case-insensitive node name-or-path pattern; '*' is a wildcard."),
   node_name_glob: starGlob(128).optional().describe("Anchored node-name '*' glob."),
-  node_path_glob: starGlob(128).optional().describe("Anchored absolute node-path '*' glob."),
+  node_path_glob: starGlob(128)
+    .optional()
+    .describe("Anchored node-path '*' glob; use '/project1/*' or '*/callbacks'."),
   type: boundedText(128).optional().describe("TouchDesigner operator type filter."),
   type_match: z.enum(["partial", "exact"]).default("partial"),
   family: familySchema.optional(),
