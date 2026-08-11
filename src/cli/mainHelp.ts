@@ -1,3 +1,5 @@
+import { getVersion } from "../utils/version.js";
+
 const TOP_LEVEL_COMPLETION_WORDS = [
   "serve",
   "init",
@@ -55,6 +57,7 @@ export interface MainCompletionCommandResult {
 }
 
 export function renderMainHelp(): string {
+  const version = getVersion();
   return [
     "Usage: tdmcp [command] [flags]",
     "",
@@ -68,7 +71,7 @@ export function renderMainHelp(): string {
     "  install-client          Print a Claude/Codex/Cursor MCP client config snippet.",
     "  skills                  Inspect/manage bundled agent skills; mutations default to dry-run.",
     "  status                  Print build-aware runtime readiness without mutating TD.",
-    "  show <profile>          Run fail-closed show gates, then enter Perform Mode (source-only; TD 2025.32820 live QA passed).",
+    `  show <profile>          Run fail-closed show gates, then enter Perform Mode (v${version}; TD 2025.32820 live QA passed).`,
     "  doctor                  Diagnose config, bridge, LLM and local runtime readiness.",
     "  chat                    Start the local browser copilot.",
     "  copilot-calibrate       Benchmark the configured model with synthetic tools only.",

@@ -4,7 +4,7 @@ description: "Bounded, compact search across live TouchDesigner operators, param
 
 # Live project search
 
-<FeatureAvailability status="source-only" locale="en" />
+<FeatureAvailability status="released" locale="en" />
 
 tdmcp can search the running TouchDesigner project at the bridge instead of
 downloading a recursive topology and filtering it in the MCP process. The three

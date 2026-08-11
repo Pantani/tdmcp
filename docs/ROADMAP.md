@@ -10,14 +10,13 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The published npm `latest` package and latest
-published GitHub Release/tag are **v0.13.1** (published 2026-07-09). That release
-contains the tool-integration campaign and native RayTK graph work described
-below. Local HEAD `fd7282ed` is three commits after the released tag and matches
-`main` / `origin/main`; the TD-native discovery Waves 1–16 are additional dirty
-worktree changes on top of that HEAD. They are **unreleased**, are not present in
-npm or the `v0.13.1` tag, and keep their live evidence boundaries explicit. The
-CHANGELOG blocks list every entry; the always-current tool list is the
+**Where things stand today.** The source tree targets **v0.13.2**. The last
+verified public npm package and GitHub Release/tag remain **v0.13.1** (published
+2026-07-09) until the 0.13.2 npm publication, tag and Release are completed and
+verified independently. The v0.13.2 candidate includes the post-v0.13.1
+TD-native discovery campaign through Wave 16 while preserving every live-
+evidence boundary below. The CHANGELOG blocks list every entry; the
+always-current tool list is the
 [Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.1x
 line is the active feature/consolidation line, and v1.0 will land only once the
 consolidation gates below are all green.
@@ -59,12 +58,13 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### v0.13.1 public baseline + post-release source-tree campaign
+### v0.13.2 release candidate
 
-**v0.13.1 is public** on npm, GitHub Releases and the annotated release tag.
-The RayTK/tool-integration entries in this section belong to that release. Local
-HEAD `fd7282ed` contains three later mainline commits; the TD-native Waves 1–16
-listed here are newer dirty-worktree work and remain **unreleased**:
+The source tree and release metadata target **v0.13.2**. Until the npm package,
+annotated tag and GitHub Release are all published and independently verified,
+**v0.13.1 remains the confirmed public baseline**. The entries below are
+included in the v0.13.2 candidate; PASS / FAIL / UNVERIFIED boundaries remain
+unchanged:
 
 - **Native RayTK integration.** `create_raytk_op`, `create_raytk_scene`, and the
   `tdmcp://raytk/operators` catalog drive RayTK (t3kt/raytk) as editable ROP
@@ -75,7 +75,7 @@ listed here are newer dirty-worktree work and remain **unreleased**:
 - **Registry/directory fixes.** Glama/MCP directory metadata exposes
   `TDMCP_TOOL_PROFILE`, and the Creative RAG Smithsonian adapter now produces a
   valid canonical URL when `record_link` is absent.
-- **TD-native Interaction & Safety Wave 1 (source tree, unreleased).** A bounded
+- **TD-native Interaction & Safety Wave 1.** A bounded
   native broker now gates delete and Save As overwrite decisions; structured
   editor context, project save, Pulse, atomic node metadata edits and node
   placement work without `/api/exec`. Offline contracts and regression suites
@@ -85,16 +85,16 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   nested edits but reproduced an `annotateCOMP` that closes/replaces the outer
   block, so whole-tool undo stays disabled. Wave 8 later also rejects automated
   one-item undo because the native stack has no stable item identity.
-- **Build-aware Agent Enablement & Runtime Readiness Wave 2 (source tree,
-  unreleased).** `get_td_docs` reads bounded installed OfflineHelp with embedded
+- **Build-aware Agent Enablement & Runtime Readiness Wave 2.** `get_td_docs`
+  reads bounded installed OfflineHelp with embedded
   fallback and honest build provenance; `manage_agent_skills` and `tdmcp skills`
   manage only three package-bundled, manifest-owned Codex/Claude skills with
   dry-run and rollback; the maintainer bundle is deterministic and local-only;
   `tdmcp status` reports redacted config, bridge, TD, interaction, skill and
   client readiness. The installed macOS TD 2025.32820 corpus passed offline/real-
   corpus tests; bridge-live and Windows discovery remain **UNVERIFIED**.
-- **Project-scoped Ownership & Reversible Setup Wave 3 (source tree,
-  unreleased).** Package and local-library installs now have explicit user or
+- **Project-scoped Ownership & Reversible Setup Wave 3.** Package and
+  local-library installs now have explicit user or
   project ownership; client setup can plan, check, reconcile, or remove only a
   named Claude Code/Cursor project/user or Codex user registration with atomic
   verification and secret redaction. `tdmcp status` observes those native
@@ -103,8 +103,8 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   unsupported pending a verified client contract; live package import remains
   **UNVERIFIED**. Wave 7 later proves package namespace classification/dry-run on
   the current build while keeping final cross-storage apply unverified.
-- **Grounded, Verified & Calibrated Local Copilot Wave 4 (source tree,
-  unreleased).** Local turns use ephemeral bounded editor context, canonical
+- **Grounded, Verified & Calibrated Local Copilot Wave 4.** Local turns use
+  ephemeral bounded editor context, canonical
   registered prompts are locally invocable through schema validation, supported
   mutations carry post-dispatch read-only evidence, and one bounded adaptive
   recovery action never retries an ambiguous mutation. `tdmcp
@@ -115,8 +115,8 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   safe bridge**. Wave 13 later passed exact synthetic real-model calibration,
   including native vision capability and image input; the separate visual-
   critique rubric and TD-fixture gate remains FAIL/UNVERIFIED.
-- **Project-Owned Context & Auditable Copilot Turns Wave 5 (source tree,
-  unreleased).** Each project can own a bounded, versioned agent brief at
+- **Project-Owned Context & Auditable Copilot Turns Wave 5.** Each project can
+  own a bounded, versioned agent brief at
   `.tdmcp/agent-brief.json`, selected only by explicit root, environment, or the
   saved TouchDesigner project folder and replaced with an exact revision. The
   local copilot uses it as ephemeral untrusted evidence; external MCP hosts read
@@ -126,7 +126,7 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   is suppressed for perform mode, emergency tools and `noPersist`; receipts are
   readable through a bounded MCP resource. Live root inference and live mutation
   evidence remain **UNVERIFIED — pending bridge/model endpoint**.
-- **Bounded Live Project Discovery Wave 6 (source tree, unreleased).**
+- **Bounded Live Project Discovery Wave 6.**
   `find_td_nodes` now prefers compact authenticated bridge-side traversal with
   legacy-call compatibility and an older-bridge structured fallback.
   `find_td_parameters` adds bounded point-in-time filters for parameter name,
@@ -134,7 +134,7 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   secret redaction, anti-oracle behavior and unreadable counters. Both passed
   live auth, `ALLOW_EXEC=0`, limit, completeness and undo-stack checks on TD 099
   build 2025.32820; other builds remain unverified until probed.
-- **Bounded Authored-Code Discovery (source tree, unreleased).**
+- **Bounded Authored-Code Discovery.**
   `search_td_code` adds local BM25-style retrieval across coherent DAT bodies and
   parameter expressions, with literal boosts, redaction-before-match, precise
   excerpt provenance and node/document/parameter/byte/time budgets. It uses the
@@ -163,8 +163,8 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   - **P3 — parameter-watch wording:** remove the stale claim that
     `param.changed` is a high-frequency client event; it is opt-in and coalesced
     bridge-side but deliberately absent from the client's high-frequency gate.
-- **Action-aware, Transactional Editor Workflows Wave 7 (source tree,
-  unreleased).** Existing tools now provide action/framing-aware Network Editor
+- **Action-aware, Transactional Editor Workflows Wave 7.** Existing tools now
+  provide action/framing-aware Network Editor
   follow, broker-aware atomic `.tox` export, dry-run-first package namespace
   reconciliation and transactional custom-parameter lifecycle without duplicate
   aliases. The new `insert_operator_at_selection` adds a context-CAS, explicitly
@@ -185,7 +185,7 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   is a separate local trust **FAIL**: the TouchDesigner app seal is invalid and
   FreenectTOP is ad-hoc signed/Gatekeeper-rejected; registration/cooking remains
   **UNVERIFIED**, with no security or install-state workaround applied.
-- **Live Closure & Native History Safety Wave 8 (source tree, unreleased).** A
+- **Live Closure & Native History Safety Wave 8.** A
   fresh authenticated TD 099 build 2025.32820 sandbox with bridge exec disabled
   passed the final insert, TOX export, package reconciliation and custom-
   parameter route matrices, including retries, cancellation, rollback, cleanup
@@ -194,8 +194,8 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   one-item undo was rejected because stack items are repeatable plain strings
   and cannot prevent same-label ABA; whole-tool cross-request undo also remains
   **FAIL / HELD**.
-- **Portable Artifact Trust & Annotation-Aware Composition Wave 9 (source tree,
-  unreleased).** Existing library and editor tools now provide quarantine-only
+- **Portable Artifact Trust & Annotation-Aware Composition Wave 9.** Existing
+  library and editor tools now provide quarantine-only
   deep TOX round-trip validation, canonical automatic provenance, optional
   installed exact-build component help, transactional Annotate COMP style/bounds
   editing and fingerprinted annotation-aware layout. The authenticated TD 099
@@ -205,8 +205,8 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   trip and scratch cleanup with bridge exec disabled. No duplicate public tools
   or raw-Python shortcuts were introduced; actual headless TD and other builds
   remain **UNVERIFIED**.
-- **Artist Workspace Control & Exact Placement Wave 10 (source tree,
-  unreleased).** The existing `arrange_network` surface now accepts a bounded
+- **Artist Workspace Control & Exact Placement Wave 10.** The existing
+  `arrange_network` surface now accepts a bounded
   `layout_mode: "explicit"` branch with exact coordinates, dock-host precedence,
   context fingerprints, idempotent replay and complete one-request rollback;
   legacy automatic and annotation-aware behavior remains the default. The new
@@ -236,7 +236,7 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   readback plus a separate capability-bound restore. Invalid model shape and
   timeout/Keep remained zero-write fail-closed paths; other models/builds and
   actual headless TD remain **UNVERIFIED**.
-- **Remote Connection Trust Wave 11 (source tree, unreleased).** Streamable HTTP
+- **Remote Connection Trust Wave 11.** Streamable HTTP
   can opt into a co-located OAuth authorization-code flow with required S256
   PKCE, exact MCP resource/scope binding, path-specific protected-resource
   metadata, bounded public-client DCR, rotating refresh tokens and per-principal
@@ -252,8 +252,8 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   multi-user/federated deployments remain **UNVERIFIED / follow-up**, not
   implied by this local single-owner design.
 
-- **Grounded Planning, Show Gate & Internal Transaction Foundation Wave 12
-  (source tree, unreleased).** The existing read-only `plan_visual` tool now has
+- **Grounded Planning, Show Gate & Internal Transaction Foundation Wave 12.**
+  The existing read-only `plan_visual` tool now has
   an explicit `planner: "llm"` option for one bounded completion grounded in
   compact redacted editor, project-brief, graph, recipe, operator and registered-
   tool evidence. The deterministic planner remains the default and typed
@@ -274,8 +274,8 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   `unverified_live_boundary` without a live-verified adapter. No public route,
   tool or whole-tool undo claim was added.
 
-- **Vision Proof & Internal Transaction Hardening Wave 13 (source tree,
-  unreleased).** The explicitly approved exact-digest local vision model passed
+- **Vision Proof & Internal Transaction Hardening Wave 13.** The explicitly
+  approved exact-digest local vision model passed
   hardened calibration suite `2026-07-15.3`, all tool gates and `image_input`.
   The revised strict offline good/bad surrogate passed 6/6 with locally derived
   scores and unchanged thresholds; authenticated TD-generated fixtures remain
@@ -288,7 +288,7 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   failure. It remains unregistered; no whole-operation default or public route
   is claimed.
 
-- **Live Closure & Boundary Hardening Wave 14 (source tree, unreleased).** A
+- **Live Closure & Boundary Hardening Wave 14.** A
   disposable authenticated TD 099 build 2025.32820 passed show-mode entry,
   already-on behavior and fail-closed rollback; OAuth callback Allow/Deny,
   timeout, close and disconnect; the internal operation adapter's
@@ -304,8 +304,8 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   undo/redo remains rejected because native labels cannot prevent same-label
   ABA.
 
-- **Receipt-authorized operation boundary Wave 15 (source tree, unreleased).**
-  The source tree now exposes token-required structured preview, one-request
+- **Receipt-authorized operation boundary Wave 15.** The release source exposes
+  token-required structured preview, one-request
   commit and capability-authorized receipt observation through the bridge and
   typed TD client, all outside `/api/exec` and the generic request undo wrapper.
   Wire receipts use a 256-bit `receipt_capability`, never the idempotency key as
@@ -317,7 +317,7 @@ listed here are newer dirty-worktree work and remain **unreleased**:
   permanently rejected; a future revert must be a separately approved,
   exact-state compensating operation with its own journal.
 
-- **Authenticated operation closure Wave 16 (source tree, unreleased).** The
+- **Authenticated operation closure Wave 16.** The
   isolated TD 099 build 2025.32820 process at PID 62916 passed the authenticated
   A0–A13 matrix with bridge exec disabled: exact one-request apply and receipt
   observation, native Undo/Redo, induced rollback, journal-v2 artist-drift
@@ -947,7 +947,7 @@ they're considered solid.
 
 ## ⬜ Planned — the road to 1.0 {#planned}
 
-With the v0.8 line published (and now public **v0.13.1** on top of it), the
+With the v0.8 line published (and the **v0.13.2 release line** on top of it), the
 deferred SDF, strange-attractor, optical-flow and
 histogram-scope generators; MediaPipe face / hand / segmentation adapters; the
 persistent `load_session_profile` (+ `tdmcp://session/profile` resource);

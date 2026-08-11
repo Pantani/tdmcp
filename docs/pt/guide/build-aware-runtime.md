@@ -4,7 +4,7 @@ description: "Docs do build instalado, skills curadas, bundles locais determiní
 
 # Agent build-aware & readiness do runtime
 
-<FeatureAvailability status="source-only" locale="pt" />
+<FeatureAvailability status="released" locale="pt" />
 
 A Wave 2 de discovery adiciona documentação local-first e primitives de
 readiness sem abrir raw Python nem instalação remota. As tools funcionam com

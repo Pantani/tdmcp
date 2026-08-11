@@ -4,7 +4,7 @@ description: "Opt-in OAuth 2.1-style authorization for tdmcp Streamable HTTP, wi
 
 # OAuth, PKCE & TouchDesigner consent
 
-<FeatureAvailability status="source-only" locale="en" />
+<FeatureAvailability status="released" locale="en" />
 
 tdmcp can protect its Streamable HTTP `/mcp` endpoint with an opt-in,
 co-located authorization server. The Node process owns discovery, client
@@ -73,8 +73,8 @@ an unauthenticated client lookup. Once the lifetime expires, a client with no
 live token row is pruned. At the 128-client capacity boundary, registration
 evicts the oldest tokenless client before refusing the new client; any client
 that still owns a non-expired, non-revoked access or refresh row is retained.
-The lifetime is policy-construction state in this source tree, not a documented
-environment variable.
+The lifetime is policy-construction state, not a documented environment
+variable.
 
 Unauthenticated DCR uses a continuously refilling bucket per opaque source (20
 registrations/hour by default) under a separate global ceiling of 16 times that

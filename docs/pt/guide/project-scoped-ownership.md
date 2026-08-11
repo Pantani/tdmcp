@@ -5,7 +5,7 @@ description: Gerencie pacotes e registros MCP do tdmcp com ownership explícito 
 
 # Ownership por projeto
 
-<FeatureAvailability status="source-only" locale="pt" />
+<FeatureAvailability status="released" locale="pt" />
 
 A Wave 3 torna o setup local explícito, inspecionável e reversível. Arquivos de
 pacotes podem pertencer a um projeto em vez de um cache global implícito, e o

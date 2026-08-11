@@ -4,7 +4,7 @@ description: "Placement exato no Network Editor e workspaces temporários para a
 
 # Workspaces do editor & placement exato
 
-<FeatureAvailability status="source-only" locale="pt" />
+<FeatureAvailability status="released" locale="pt" />
 
 A Wave 10 adiciona dois workflows de editor deliberadamente estreitos: placement
 exato pela tool existente `arrange_network` e um workspace temporário lado a
@@ -18,8 +18,8 @@ rollback/state-machine da Wave 10 passam no QA offline integrado. O QA live
 autenticado do build atual também passou apply/replay/undo/redo do placement
 exato e os ciclos de workspace TOP-restore e PANEL-cancel no TouchDesigner 099
 build 2025.32820 com exec do bridge desabilitado. Edge cases e plataformas não
-testados continuam explicitamente **UNVERIFIED**. Este trabalho ainda está
-unreleased na source tree.
+testados continuam explicitamente **UNVERIFIED**. Esses limites seguem
+explícitos no release v0.13.2.
 :::
 
 Nenhum dos workflows abre UI arbitrária, expõe raw Python, carrega ou encerra um
@@ -304,7 +304,7 @@ setter só é uma falha limpa quando o receipt prova rollback completo.
   qualquer contrato da Wave 10. Um bridge sem as routes estruturadas deve
   falhar; clients não podem cair para `/api/exec`.
 
-## Crítica visual limitada (ainda não lançada)
+## Crítica visual limitada
 
 `enhance_build.visualCritique` é um branch opt-in da tool existente. Ele preserva
 a chamada legacy, recebe um TOP explícito e 1–6 alvos numéricos limitados e usa

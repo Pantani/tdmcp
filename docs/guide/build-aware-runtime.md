@@ -4,7 +4,7 @@ description: "Build-aware TouchDesigner docs, curated agent skills, deterministi
 
 # Build-aware agent & runtime readiness
 
-<FeatureAvailability status="source-only" locale="en" />
+<FeatureAvailability status="released" locale="en" />
 
 Discovery Wave 2 adds local-first documentation and operator-readiness primitives
 without opening raw Python or remote installation surfaces. The tools work when

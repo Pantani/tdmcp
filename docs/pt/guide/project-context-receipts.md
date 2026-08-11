@@ -4,7 +4,7 @@ description: "Dê a cada projeto do TouchDesigner um brief criativo limitado e i
 
 # Contexto por projeto & recibos de turno
 
-<FeatureAvailability status="source-only" locale="pt" />
+<FeatureAvailability status="released" locale="pt" />
 
 O tdmcp pode manter um pequeno brief criativo versionado ao lado de um projeto
 salvo do TouchDesigner e produzir um recibo estruturado para cada turno do

@@ -4,7 +4,7 @@ description: "Give each TouchDesigner project a bounded creative brief and inspe
 
 # Project context & turn receipts
 
-<FeatureAvailability status="source-only" locale="en" />
+<FeatureAvailability status="released" locale="en" />
 
 tdmcp can keep a small, versioned creative brief beside a saved TouchDesigner
 project and produce one structured receipt for every built-in copilot turn. The

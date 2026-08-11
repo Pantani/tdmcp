@@ -194,7 +194,7 @@ DEFAULT_PACKAGE_NAME = "tdmcp_bridge_package"
 DEFAULT_PACKAGE_TOX_NAME = DEFAULT_PACKAGE_NAME + ".tox"
 DEFAULT_PACKAGE_PALETTE_FOLDER = "tdmcp"
 DEFAULT_PACKAGE_BOOTSTRAP_REPO_ZIP = (
-    "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.13.1.zip"
+    "https://github.com/Pantani/tdmcp/archive/refs/tags/v0.13.2.zip"
 )
 DEFAULT_PACKAGE_BOOTSTRAP_DEST = "~/tdmcp-bridge"
 
