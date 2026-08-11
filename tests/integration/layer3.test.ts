@@ -39,6 +39,7 @@ describe("integration: Layer 3 over the MCP protocol", () => {
         "get_td_nodes",
         "get_td_node_parameters",
         "get_td_node_errors",
+        "search_td_code",
         "execute_python_script",
         "exec_node_method",
         "create_python_script",
@@ -54,6 +55,7 @@ describe("integration: Layer 3 over the MCP protocol", () => {
     expect(names).not.toContain("create_python_script");
     // Structured tools stay available.
     expect(names).toContain("find_td_nodes");
+    expect(names).toContain("search_td_code");
     expect(names).toContain("get_td_nodes");
   });
 

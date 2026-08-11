@@ -76,6 +76,7 @@ const SAFE_PROFILE_KEEP = [
   "connect_nodes",
   "update_td_node_parameters",
   "find_td_nodes",
+  "search_td_code",
   "get_td_info",
   "get_td_classes",
   "load_session_profile",
@@ -89,6 +90,7 @@ const DIRECTORY_PROFILE_TOOLS = [
   "get_td_classes",
   "get_operator_workflow_guide",
   "find_td_nodes",
+  "search_td_code",
   "get_td_node_parameters",
   "get_td_node_flags",
   "get_td_topology",
@@ -170,7 +172,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
   it("directory exposes exactly the compact registry-facing surface", async () => {
     const names = await toolNames({ TDMCP_TOOL_PROFILE: "directory" });
     expect(names.sort()).toEqual([...DIRECTORY_PROFILE_TOOLS].sort());
-    expect(names).toHaveLength(16);
+    expect(names).toHaveLength(17);
   });
 
   it("directory is a non-destructive subset of safe", async () => {

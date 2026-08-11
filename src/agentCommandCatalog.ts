@@ -526,6 +526,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "code search",
+    summary: "Search authored DAT text and parameter expressions with bounded redacted excerpts.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "collect-assets",
     summary:
       "Scan a COMP subtree for external file dependencies into an inventory + optional manifest.",

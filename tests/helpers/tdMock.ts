@@ -107,6 +107,7 @@ export const tdHandlers = [
   http.get(`${TD_BASE}/api/optypes`, notFound),
   http.get(`${TD_BASE}/api/nodes/search`, notFound),
   http.post(`${TD_BASE}/api/params/search`, notFound),
+  http.post(`${TD_BASE}/api/code/search`, notFound),
   http.post(`${TD_BASE}/api/params/watch`, notFound),
   http.delete(`${TD_BASE}/api/params/watch`, notFound),
   http.get(`${TD_BASE}/api/params/watch`, notFound),

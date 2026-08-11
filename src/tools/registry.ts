@@ -77,6 +77,7 @@ const DIRECTORY_PROFILE_ALLOW = new Set<string>([
   "get_td_classes",
   "get_operator_workflow_guide",
   "find_td_nodes",
+  "search_td_code",
   "get_td_node_parameters",
   "get_td_node_flags",
   "get_td_topology",

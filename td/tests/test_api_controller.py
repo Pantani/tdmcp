@@ -170,6 +170,7 @@ class RoutingTests(unittest.TestCase):
             "editor_insert": ac.editor_insert_service,
             "search": ac.search_service,
             "parameter_search": ac.parameter_search_service,
+            "code_search": ac.code_search_service,
             "tox_export": ac.tox_export_service,
             "tox_roundtrip": ac.tox_roundtrip_service,
             "package_namespace": ac.package_namespace_service,
@@ -186,6 +187,7 @@ class RoutingTests(unittest.TestCase):
         ac.editor_insert_service = mock.MagicMock(name="editor_insert_service")
         ac.search_service = mock.MagicMock(name="search_service")
         ac.parameter_search_service = mock.MagicMock(name="parameter_search_service")
+        ac.code_search_service = mock.MagicMock(name="code_search_service")
         ac.tox_export_service = mock.MagicMock(name="tox_export_service")
         ac.tox_roundtrip_service = mock.MagicMock(name="tox_roundtrip_service")
         ac.package_namespace_service = mock.MagicMock(name="package_namespace_service")
@@ -203,6 +205,7 @@ class RoutingTests(unittest.TestCase):
         ac.editor_insert_service = self._saved["editor_insert"]
         ac.search_service = self._saved["search"]
         ac.parameter_search_service = self._saved["parameter_search"]
+        ac.code_search_service = self._saved["code_search"]
         ac.tox_export_service = self._saved["tox_export"]
         ac.tox_roundtrip_service = self._saved["tox_roundtrip"]
         ac.package_namespace_service = self._saved["package_namespace"]
@@ -367,6 +370,52 @@ class RoutingTests(unittest.TestCase):
 
     def test_parameter_search_is_read_only_for_undo_wrapper(self):
         self.assertIsNone(ac._undo_label("POST", "/api/params/search"))
+
+    def test_code_search_route_forwards_bounded_filters(self):
+        ac._route(
+            "POST",
+            "/api/code/search",
+            {},
+            {
+                "query": "reset feedback buffer",
+                "root_path": "/project1/show",
+                "max_depth": 4,
+                "source_kinds": ["dat_text", "parameter_expression"],
+                "node_pattern": "control*",
+                "node_name_glob": "callback*",
+                "node_path_glob": "*/callbacks",
+                "type": "textDAT",
+                "type_match": "exact",
+                "family": "DAT",
+                "limit": 20,
+                "node_scan_limit": 900,
+                "document_scan_limit": 8000,
+                "parameter_scan_limit": 12000,
+                "byte_scan_limit": 1048576,
+                "time_budget_ms": 800,
+            },
+        )
+        ac.code_search_service.search_code.assert_called_once_with(
+            "reset feedback buffer",
+            "/project1/show",
+            max_depth=4,
+            source_kinds=["dat_text", "parameter_expression"],
+            node_pattern="control*",
+            node_name_glob="callback*",
+            node_path_glob="*/callbacks",
+            type_filter="textDAT",
+            type_match="exact",
+            family="DAT",
+            limit=20,
+            node_scan_limit=900,
+            document_scan_limit=8000,
+            parameter_scan_limit=12000,
+            byte_scan_limit=1048576,
+            time_budget_ms=800,
+        )
+
+    def test_code_search_is_read_only_for_undo_wrapper(self):
+        self.assertIsNone(ac._undo_label("POST", "/api/code/search"))
 
     def test_exec_dispatch_when_allowed(self):
         os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "1"
