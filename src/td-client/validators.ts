@@ -279,6 +279,8 @@ export const CapturingJobSchema = z.object({
   job_id: z.string(),
   delay_frames: z.number().int().nonnegative(),
   wait_ms: z.number().int().nonnegative(),
+  requested_width: z.number().int().positive().optional(),
+  requested_height: z.number().int().positive().optional(),
 });
 export type TdCapturingJob = z.infer<typeof CapturingJobSchema>;
 
@@ -290,6 +292,8 @@ export type TdAdvancedCapture = z.infer<typeof AdvancedCaptureSchema>;
 export const PreviewJobSchema = z.object({
   status: z.enum(["pending", "ready", "error", "expired"]),
   job_id: z.string(),
+  requested_width: z.number().int().positive().optional(),
+  requested_height: z.number().int().positive().optional(),
   preview: z.union([PreviewSchema, SampleGridSchema]).optional(),
   error: z.string().optional(),
 });

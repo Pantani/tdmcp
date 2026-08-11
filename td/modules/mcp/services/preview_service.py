@@ -249,7 +249,14 @@ def _prune_jobs(now):
 def _schedule_deferred(path, width, height, delay_frames, sample_grid_n):
     _prune_jobs(time.monotonic())
     job_id = uuid.uuid4().hex
-    job = {"created": time.monotonic(), "status": "pending", "result": None, "error": None}
+    job = {
+        "created": time.monotonic(),
+        "status": "pending",
+        "result": None,
+        "error": None,
+        "requested_width": int(width),
+        "requested_height": int(height),
+    }
     _PREVIEW_JOBS[job_id] = job
 
     def _run():
@@ -266,6 +273,8 @@ def _schedule_deferred(path, width, height, delay_frames, sample_grid_n):
         "job_id": job_id,
         "delay_frames": int(delay_frames),
         "wait_ms": int(delay_frames * 1000 / _fps()),
+        "requested_width": job["requested_width"],
+        "requested_height": job["requested_height"],
     }
 
 
@@ -295,11 +304,28 @@ def collect_preview_job(job_id):
     if job is None:
         return {"status": "expired", "job_id": job_id}
     if job["status"] == "pending":
-        return {"status": "pending", "job_id": job_id}
+        return {
+            "status": "pending",
+            "job_id": job_id,
+            "requested_width": job["requested_width"],
+            "requested_height": job["requested_height"],
+        }
     del _PREVIEW_JOBS[job_id]
     if job["status"] == "error":
-        return {"status": "error", "job_id": job_id, "error": job["error"]}
-    return {"status": "ready", "job_id": job_id, "preview": job["result"]}
+        return {
+            "status": "error",
+            "job_id": job_id,
+            "requested_width": job["requested_width"],
+            "requested_height": job["requested_height"],
+            "error": job["error"],
+        }
+    return {
+        "status": "ready",
+        "job_id": job_id,
+        "requested_width": job["requested_width"],
+        "requested_height": job["requested_height"],
+        "preview": job["result"],
+    }
 
 
 def sample_grid(path, n=8):
