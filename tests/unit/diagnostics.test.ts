@@ -143,6 +143,42 @@ describe("summarize_td_errors", () => {
       | undefined;
     expect(text?.text).toContain("0 error(s), 2 warning(s)");
   });
+
+  it("normalizes typeless and unknown diagnostics as errors", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/network/:seg/errors`, () =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            errors: [
+              { path: "/project1/a", message: "legacy typeless diagnostic" },
+              { path: "/project1/b", message: "unrecognized severity", type: "info" },
+              { path: "/project1/c", message: "known warning", type: "warning" },
+            ],
+          },
+        }),
+      ),
+    );
+    const r = await summarizeTdErrorsImpl(makeCtx(), { path: "/project1", group_by: "type" });
+    expect(sc(r)).toMatchObject({ total: 3, error_count: 2, warning_count: 1 });
+    expect(sc(r).error_count + sc(r).warning_count).toBe(sc(r).total);
+    expect(sc(r).groups).toEqual([
+      {
+        key: "error",
+        count: 2,
+        sample: {
+          path: "/project1/a",
+          message: "legacy typeless diagnostic",
+          type: "error",
+        },
+      },
+      {
+        key: "warning",
+        count: 1,
+        sample: { path: "/project1/c", message: "known warning", type: "warning" },
+      },
+    ]);
+  });
 });
 
 describe("compare_td_nodes", () => {

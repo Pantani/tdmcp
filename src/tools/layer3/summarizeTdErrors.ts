@@ -13,6 +13,10 @@ export const summarizeTdErrorsSchema = z.object({
     ),
 });
 type SummarizeTdErrorsArgs = z.infer<typeof summarizeTdErrorsSchema>;
+type DiagnosticSeverity = "error" | "warning";
+
+const normalizeDiagnosticSeverity = (type?: string): DiagnosticSeverity =>
+  type === "warning" ? "warning" : "error";
 
 export const summarizeTdErrorsOutputSchema = z.object({
   path: z.string().describe("The network root diagnostics were collected under."),
@@ -48,10 +52,15 @@ export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdE
   return guardTd(
     () => ctx.client.getNetworkErrors(args.path),
     (result) => {
-      const errors = result.errors;
-      const total = errors.length;
-      const errorCount = errors.filter((diagnostic) => diagnostic.type === "error").length;
-      const warningCount = errors.filter((diagnostic) => diagnostic.type === "warning").length;
+      const diagnostics = result.errors.map((diagnostic) => ({
+        ...diagnostic,
+        severity: normalizeDiagnosticSeverity(diagnostic.type),
+      }));
+      const total = diagnostics.length;
+      const errorCount = diagnostics.filter((diagnostic) => diagnostic.severity === "error").length;
+      const warningCount = diagnostics.filter(
+        (diagnostic) => diagnostic.severity === "warning",
+      ).length;
       if (total === 0) {
         return structuredResult(`No errors or warnings found under ${args.path}.`, {
           path: args.path,
@@ -64,11 +73,11 @@ export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdE
         });
       }
 
-      const keyOf = (e: { path: string; message: string; type?: string }): string =>
+      const keyOf = (e: { path: string; message: string; severity: DiagnosticSeverity }): string =>
         args.group_by === "message"
           ? e.message
           : args.group_by === "type"
-            ? e.type || "error"
+            ? e.severity
             : parentOf(e.path);
 
       const grouped = new Map<
@@ -76,7 +85,7 @@ export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdE
         { count: number; sample: { path: string; message: string; type: "error" | "warning" } }
       >();
       const byPath = new Map<string, number>();
-      for (const e of errors) {
+      for (const e of diagnostics) {
         const key = keyOf(e);
         const g = grouped.get(key);
         if (g) g.count += 1;
@@ -86,7 +95,7 @@ export async function summarizeTdErrorsImpl(ctx: ToolContext, args: SummarizeTdE
             sample: {
               path: e.path,
               message: e.message,
-              type: e.type === "warning" ? "warning" : "error",
+              type: e.severity,
             },
           });
         }
