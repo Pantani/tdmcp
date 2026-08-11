@@ -4,7 +4,7 @@ description: "Autorização OAuth opt-in no Streamable HTTP do tdmcp, com PKCE S
 
 # OAuth, PKCE & consentimento no TouchDesigner
 
-<FeatureAvailability status="source-only" locale="pt" />
+<FeatureAvailability status="released" locale="pt" />
 
 O tdmcp pode proteger o endpoint Streamable HTTP `/mcp` com um authorization
 server opt-in no processo Node. O Node é dono de discovery, registro de clientes,

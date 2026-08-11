@@ -38,6 +38,7 @@ plugins/tdmcp/.claude-plugin/
 # current `.mcpb` and any legacy `.dxt` output are ignored.
 *.dxt
 *.mcpb
+*.tgz
 
 # Harness working directory: intermediate artifacts from the submission agents
 # (spec, migration notes, form-answer draft, QA report). Local-only scratch.

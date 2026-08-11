@@ -6,7 +6,7 @@ const publicVersion = `v${pkg.version}`;
 
 const props = withDefaults(
   defineProps<{
-    status: "source-only" | "live-unverified";
+    status: "released" | "source-only" | "live-unverified";
     locale?: "en" | "pt";
   }>(),
   { locale: "en" },
@@ -14,6 +14,12 @@ const props = withDefaults(
 
 const _copy = computed(() => {
   if (props.locale === "pt") {
+    if (props.status === "released") {
+      return {
+        title: `Incluído na ${publicVersion}`,
+        body: `Esta capacidade faz parte da ${publicVersion}. Os limites PASS / FAIL / UNVERIFIED documentados continuam valendo; use o bridge correspondente à mesma versão do pacote.`,
+      };
+    }
     return props.status === "source-only"
       ? {
           title: "Disponível somente no código-fonte",
@@ -23,6 +29,12 @@ const _copy = computed(() => {
           title: "Validação live pendente",
           body: "O contrato offline passou, mas esta capacidade ainda precisa de evidência live no runtime indicado antes de uso em produção.",
         };
+  }
+  if (props.status === "released") {
+    return {
+      title: `Included in ${publicVersion}`,
+      body: `This capability is part of ${publicVersion}. Its documented PASS / FAIL / UNVERIFIED boundaries still apply; use the bridge that matches the package version.`,
+    };
   }
   return props.status === "source-only"
     ? {

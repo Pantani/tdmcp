@@ -4,7 +4,7 @@ description: "Busca compacta e bounded em operadores, parâmetros e código do T
 
 # Busca no projeto live
 
-<FeatureAvailability status="source-only" locale="pt" />
+<FeatureAvailability status="released" locale="pt" />
 
 O tdmcp pode buscar dentro do projeto TouchDesigner em execução no próprio
 bridge, em vez de baixar uma topologia recursiva e filtrá-la no processo MCP. As

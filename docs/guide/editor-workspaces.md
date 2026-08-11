@@ -4,7 +4,7 @@ description: "Exact Network Editor placement and temporary artist workspaces wit
 
 # Editor workspaces & exact placement
 
-<FeatureAvailability status="source-only" locale="en" />
+<FeatureAvailability status="released" locale="en" />
 
 Wave 10 adds two deliberately narrow editor workflows: exact placement through
 the existing `arrange_network` tool, and a temporary side-by-side workspace
@@ -17,7 +17,7 @@ contracts pass integrated offline QA. Authenticated current-build live QA also
 passed exact placement apply/replay/undo/redo and the TOP-restore plus
 PANEL-cancel workspace lifecycles on TouchDesigner 099 build 2025.32820 with
 bridge exec disabled. Untested edge cases and platforms remain explicitly
-**UNVERIFIED**. This is still unreleased source-tree work.
+**UNVERIFIED**. Those limits remain explicit in the v0.13.2 release.
 :::
 
 Neither workflow opens arbitrary UI, exposes raw Python, loads or quits a
@@ -296,7 +296,7 @@ setter failure is not a clean failure unless the receipt proves full rollback.
   contract. A bridge without the structured routes must fail; clients must not
   fall back to `/api/exec`.
 
-## Bounded visual critique (unreleased)
+## Bounded visual critique
 
 `enhance_build.visualCritique` is an opt-in branch of the existing tool. It keeps
 the legacy call unchanged, accepts one explicit TOP plus 1–6 bounded numeric

@@ -5,7 +5,7 @@ description: Safely own tdmcp packages and MCP client registration per TouchDesi
 
 # Project-scoped ownership
 
-<FeatureAvailability status="source-only" locale="en" />
+<FeatureAvailability status="released" locale="en" />
 
 Wave 3 makes local setup explicit, inspectable, and reversible. Package files
 can belong to one project instead of an implicit global cache, and client setup
