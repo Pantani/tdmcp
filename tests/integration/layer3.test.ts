@@ -20,6 +20,11 @@ async function connectClient(env: NodeJS.ProcessEnv = {}) {
   return client;
 }
 
+function resourceText(content: { text: string } | { blob: string } | undefined): string {
+  if (!content || !("text" in content)) throw new Error("Expected a text resource payload.");
+  return content.text;
+}
+
 describe("integration: Layer 3 over the MCP protocol", () => {
   it("exposes the core Layer 3 tools", async () => {
     const client = await connectClient();
@@ -101,9 +106,37 @@ describe("integration: Layer 3 over the MCP protocol", () => {
 
   it("reads the operator knowledge resource", async () => {
     const client = await connectClient();
-    const result = await client.readResource({ uri: "tdmcp://operators/TOP" });
-    expect(result.contents.length).toBeGreaterThan(0);
-    expect(JSON.stringify(result.contents)).toContain("Noise TOP");
+    const categoryResult = await client.readResource({ uri: "tdmcp://operators/TOP" });
+    expect(categoryResult.contents.length).toBeGreaterThan(0);
+    expect(JSON.stringify(categoryResult.contents)).toContain("Noise TOP");
+
+    const operatorResult = await client.readResource({ uri: "tdmcp://operators/noise_top" });
+    const operatorPayload = JSON.parse(resourceText(operatorResult.contents[0]));
+    expect(operatorPayload).toMatchObject({
+      name: "Noise TOP",
+      found: true,
+      lookup_status: "found_in_snapshot",
+      data_version: {
+        source: "bottobot",
+        sourceVersion: "2.8.0",
+        importedAt: "2026-06-24T01:57:20.374Z",
+      },
+    });
+
+    const missingResult = await client.readResource({
+      uri: "tdmcp://operators/triangulatePOP",
+    });
+    const missingPayload = JSON.parse(resourceText(missingResult.contents[0]));
+    expect(missingPayload).toMatchObject({
+      found: false,
+      lookup_status: "not_in_snapshot",
+      data_version: {
+        source: "bottobot",
+        sourceVersion: "2.8.0",
+        importedAt: "2026-06-24T01:57:20.374Z",
+      },
+    });
+    expect(missingPayload.snapshot_notice).toContain("does not prove");
   });
 
   it("get_td_info returns bridge info through MCP when mocked", async () => {

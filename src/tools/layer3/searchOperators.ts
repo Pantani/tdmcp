@@ -275,6 +275,12 @@ function searchOperators(ctx: ToolContext, args: SearchOperatorsArgs): SearchRep
 
   scored.sort((a, b) => b.score - a.score || a.operator.name.localeCompare(b.operator.name));
   const allOperators = scored.map((hit) => hit.operator);
+  const warnings =
+    allOperators.length === 0
+      ? [
+          "No matching entry was found in the imported knowledge snapshot. This does not prove that the operator is absent from the current or connected TouchDesigner build.",
+        ]
+      : [];
   return {
     operators: allOperators,
     total: allOperators.length,
@@ -288,7 +294,7 @@ function searchOperators(ctx: ToolContext, args: SearchOperatorsArgs): SearchRep
       type: args.type,
     },
     tips: allOperators.length === 0 ? buildTips(args) : [],
-    warnings: [],
+    warnings,
   };
 }
 
