@@ -49,7 +49,7 @@ export const registerOperatorResource: ResourceRegistrar = (server, ctx) => {
 
       const doc = ctx.knowledge.getOperator(name);
       if (!doc) {
-        const suggestions = ctx.knowledge.searchOperators(name, 5).map((o) => o.name);
+        const suggestions = ctx.knowledge.searchOperators(name, 5).map((o) => o.slug);
         return jsonContents(uri, {
           error: `Operator "${name}" is not present in the imported knowledge snapshot.`,
           found: false,

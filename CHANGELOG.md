@@ -697,6 +697,11 @@ to a release.
 
 ### Fixed
 
+- Operator knowledge responses now expose the imported snapshot provenance and
+  distinguish `found_in_snapshot` from `not_in_snapshot`. Missing operator
+  records and empty searches explicitly warn that snapshot absence does not
+  prove absence from the current TouchDesigner build, and resource suggestions
+  use URI-ready operator slugs.
 - **`create_raytk_sdf_graph`** now sets the copied RayTK `raymarchRender3D`
   renderer to `1280x720` by default, avoiding TouchDesigner Non-Commercial
   resolution warnings during live QA while keeping the resolution configurable.

@@ -108,9 +108,19 @@ describe("integration: Layer 3 over the MCP protocol", () => {
     const client = await connectClient();
     const categoryResult = await client.readResource({ uri: "tdmcp://operators/TOP" });
     expect(categoryResult.contents.length).toBeGreaterThan(0);
-    expect(JSON.stringify(categoryResult.contents)).toContain("Noise TOP");
+    const categoryPayload = JSON.parse(resourceText(categoryResult.contents[0]));
+    expect(JSON.stringify(categoryPayload)).toContain("Noise TOP");
+    expect(categoryPayload).toMatchObject({
+      category: "TOP",
+      data_version: {
+        source: "bottobot",
+        sourceVersion: "2.8.0",
+        importedAt: "2026-06-24T01:57:20.374Z",
+      },
+    });
 
     const operatorResult = await client.readResource({ uri: "tdmcp://operators/noise_top" });
+    expect(operatorResult.contents.length).toBeGreaterThan(0);
     const operatorPayload = JSON.parse(resourceText(operatorResult.contents[0]));
     expect(operatorPayload).toMatchObject({
       name: "Noise TOP",
@@ -126,6 +136,7 @@ describe("integration: Layer 3 over the MCP protocol", () => {
     const missingResult = await client.readResource({
       uri: "tdmcp://operators/triangulatePOP",
     });
+    expect(missingResult.contents.length).toBeGreaterThan(0);
     const missingPayload = JSON.parse(resourceText(missingResult.contents[0]));
     expect(missingPayload).toMatchObject({
       found: false,
@@ -137,6 +148,13 @@ describe("integration: Layer 3 over the MCP protocol", () => {
       },
     });
     expect(missingPayload.snapshot_notice).toContain("does not prove");
+
+    const suggestionResult = await client.readResource({
+      uri: "tdmcp://operators/noise",
+    });
+    expect(suggestionResult.contents.length).toBeGreaterThan(0);
+    const suggestionPayload = JSON.parse(resourceText(suggestionResult.contents[0]));
+    expect(suggestionPayload.suggestions).toContain("noise_top");
   });
 
   it("get_td_info returns bridge info through MCP when mocked", async () => {
