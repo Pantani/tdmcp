@@ -133,14 +133,14 @@ describe("session receipts resource", () => {
   it("registers the exact read-only URI template and emits JSON", async () => {
     const calls: Array<{
       name: string;
-      template: ResourceTemplate;
+      template: ResourceTemplate | string;
       metadata: { mimeType?: string };
       handler: (uri: URL) => Promise<{ contents: Array<{ text?: string }> }>;
     }> = [];
     const server = {
       registerResource(
         name: string,
-        template: ResourceTemplate,
+        template: ResourceTemplate | string,
         metadata: { mimeType?: string },
         handler: (uri: URL) => Promise<{ contents: Array<{ text?: string }> }>,
       ) {
@@ -149,14 +149,20 @@ describe("session receipts resource", () => {
     };
 
     registerSessionReceiptsResource(server as never, {} as never);
-    const registered = calls[0];
-    if (!registered) throw new Error("resource was not registered");
-    expect(registered.name).toBe("td-session-receipts");
-    expect(registered.template.uriTemplate.toString()).toBe(
+    expect(calls).toHaveLength(3);
+    const base = calls.find((call) => call.name === "td-session-receipts");
+    const canonical = calls.find((call) => call.name === "td-session-receipts-filtered");
+    const fallback = calls.find((call) => call.name === "td-session-receipts-query-fallback");
+    if (!base || !canonical || !fallback) throw new Error("resources were not registered");
+    expect(base.template).toBe("tdmcp://session/receipts");
+    expect((canonical.template as ResourceTemplate).uriTemplate.toString()).toBe(
       "tdmcp://session/receipts{?limit,status}",
     );
-    expect(registered.metadata.mimeType).toBe("application/json");
-    const result = await registered.handler(new URL("tdmcp://session/receipts"));
+    expect((fallback.template as ResourceTemplate).uriTemplate.toString()).toBe(
+      "tdmcp://session/receipts{+query}",
+    );
+    expect(base.metadata.mimeType).toBe("application/json");
+    const result = await base.handler(new URL("tdmcp://session/receipts"));
     expect(JSON.parse(result.contents[0]?.text ?? "{}")).toMatchObject({ state: "off" });
   });
 });

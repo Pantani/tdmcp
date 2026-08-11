@@ -18,7 +18,7 @@ export const getPreviewSchema = z.object({
     .max(4096)
     .default(640)
     .describe(
-      "Requested preview width (1–4096; default 640). The bridge may return a TOP's native output width; the caption reports the returned size.",
+      "Requested preview width (1–4096; default 640). The bridge may return a TOP's native output width; when it differs, the caption reports both native and requested sizes.",
     ),
   height: z.coerce
     .number()
@@ -27,7 +27,7 @@ export const getPreviewSchema = z.object({
     .max(4096)
     .default(360)
     .describe(
-      "Requested preview height (1–4096; default 360). The bridge may return a TOP's native output height; the caption reports the returned size.",
+      "Requested preview height (1–4096; default 360). The bridge may return a TOP's native output height; when it differs, the caption reports both native and requested sizes.",
     ),
   sample_grid: z.coerce
     .number()
@@ -123,7 +123,13 @@ function renderJob(job: TdPreviewJob) {
     return imageResult(
       preview.base64,
       MIME_BY_FORMAT[preview.format] ?? "image/png",
-      `Deferred preview (${job.job_id}).`,
+      previewCaption(
+        preview.path,
+        preview.width,
+        preview.height,
+        job.requested_width ?? preview.width,
+        job.requested_height ?? preview.height,
+      ),
     );
   }
   return jsonResult(`Deferred capture ${job.job_id} ready.`, job);

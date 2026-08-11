@@ -88,6 +88,41 @@ describe("getPreviewImpl", () => {
     expect(collected.content.find((c) => c.type === "image")).toBeDefined();
   });
 
+  it("labels native and requested dimensions when collecting a deferred job", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/preview_job/:seg`, ({ params }) =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            status: "ready",
+            job_id: params.seg,
+            requested_width: 960,
+            requested_height: 540,
+            preview: {
+              path: "/project1/portrait",
+              width: 360,
+              height: 640,
+              format: "png",
+              base64: Buffer.from("native-preview").toString("base64"),
+            },
+          },
+        }),
+      ),
+    );
+
+    const collected = await getPreviewImpl(makeCtx(), {
+      width: 640,
+      height: 360,
+      job_id: "job-1",
+    });
+    const caption = collected.content.find((content) => content.type === "text") as
+      | { text?: string }
+      | undefined;
+    expect(caption?.text).toContain("/project1/portrait");
+    expect(caption?.text).toContain("360×640 native");
+    expect(caption?.text).toContain("960×540 requested");
+  });
+
   it("errors when node_path is missing and there is no job_id", async () => {
     const result = await getPreviewImpl(makeCtx(), { width: 640, height: 360 });
     expect(result.isError).toBe(true);
