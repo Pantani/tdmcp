@@ -532,15 +532,28 @@ class DeferredCaptureTests(unittest.TestCase):
     def test_deferred_job_becomes_ready_and_is_collected_once(self):
         # Default _schedule (no td.run off-TD) runs the callback immediately.
         with mock.patch.object(
-            preview_service, "capture", return_value={"path": "/project1/out", "base64": "x"}
+            preview_service,
+            "capture",
+            return_value={
+                "path": "/project1/out",
+                "width": 360,
+                "height": 640,
+                "base64": "x",
+            },
         ):
-            scheduled = preview_service.capture_advanced("/project1/out", delay_frames=6)
+            scheduled = preview_service.capture_advanced(
+                "/project1/out", width=960, height=540, delay_frames=6
+            )
         self.assertEqual(scheduled["status"], "capturing")
         self.assertIn("job_id", scheduled)
         self.assertGreater(scheduled["wait_ms"], 0)
+        self.assertEqual(scheduled["requested_width"], 960)
+        self.assertEqual(scheduled["requested_height"], 540)
         collected = preview_service.collect_preview_job(scheduled["job_id"])
         self.assertEqual(collected["status"], "ready")
         self.assertEqual(collected["preview"]["path"], "/project1/out")
+        self.assertEqual(collected["requested_width"], 960)
+        self.assertEqual(collected["requested_height"], 540)
         # One-shot: a second collect reports expired.
         again = preview_service.collect_preview_job(scheduled["job_id"])
         self.assertEqual(again["status"], "expired")
@@ -550,6 +563,8 @@ class DeferredCaptureTests(unittest.TestCase):
             scheduled = preview_service.capture_advanced("/project1/out", delay_frames=6)
         collected = preview_service.collect_preview_job(scheduled["job_id"])
         self.assertEqual(collected["status"], "pending")
+        self.assertEqual(collected["requested_width"], 640)
+        self.assertEqual(collected["requested_height"], 360)
 
     def test_expired_job_is_pruned_by_ttl(self):
         with mock.patch.object(preview_service, "_schedule", lambda cb, frames: None):

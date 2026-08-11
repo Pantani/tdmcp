@@ -198,6 +198,8 @@ export const tdHandlers = [
     const body = (await request.json()) as {
       delay_frames?: number;
       sample_grid?: number;
+      width?: number;
+      height?: number;
     };
     if (body.delay_frames) {
       return ok({
@@ -205,6 +207,8 @@ export const tdHandlers = [
         job_id: "job-1",
         delay_frames: body.delay_frames,
         wait_ms: 100,
+        requested_width: body.width ?? 640,
+        requested_height: body.height ?? 360,
       });
     }
     return ok({
@@ -221,6 +225,8 @@ export const tdHandlers = [
     ok({
       status: "ready",
       job_id: seg(params),
+      requested_width: 320,
+      requested_height: 180,
       preview: {
         path: "/project1/out1",
         width: 320,

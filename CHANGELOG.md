@@ -715,6 +715,16 @@ to a release.
 - Hardened Glama and hosted-registry introspection with a compact directory tool
   profile, reachable container HTTP binding, accurate tool metadata, raw-Python
   macro replay gating, and schema-backed structured recipe-bundle results.
+- **`get_preview`** no longer implies that a capture was scaled to the requested
+  size. The bridge may return a TOP at its native resolution, but `width` and
+  `height` were described as the captured image dimensions and the caption
+  printed the returned size as if it were the requested result — misleading for
+  artists and agents inspecting an output. Both parameters are now described as
+  requested dimensions, and when the returned size differs the caption reports
+  both (`1080×1920 native; 640×360 requested`) for ordinary, immediate advanced,
+  and deferred-job image captures alike. Deferred jobs now retain their original
+  requested dimensions for accurate collection captions. Bridge capture and
+  scaling behaviour is unchanged.
 - **`summarize_td_errors`** now distinguishes warnings from errors. The bridge
   returns both severities in `result.errors`, but the summary counted and
   described every entry as an error, so a warning-only network appeared to be
@@ -722,7 +732,6 @@ to a release.
   the existing `total` field and adds `error_count` and `warning_count`, each
   grouped representative sample retains its severity, and the descriptions and
   suggestions use accurate diagnostic terminology.
-
 - The `tdmcp://session/receipts` MCP resource now resolves for bare, partial and
   reordered query reads. Under MCP SDK 1.30 the documented `{?limit,status}`
   template resolves reliably only when both parameters appear in template order,
