@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { tryEndpoint } from "../../td-client/types.js";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -76,10 +77,14 @@ export function buildEditDatContentScript(payload: object): string {
 }
 
 export async function editDatContentImpl(ctx: ToolContext, args: EditDatContentArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("DAT text mutation");
+  }
   return guardTd(
     async () => {
-      // 1) first-class endpoint path (survives ALLOW_EXEC=0): read the DAT text,
-      //    run the exhaustively-tested pure replace, write it back. A compute error
+      // 1) first-class endpoint path: read the DAT text, run the exhaustively-tested
+      //    pure replace, then write it through the bridge's independently exec-gated
+      //    DAT route. A compute error
       //    (0 matches / >1 without replace_all / not-a-DAT) becomes report.fatal so
       //    the shared onOk turns it into an errorResult and NO write happens.
       // 2) Fall back to exec ONLY when an endpoint is absent on an older bridge;
@@ -135,6 +140,7 @@ export async function editDatContentImpl(ctx: ToolContext, args: EditDatContentA
 }
 
 export const registerEditDatContent: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "edit_dat_content",
     {
@@ -143,7 +149,9 @@ export const registerEditDatContent: ToolRegistrar = (server, ctx) => {
         "Surgically replace a substring inside a Text or Table DAT's `.text`. " +
         "Without `replace_all`, requires exactly one match — 0 or >1 occurrences is an error, " +
         "forcing the caller to add context or set `replace_all`. " +
-        "Use `set_dat_content` to overwrite an entire DAT's text in place; use this to make a targeted edit.",
+        "Use `set_dat_content` to overwrite an entire DAT's text in place; use this to make a targeted edit. " +
+        "Because DAT text can become executable callbacks, this tool is hidden when " +
+        "TDMCP_RAW_PYTHON=off and the bridge also requires TDMCP_BRIDGE_ALLOW_EXEC=1 for writes.",
       inputSchema: editDatContentSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

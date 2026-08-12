@@ -1,7 +1,12 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { friendlyTdError } from "../../td-client/types.js";
-import { computeDataflowLayout, type LayoutEdge, layoutScript } from "../layout.js";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
+import { computeDataflowLayout, type LayoutEdge } from "../layout.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { connectNodesViaBridge } from "./connectHelper.js";
@@ -39,26 +44,60 @@ function reusedNote(created: CreatedNode[]): string {
   return ` (${reused} already existed and ${reused === 1 ? "was" : "were"} reused)`;
 }
 
+function callerCodeDenial(ctx: ToolContext, args: CreateNodeChainArgs): CallToolResult | undefined {
+  if (allowsCallerCode(ctx)) return undefined;
+  for (const node of args.nodes) {
+    const codeSources = genericNodeCodeBearingSources(node.type, node.parameters);
+    if (codeSources.length > 0) {
+      return callerCodeDenied(
+        `Node-chain creation with ${codeSources.join(", ")} on ${node.name ?? node.type}`,
+      );
+    }
+  }
+  return undefined;
+}
+
+function knowledgeWarnings(ctx: ToolContext, args: CreateNodeChainArgs): string[] {
+  return args.nodes
+    .filter((node) => !ctx.knowledge.operatorExists(node.type))
+    .map((node) => `Operator type "${node.type}" was not found in the knowledge base.`);
+}
+
+function plannedChainPositions(args: CreateNodeChainArgs): Array<[number, number]> {
+  const ids = args.nodes.map((_, index) => `planned-${index}`);
+  const edges: LayoutEdge[] = [];
+  if (args.connect_sequentially) {
+    for (let index = 0; index < ids.length - 1; index++) {
+      const from = ids[index];
+      const to = ids[index + 1];
+      if (from && to) edges.push({ from, to });
+    }
+  }
+  const positions = computeDataflowLayout(ids, edges);
+  return ids.map((id) => positions[id] ?? [0, 0]);
+}
+
 export async function createNodeChainImpl(
   ctx: ToolContext,
   args: CreateNodeChainArgs,
 ): Promise<CallToolResult> {
+  const denied = callerCodeDenial(ctx, args);
+  if (denied) return denied;
   const created: CreatedNode[] = [];
-  const warnings: string[] = [];
+  const warnings = knowledgeWarnings(ctx, args);
+  const positions = plannedChainPositions(args);
 
-  for (const node of args.nodes) {
-    if (!ctx.knowledge.operatorExists(node.type)) {
-      warnings.push(`Operator type "${node.type}" was not found in the knowledge base.`);
-    }
-  }
-
-  for (const node of args.nodes) {
+  for (const [index, node] of args.nodes.entries()) {
     try {
+      const [nodeX, nodeY] = positions[index] ?? [0, 0];
       const ref = await ctx.client.createNode({
         parent_path: args.parent_path,
         type: node.type,
         name: node.name,
         parameters: node.parameters,
+        placement: "explicit",
+        node_x: nodeX,
+        node_y: nodeY,
       });
       created.push({
         path: ref.path,
@@ -88,26 +127,6 @@ export async function createNodeChainImpl(
       } catch (err) {
         warnings.push(`Failed to connect ${from.path} → ${to.path}: ${friendlyTdError(err)}`);
       }
-    }
-  }
-
-  const edges: LayoutEdge[] = [];
-  if (args.connect_sequentially) {
-    for (let i = 0; i < created.length - 1; i++) {
-      const from = created[i];
-      const to = created[i + 1];
-      if (from && to) edges.push({ from: from.path, to: to.path });
-    }
-  }
-  const positions = computeDataflowLayout(
-    created.map((c) => c.path),
-    edges,
-  );
-  if (Object.keys(positions).length > 0) {
-    try {
-      await ctx.client.executePythonScript(layoutScript(positions), false);
-    } catch (err) {
-      warnings.push(`Auto-layout skipped: ${friendlyTdError(err)}`);
     }
   }
 

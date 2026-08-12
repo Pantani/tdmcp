@@ -93,6 +93,33 @@ describe("importShadertoySchema XOR refine", () => {
 });
 
 describe("importShadertoyImpl — raw_source happy path", () => {
+  it("rejects shader source before fetch or node creation in raw-off mode", async () => {
+    const rec: Recording = { createdTypes: [], execScripts: [], shadertoyHits: [] };
+    server.use(...recordingHandlers(rec));
+    const result = await importShadertoyImpl(
+      { ...ctx(), allowRawPython: false },
+      {
+        shader_id: undefined,
+        url: undefined,
+        raw_source: RAW_SHADER,
+        parent_path: "/project1",
+        name: "shadertoy",
+        resolution: [640, 360],
+        pixel_format: "rgba8",
+        channels: [],
+        expose_mouse_control: false,
+        expose_speed_control: true,
+        capture_preview: false,
+        provenance_override: undefined,
+      },
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(rec.createdTypes).toEqual([]);
+    expect(rec.shadertoyHits).toEqual([]);
+  });
+
   it("builds GLSL TOP without fetching Shadertoy", async () => {
     const rec: Recording = { createdTypes: [], execScripts: [], shadertoyHits: [] };
     server.use(...recordingHandlers(rec));

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import {
   applyGlslTopMapping,
   applyShadertoyUniforms,
@@ -232,6 +233,9 @@ export async function resolveShadertoySource(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function importShadertoyImpl(ctx: ToolContext, args: ImportShadertoyArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Shadertoy source import");
+  }
   let resolved: ResolvedShader;
   try {
     resolved = await resolveShadertoySource(args, ctx);
@@ -273,12 +277,17 @@ export async function importShadertoyImpl(ctx: ToolContext, args: ImportShaderto
 }
 
 export const registerImportShadertoy: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "import_shadertoy",
     {
       title: "Import Shadertoy",
       description:
-        "Build a GLSL TOP from a Shadertoy URL, ID, or pasted source. Wires iChannels (defaulting to noise placeholders), exposes Speed (and optional Mouse) controls, and captures a preview. First fetch on macOS may trigger an outgoing-connection permission prompt. Set TDMCP_SHADERTOY_KEY for reliable fetches; paste into raw_source to stay offline.",
+        "Build a GLSL TOP from a Shadertoy URL, ID, or pasted source. " +
+        "Imported shader source requires TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1. " +
+        "Wires iChannels (defaulting to noise placeholders), exposes Speed (and optional Mouse) controls, and captures a preview. " +
+        "First fetch on macOS may trigger an outgoing-connection permission prompt. " +
+        "Set TDMCP_SHADERTOY_KEY for reliable fetches; paste into raw_source to stay offline.",
       inputSchema: importShadertoyBaseSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -84,6 +85,9 @@ function scanShaderFootguns(args: CreateGlslMaterialArgs): string[] {
 }
 
 export async function createGlslMaterialImpl(ctx: ToolContext, args: CreateGlslMaterialArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("GLSL material source");
+  }
   const desiredName = args.name ?? "glsl_mat1";
   return guardTd(
     async () => {
@@ -219,12 +223,13 @@ export async function createGlslMaterialImpl(ctx: ToolContext, args: CreateGlslM
 }
 
 export const registerCreateGlslMaterial: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "create_glsl_material",
     {
       title: "Create GLSL material",
       description:
-        "Create a GLSL MAT under parent_path for custom-shaded geometry. The pixel/vertex/(optional) geometry shader source is placed in companion Text DATs (`<name>_pix`/`_vert`/`_geo`) and wired to the GLSL MAT's pixel/vertex/geometry parameters; numeric uniforms are best-effort bound on the Vectors sequence and samplers on the Samplers sequence. Pixel shader must declare `out vec4 fragColor;`. Returns the GLSL MAT path, the DAT paths, and warnings for known TD GLSL footguns (missing fragColor, F1/F2 preamble collision, undeclared uTime, sampler bindings needing manual wiring). Artist assigns the MAT to a Geometry COMP via its `material` par.",
+        "Create a GLSL MAT under parent_path for custom-shaded geometry. Caller shader source requires TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1. The pixel/vertex/(optional) geometry shader source is placed in companion Text DATs (`<name>_pix`/`_vert`/`_geo`) and wired to the GLSL MAT's pixel/vertex/geometry parameters; numeric uniforms are best-effort bound on the Vectors sequence and samplers on the Samplers sequence. Pixel shader must declare `out vec4 fragColor;`. Returns the GLSL MAT path, the DAT paths, and warnings for known TD GLSL footguns (missing fragColor, F1/F2 preamble collision, undeclared uTime, sampler bindings needing manual wiring). Artist assigns the MAT to a Geometry COMP via its `material` par.",
       inputSchema: createGlslMaterialSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

@@ -69,6 +69,25 @@ function captureNodes(): Array<{ parent_path: string; type: string; name?: strin
 const GOOD_PIXEL = "out vec4 fragColor; void main(){ fragColor = vec4(1.0); }";
 
 describe("create_glsl_material", () => {
+  it("rejects shader source before creating nodes in raw-off mode", async () => {
+    const nodes = captureNodes();
+    const result = await createGlslMaterialImpl(
+      { ...makeCtx(), allowRawPython: false },
+      {
+        parent_path: "/project1",
+        name: "mat1",
+        pixel_shader: GOOD_PIXEL,
+        glsl_version: "330",
+        two_sided: false,
+        lighting_space: "world",
+      },
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(nodes).toEqual([]);
+  });
+
   it("creates exactly one glslMAT + one textDAT (pixel) at minimum", async () => {
     const nodes = captureNodes();
     captureScripts();

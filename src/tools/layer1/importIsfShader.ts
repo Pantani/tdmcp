@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import {
   applyGlslTopMapping,
   buildIsfMapping,
@@ -427,6 +428,9 @@ function sanitizeName(name: string): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function importIsfShaderImpl(ctx: ToolContext, args: Args) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("ISF shader source import");
+  }
   let resolved: ResolvedSource;
   try {
     resolved = await resolveIsfSource(args);
@@ -482,16 +486,19 @@ export async function importIsfShaderImpl(ctx: ToolContext, args: Args) {
 }
 
 export const registerImportIsfShader: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "import_isf_shader",
     {
       title: "Import ISF shader",
       description:
-        "Create a new TouchDesigner system container containing an ISF (.fs) shader as a GLSL TOP, companion DATs, " +
-        "and optional live controls. Accepts raw source, a local file path, or an http(s) URL; URL fetches are " +
+        "Create a new TouchDesigner system container containing an ISF (.fs) shader as a GLSL TOP, " +
+        "companion DATs, and optional live controls. " +
+        "Accepts raw source, a local file path, or an http(s) URL; URL fetches are " +
         "bounded by fetch_timeout_ms. Returns the container/GLSL/output paths, generated controls, provenance, " +
         "warnings for inputs that need manual wiring, and an inline preview when capture_preview=true. Use " +
-        "create_glsl_shader for hand-written GLSL or import_shadertoy for Shadertoy sources.",
+        "create_glsl_shader for hand-written GLSL or import_shadertoy for Shadertoy sources. Imported shader " +
+        "source requires TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1.",
       inputSchema: importIsfShaderSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

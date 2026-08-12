@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -20,6 +21,9 @@ export const createPythonScriptSchema = z.object({
 type CreatePythonScriptArgs = z.infer<typeof createPythonScriptSchema>;
 
 export async function createPythonScriptImpl(ctx: ToolContext, args: CreatePythonScriptArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Creating a DAT from caller-supplied Python");
+  }
   return guardTd(
     async () => {
       const dat = await ctx.client.createNode({
@@ -55,7 +59,7 @@ export async function createPythonScriptImpl(ctx: ToolContext, args: CreatePytho
 }
 
 export const registerCreatePythonScript: ToolRegistrar = (server, ctx) => {
-  if (ctx.allowRawPython === false) return;
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "create_python_script",
     {

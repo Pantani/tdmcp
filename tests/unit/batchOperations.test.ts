@@ -70,6 +70,58 @@ function captureBatchOps(): ConnectOperation[] {
 }
 
 describe("batch_operations", () => {
+  it("rejects executable create operations before any partial mutation in raw-off mode", async () => {
+    const bodies = captureCreateBodies();
+    const batchOps = captureBatchOps();
+    const result = await batchOperationsImpl(
+      { ...makeCtx(), allowRawPython: false },
+      {
+        default_parent: "/project1",
+        operations: [
+          { action: "create", type: "noiseTOP", name: "safe" },
+          {
+            action: "create",
+            type: "executeDAT",
+            name: "execute1",
+            parameters: { file: "/tmp/payload.py", active: 1 },
+          },
+        ],
+      },
+    );
+    expect(result.isError).toBe(true);
+    expect(result.content[0]).toMatchObject({ type: "text" });
+    expect((result.content[0] as { text: string }).text).toContain("raw Python is disabled");
+    expect(bodies).toEqual([]);
+    expect(batchOps).toEqual([]);
+  });
+
+  it("inspects existing setParam targets and rejects executable nodes before mutation", async () => {
+    const batchOps = captureBatchOps();
+    server.use(
+      http.get(`${TD_BASE}/api/nodes/:seg`, ({ params }) =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            path: decodeURIComponent(String(params.seg)),
+            type: "executeDAT",
+            name: "execute1",
+            parameters: {},
+          },
+        }),
+      ),
+    );
+    const result = await batchOperationsImpl(
+      { ...makeCtx(), allowRawPython: false },
+      {
+        default_parent: "/project1",
+        operations: [{ action: "setParam", path: "/project1/execute1", parameters: { active: 1 } }],
+      },
+    );
+    expect(result.isError).toBe(true);
+    expect((result.content[0] as { text: string }).text).toContain("raw Python is disabled");
+    expect(batchOps).toEqual([]);
+  });
+
   it("runs create/connect/setParam in order and reports created paths", async () => {
     const bodies = captureCreateBodies();
     const batchOps = captureBatchOps();

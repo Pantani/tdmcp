@@ -131,6 +131,9 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     expect(names).not.toContain("execute_python_script");
     expect(names).not.toContain("exec_node_method");
     expect(names).not.toContain("create_python_script");
+    expect(names).not.toContain("create_glsl_shader");
+    expect(names).not.toContain("create_shader_park");
+    expect(names).not.toContain("bind_vault_text");
   });
 
   it("safe drops the destructive tools", async () => {
@@ -184,11 +187,11 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     }
   });
 
-  it("safe hides exactly SAFE_PROFILE_EXCLUDE.size fewer tools than full", async () => {
+  it("safe hides every destructive tool plus code-only registrars", async () => {
     const full = await toolNames({ TDMCP_TOOL_PROFILE: "full" });
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
-    expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
+    expect(full.length - safe.length).toBeGreaterThan(SAFE_PROFILE_EXCLUDE.length);
     expect(SAFE_PROFILE_EXCLUDE.length).toBe(43);
   });
 

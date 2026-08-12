@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
@@ -37,6 +37,28 @@ function captureExecScripts(): string[] {
 const SHADER = "out vec4 fragColor; void main(){ fragColor = vec4(1.0); }";
 
 describe("generative art evolution-speed control", () => {
+  it("rejects caller-supplied custom GLSL before creating a node in raw-off mode", async () => {
+    const createNode = vi.fn();
+    const ctx = {
+      ...makeCtx(),
+      allowRawPython: false,
+      client: { createNode },
+    } as unknown as ToolContext;
+
+    const result = await createGenerativeArtImpl(ctx, {
+      technique: "custom_glsl",
+      custom_glsl_code: SHADER,
+      evolution_speed: 1,
+      expose_controls: true,
+      parent_path: "/project1",
+    });
+
+    expect(result.isError).toBe(true);
+    const text = result.content.find((item) => item.type === "text");
+    expect(text?.type === "text" ? text.text : "").toContain("raw Python is disabled");
+    expect(createNode).not.toHaveBeenCalled();
+  });
+
   it("references a defensive Speed lookup from the uTime expression and exposes the knob", async () => {
     const scripts = captureExecScripts();
     await createGenerativeArtImpl(makeCtx(), {

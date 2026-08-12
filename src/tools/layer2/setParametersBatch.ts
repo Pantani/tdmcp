@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { guardTd, jsonResult } from "../result.js";
+import { friendlyTdError } from "../../td-client/types.js";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
+import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
 const UpdateSchema = z.object({
@@ -20,6 +26,26 @@ export const setParametersBatchSchema = z.object({
 type SetParametersBatchArgs = z.infer<typeof setParametersBatchSchema>;
 
 export async function setParametersBatchImpl(ctx: ToolContext, args: SetParametersBatchArgs) {
+  if (!allowsCallerCode(ctx)) {
+    try {
+      const nodes = await Promise.all(
+        args.updates.map((update) => ctx.client.getNode(update.path)),
+      );
+      for (const [index, update] of args.updates.entries()) {
+        const node = nodes[index];
+        const codeSources = genericNodeCodeBearingSources(node?.type, update.parameters);
+        if (codeSources.length > 0) {
+          return callerCodeDenied(
+            `Batch parameter update with ${codeSources.join(", ")} on ${update.path}`,
+          );
+        }
+      }
+    } catch (err) {
+      return errorResult(
+        `Could not safely inspect every batch target before mutation: ${friendlyTdError(err)}. No parameters were changed.`,
+      );
+    }
+  }
   return guardTd(
     () =>
       ctx.client.batch(

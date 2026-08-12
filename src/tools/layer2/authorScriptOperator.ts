@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -175,6 +176,9 @@ export function buildAuthorScript(payload: object): string {
 }
 
 export async function authorScriptOperatorImpl(ctx: ToolContext, args: AuthorScriptOperatorArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Authoring a Script operator from caller-supplied Python");
+  }
   const opType = FAMILY_TYPE[args.family];
   const kbWarnings: string[] = [];
   if (!ctx.knowledge.operatorExists(opType)) {
@@ -230,13 +234,19 @@ export async function authorScriptOperatorImpl(ctx: ToolContext, args: AuthorScr
 export const registerAuthorScriptOperator: ToolRegistrar = (server, ctx) => {
   // This tool persists caller-supplied Python in a callbacks DAT, so it is a
   // raw-Python escape hatch and must obey TDMCP_RAW_PYTHON=off.
-  if (ctx.allowRawPython === false) return;
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "author_script_operator",
     {
       title: "Author Script operator",
       description:
-        "Scaffold a Script CHOP/DAT/SOP/TOP with a ready-to-edit onCook(scriptOp) stub and optional custom parameters. Creates the Script op plus its companion callbacks DAT, writes a per-family stub (chan/row/point/numpy) — or your `on_cook_body` — and appends Float/Toggle/Str custom pars inferred from each default's type. Returns {op_path, callbacks_path, params_added, warnings}. Note: Script ops only cook when something requests them, so a paused timeline + no downstream consumer means no cook (not a bug).",
+        "Scaffold a Script CHOP/DAT/SOP/TOP with a ready-to-edit onCook(scriptOp) stub and " +
+        "optional custom parameters. Creates the Script op plus its companion callbacks DAT, " +
+        "writes a per-family stub (chan/row/point/numpy) — or your `on_cook_body` — and " +
+        "appends Float/Toggle/Str custom pars inferred from each default's type. Returns " +
+        "{op_path, callbacks_path, params_added, warnings}. Requires TDMCP_RAW_PYTHON=on and " +
+        "TDMCP_BRIDGE_ALLOW_EXEC=1. Note: Script ops only cook when something requests them, " +
+        "so a paused timeline + no downstream consumer means no cook (not a bug).",
       inputSchema: authorScriptOperatorSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

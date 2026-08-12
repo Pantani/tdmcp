@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { extractFencedBlock } from "../../vault/frontmatter.js";
 import type { Vault } from "../../vault/index.js";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { createGlslShaderImpl, createGlslShaderSchema } from "../layer2/createGlslShader.js";
 import { errorResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -36,6 +37,9 @@ function resolveNotePath(vault: Vault, note: string): string | undefined {
 }
 
 export async function applyShaderFromVaultImpl(ctx: ToolContext, args: ApplyShaderFromVaultArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Applying GLSL source from a vault note");
+  }
   const v = requireVault(ctx);
   if ("error" in v) return v.error;
   const { vault } = v;
@@ -76,12 +80,19 @@ export async function applyShaderFromVaultImpl(ctx: ToolContext, args: ApplyShad
 }
 
 export const registerApplyShaderFromVault: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "apply_shader_from_vault",
     {
       title: "Apply a GLSL shader from the vault",
       description:
-        "READ a shader note from the Obsidian vault (a ```glsl fragment block, optional ```glslvert vertex block, and optional `uniforms`/`resolution`/`name` frontmatter) and CREATE a GLSL TOP in TouchDesigner from it. Side effect is node creation in TD, not file writes. Use this to apply a shader you keep in the vault; to supply shader code inline instead, use create_glsl_shader. Returns the created GLSL TOP (same result as create_glsl_shader). Requires a configured TDMCP_VAULT_PATH.",
+        "READ a shader note from the Obsidian vault (a ```glsl fragment block, optional " +
+        "```glslvert vertex block, and optional `uniforms`/`resolution`/`name` frontmatter) " +
+        "and CREATE a GLSL TOP in TouchDesigner from it. Side effect is node creation in TD, " +
+        "not file writes. Use this to apply a shader you keep in the vault; to supply shader " +
+        "code inline instead, use create_glsl_shader. Returns the created GLSL TOP (same " +
+        "result as create_glsl_shader). Requires a configured TDMCP_VAULT_PATH, " +
+        "TDMCP_RAW_PYTHON=on, and TDMCP_BRIDGE_ALLOW_EXEC=1.",
       inputSchema: applyShaderFromVaultSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

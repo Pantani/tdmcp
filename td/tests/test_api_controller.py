@@ -428,8 +428,12 @@ class RoutingTests(unittest.TestCase):
         ac.batch_service.run.assert_called_once_with(ops)
 
     def test_node_get_patch_delete(self):
+        ac.api_service.get_node.return_value = {
+            "path": "/project1/noise1",
+            "type": "noiseTOP",
+        }
         ac._route("GET", "/api/nodes/project1/noise1", {}, {})
-        ac.api_service.get_node.assert_called_once_with("/project1/noise1")
+        ac.api_service.get_node.assert_called_with("/project1/noise1")
 
         ac._route(
             "PATCH", "/api/nodes/project1/noise1", {}, {"parameters": {"period": 4}}
@@ -437,6 +441,7 @@ class RoutingTests(unittest.TestCase):
         ac.api_service.update_parameters.assert_called_once_with(
             "/project1/noise1", {"period": 4}
         )
+        self.assertEqual(ac.api_service.get_node.call_count, 2)
 
         ac._route("DELETE", "/api/nodes/project1/noise1", {}, {})
         ac.api_service.delete_node.assert_called_once_with(
@@ -682,6 +687,22 @@ class RoutingTests(unittest.TestCase):
             ac._undo_label("POST", "/api/editor/insert", body),
             "MCP insert_operator_at_selection /project1/source",
         )
+
+    def test_editor_insert_blocks_executable_operator_with_exec_disabled(self):
+        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
+        body = {
+            "type": "executeDAT",
+            "parameters": {"file": "/tmp/payload.py", "active": 1},
+            "expected_context": {
+                "owner_path": "/project1",
+                "selected_path": "/project1/source",
+                "current_path": "/project1/source",
+            },
+            "idempotency_key": "opaque_insert_key_1234",
+        }
+        with self.assertRaises(PermissionError):
+            ac._route("POST", "/api/editor/insert", {}, body)
+        ac.editor_insert_service.insert_operator_at_selection.assert_not_called()
 
     def test_watch_register_dispatch(self):
         # Registration routes straight to watch_service; the onFrameEnd poller (not
@@ -1176,12 +1197,10 @@ class UndoBlockTests(unittest.TestCase):
 
 
 class StructuredEndpointTests(unittest.TestCase):
-    """The 0.6.0 structured routes dispatch correctly AND are NOT behind the exec
-    gate — they must keep working with TDMCP_BRIDGE_ALLOW_EXEC=0. Exec is disabled
-    for every test here, so a passing dispatch also proves exec-gate survival."""
+    """Structured routes remain available with exec disabled unless they carry code."""
 
     def setUp(self):
-        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"  # the routes below must ignore this
+        os.environ["TDMCP_BRIDGE_ALLOW_EXEC"] = "0"
         self._saved = {
             "connect": ac.connect_service,
             "log": ac.log_service,
@@ -1192,6 +1211,7 @@ class StructuredEndpointTests(unittest.TestCase):
             "project_analysis": ac.project_analysis_service,
             "custom_params": ac.custom_params_service,
             "parameter": ac.parameter_service,
+            "batch": ac.batch_service,
         }
         ac.connect_service = mock.MagicMock(name="connect_service")
         ac.log_service = mock.MagicMock(name="log_service")
@@ -1201,6 +1221,7 @@ class StructuredEndpointTests(unittest.TestCase):
         ac.system_service = mock.MagicMock(name="system_service")
         ac.custom_params_service = mock.MagicMock(name="custom_params_service")
         ac.parameter_service = mock.MagicMock(name="parameter_service")
+        ac.batch_service = mock.MagicMock(name="batch_service")
 
     def tearDown(self):
         ac.connect_service = self._saved["connect"]
@@ -1212,6 +1233,7 @@ class StructuredEndpointTests(unittest.TestCase):
         ac.project_analysis_service = self._saved["project_analysis"]
         ac.custom_params_service = self._saved["custom_params"]
         ac.parameter_service = self._saved["parameter"]
+        ac.batch_service = self._saved["batch"]
         _clear_exec_env()
 
     def test_connect_dispatches_with_exec_disabled(self):
@@ -1227,6 +1249,108 @@ class StructuredEndpointTests(unittest.TestCase):
             },
         )
         ac.connect_service.connect.assert_called_once_with("/p/a", "/p/b", 1, 2)
+
+    def test_generic_node_create_blocks_executable_type_with_exec_disabled(self):
+        with self.assertRaises(PermissionError):
+            ac._route(
+                "POST",
+                "/api/nodes",
+                {},
+                {
+                    "parent_path": "/project1",
+                    "type": "executeDAT",
+                    "parameters": {
+                        "file": "/tmp/payload.py",
+                        "syncfile": 1,
+                        "active": 1,
+                    },
+                },
+            )
+        ac.api_service.create_node.assert_not_called()
+
+    def test_generic_node_create_blocks_code_bearing_parameters_with_exec_disabled(self):
+        for type_name, parameters in (
+            ("selectDAT", {"rowexpr": "__import__('os').system('id')"}),
+            ("baseCOMP", {"ext0object": "op('/caller')"}),
+            ("groupPOP", {"filter": "caller expression"}),
+            ("deletePOP", {"filter": "caller expression"}),
+        ):
+            with self.subTest(type_name=type_name):
+                with self.assertRaises(PermissionError):
+                    ac._route(
+                        "POST",
+                        "/api/nodes",
+                        {},
+                        {
+                            "parent_path": "/project1",
+                            "type": type_name,
+                            "parameters": parameters,
+                        },
+                    )
+        ac.api_service.create_node.assert_not_called()
+
+    def test_generic_node_create_keeps_safe_types_with_exec_disabled(self):
+        ac._route(
+            "POST",
+            "/api/nodes",
+            {},
+            {"parent_path": "/project1", "type": "noiseTOP", "parameters": {"period": 2}},
+        )
+        ac.api_service.create_node.assert_called_once()
+
+    def test_generic_update_blocks_executable_target_before_mutation(self):
+        ac.api_service.get_node.return_value = {
+            "path": "/project1/execute1",
+            "type": "executeDAT",
+        }
+        with self.assertRaises(PermissionError):
+            ac._route(
+                "PATCH",
+                "/api/nodes/project1/execute1",
+                {},
+                {"parameters": {"active": 1}},
+            )
+        ac.api_service.update_parameters.assert_not_called()
+
+    def test_batch_blocks_all_mutation_when_any_create_is_executable(self):
+        operations = [
+            {"action": "create", "parent_path": "/project1", "type": "noiseTOP"},
+            {
+                "action": "create",
+                "parent_path": "/project1",
+                "type": "scriptCHOP",
+            },
+        ]
+        with self.assertRaises(PermissionError):
+            ac._route("POST", "/api/batch", {}, {"operations": operations})
+        ac.batch_service.run.assert_not_called()
+
+    def test_batch_blocks_update_to_existing_executable_target(self):
+        ac.api_service.get_node.return_value = {
+            "path": "/project1/execute1",
+            "type": "executeDAT",
+        }
+        operations = [
+            {
+                "action": "update",
+                "path": "/project1/execute1",
+                "parameters": {"active": 1},
+            }
+        ]
+        with self.assertRaises(PermissionError):
+            ac._route("POST", "/api/batch", {}, {"operations": operations})
+        ac.batch_service.run.assert_not_called()
+
+    def test_batch_preflight_defers_malformed_shapes_to_batch_service(self):
+        malformed_shapes = [
+            {"unexpected": "object"},
+            ["not-an-operation", {"action": "create", "type": "noiseTOP"}],
+        ]
+        for operations in malformed_shapes:
+            with self.subTest(operations=operations):
+                ac.batch_service.run.reset_mock()
+                ac._route("POST", "/api/batch", {}, {"operations": operations})
+                ac.batch_service.run.assert_called_once_with(operations)
 
     def test_disconnect_dispatches_with_exec_disabled(self):
         ac._route(
@@ -1318,6 +1442,44 @@ class StructuredEndpointTests(unittest.TestCase):
             "/project1/sub/deep/comp"
         )
 
+    def test_custom_param_expression_and_bind_are_blocked_with_exec_disabled(self):
+        for fields in (
+            {"mode": "EXPRESSION", "expression": "absTime.seconds"},
+            {"mode": "BIND", "bind_expression": "op('caller')"},
+        ):
+            with self.subTest(mode=fields["mode"]):
+                with self.assertRaises(PermissionError):
+                    ac._route(
+                        "POST",
+                        "/api/nodes/project1/comp1/custom_params",
+                        {},
+                        {
+                            "operations": [
+                                {
+                                    "action": "edit_parameter",
+                                    "name": "Gain",
+                                    "fields": fields,
+                                }
+                            ]
+                        },
+                    )
+        ac.custom_params_service.apply_custom_parameter_lifecycle.assert_not_called()
+
+    def test_custom_param_constant_dispatches_with_exec_disabled(self):
+        body = {
+            "operations": [
+                {
+                    "action": "edit_parameter",
+                    "name": "Gain",
+                    "fields": {"mode": "CONSTANT", "value": 0.5},
+                }
+            ]
+        }
+        ac._route("POST", "/api/nodes/project1/comp1/custom_params", {}, body)
+        ac.custom_params_service.apply_custom_parameter_lifecycle.assert_called_once_with(
+            "/project1/comp1", body
+        )
+
     def test_parameter_menu_dispatches_with_exec_disabled(self):
         ac._route(
             "GET",
@@ -1347,24 +1509,61 @@ class StructuredEndpointTests(unittest.TestCase):
             "/project1/noise1", ["tx", "ty"], False
         )
 
-    def test_param_mode_patch_dispatches_with_exec_disabled(self):
-        ac._route(
-            "PATCH",
-            "/api/nodes/project1/noise1/params/tx/mode",
-            {},
-            {"mode": "expression", "expr": "absTime.seconds"},
-        )
-        ac.param_text_service.set_param_mode.assert_called_once_with(
-            "/project1/noise1", "tx", "expression", "absTime.seconds", None
-        )
+    def test_expression_bind_and_blank_default_are_blocked_with_exec_disabled(self):
+        for mode in ("expression", "bind", "", "   "):
+            with self.subTest(mode=mode):
+                with self.assertRaises(PermissionError):
+                    ac._route(
+                        "PATCH",
+                        "/api/nodes/project1/noise1/params/tx/mode",
+                        {},
+                        {"mode": mode, "expr": "absTime.seconds"},
+                    )
+        ac.param_text_service.set_param_mode.assert_not_called()
+
+    def test_non_code_param_modes_dispatch_with_exec_disabled(self):
+        for mode, value in (("constant", 1), ("reset", None), ("unbind", None)):
+            with self.subTest(mode=mode):
+                ac._route(
+                    "PATCH",
+                    "/api/nodes/project1/noise1/params/tx/mode",
+                    {},
+                    {"mode": mode, "value": value},
+                )
+        self.assertEqual(ac.param_text_service.set_param_mode.call_count, 3)
+
+    def test_expr_field_is_blocked_even_with_constant_mode_and_exec_disabled(self):
+        with self.assertRaises(PermissionError):
+            ac._route(
+                "PATCH",
+                "/api/nodes/project1/noise1/params/tx/mode",
+                {},
+                {"mode": "constant", "value": 1, "expr": "absTime.seconds"},
+            )
+        ac.param_text_service.set_param_mode.assert_not_called()
 
     def test_dat_text_get_dispatches_with_exec_disabled(self):
         ac.param_text_service.is_dat.return_value = True
         ac._route("GET", "/api/nodes/project1/text1/text", {}, {})
         ac.param_text_service.get_dat_text.assert_called_once_with("/project1/text1")
 
-    def test_dat_text_put_dispatches_with_exec_disabled(self):
-        ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
+    def test_dat_text_put_is_blocked_with_exec_disabled(self):
+        with self.assertRaises(PermissionError):
+            ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
+        ac.param_text_service.put_dat_text.assert_not_called()
+
+    def test_code_bearing_routes_dispatch_when_exec_is_enabled(self):
+        with mock.patch.dict(os.environ, {"TDMCP_BRIDGE_ALLOW_EXEC": "1"}):
+            ac._route(
+                "PATCH",
+                "/api/nodes/project1/noise1/params/tx/mode",
+                {},
+                {"mode": "expression", "expr": "absTime.seconds"},
+            )
+            ac._route("PUT", "/api/nodes/project1/text1/text", {}, {"text": "hello"})
+        ac.param_text_service.set_param_mode.assert_called_once_with(
+            "/project1/noise1", "tx", "expression", "absTime.seconds", None
+        )
         ac.param_text_service.put_dat_text.assert_called_once_with(
             "/project1/text1", "hello"
         )

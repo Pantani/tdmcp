@@ -124,6 +124,24 @@ describe("editShaderLiveLoopSchema", () => {
 });
 
 describe("editShaderLiveLoopImpl", () => {
+  it("rejects shader mutation before bridge calls in raw-off mode", async () => {
+    const { ctx, client, calls } = fakeCtx();
+    ctx.allowRawPython = false;
+    const result = await editShaderLiveLoopImpl(
+      ctx,
+      editShaderLiveLoopSchema.parse({
+        dat_path: "/project1/glsl1_pixel",
+        shader_code: "void main(){}",
+      }),
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(client.putDatText).not.toHaveBeenCalled();
+    expect(client.getNodeErrors).not.toHaveBeenCalled();
+    expect(calls).toEqual([]);
+  });
+
   it("set mode writes the full shader, checks errors, and compacts preview base64", async () => {
     const { ctx, client } = fakeCtx();
     const result = await editShaderLiveLoopImpl(

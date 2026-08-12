@@ -193,6 +193,22 @@ describe("POP_KINDS", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildPopChainImpl", () => {
+  it("rejects code-bearing POP parameters before exec in raw-off mode", async () => {
+    const exec = vi.fn();
+    const ctx = fakeCtx(exec);
+    ctx.allowRawPython = false;
+    const result = await buildPopChainImpl(
+      ctx,
+      buildPopChainSchema.parse({
+        name: "blocked",
+        chain: [{ type: "group_pop", params: { filter: "caller expression" } }],
+      }),
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(exec).not.toHaveBeenCalled();
+  });
+
   it("happy path 3-kind chain → created list, connections, output_path, no warnings", async () => {
     const exec = okExec({
       container: "/project1",

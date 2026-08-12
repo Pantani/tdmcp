@@ -50,9 +50,21 @@ export const tdHandlers = [
   ),
 
   http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
-    const body = (await request.json()) as { parent_path: string; type: string; name?: string };
+    const body = (await request.json()) as {
+      parent_path: string;
+      type: string;
+      name?: string;
+      node_x?: number;
+      node_y?: number;
+    };
     const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
-    return ok({ path: `${body.parent_path}/${name}`, type: body.type, name });
+    return ok({
+      path: `${body.parent_path}/${name}`,
+      type: body.type,
+      name,
+      nodeX: body.node_x,
+      nodeY: body.node_y,
+    });
   }),
 
   http.post(`${TD_BASE}/api/interactions`, async ({ request }) => {

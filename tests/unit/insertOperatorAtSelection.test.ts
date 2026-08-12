@@ -72,6 +72,21 @@ function text(result: Awaited<ReturnType<typeof insertOperatorAtSelectionImpl>>)
 }
 
 describe("insert_operator_at_selection", () => {
+  it("rejects executable insertions before the structured bridge mutation in raw-off mode", async () => {
+    const insertOperatorAtSelection = vi.fn(async () => report);
+    const result = await insertOperatorAtSelectionImpl(
+      { ...ctx(insertOperatorAtSelection), allowRawPython: false },
+      {
+        ...input,
+        type: "executeDAT",
+        parameters: { file: "/tmp/payload.py", syncfile: 1, active: 1 },
+      },
+    );
+    expect(result.isError).toBe(true);
+    expect(text(result)).toContain("raw Python is disabled");
+    expect(insertOperatorAtSelection).not.toHaveBeenCalled();
+  });
+
   it("sends the exact CAS/idempotency request through only the structured client", async () => {
     const insertOperatorAtSelection = vi.fn(async () => report);
     const executePythonScript = vi.fn();

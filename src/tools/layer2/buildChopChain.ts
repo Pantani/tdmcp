@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -110,6 +115,12 @@ export function buildChainScript(payload: object): string {
 }
 
 export async function buildChopChainImpl(ctx: ToolContext, args: BuildChopChainArgs) {
+  if (!allowsCallerCode(ctx)) {
+    const codeSources = args.ops.flatMap((op) => genericNodeCodeBearingSources(op.type, op.params));
+    if (codeSources.length > 0) {
+      return callerCodeDenied(`CHOP chain with ${[...new Set(codeSources)].join(", ")}`);
+    }
+  }
   return guardTd(
     async () => {
       const script = buildChainScript({

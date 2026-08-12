@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -44,6 +45,9 @@ const RESOLUTIONS = {
 const q = (value: string): string => JSON.stringify(value);
 
 export async function createGlslShaderImpl(ctx: ToolContext, args: CreateGlslShaderArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("GLSL shader source");
+  }
   const desiredName = args.name ?? "glsl1";
   return guardTd(
     async () => {
@@ -143,12 +147,13 @@ export async function createGlslShaderImpl(ctx: ToolContext, args: CreateGlslSha
 }
 
 export const registerCreateGlslShader: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "create_glsl_shader",
     {
       title: "Create GLSL shader",
       description:
-        "Create a GLSL TOP under parent_path that renders a custom fragment shader (and optional vertex shader). The shader source is placed in companion Text DATs (`<name>_frag` and, if given, `<name>_vert`) and wired to the GLSL TOP's pixel/vertex parameters; numeric uniforms are best-effort bound on the Vectors page and the output resolution is set. Returns the GLSL TOP path, the fragment/vertex DAT paths, and any warnings (e.g. sampler2D uniforms or uniform binds that need manual wiring).",
+        "Create a GLSL TOP under parent_path that renders a custom fragment shader (and optional vertex shader). Caller shader source requires TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1. The shader source is placed in companion Text DATs (`<name>_frag` and, if given, `<name>_vert`) and wired to the GLSL TOP's pixel/vertex parameters; numeric uniforms are best-effort bound on the Vectors page and the output resolution is set. Returns the GLSL TOP path, the fragment/vertex DAT paths, and any warnings (e.g. sampler2D uniforms or uniform binds that need manual wiring).",
       inputSchema: createGlslShaderSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

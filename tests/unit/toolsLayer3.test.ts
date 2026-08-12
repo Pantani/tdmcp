@@ -96,6 +96,27 @@ describe("layer 3 tool handlers", () => {
     expect(textOf(bad)).toContain("not found in the knowledge base");
   });
 
+  it("create_td_node rejects executable generic types before bridge mutation in raw-off mode", async () => {
+    let createCalls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/nodes`, () => {
+        createCalls++;
+        return HttpResponse.json({ ok: true, data: {} });
+      }),
+    );
+    const result = await createTdNodeImpl(
+      { ...makeCtx(), allowRawPython: false },
+      {
+        parent_path: "/project1",
+        type: "executeDAT",
+        parameters: { file: "/tmp/callbacks.py", active: true },
+      },
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(createCalls).toBe(0);
+  });
+
   it("create_td_node reports an idempotent reuse when the node already existed", async () => {
     server.use(
       http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
@@ -182,6 +203,43 @@ describe("layer 3 tool handlers", () => {
     expect(result.isError).toBeFalsy();
     expect(textOf(result)).toContain("Updated 2 parameter(s)");
     expect(textOf(result)).toContain("/project1/noise1");
+  });
+
+  it("update_td_node_parameters inspects and rejects executable targets before mutation in raw-off mode", async () => {
+    let patchCalls = 0;
+    server.use(
+      http.get(`${TD_BASE}/api/nodes/:seg`, ({ params }) =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            path: decodeURIComponent(String(params.seg)),
+            type: "executeDAT",
+            name: "execute1",
+            parameters: {},
+          },
+        }),
+      ),
+      http.patch(`${TD_BASE}/api/nodes/:seg`, () => {
+        patchCalls++;
+        return HttpResponse.json({ ok: true, data: {} });
+      }),
+    );
+    const result = await updateTdNodeParametersImpl(
+      { ...makeCtx(), allowRawPython: false },
+      { path: "/project1/execute1", parameters: { active: true } },
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(patchCalls).toBe(0);
+  });
+
+  it("update_td_node_parameters still permits constant updates on safe targets in raw-off mode", async () => {
+    const result = await updateTdNodeParametersImpl(
+      { ...makeCtx(), allowRawPython: false },
+      { path: "/project1/noise1", parameters: { period: 4 } },
+    );
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain("Updated 1 parameter(s)");
   });
 
   it("delete_td_node removes a node by path", async () => {
