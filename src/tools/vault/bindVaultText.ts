@@ -91,7 +91,7 @@ export const registerBindVaultText: ToolRegistrar = (server, ctx) => {
     {
       title: "Bind a Text DAT to a vault note",
       description:
-        "CREATE a Text DAT in TouchDesigner whose `file` parameter points at a vault note, so the note's text loads into TD (and, with sync:true, stays live as you edit it in Obsidian) — turning the vault into the text/lyrics source for your visuals. Side effect is node creation in TD plus reading the note file; it does not write to the vault. Wire the DAT into a Text TOP to render it. Returns the DAT path, the resolved note, the absolute file path, and whether sync is on. Requires a configured TDMCP_VAULT_PATH.",
+        "CREATE a Text DAT in TouchDesigner whose `file` parameter points at a vault note, so the note's text loads into TD (and, with sync:true, stays live as you edit it in Obsidian) — turning the vault into the text/lyrics source for your visuals. Side effect is node creation in TD plus reading the note file; it does not write to the vault. Wire the DAT into a Text TOP to render it. Returns the DAT path, the resolved note, the absolute file path, and whether sync is on. Requires a configured TDMCP_VAULT_PATH, TDMCP_RAW_PYTHON=on, and TDMCP_BRIDGE_ALLOW_EXEC=1.",
       inputSchema: bindVaultTextSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

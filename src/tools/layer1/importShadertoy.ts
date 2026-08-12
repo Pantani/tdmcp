@@ -283,7 +283,11 @@ export const registerImportShadertoy: ToolRegistrar = (server, ctx) => {
     {
       title: "Import Shadertoy",
       description:
-        "Build a GLSL TOP from a Shadertoy URL, ID, or pasted source. Imported shader source requires TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1. Wires iChannels (defaulting to noise placeholders), exposes Speed (and optional Mouse) controls, and captures a preview. First fetch on macOS may trigger an outgoing-connection permission prompt. Set TDMCP_SHADERTOY_KEY for reliable fetches; paste into raw_source to stay offline.",
+        "Build a GLSL TOP from a Shadertoy URL, ID, or pasted source. " +
+        "Imported shader source requires TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1. " +
+        "Wires iChannels (defaulting to noise placeholders), exposes Speed (and optional Mouse) controls, and captures a preview. " +
+        "First fetch on macOS may trigger an outgoing-connection permission prompt. " +
+        "Set TDMCP_SHADERTOY_KEY for reliable fetches; paste into raw_source to stay offline.",
       inputSchema: importShadertoyBaseSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

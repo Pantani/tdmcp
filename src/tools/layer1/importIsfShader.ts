@@ -492,8 +492,9 @@ export const registerImportIsfShader: ToolRegistrar = (server, ctx) => {
     {
       title: "Import ISF shader",
       description:
-        "Create a new TouchDesigner system container containing an ISF (.fs) shader as a GLSL TOP, companion DATs, " +
-        "and optional live controls. Accepts raw source, a local file path, or an http(s) URL; URL fetches are " +
+        "Create a new TouchDesigner system container containing an ISF (.fs) shader as a GLSL TOP, " +
+        "companion DATs, and optional live controls. " +
+        "Accepts raw source, a local file path, or an http(s) URL; URL fetches are " +
         "bounded by fetch_timeout_ms. Returns the container/GLSL/output paths, generated controls, provenance, " +
         "warnings for inputs that need manual wiring, and an inline preview when capture_preview=true. Use " +
         "create_glsl_shader for hand-written GLSL or import_shadertoy for Shadertoy sources. Imported shader " +

@@ -898,6 +898,8 @@ def _node_type_for_policy(path):
 
 
 def _preflight_one_batch_operation(operation, types_by_reference):
+    if not isinstance(operation, dict):
+        return
     action = operation.get("action")
     if action == "create":
         type_name = operation.get("type")
@@ -923,7 +925,7 @@ def _preflight_one_batch_operation(operation, types_by_reference):
 
 def _preflight_batch_caller_code(operations):
     """Inspect every generic create/update before a raw-off batch mutates anything."""
-    if _exec_allowed():
+    if _exec_allowed() or not isinstance(operations, list):
         return
     types_by_reference = {}
     for operation in operations or []:

@@ -75,16 +75,84 @@ describe("layer 2 tool handlers", () => {
     expect(createCalls).toBe(0);
   });
 
+  it("create_node_chain positions safe nodes without requesting exec in raw-off mode", async () => {
+    const createBodies: Array<{
+      name?: string;
+      placement?: string;
+      node_x?: number;
+      node_y?: number;
+    }> = [];
+    let execCalls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
+        const body = (await request.json()) as {
+          parent_path: string;
+          type: string;
+          name?: string;
+          placement?: string;
+          node_x?: number;
+          node_y?: number;
+        };
+        createBodies.push(body);
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: `${body.parent_path}/${body.name}`,
+            type: body.type,
+            name: body.name,
+            nodeX: body.node_x,
+            nodeY: body.node_y,
+          },
+        });
+      }),
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalls++;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+
+    const result = await createNodeChainImpl(
+      { ...makeCtx(), allowRawPython: false },
+      {
+        parent_path: "/project1",
+        nodes: [
+          { type: "noiseTOP", name: "noise1" },
+          { type: "nullTOP", name: "null1" },
+        ],
+        connect_sequentially: true,
+      },
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(createBodies).toEqual([
+      expect.objectContaining({ name: "noise1", placement: "explicit", node_x: 0, node_y: 0 }),
+      expect.objectContaining({ name: "null1", placement: "explicit", node_x: 200, node_y: 0 }),
+    ]);
+    expect(execCalls).toBe(0);
+  });
+
   it("create_node_chain reports partial progress on failure without deleting", async () => {
     let calls = 0;
     server.use(
       http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
         calls++;
         if (calls === 2) return HttpResponse.error();
-        const body = (await request.json()) as { parent_path: string; type: string; name?: string };
+        const body = (await request.json()) as {
+          parent_path: string;
+          type: string;
+          name?: string;
+          node_x?: number;
+          node_y?: number;
+        };
         return HttpResponse.json({
           ok: true,
-          data: { path: `${body.parent_path}/${body.name}`, type: body.type, name: body.name },
+          data: {
+            path: `${body.parent_path}/${body.name}`,
+            type: body.type,
+            name: body.name,
+            nodeX: body.node_x,
+            nodeY: body.node_y,
+          },
         });
       }),
     );

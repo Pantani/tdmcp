@@ -1341,6 +1341,17 @@ class StructuredEndpointTests(unittest.TestCase):
             ac._route("POST", "/api/batch", {}, {"operations": operations})
         ac.batch_service.run.assert_not_called()
 
+    def test_batch_preflight_defers_malformed_shapes_to_batch_service(self):
+        malformed_shapes = [
+            {"unexpected": "object"},
+            ["not-an-operation", {"action": "create", "type": "noiseTOP"}],
+        ]
+        for operations in malformed_shapes:
+            with self.subTest(operations=operations):
+                ac.batch_service.run.reset_mock()
+                ac._route("POST", "/api/batch", {}, {"operations": operations})
+                ac.batch_service.run.assert_called_once_with(operations)
+
     def test_disconnect_dispatches_with_exec_disabled(self):
         ac._route(
             "POST",

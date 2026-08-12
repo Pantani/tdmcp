@@ -86,7 +86,7 @@ export const registerApplyShaderFromVault: ToolRegistrar = (server, ctx) => {
     {
       title: "Apply a GLSL shader from the vault",
       description:
-        "READ a shader note from the Obsidian vault (a ```glsl fragment block, optional ```glslvert vertex block, and optional `uniforms`/`resolution`/`name` frontmatter) and CREATE a GLSL TOP in TouchDesigner from it. Side effect is node creation in TD, not file writes. Use this to apply a shader you keep in the vault; to supply shader code inline instead, use create_glsl_shader. Returns the created GLSL TOP (same result as create_glsl_shader). Requires a configured TDMCP_VAULT_PATH.",
+        "READ a shader note from the Obsidian vault (a ```glsl fragment block, optional ```glslvert vertex block, and optional `uniforms`/`resolution`/`name` frontmatter) and CREATE a GLSL TOP in TouchDesigner from it. Side effect is node creation in TD, not file writes. Use this to apply a shader you keep in the vault; to supply shader code inline instead, use create_glsl_shader. Returns the created GLSL TOP (same result as create_glsl_shader). Requires a configured TDMCP_VAULT_PATH, TDMCP_RAW_PYTHON=on, and TDMCP_BRIDGE_ALLOW_EXEC=1.",
       inputSchema: applyShaderFromVaultSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
