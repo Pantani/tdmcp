@@ -66,6 +66,11 @@ function writeWorkflowFixture(dataDir: string): void {
     ],
     tips: ["Target a downstream TOP, not the upstream source."],
   });
+  writeJson(join(dataDir, "meta.json"), {
+    source: "bottobot",
+    bottobotVersion: "2.8.0",
+    importedAt: "2026-06-24T01:57:20.374Z",
+  });
   writeJson(join(dataDir, "python-api", "index.json"), []);
   writeJson(join(dataDir, "tutorials", "index.json"), []);
   writeJson(join(dataDir, "patterns.json"), [
@@ -114,12 +119,20 @@ describe("getOperatorWorkflowGuideImpl", () => {
     });
     const data = structured<{
       found: boolean;
+      lookup_status: string;
+      data_version?: { source: string; sourceVersion?: string; importedAt?: string };
       guide?: { outputs?: Array<{ op: string }>; workflowHits?: unknown[] };
       examples?: { pythonExamples?: Array<{ title: string }> };
       nextOperators: Array<{ operator: string; confidence: number }>;
     }>(result);
 
     expect(data.found).toBe(true);
+    expect(data.lookup_status).toBe("found_in_snapshot");
+    expect(data.data_version).toMatchObject({
+      source: "bottobot",
+      sourceVersion: "2.8.0",
+      importedAt: "2026-06-24T01:57:20.374Z",
+    });
     expect(data.guide?.outputs?.map((entry) => entry.op)).toEqual(["Transform TOP", "Null TOP"]);
     expect(data.guide?.workflowHits).toHaveLength(1);
     expect(data.examples?.pythonExamples).toEqual([
@@ -140,12 +153,20 @@ describe("getOperatorWorkflowGuideImpl", () => {
       include_examples: false,
       next_limit: 3,
     });
-    const data = structured<{ found: boolean; suggestions: string[]; nextOperators: unknown[] }>(
-      result,
-    );
+    const data = structured<{
+      found: boolean;
+      lookup_status: string;
+      snapshot_notice?: string;
+      data_version?: { source: string };
+      suggestions: string[];
+      nextOperators: unknown[];
+    }>(result);
 
     expect(result.isError).toBeFalsy();
     expect(data.found).toBe(false);
+    expect(data.lookup_status).toBe("not_in_snapshot");
+    expect(data.snapshot_notice).toContain("does not prove");
+    expect(data.data_version?.source).toBe("bottobot");
     expect(data.nextOperators).toEqual([]);
     expect(data.suggestions).toContain("feedback_top");
   });

@@ -269,6 +269,22 @@ function captureBuildHandlers(): MswCtx {
 }
 
 describe("importIsfShaderImpl (end-to-end via msw)", () => {
+  it("rejects shader source before IO or node creation in raw-off mode", async () => {
+    const cap = captureBuildHandlers();
+    const result = await importIsfShaderImpl(
+      { ...ctx(), allowRawPython: false },
+      {
+        ...baseArgs,
+        source: ISF_MINIMAL,
+      },
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(cap.createdTypes).toEqual([]);
+    expect(cap.execScripts).toEqual([]);
+  });
+
   it("builds the network and surfaces provenance from the ISF header", async () => {
     const cap = captureBuildHandlers();
     const result = await importIsfShaderImpl(ctx(), {

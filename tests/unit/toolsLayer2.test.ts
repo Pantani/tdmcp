@@ -1,6 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
@@ -51,16 +51,108 @@ describe("layer 2 tool handlers", () => {
     expect(text).toContain("/project1/null1");
   });
 
+  it("create_node_chain rejects all executable nodes before partial mutation in raw-off mode", async () => {
+    let createCalls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/nodes`, () => {
+        createCalls++;
+        return HttpResponse.json({ ok: true, data: {} });
+      }),
+    );
+    const result = await createNodeChainImpl(
+      { ...makeCtx(), allowRawPython: false },
+      {
+        parent_path: "/project1",
+        nodes: [
+          { type: "noiseTOP", name: "safe" },
+          { type: "scriptCHOP", name: "callbacks", parameters: { callbacks: "cb" } },
+        ],
+        connect_sequentially: true,
+      },
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(createCalls).toBe(0);
+  });
+
+  it("create_node_chain positions safe nodes without requesting exec in raw-off mode", async () => {
+    const createBodies: Array<{
+      name?: string;
+      placement?: string;
+      node_x?: number;
+      node_y?: number;
+    }> = [];
+    let execCalls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
+        const body = (await request.json()) as {
+          parent_path: string;
+          type: string;
+          name?: string;
+          placement?: string;
+          node_x?: number;
+          node_y?: number;
+        };
+        createBodies.push(body);
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            path: `${body.parent_path}/${body.name}`,
+            type: body.type,
+            name: body.name,
+            nodeX: body.node_x,
+            nodeY: body.node_y,
+          },
+        });
+      }),
+      http.post(`${TD_BASE}/api/exec`, () => {
+        execCalls++;
+        return HttpResponse.json({ ok: true, data: { result: null, stdout: "" } });
+      }),
+    );
+
+    const result = await createNodeChainImpl(
+      { ...makeCtx(), allowRawPython: false },
+      {
+        parent_path: "/project1",
+        nodes: [
+          { type: "noiseTOP", name: "noise1" },
+          { type: "nullTOP", name: "null1" },
+        ],
+        connect_sequentially: true,
+      },
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(createBodies).toEqual([
+      expect.objectContaining({ name: "noise1", placement: "explicit", node_x: 0, node_y: 0 }),
+      expect.objectContaining({ name: "null1", placement: "explicit", node_x: 200, node_y: 0 }),
+    ]);
+    expect(execCalls).toBe(0);
+  });
+
   it("create_node_chain reports partial progress on failure without deleting", async () => {
     let calls = 0;
     server.use(
       http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
         calls++;
         if (calls === 2) return HttpResponse.error();
-        const body = (await request.json()) as { parent_path: string; type: string; name?: string };
+        const body = (await request.json()) as {
+          parent_path: string;
+          type: string;
+          name?: string;
+          node_x?: number;
+          node_y?: number;
+        };
         return HttpResponse.json({
           ok: true,
-          data: { path: `${body.parent_path}/${body.name}`, type: body.type, name: body.name },
+          data: {
+            path: `${body.parent_path}/${body.name}`,
+            type: body.type,
+            name: body.name,
+            nodeX: body.node_x,
+            nodeY: body.node_y,
+          },
         });
       }),
     );
@@ -115,6 +207,21 @@ describe("layer 2 tool handlers", () => {
     const text = textOf(result);
     expect(text).toContain("/project1/glsl1");
     expect(text).toContain("glsl1_frag");
+  });
+
+  it("create_glsl_shader rejects source in raw-off mode", async () => {
+    const result = await createGlslShaderImpl(
+      { ...makeCtx(), allowRawPython: false },
+      {
+        parent_path: "/project1",
+        name: "glsl1",
+        fragment_shader: "out vec4 fragColor; void main(){ fragColor = vec4(1.0); }",
+        resolution: "input",
+      },
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
   });
 
   it("create_glsl_shader binds numeric uniforms via the Vectors sequence, not the legacy flat params", async () => {
@@ -486,6 +593,22 @@ describe("layer 2 tool handlers", () => {
     expect(execScript).toContain('_cb.text = "def onCook(dat): pass"');
     // Must NOT assign to the scriptDAT's own read-only .text.
     expect(execScript).not.toContain('op("/project1/builder").text =');
+  });
+
+  it("create_python_script rejects direct implementation calls before bridge mutation in raw-off mode", async () => {
+    const ctx = { ...makeCtx(), allowRawPython: false };
+    const createNode = vi.spyOn(ctx.client, "createNode");
+    const exec = vi.spyOn(ctx.client, "executePythonScript");
+    const result = await createPythonScriptImpl(ctx, {
+      parent_path: "/project1",
+      name: "blocked",
+      code: "print('blocked')",
+      dat_type: "text",
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(createNode).not.toHaveBeenCalled();
+    expect(exec).not.toHaveBeenCalled();
   });
 
   it("arrange_network reports when there is nothing to arrange", async () => {

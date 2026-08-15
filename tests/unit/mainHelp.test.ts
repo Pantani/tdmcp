@@ -18,7 +18,7 @@ describe("tdmcp top-level help", () => {
     expect(help).toContain("install-client");
     expect(help).toContain("show <profile>");
     expect(help).toContain("fail-closed show gates");
-    expect(help).toContain("source-only; TD 2025.32820 live QA passed");
+    expect(help).toContain("v0.13.2; TD 2025.32820 live QA passed");
     expect(help).toContain("chat");
     expect(help).toContain("copilot-calibrate");
     expect(help).toContain("telegram");

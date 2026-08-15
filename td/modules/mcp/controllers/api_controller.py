@@ -22,6 +22,7 @@ from mcp.services import (
     annotation_service,
     api_service,
     batch_service,
+    code_search_service,
     connect_service,
     custom_params_service,
     duplicate_service,
@@ -86,12 +87,13 @@ def _required_token():
 
 
 def _exec_allowed():
-    """Whether the arbitrary-code endpoints (`/api/exec`, node `method`) are enabled.
+    """Whether arbitrary and caller-supplied code-bearing writes are enabled.
 
     Default-deny. Authentication and authorization are separate controls: a
     bearer token proves who may call the bridge, while
     `TDMCP_BRIDGE_ALLOW_EXEC=1` (also accepts true/yes/on) is still required to
-    authorize arbitrary code. Structured endpoints stay available.
+    authorize arbitrary code. Structured endpoints stay available unless their
+    payload itself carries executable expression/DAT source text.
     """
     raw = os.environ.get("TDMCP_BRIDGE_ALLOW_EXEC")
     if raw is None:
@@ -815,9 +817,127 @@ def _save_project(body):
     return result
 
 
+_EXECUTABLE_OPERATOR_FRAGMENTS = (
+    "script",
+    "execute",
+    "expression",
+    "evaluate",
+    "glsl",
+    "shaderpark",
+)
+_CODE_PARAMETER_PREFIXES = ("callback", "python", "script", "glsl", "shader")
+_CODE_PARAMETER_NAMES = {
+    "code",
+    "expr",
+    "expression",
+    "bindexpr",
+}
+_TYPE_SPECIFIC_CODE_PARAMETERS = {
+    "groupsop": {"filter"},
+    "deletesop": {"filter"},
+    "grouppop": {"filter"},
+    "deletepop": {"filter"},
+    "textcomp": {"customformatting"},
+}
+_DAT_FILE_PARAMETER_NAMES = {"file", "syncfile", "loadonstart", "loadonstartpulse"}
+
+
+def _normalized_identifier(value):
+    if not isinstance(value, str):
+        return ""
+    return "".join(char for char in value.lower() if char.isalnum())
+
+
+def _generic_node_code_sources(type_name, parameters=None):
+    """Return caller-code surfaces exposed by generic create/update routes."""
+    sources = []
+    normalized_type = _normalized_identifier(type_name)
+    if any(fragment in normalized_type for fragment in _EXECUTABLE_OPERATOR_FRAGMENTS):
+        sources.append("operator type %s" % type_name)
+    for name in (parameters or {}):
+        normalized_name = _normalized_identifier(name)
+        code_parameter = (
+            normalized_name in _CODE_PARAMETER_NAMES
+            or normalized_name.endswith("expr")
+            or (
+                normalized_name.startswith("ext")
+                and normalized_name.endswith("object")
+                and normalized_name[3:-6].isdigit()
+            )
+            or any(
+                normalized_name.startswith(prefix)
+                for prefix in _CODE_PARAMETER_PREFIXES
+            )
+            or normalized_name
+            in _TYPE_SPECIFIC_CODE_PARAMETERS.get(normalized_type, set())
+        )
+        dat_file_source = normalized_type.endswith(
+            "dat"
+        ) and normalized_name in _DAT_FILE_PARAMETER_NAMES
+        if code_parameter or dat_file_source:
+            sources.append("parameter %s" % name)
+    return list(dict.fromkeys(sources))
+
+
+def _deny_generic_node_code(type_name, parameters, action):
+    if _exec_allowed():
+        return
+    sources = _generic_node_code_sources(type_name, parameters)
+    if sources:
+        raise _Forbidden(
+            "Forbidden: %s with %s is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0)."
+            % (action, ", ".join(sources))
+        )
+
+
+def _node_type_for_policy(path):
+    node = api_service.get_node(path)
+    if not isinstance(node, dict) or not isinstance(node.get("type"), str):
+        raise ValueError("Could not safely inspect node type before mutation: %s" % path)
+    return node["type"]
+
+
+def _preflight_one_batch_operation(operation, types_by_reference):
+    if not isinstance(operation, dict):
+        return
+    action = operation.get("action")
+    if action == "create":
+        type_name = operation.get("type")
+        _deny_generic_node_code(
+            type_name, operation.get("parameters"), "generic node creation"
+        )
+        name = operation.get("name")
+        parent = operation.get("parent_path")
+        if name and parent:
+            types_by_reference[name] = type_name
+            types_by_reference[parent.rstrip("/") + "/" + name] = type_name
+        return
+    if action != "update":
+        return
+    path = operation.get("path")
+    if not path:
+        return  # batch_service preserves its per-item malformed-op error
+    type_name = types_by_reference.get(path) or _node_type_for_policy(path)
+    _deny_generic_node_code(
+        type_name, operation.get("parameters"), "generic parameter update"
+    )
+
+
+def _preflight_batch_caller_code(operations):
+    """Inspect every generic create/update before a raw-off batch mutates anything."""
+    if _exec_allowed() or not isinstance(operations, list):
+        return
+    types_by_reference = {}
+    for operation in operations or []:
+        _preflight_one_batch_operation(operation, types_by_reference)
+
+
 def _route_post_root_core(rest, body):
     if rest == ["nodes"]:
         _require(body, "parent_path", "type")
+        _deny_generic_node_code(
+            body["type"], body.get("parameters"), "generic node creation"
+        )
         return api_service.create_node(
             body["parent_path"],
             body["type"],
@@ -838,7 +958,9 @@ def _route_post_root_core(rest, body):
         return api_service.exec_script(body["script"], body.get("return_output", True))
 
     if rest == ["batch"]:
-        return batch_service.run(body.get("operations", []))
+        operations = body.get("operations", [])
+        _preflight_batch_caller_code(operations)
+        return batch_service.run(operations)
 
     if rest == ["params", "search"]:
         return parameter_search_service.search_parameters(
@@ -865,6 +987,39 @@ def _route_post_root_core(rest, body):
             ),
             time_budget_ms=body.get(
                 "time_budget_ms", parameter_search_service.DEFAULT_TIME_BUDGET_MS
+            ),
+        )
+
+    if rest == ["code", "search"]:
+        _require(body, "query")
+        return code_search_service.search_code(
+            body["query"],
+            body.get("root_path", "/project1"),
+            max_depth=body.get("max_depth", code_search_service.DEFAULT_MAX_DEPTH),
+            source_kinds=body.get("source_kinds"),
+            node_pattern=body.get("node_pattern"),
+            node_name_glob=body.get("node_name_glob"),
+            node_path_glob=body.get("node_path_glob"),
+            type_filter=body.get("type"),
+            type_match=body.get("type_match", "partial"),
+            family=body.get("family"),
+            limit=body.get("limit", code_search_service.DEFAULT_LIMIT),
+            node_scan_limit=body.get(
+                "node_scan_limit", code_search_service.DEFAULT_NODE_SCAN_LIMIT
+            ),
+            document_scan_limit=body.get(
+                "document_scan_limit",
+                code_search_service.DEFAULT_DOCUMENT_SCAN_LIMIT,
+            ),
+            parameter_scan_limit=body.get(
+                "parameter_scan_limit",
+                code_search_service.DEFAULT_PARAMETER_SCAN_LIMIT,
+            ),
+            byte_scan_limit=body.get(
+                "byte_scan_limit", code_search_service.DEFAULT_BYTE_SCAN_LIMIT
+            ),
+            time_budget_ms=body.get(
+                "time_budget_ms", code_search_service.DEFAULT_TIME_BUDGET_MS
             ),
         )
 
@@ -1054,6 +1209,11 @@ def _route_node_special(method, rest, query, body):
 
 def _route_node_mutation_primitive(method, rest, body):
     if method == "POST" and rest[-1] == "custom_params":
+        if _custom_params_contains_caller_code(body) and not _exec_allowed():
+            raise _Forbidden(
+                "Forbidden: custom-parameter expression/bind assignment is disabled "
+                "(TDMCP_BRIDGE_ALLOW_EXEC=0)."
+            )
         return custom_params_service.apply_custom_parameter_lifecycle(
             _node_path(rest[1:-1]), body
         )
@@ -1062,6 +1222,30 @@ def _route_node_mutation_primitive(method, rest, body):
     if method == "PATCH" and rest[-1] == "annotation":
         return annotation_service.edit_annotation(_node_path(rest[1:-1]), body)
     return None
+
+
+def _custom_param_fields_contain_caller_code(fields):
+    if not isinstance(fields, dict):
+        return False
+    mode = str(fields.get("mode") or "").strip().upper()
+    return mode in ("EXPRESSION", "BIND") or any(
+        key in fields for key in ("expression", "bind_expression")
+    )
+
+
+def _custom_param_operation_contains_caller_code(operation):
+    return (
+        isinstance(operation, dict)
+        and operation.get("action") == "edit_parameter"
+        and _custom_param_fields_contain_caller_code(operation.get("fields"))
+    )
+
+
+def _custom_params_contains_caller_code(body):
+    operations = body.get("operations") if isinstance(body, dict) else None
+    if not isinstance(operations, list):
+        return False
+    return any(_custom_param_operation_contains_caller_code(item) for item in operations)
 
 
 def _route_node_parameter_primitive(method, rest):
@@ -1100,10 +1284,16 @@ def _route_node_param_mode(method, rest, body):
         and rest[-1] == "mode"
         and rest[-3] == "params"
     ):
+        mode = str(body.get("mode") or "expression").strip().lower() or "expression"
+        if (mode in ("expression", "bind") or "expr" in body) and not _exec_allowed():
+            raise _Forbidden(
+                "Forbidden: parameter expression/bind source is disabled "
+                "(TDMCP_BRIDGE_ALLOW_EXEC=0)."
+            )
         return param_text_service.set_param_mode(
             _node_path(rest[1:-3]),
             unquote(rest[-2]),
-            body.get("mode", "expression"),
+            mode,
             body.get("expr"),
             body.get("value"),
         )
@@ -1151,7 +1341,14 @@ def _route_node_crud(method, rest, query, body):
     if method == "GET":
         return api_service.get_node(node_path)
     if method == "PATCH":
-        return api_service.update_parameters(node_path, body.get("parameters", {}))
+        parameters = body.get("parameters", {})
+        if not _exec_allowed():
+            _deny_generic_node_code(
+                _node_type_for_policy(node_path),
+                parameters,
+                "generic parameter update",
+            )
+        return api_service.update_parameters(node_path, parameters)
     if method == "DELETE":
         return _route_node_delete(node_path, query)
     return None
@@ -1169,12 +1366,26 @@ def _route_nodes(method, rest, query, body):
     routed = _route_node_param_mode(method, rest, body)
     if routed is not None:
         return routed
-    if method == "GET" and rest[-1] == "text":
-        return _route_dat_text_get(rest)
-    if method == "PUT" and rest[-1] == "text":
-        _require(body, "text")
-        return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
+    routed = _route_dat_text(method, rest, body)
+    if routed is not None:
+        return routed
     return _route_node_crud(method, rest, query, body)
+
+
+def _route_dat_text(method, rest, body):
+    if rest[-1] != "text":
+        return None
+    if method == "GET":
+        return _route_dat_text_get(rest)
+    if method != "PUT":
+        return None
+    if not _exec_allowed():
+        raise _Forbidden(
+            "Forbidden: DAT text mutation is disabled "
+            "(TDMCP_BRIDGE_ALLOW_EXEC=0)."
+        )
+    _require(body, "text")
+    return param_text_service.put_dat_text(_node_path(rest[1:-1]), body["text"])
 
 
 def _route_dat_text_get(rest):
@@ -1241,6 +1452,9 @@ def _route_annotation_layout(method, rest, body):
 def _route_editor_insert(method, rest, body):
     if method == "POST" and rest == ["editor", "insert"]:
         _require(body, "type", "expected_context", "idempotency_key")
+        _deny_generic_node_code(
+            body["type"], body.get("parameters"), "editor node insertion"
+        )
         return editor_insert_service.insert_operator_at_selection(body)
     return None
 
@@ -1572,6 +1786,7 @@ def _attach_undo_receipt(data, wrapper_label, before, after):
 _UNDO_EXCLUDED_POST = (
     ["param_modes", "batch"],
     ["params", "search"],
+    ["code", "search"],
     ["editor", "focus"],
     ["editor", "annotation-layout", "context"],
     ["editor", "reposition", "context"],

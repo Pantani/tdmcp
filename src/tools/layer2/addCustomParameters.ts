@@ -1,5 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { errorResult, guardTd, jsonStructuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -243,7 +244,23 @@ function lifecycleError(report: LifecycleReport): CallToolResult {
   return result;
 }
 
+function hasCallerCode(args: AddCustomParametersArgs): boolean {
+  return (
+    args.operations?.some(
+      (operation) =>
+        operation.action === "edit_parameter" &&
+        (operation.fields.mode === "EXPRESSION" ||
+          operation.fields.mode === "BIND" ||
+          operation.fields.expression !== undefined ||
+          operation.fields.bind_expression !== undefined),
+    ) ?? false
+  );
+}
+
 export async function addCustomParametersImpl(ctx: ToolContext, args: AddCustomParametersArgs) {
+  if (!allowsCallerCode(ctx) && hasCallerCode(args)) {
+    return callerCodeDenied("Custom-parameter expression and bind assignment");
+  }
   const client = ctx.client as typeof ctx.client & LifecycleClient;
   const body =
     args.params !== undefined
@@ -278,7 +295,7 @@ export const registerAddCustomParameters: ToolRegistrar = (server, ctx) => {
     {
       title: "Manage custom parameters",
       description:
-        "Transactionally add, edit, delete, sort, and organize a COMP's custom parameters through an authenticated structured TouchDesigner route. Legacy page+params calls remain valid. Supports Float, Int, Toggle, Str, Menu, Pulse, Header, OP, TOP, File, Folder, XYZW, RGBA, RGB, and XYZ; EXPRESSION and BIND are reversible. EXPORT is explicitly HELD and returns an error without mutation. Built-ins are protected, failures roll back to the exact prior custom-page snapshot, and no raw Python or /api/exec fallback is used.",
+        "Transactionally add, edit, delete, sort, and organize a COMP's custom parameters through an authenticated structured TouchDesigner route. Legacy page+params calls remain valid. Supports Float, Int, Toggle, Str, Menu, Pulse, Header, OP, TOP, File, Folder, XYZW, RGBA, RGB, and XYZ; EXPRESSION and BIND are reversible and require TDMCP_RAW_PYTHON=on plus TDMCP_BRIDGE_ALLOW_EXEC=1 because their source is caller-supplied code. Constant and page-lifecycle operations remain available in restricted mode. EXPORT is explicitly HELD and returns an error without mutation. Built-ins are protected and failures roll back to the exact prior custom-page snapshot.",
       inputSchema: addCustomParametersSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

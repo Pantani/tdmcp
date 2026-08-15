@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { friendlyTdError } from "../../td-client/types.js";
-import { structuredResult } from "../result.js";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
+import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { NetworkBuilder, runBuild } from "./orchestration.js";
 
@@ -91,7 +96,61 @@ interface OperationResult {
   ok: boolean;
 }
 
+function joinedPath(parent: string, name: string): string {
+  return `${parent.replace(/\/$/, "")}/${name}`;
+}
+
+type BatchOperation = BatchOperationsArgs["operations"][number];
+
+async function operationCallerCodeSources(
+  ctx: ToolContext,
+  args: BatchOperationsArgs,
+  typesByReference: Map<string, string>,
+  operation: BatchOperation,
+): Promise<string[]> {
+  if (operation.action === "create") {
+    if (operation.name) {
+      const parent = operation.parent_path ?? args.default_parent;
+      typesByReference.set(operation.name, operation.type);
+      typesByReference.set(joinedPath(parent, operation.name), operation.type);
+    }
+    return genericNodeCodeBearingSources(operation.type, operation.parameters);
+  }
+  if (operation.action !== "setParam") return [];
+
+  const knownType = typesByReference.get(operation.path);
+  const type = knownType ?? (await ctx.client.getNode(operation.path)).type;
+  return genericNodeCodeBearingSources(type, operation.parameters);
+}
+
+async function batchCallerCodeSources(
+  ctx: ToolContext,
+  args: BatchOperationsArgs,
+): Promise<string[]> {
+  const typesByReference = new Map<string, string>();
+
+  for (const operation of args.operations) {
+    const sources = await operationCallerCodeSources(ctx, args, typesByReference, operation);
+    if (sources.length > 0) return sources;
+  }
+
+  return [];
+}
+
 export async function batchOperationsImpl(ctx: ToolContext, args: BatchOperationsArgs) {
+  if (!allowsCallerCode(ctx)) {
+    let codeSources: string[];
+    try {
+      codeSources = await batchCallerCodeSources(ctx, args);
+    } catch (err) {
+      return errorResult(
+        `Could not safely inspect every batch target before mutation: ${friendlyTdError(err)}. No operations were run.`,
+      );
+    }
+    if (codeSources.length > 0) {
+      return callerCodeDenied(`Batch operation with ${codeSources.join(", ")}`);
+    }
+  }
   return runBuild(async () => {
     const builder = new NetworkBuilder(ctx, args.default_parent);
     const results: OperationResult[] = [];

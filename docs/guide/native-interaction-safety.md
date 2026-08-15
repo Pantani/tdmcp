@@ -4,7 +4,7 @@ description: "Safe, native TouchDesigner decisions and editor primitives: consen
 
 # Native interaction & safe editor actions
 
-<FeatureAvailability status="source-only" locale="en" />
+<FeatureAvailability status="released" locale="en" />
 
 tdmcp can now ask for a destructive decision inside TouchDesigner without
 holding the original HTTP request open. Wave 1 adds a small, authenticated
@@ -167,7 +167,7 @@ bridge instance. Capabilities stay in POST bodies and are never undo labels or
 query parameters. The idempotency key only deduplicates an identical commit and
 is deliberately absent from terminal receipts.
 
-The source tree does not expose generic undo/redo, receipt-bound revert,
+v0.13.2 does not expose generic undo/redo, receipt-bound revert,
 selection-to-component or plan/preview/commit agent orchestration yet. Revert
 requires a direction-aware compensation journal plus native Apply/Keep consent;
 selection collapse requires live proof of exact topology/reference rollback.

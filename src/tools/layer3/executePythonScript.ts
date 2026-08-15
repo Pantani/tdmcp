@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -17,6 +18,9 @@ export const executePythonScriptSchema = z.object({
 type ExecutePythonScriptArgs = z.infer<typeof executePythonScriptSchema>;
 
 export async function executePythonScriptImpl(ctx: ToolContext, args: ExecutePythonScriptArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Executing caller-supplied Python");
+  }
   return guardTd(
     () => ctx.client.executePythonScript(args.script, args.return_output),
     (result) => jsonResult("Python executed in TouchDesigner.", result),
@@ -24,7 +28,7 @@ export async function executePythonScriptImpl(ctx: ToolContext, args: ExecutePyt
 }
 
 export const registerExecutePythonScript: ToolRegistrar = (server, ctx) => {
-  if (ctx.allowRawPython === false) return;
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "execute_python_script",
     {

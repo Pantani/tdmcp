@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { type ControlSpec, toTdCustomParameterName } from "../layer2/createControlPanel.js";
 import {
   createSystemContainer,
@@ -840,6 +841,9 @@ export const applyGlslTopMappingSchema = z.object({
 type ApplyGlslTopMappingArgs = z.infer<typeof applyGlslTopMappingSchema>;
 
 export async function applyGlslTopMappingImpl(ctx: ToolContext, args: ApplyGlslTopMappingArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("GLSL mapping source");
+  }
   if (!args.mapping.fragment || args.mapping.fragment.trim().length === 0) {
     return errorResult(
       "Cannot apply GLSL TOP mapping: `mapping.fragment` is empty — provide a translated fragment string.",
@@ -868,12 +872,13 @@ export async function applyGlslTopMappingImpl(ctx: ToolContext, args: ApplyGlslT
 }
 
 export const registerApplyGlslTopMapping: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "apply_glsl_top_mapping",
     {
       title: "Apply GLSL TOP mapping",
       description:
-        "Build a self-contained GLSL TOP network from a pre-translated mapping (fragment + uniforms + channels + controls). Foundation primitive used by Shadertoy and ISF importers; also reachable directly for power users with a hand-translated fragment.",
+        "Build a self-contained GLSL TOP network from a pre-translated mapping (fragment + uniforms + channels + controls). Caller fragment source requires TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1. Foundation primitive used by Shadertoy and ISF importers; also reachable directly for power users with a hand-translated fragment.",
       inputSchema: applyGlslTopMappingSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

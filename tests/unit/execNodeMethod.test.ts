@@ -27,6 +27,23 @@ function textOf(result: CallToolResult): string {
 }
 
 describe("execNodeMethodImpl", () => {
+  it("rejects direct implementation calls before bridge execution in raw-off mode", async () => {
+    let methodCalls = 0;
+    server.use(
+      http.post(`${TD_BASE}/api/nodes/:seg/method`, () => {
+        methodCalls++;
+        return HttpResponse.json({ ok: true, data: {} });
+      }),
+    );
+    const result = await execNodeMethodImpl(
+      { ...makeCtx(), allowRawPython: false },
+      { path: "/project1/x", method: "cook", args: [], kwargs: {} },
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(methodCalls).toBe(0);
+  });
+
   it("calls the method and reports which node.method() ran", async () => {
     const result = await execNodeMethodImpl(makeCtx(), {
       path: "/project1/moviein1",

@@ -1356,6 +1356,7 @@ import { saveTdProjectImpl, saveTdProjectSchema } from "../tools/layer3/saveTdPr
 import { scoreBuildImpl, scoreBuildSchema } from "../tools/layer3/scoreBuild.js";
 import { searchOperatorsImpl, searchOperatorsSchema } from "../tools/layer3/searchOperators.js";
 import { searchPythonApiImpl, searchPythonApiSchema } from "../tools/layer3/searchPythonApi.js";
+import { searchTdCodeImpl, searchTdCodeSchema } from "../tools/layer3/searchTdCode.js";
 import {
   searchTouchDesignerKnowledgeImpl,
   searchTouchDesignerKnowledgeSchema,
@@ -1637,6 +1638,11 @@ const COMMANDS: Record<string, Command> = {
     findTdParametersSchema,
     findTdParametersImpl,
     "Search live parameters by node, name, value, expression, mode, or default state.",
+  ),
+  "code search": r(
+    searchTdCodeSchema,
+    searchTdCodeImpl,
+    "Search authored DAT text and parameter expressions with bounded redacted excerpts.",
   ),
   "nodes get": r(getTdNodeParametersSchema, getTdNodeParametersImpl, "Read a node's parameters."),
   "nodes errors": r(getTdNodeErrorsSchema, getTdNodeErrorsImpl, "Check a node/network for errors."),
@@ -3240,7 +3246,7 @@ const COMMANDS: Record<string, Command> = {
   "set-expr": r(
     setParameterExpressionSchema,
     setParameterExpressionImpl,
-    "Set a parameter to an expression/bind/constant without raw Python.",
+    "Set a parameter mode; expression/bind require raw Python, while constant/reset/unbind work in restricted mode.",
     { mutates: true },
   ),
   disconnect: r(

@@ -45,7 +45,7 @@ bridge. Advanced exports can use `--palette-dir <path>` and
 (`Dialogs → Textport and DATs`):
 
 ```python
-import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.1/td/bootstrap.py").read().decode())
+import urllib.request; exec(urllib.request.urlopen("https://github.com/Pantani/tdmcp/raw/v0.13.2/td/bootstrap.py").read().decode())
 ```
 
 Downloads the bridge to `~/tdmcp-bridge/modules` and starts it on port 9980.
@@ -109,6 +109,7 @@ All responses use the envelope `{ "ok": true, "data": … }` or
 | GET | `/api/nodes/{path}/custom_params` | bounded custom-page/parameter definitions |
 | POST | `/api/nodes/{path}/custom_params` | transactional add/edit/delete/sort/rename lifecycle with exact rollback |
 | POST | `/api/params/search` | bounded point-in-time parameter search with redaction, unreadable counters and honest completion metadata |
+| POST | `/api/code/search` | bounded BM25-style DAT-text and parameter-expression search with redacted excerpts and honest completion metadata |
 | GET | `/api/editor/context` | compact project, pane, active Network Editor, selection, rollover and viewport context |
 | POST | `/api/editor/focus` | schedule one bounded action-aware pane/selection/framing job |
 | GET | `/api/editor/focus/{operation_id}` | poll a follow receipt; the client uses a bounded 750 ms window |
@@ -203,13 +204,16 @@ authority. Wave 15 added no MCP tool, CLI command, generic undo/redo or revert
 route, and the public controller path remains live-`UNVERIFIED` pending a safe
 disposable TD listener.
 
-The node and parameter search routes are also structured read-only operations
+The node, parameter and authored-code search routes are also structured read-only operations
 independent of the exec gate. `/api/nodes/search` returns compact operator hits;
 `/api/params/search` keeps value/expression filters in the POST body, redacts
 likely credentials, refuses to use sensitive content as a filter oracle, skips
 unreadable parameters without exception text, and bounds depth, returned hits,
-node/parameter scans, response size and elapsed work. Both report whether the
-match count is complete. See [Live project search](/guide/live-project-search).
+node/parameter scans, response size and elapsed work. All three report whether the
+match count is complete. `/api/code/search` ranks fresh DAT bodies and parameter
+expressions locally, redacts before matching, returns only bounded excerpts and
+reports node/document/parameter/byte/time exhaustion without an embedding or
+raw-Python fallback. See [Live project search](/guide/live-project-search).
 
 ### Native interaction delivery
 

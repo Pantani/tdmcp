@@ -1,5 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { editDatContentImpl } from "./editDatContent.js";
@@ -117,7 +118,43 @@ function compactPreview(data: Record<string, unknown>): Record<string, unknown> 
   };
 }
 
+async function attachPreview(
+  ctx: ToolContext,
+  args: EditShaderLiveLoopArgs,
+  report: ShaderLiveLoopReport,
+  warnings: string[],
+): Promise<void> {
+  if (!args.include_preview) return;
+  if (!args.preview_path) {
+    warnings.push("Preview skipped because preview_path was not supplied.");
+    return;
+  }
+
+  const previewResult = await getInlinePreviewImpl(ctx, {
+    path: args.preview_path,
+    width: args.preview_width,
+    height: args.preview_height,
+    format: args.preview_format,
+    jpeg_quality: args.jpeg_quality,
+    parent_depth: args.parent_depth,
+    max_changed_params: 12,
+    include_full_params: false,
+  });
+  report.preview_path = args.preview_path;
+  if (previewResult.isError) {
+    warnings.push(
+      `Could not capture preview at ${args.preview_path}: ${firstLine(textOf(previewResult))}`,
+    );
+    return;
+  }
+  const preview = structuredOf(previewResult);
+  report.preview = preview ? compactPreview(preview) : firstLine(textOf(previewResult));
+}
+
 export async function editShaderLiveLoopImpl(ctx: ToolContext, args: EditShaderLiveLoopArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Shader DAT mutation");
+  }
   if (args.mode === "set" && args.shader_code === undefined) {
     return errorResult("edit_shader_live_loop mode:'set' requires shader_code.");
   }
@@ -173,31 +210,7 @@ export async function editShaderLiveLoopImpl(ctx: ToolContext, args: EditShaderL
     report.errors = structuredOf(errorsResult);
   }
 
-  if (args.include_preview) {
-    if (!args.preview_path) {
-      warnings.push("Preview skipped because preview_path was not supplied.");
-    } else {
-      const previewResult = await getInlinePreviewImpl(ctx, {
-        path: args.preview_path,
-        width: args.preview_width,
-        height: args.preview_height,
-        format: args.preview_format,
-        jpeg_quality: args.jpeg_quality,
-        parent_depth: args.parent_depth,
-        max_changed_params: 12,
-        include_full_params: false,
-      });
-      report.preview_path = args.preview_path;
-      if (previewResult.isError) {
-        warnings.push(
-          `Could not capture preview at ${args.preview_path}: ${firstLine(textOf(previewResult))}`,
-        );
-      } else {
-        const preview = structuredOf(previewResult);
-        report.preview = preview ? compactPreview(preview) : firstLine(textOf(previewResult));
-      }
-    }
-  }
+  await attachPreview(ctx, args, report, warnings);
 
   const errorData = report.errors as { total?: number } | undefined;
   const errorCount = typeof errorData?.total === "number" ? errorData.total : 0;
@@ -210,12 +223,13 @@ export async function editShaderLiveLoopImpl(ctx: ToolContext, args: EditShaderL
 }
 
 export const registerEditShaderLiveLoop: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "edit_shader_live_loop",
     {
       title: "Edit shader live loop",
       description:
-        "Edit a GLSL/Text DAT and immediately run the practical shader feedback loop: write or surgically replace source text, inspect the shader/output node for errors, and optionally capture a compact inline preview. Uses set_dat_content/edit_dat_content under the hood so DAT write guardrails stay consistent.",
+        "Edit a GLSL/Text DAT and immediately run the practical shader feedback loop: write or surgically replace source text, inspect the shader/output node for errors, and optionally capture a compact inline preview. Uses set_dat_content/edit_dat_content under the hood so DAT write guardrails stay consistent, and requires TDMCP_RAW_PYTHON=on plus TDMCP_BRIDGE_ALLOW_EXEC=1.",
       inputSchema: editShaderLiveLoopSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

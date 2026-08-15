@@ -91,6 +91,22 @@ describe("buildSopChainScript", () => {
 });
 
 describe("buildSopGeometryImpl", () => {
+  it("rejects executable SOP types and filter source before exec in raw-off mode", async () => {
+    const exec = vi.fn();
+    const ctx = fakeCtx(exec);
+    ctx.allowRawPython = false;
+    const result = await buildSopGeometryImpl(
+      ctx,
+      buildSopGeometrySchema.parse({
+        name: "blocked",
+        ops: [{ type: "groupSOP", params: { filter: "caller expression" } }],
+      }),
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(exec).not.toHaveBeenCalled();
+  });
+
   it("happy path — 3-op chain returns created list and output_path", async () => {
     const exec = okExec({
       container: "/project1",

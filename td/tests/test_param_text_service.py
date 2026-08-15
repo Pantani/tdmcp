@@ -54,6 +54,7 @@ class FakePar:
     def __init__(self, name, val=0.0, mode=FakeParMode.CONSTANT):
         self.name = name
         self.val = val
+        self.default = val
         self.expr = ""
         self.bindExpr = ""
         self.mode = mode
@@ -61,6 +62,12 @@ class FakePar:
 
     def eval(self):
         return self.val
+
+    def reset(self):
+        self.val = self.default
+        self.expr = ""
+        self.bindExpr = ""
+        self.mode = FakeParMode.CONSTANT
 
 
 class FakeParCollection:
@@ -187,6 +194,28 @@ class SetParamModeTests(unittest.TestCase):
         self.assertEqual(res["readback_mode"], "CONSTANT")
         # A constant has no expression — readback must not leak the stale par.expr.
         self.assertEqual(res["readback_expr"], "")
+
+    def test_reset_restores_default_without_exec(self):
+        par = FakePar("tx", val=2.5, mode=FakeParMode.EXPRESSION)
+        par.default = 0.25
+        par.expr = "me.time.seconds"
+        node = FakeNode("/project1/geo1", [par])
+        with _patch_op(node):
+            res = pme.set_param_mode("/project1/geo1", "tx", "reset")
+        self.assertEqual(par.val, 0.25)
+        self.assertIs(par.mode, FakeParMode.CONSTANT)
+        self.assertEqual(par.expr, "")
+        self.assertEqual(res["mode"], "reset")
+
+    def test_unbind_freezes_evaluated_value_without_exec(self):
+        par = FakePar("tx", val=3.5, mode=FakeParMode.BIND)
+        par.bindExpr = "parent().par.X"
+        node = FakeNode("/project1/geo1", [par])
+        with _patch_op(node):
+            res = pme.set_param_mode("/project1/geo1", "tx", "unbind")
+        self.assertEqual(par.val, 3.5)
+        self.assertIs(par.mode, FakeParMode.CONSTANT)
+        self.assertEqual(res["mode"], "unbind")
 
     def test_constant_rejects_invalid_menu_value(self):
         par = FakePar("extend")

@@ -78,9 +78,9 @@ secret values.
 
 ## Show mode (`tdmcp show`) {#show-mode}
 
-::: warning Unreleased; live evidence is build-scoped
-`tdmcp show <profile>` exists in the Wave 12 source tree, not in the public
-v0.13.1 package. A disposable TD 2025.32820 sandbox passed Perform entry,
+::: warning Included in v0.13.2; live evidence is build-scoped
+`tdmcp show <profile>` is included in v0.13.2. A disposable TD 2025.32820
+sandbox passed Perform entry,
 already-on idempotence, exact readback and rollback after an induced ambiguous
 readback. Other builds, TouchPlayer and actual headless execution remain
 **UNVERIFIED**.

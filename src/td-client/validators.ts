@@ -138,6 +138,57 @@ export const ParameterSearchResultSchema = z.object({
 });
 export type TdParameterSearchResult = z.infer<typeof ParameterSearchResultSchema>;
 
+export const CodeSearchSourceKindSchema = z.enum(["dat_text", "parameter_expression"]);
+export type TdCodeSearchSourceKind = z.infer<typeof CodeSearchSourceKindSchema>;
+
+export const CodeSearchHitSchema = z.object({
+  op: z.string(),
+  type: z.string(),
+  family: z.enum(["TOP", "CHOP", "SOP", "DAT", "COMP", "MAT", "POP", "UNKNOWN"]),
+  source_kind: CodeSearchSourceKindSchema,
+  field: z.string(),
+  line: z.number().int().positive(),
+  column: z.number().int().positive(),
+  excerpt: z.string(),
+  score: z.number().nonnegative(),
+  rank_sources: z.array(z.enum(["literal", "bm25"])).min(1),
+  redacted: z.literal(true).optional(),
+  content_truncated: z.literal(true).optional(),
+  excerpt_truncated: z.literal(true).optional(),
+});
+export type TdCodeSearchHit = z.infer<typeof CodeSearchHitSchema>;
+
+export const CodeSearchResultSchema = z.object({
+  query: z.string(),
+  root_path: z.string(),
+  max_depth: z.number().int().min(1).max(32),
+  source_kinds: z.array(CodeSearchSourceKindSchema).min(1),
+  results: z.array(CodeSearchHitSchema),
+  scanned_nodes: z.number().int().nonnegative(),
+  scanned_documents: z.number().int().nonnegative(),
+  scanned_parameters: z.number().int().nonnegative(),
+  scanned_bytes: z.number().int().nonnegative(),
+  matched: z.number().int().nonnegative(),
+  returned: z.number().int().nonnegative(),
+  limit: z.number().int().min(1).max(200),
+  truncated: z.boolean(),
+  scan_truncated: z.boolean(),
+  count_complete: z.boolean(),
+  unreadable_documents: z.number().int().nonnegative(),
+  skipped_documents: z.number().int().nonnegative(),
+  redacted_documents: z.number().int().nonnegative(),
+  stop_reason: z.enum([
+    "completed",
+    "node_scan_limit",
+    "document_scan_limit",
+    "parameter_scan_limit",
+    "byte_scan_limit",
+    "time_limit",
+  ]),
+  elapsed_ms: z.number().int().nonnegative(),
+});
+export type TdCodeSearchResult = z.infer<typeof CodeSearchResultSchema>;
+
 export const InfoSchema = z.object({
   td_version: z.string().optional(),
   python_version: z.string().optional(),
@@ -228,6 +279,8 @@ export const CapturingJobSchema = z.object({
   job_id: z.string(),
   delay_frames: z.number().int().nonnegative(),
   wait_ms: z.number().int().nonnegative(),
+  requested_width: z.number().int().positive().optional(),
+  requested_height: z.number().int().positive().optional(),
 });
 export type TdCapturingJob = z.infer<typeof CapturingJobSchema>;
 
@@ -239,6 +292,8 @@ export type TdAdvancedCapture = z.infer<typeof AdvancedCaptureSchema>;
 export const PreviewJobSchema = z.object({
   status: z.enum(["pending", "ready", "error", "expired"]),
   job_id: z.string(),
+  requested_width: z.number().int().positive().optional(),
+  requested_height: z.number().int().positive().optional(),
   preview: z.union([PreviewSchema, SampleGridSchema]).optional(),
   error: z.string().optional(),
 });

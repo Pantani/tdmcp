@@ -38,6 +38,7 @@ plugins/tdmcp/.claude-plugin/
 # current `.mcpb` and any legacy `.dxt` output are ignored.
 *.dxt
 *.mcpb
+*.tgz
 
 # Harness working directory: intermediate artifacts from the submission agents
 # (spec, migration notes, form-answer draft, QA report). Local-only scratch.
@@ -50,6 +51,10 @@ docs/.vitepress/cache/
 # Generated tool reference — rebuilt by `npm run docs:gen` (runs before every docs
 # build, locally and in CI), so it's a build artifact, not source.
 docs/reference/tools.md
+
+# Generated Agent Skills discovery index and public SKILL.md copies. The docs
+# build recreates these from the canonical skills/curated sources.
+docs/public/.well-known/agent-skills/
 
 # External Shader Park TouchDesigner plugin fetched on demand by
 # `npm run shader-park:tox`; do not vendor release binaries into source.

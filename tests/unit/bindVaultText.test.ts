@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { bindVaultTextImpl } from "../../src/tools/vault/bindVaultText.js";
@@ -48,6 +48,22 @@ function withVault(fn: (vault: Vault) => Promise<void>): Promise<void> {
 }
 
 describe("bindVaultTextImpl", () => {
+  it("rejects vault text before vault IO or bridge mutation in raw-off mode", async () => {
+    const context = { ...ctxNoVault(), allowRawPython: false };
+    const createNode = vi.spyOn(context.client, "createNode");
+    const exec = vi.spyOn(context.client, "executePythonScript");
+    const result = await bindVaultTextImpl(context, {
+      note: "payload",
+      parent_path: "/project1",
+      sync: true,
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(textOf(result)).not.toContain("TDMCP_VAULT_PATH");
+    expect(createNode).not.toHaveBeenCalled();
+    expect(exec).not.toHaveBeenCalled();
+  });
+
   it("errors with a TDMCP_VAULT_PATH hint when no vault is configured", async () => {
     const result = await bindVaultTextImpl(ctxNoVault(), {
       note: "lyrics",

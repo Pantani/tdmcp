@@ -98,6 +98,19 @@ describe("buildCallbacksText", () => {
 });
 
 describe("authorScriptOperatorImpl", () => {
+  it("rejects direct implementation calls before bridge mutation in raw-off mode", async () => {
+    const { ctx, createNode, exec } = fakeCtx({});
+    ctx.allowRawPython = false;
+    const result = await authorScriptOperatorImpl(
+      ctx,
+      authorScriptOperatorSchema.parse({ family: "CHOP" }),
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(createNode).not.toHaveBeenCalled();
+    expect(exec).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["CHOP", "scriptCHOP", "appendChan('chan1')"],
     ["DAT", "scriptDAT", "appendRow(['name', 'value'])"],

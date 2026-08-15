@@ -27,6 +27,43 @@ function textOf(result: CallToolResult): string {
 }
 
 describe("set_parameters_batch", () => {
+  it("rejects executable targets before submitting any batch mutation in raw-off mode", async () => {
+    let batchCalls = 0;
+    server.use(
+      http.get(`${TD_BASE}/api/nodes/:seg`, ({ params }) =>
+        HttpResponse.json({
+          ok: true,
+          data: {
+            path: decodeURIComponent(String(params.seg)),
+            type: "executeDAT",
+            name: "execute1",
+            parameters: {},
+          },
+        }),
+      ),
+      http.post(`${TD_BASE}/api/batch`, () => {
+        batchCalls++;
+        return HttpResponse.json({ ok: true, data: { results: [] } });
+      }),
+    );
+    const result = await setParametersBatchImpl(
+      { ...makeCtx(), allowRawPython: false },
+      { updates: [{ path: "/project1/execute1", parameters: { active: true } }] },
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("raw Python is disabled");
+    expect(batchCalls).toBe(0);
+  });
+
+  it("permits safe constant batch updates in raw-off mode", async () => {
+    const result = await setParametersBatchImpl(
+      { ...makeCtx(), allowRawPython: false },
+      { updates: [{ path: "/project1/noise1", parameters: { period: 4 } }] },
+    );
+    expect(result.isError).toBeFalsy();
+    expect(textOf(result)).toContain("Applied 1 parameter update(s)");
+  });
+
   it("reports all N updates applied when every result is ok", async () => {
     const result = await setParametersBatchImpl(makeCtx(), {
       updates: [

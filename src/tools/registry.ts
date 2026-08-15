@@ -10,11 +10,12 @@ import { utilRegistrars } from "./util/index.js";
 import { vaultRegistrars } from "./vault/index.js";
 
 /**
- * Tools hidden by the `safe` profile: every tool flagged `destructiveHint: true`.
- * This is a strict superset of TDMCP_RAW_PYTHON=off (which hides the raw-code
- * authoring/execution tools), so `safe` ⊇ rawPython=off. Keep in sync with
- * `destructiveHint: true` annotations (a registration test guards this — see
- * toolProfile.test.ts).
+ * Destructive tools centrally hidden by the `safe` profile: every tool flagged
+ * `destructiveHint: true`. Caller-code-only registrars additionally consult
+ * `allowsCallerCode`, which treats safe/directory profiles as restricted. Together
+ * those policies make `safe` a strict superset of TDMCP_RAW_PYTHON=off. Keep this
+ * set in sync with `destructiveHint: true` annotations (a registration test guards
+ * this — see toolProfile.test.ts).
  *
  * NOTE: this is deliberately NOT the copilot's `LLM_TOOLS` `mutates`
  * classification (src/llm/tools.ts): that splits read-only vs. write over a
@@ -77,6 +78,7 @@ const DIRECTORY_PROFILE_ALLOW = new Set<string>([
   "get_td_classes",
   "get_operator_workflow_guide",
   "find_td_nodes",
+  "search_td_code",
   "get_td_node_parameters",
   "get_td_node_flags",
   "get_td_topology",

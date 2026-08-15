@@ -4,7 +4,7 @@ description: "Decisões seguras e nativas no TouchDesigner: consentimento, follo
 
 # Interação nativa & ações seguras no editor
 
-<FeatureAvailability status="source-only" locale="pt" />
+<FeatureAvailability status="released" locale="pt" />
 
 O tdmcp agora pode pedir uma decisão destrutiva dentro do TouchDesigner sem
 manter a request HTTP original aberta. A Wave 1 adiciona um broker pequeno e

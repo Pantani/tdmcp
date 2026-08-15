@@ -50,9 +50,21 @@ export const tdHandlers = [
   ),
 
   http.post(`${TD_BASE}/api/nodes`, async ({ request }) => {
-    const body = (await request.json()) as { parent_path: string; type: string; name?: string };
+    const body = (await request.json()) as {
+      parent_path: string;
+      type: string;
+      name?: string;
+      node_x?: number;
+      node_y?: number;
+    };
     const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
-    return ok({ path: `${body.parent_path}/${name}`, type: body.type, name });
+    return ok({
+      path: `${body.parent_path}/${name}`,
+      type: body.type,
+      name,
+      nodeX: body.node_x,
+      nodeY: body.node_y,
+    });
   }),
 
   http.post(`${TD_BASE}/api/interactions`, async ({ request }) => {
@@ -107,6 +119,7 @@ export const tdHandlers = [
   http.get(`${TD_BASE}/api/optypes`, notFound),
   http.get(`${TD_BASE}/api/nodes/search`, notFound),
   http.post(`${TD_BASE}/api/params/search`, notFound),
+  http.post(`${TD_BASE}/api/code/search`, notFound),
   http.post(`${TD_BASE}/api/params/watch`, notFound),
   http.delete(`${TD_BASE}/api/params/watch`, notFound),
   http.get(`${TD_BASE}/api/params/watch`, notFound),
@@ -198,6 +211,8 @@ export const tdHandlers = [
     const body = (await request.json()) as {
       delay_frames?: number;
       sample_grid?: number;
+      width?: number;
+      height?: number;
     };
     if (body.delay_frames) {
       return ok({
@@ -205,6 +220,8 @@ export const tdHandlers = [
         job_id: "job-1",
         delay_frames: body.delay_frames,
         wait_ms: 100,
+        requested_width: body.width ?? 640,
+        requested_height: body.height ?? 360,
       });
     }
     return ok({
@@ -221,6 +238,8 @@ export const tdHandlers = [
     ok({
       status: "ready",
       job_id: seg(params),
+      requested_width: 320,
+      requested_height: 180,
       preview: {
         path: "/project1/out1",
         width: 320,

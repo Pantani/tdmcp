@@ -476,6 +476,7 @@ exports[`F4 — ToolExtra plumbing is additive and inert > registers the whole t
   "score_build",
   "search_operators",
   "search_python_api",
+  "search_td_code",
   "search_touchdesigner_knowledge",
   "serialize_network",
   "set_dat_content",

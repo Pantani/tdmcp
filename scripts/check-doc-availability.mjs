@@ -9,13 +9,14 @@ if (!Array.isArray(pages) || pages.length === 0) {
 
 const failures = [];
 const seen = new Set();
+const allowedStatuses = new Set(["released", "source-only", "live-unverified"]);
 for (const page of pages) {
   const { slug, status, en, pt } = page;
   if (
     typeof slug !== "string" ||
     !/^[a-z0-9-]+$/.test(slug) ||
     seen.has(slug) ||
-    status !== "source-only" ||
+    !allowedStatuses.has(status) ||
     typeof en !== "string" ||
     !en.trim() ||
     typeof pt !== "string" ||

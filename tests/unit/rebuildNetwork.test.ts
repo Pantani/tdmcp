@@ -214,6 +214,83 @@ describe("rebuildNetworkImpl auto_layout", () => {
 });
 
 describe("rebuildNetworkImpl", () => {
+  it.each([
+    "EXPRESSION",
+    "BIND",
+  ])("rejects caller-supplied %s source before exec in raw-off mode", async (mode) => {
+    const sink = { script: "" };
+    captureExecScript(sink);
+    const result = await rebuildNetworkImpl(
+      { ...makeCtx(), allowRawPython: false },
+      rebuildNetworkSchema.parse({
+        parent_path: "/project1",
+        spec: {
+          nodes: [
+            {
+              name: "level1",
+              type: "levelTOP",
+              params: { brightness1: { mode, expr: "me.time.seconds" } },
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(result.isError).toBe(true);
+    expect((result.content[0] as { text: string }).text).toContain("raw Python is disabled");
+    expect(sink.script).toBe("");
+  });
+
+  it("keeps constant-only rebuilds available in raw-off mode", async () => {
+    const sink = { script: "" };
+    captureExecScript(sink);
+    const result = await rebuildNetworkImpl(
+      { ...makeCtx(), allowRawPython: false },
+      rebuildNetworkSchema.parse({
+        parent_path: "/project1",
+        spec: {
+          nodes: [
+            {
+              name: "level1",
+              type: "levelTOP",
+              params: { brightness1: { mode: "CONSTANT", value: 0.5 } },
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(sink.script).not.toBe("");
+  });
+
+  it("rejects executable generic nodes with constant file parameters before exec in raw-off mode", async () => {
+    const sink = { script: "" };
+    captureExecScript(sink);
+    const result = await rebuildNetworkImpl(
+      { ...makeCtx(), allowRawPython: false },
+      rebuildNetworkSchema.parse({
+        parent_path: "/project1",
+        spec: {
+          nodes: [
+            {
+              name: "execute1",
+              type: "executeDAT",
+              params: {
+                file: { mode: "CONSTANT", value: "/tmp/payload.py" },
+                syncfile: { mode: "CONSTANT", value: 1 },
+                active: { mode: "CONSTANT", value: 1 },
+              },
+            },
+          ],
+        },
+      }),
+    );
+    expect(result.isError).toBe(true);
+    expect((result.content[0] as { text: string }).text).toContain("raw Python is disabled");
+    expect(sink.script).toBe("");
+  });
+
   it("sends the parent_path + spec through the payload and summarizes the report", async () => {
     let captured = "";
     server.use(

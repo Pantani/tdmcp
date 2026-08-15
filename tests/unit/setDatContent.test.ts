@@ -120,6 +120,31 @@ describe("anti-wipe guardrail", () => {
   });
 });
 
+describe("raw Python disabled", () => {
+  it("rejects DAT text mutation before any bridge request", async () => {
+    const putDatText = vi.fn();
+    const executePythonScript = vi.fn();
+    const ctx = {
+      allowRawPython: false,
+      client: { putDatText, executePythonScript },
+      logger: silentLogger,
+    } as unknown as ToolContext;
+
+    const result = await setDatContentImpl(ctx, {
+      dat_path: "/project1/callbacks",
+      text: "def onFrameStart(frame): pass",
+      confirm_wipe: false,
+    });
+
+    expect(result.isError).toBe(true);
+    expect((result.content[0] as { type: "text"; text: string }).text).toContain(
+      "raw Python is disabled",
+    );
+    expect(putDatText).not.toHaveBeenCalled();
+    expect(executePythonScript).not.toHaveBeenCalled();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Happy path — payload round-trip and friendly summary
 // ---------------------------------------------------------------------------

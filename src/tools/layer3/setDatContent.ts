@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { tryEndpoint } from "../../td-client/types.js";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -64,6 +65,9 @@ export function buildSetDatContentScript(payload: object): string {
 }
 
 export async function setDatContentImpl(ctx: ToolContext, args: SetDatContentArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("DAT text mutation");
+  }
   // Anti-wipe guardrail: refuse to silently clear a DAT unless the caller
   // acknowledges they mean to do so. This mirrors the manageComponentImpl
   // pre-flight pattern — checked in TS before any bridge call so the test
@@ -76,8 +80,9 @@ export async function setDatContentImpl(ctx: ToolContext, args: SetDatContentArg
   }
   return guardTd(
     async () => {
-      // 1) first-class endpoint (survives ALLOW_EXEC=0): PUT the whole text. The
-      //    endpoint returns old_length/new_length, so no extra read round-trip.
+      // 1) first-class endpoint: PUT the whole text through the bridge's independently
+      //    exec-gated DAT route. The endpoint returns old_length/new_length, so no
+      //    extra read round-trip.
       // 2) Fall back to exec ONLY when the endpoint is absent on an older bridge;
       //    a current bridge's validation 400 (not-a-DAT, node not found) surfaces
       //    unchanged via tryEndpoint.
@@ -111,6 +116,7 @@ export async function setDatContentImpl(ctx: ToolContext, args: SetDatContentArg
 }
 
 export const registerSetDatContent: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "set_dat_content",
     {
@@ -120,7 +126,9 @@ export const registerSetDatContent: ToolRegistrar = (server, ctx) => {
         "Unlike `edit_dat_content` (which makes a surgical find-and-replace), this replaces " +
         "everything in one shot — use it to deploy a full script or template. " +
         "Refuses to write empty/whitespace-only text unless `confirm_wipe:true` is passed, " +
-        "preventing silent data loss.",
+        "preventing silent data loss. Because DAT text can become executable callbacks, " +
+        "this tool is hidden when TDMCP_RAW_PYTHON=off and the bridge also requires " +
+        "TDMCP_BRIDGE_ALLOW_EXEC=1 for text writes.",
       inputSchema: setDatContentSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

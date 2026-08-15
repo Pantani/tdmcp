@@ -76,6 +76,7 @@ const SAFE_PROFILE_KEEP = [
   "connect_nodes",
   "update_td_node_parameters",
   "find_td_nodes",
+  "search_td_code",
   "get_td_info",
   "get_td_classes",
   "load_session_profile",
@@ -89,6 +90,7 @@ const DIRECTORY_PROFILE_TOOLS = [
   "get_td_classes",
   "get_operator_workflow_guide",
   "find_td_nodes",
+  "search_td_code",
   "get_td_node_parameters",
   "get_td_node_flags",
   "get_td_topology",
@@ -129,6 +131,9 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     expect(names).not.toContain("execute_python_script");
     expect(names).not.toContain("exec_node_method");
     expect(names).not.toContain("create_python_script");
+    expect(names).not.toContain("create_glsl_shader");
+    expect(names).not.toContain("create_shader_park");
+    expect(names).not.toContain("bind_vault_text");
   });
 
   it("safe drops the destructive tools", async () => {
@@ -170,7 +175,7 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
   it("directory exposes exactly the compact registry-facing surface", async () => {
     const names = await toolNames({ TDMCP_TOOL_PROFILE: "directory" });
     expect(names.sort()).toEqual([...DIRECTORY_PROFILE_TOOLS].sort());
-    expect(names).toHaveLength(16);
+    expect(names).toHaveLength(17);
   });
 
   it("directory is a non-destructive subset of safe", async () => {
@@ -182,11 +187,11 @@ describe("integration: TDMCP_TOOL_PROFILE", () => {
     }
   });
 
-  it("safe hides exactly SAFE_PROFILE_EXCLUDE.size fewer tools than full", async () => {
+  it("safe hides every destructive tool plus code-only registrars", async () => {
     const full = await toolNames({ TDMCP_TOOL_PROFILE: "full" });
     const safe = await toolNames({ TDMCP_TOOL_PROFILE: "safe" });
     expect(safe.length).toBeLessThan(full.length);
-    expect(full.length - safe.length).toBe(SAFE_PROFILE_EXCLUDE.length);
+    expect(full.length - safe.length).toBeGreaterThan(SAFE_PROFILE_EXCLUDE.length);
     expect(SAFE_PROFILE_EXCLUDE.length).toBe(43);
   });
 

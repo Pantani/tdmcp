@@ -350,6 +350,73 @@ describe("TouchDesignerClient", () => {
     expect(capturedAuth).toBe("Bearer local-test-token");
   });
 
+  it("keeps code-search queries and bounds in the authenticated POST body", async () => {
+    let capturedUrl = "";
+    let capturedBody: Record<string, unknown> = {};
+    let capturedAuth: string | null = null;
+    server.use(
+      http.post(`${TD_BASE}/api/code/search`, async ({ request }) => {
+        capturedUrl = request.url;
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        capturedAuth = request.headers.get("authorization");
+        return HttpResponse.json({
+          ok: true,
+          data: {
+            query: "private-query-sentinel",
+            root_path: "/project1",
+            max_depth: 3,
+            source_kinds: ["dat_text", "parameter_expression"],
+            results: [],
+            scanned_nodes: 0,
+            scanned_documents: 0,
+            scanned_parameters: 0,
+            scanned_bytes: 0,
+            matched: 0,
+            returned: 0,
+            limit: 50,
+            truncated: false,
+            scan_truncated: false,
+            count_complete: true,
+            unreadable_documents: 0,
+            skipped_documents: 0,
+            redacted_documents: 0,
+            stop_reason: "completed",
+            elapsed_ms: 1,
+          },
+        });
+      }),
+    );
+    const tokened = new TouchDesignerClient({
+      baseUrl: TD_BASE,
+      timeoutMs: 2000,
+      token: "local-test-token",
+    });
+
+    await tokened.searchCode({
+      query: "private-query-sentinel",
+      rootPath: "/project1",
+      maxDepth: 3,
+      sourceKinds: ["dat_text", "parameter_expression"],
+      typeMatch: "partial",
+      limit: 50,
+      nodeScanLimit: 1_000,
+      documentScanLimit: 10_000,
+      parameterScanLimit: 25_000,
+      byteScanLimit: 2 * 1_024 * 1_024,
+      timeBudgetMs: 1_000,
+    });
+
+    expect(new URL(capturedUrl).search).toBe("");
+    expect(capturedUrl).not.toContain("private-query-sentinel");
+    expect(capturedBody).toMatchObject({
+      query: "private-query-sentinel",
+      source_kinds: ["dat_text", "parameter_expression"],
+      document_scan_limit: 10_000,
+      byte_scan_limit: 2 * 1_024 * 1_024,
+    });
+    expect(capturedAuth).toBe("Bearer local-test-token");
+  });
+
   it("uses authenticated bounded operation preview, commit, and receipt bodies", async () => {
     const operationPlan = {
       schema_version: 1 as const,

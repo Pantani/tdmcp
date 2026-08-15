@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import type { ControlSpec } from "../layer2/createControlPanel.js";
 import {
   buildFromRecipe,
@@ -219,6 +220,13 @@ async function buildGlslGenerative(
 }
 
 export async function createGenerativeArtImpl(ctx: ToolContext, args: CreateGenerativeArtArgs) {
+  if (
+    args.technique === "custom_glsl" &&
+    args.custom_glsl_code !== undefined &&
+    !allowsCallerCode(ctx)
+  ) {
+    return callerCodeDenied("Custom GLSL source");
+  }
   return runBuild(async () => {
     // A single "Speed" knob drives evolution speed (the time-driving expressions reference it).
     // Recipe-built techniques don't use that expression, so they don't get the control.
@@ -319,7 +327,7 @@ export const registerCreateGenerativeArt: ToolRegistrar = (server, ctx) => {
     {
       title: "Create generative art",
       description:
-        "Create an evolving generative visual. Creates a new baseCOMP under `parent_path` holding the generator (a recipe network, a GLSL TOP + Text DAT, or a noise chain) ending in a Null output. reaction_diffusion/noise_landscape use validated recipes; strange_attractor, voronoi, and fractal render real GLSL; custom_glsl uses your shader; the rest fall back to animated noise (with a warning). Exposes a live 'Speed' knob (except for recipe-built techniques). Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, the technique, any node errors, warnings, and an inline preview image.",
+        "Create an evolving generative visual. Creates a new baseCOMP under `parent_path` holding the generator (a recipe network, a GLSL TOP + Text DAT, or a noise chain) ending in a Null output. reaction_diffusion/noise_landscape use validated recipes; strange_attractor, voronoi, and fractal render built-in GLSL; custom_glsl accepts caller shader source only when TDMCP_RAW_PYTHON=on and TDMCP_BRIDGE_ALLOW_EXEC=1; the rest fall back to animated noise (with a warning). Exposes a live 'Speed' knob (except for recipe-built techniques). Returns a summary plus a JSON block with the container path, created node paths, the output path, exposed controls, the technique, any node errors, warnings, and an inline preview image.",
       inputSchema: createGenerativeArtSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

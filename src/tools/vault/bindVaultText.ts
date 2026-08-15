@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Vault } from "../../vault/index.js";
+import { allowsCallerCode, callerCodeDenied } from "../codeBearing.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 import { requireVault } from "./shared.js";
@@ -43,6 +44,9 @@ function resolveNotePath(vault: Vault, note: string): string | undefined {
 }
 
 export async function bindVaultTextImpl(ctx: ToolContext, args: BindVaultTextArgs) {
+  if (!allowsCallerCode(ctx)) {
+    return callerCodeDenied("Binding arbitrary vault text into a DAT");
+  }
   const v = requireVault(ctx);
   if ("error" in v) return v.error;
   const { vault } = v;
@@ -81,12 +85,19 @@ export async function bindVaultTextImpl(ctx: ToolContext, args: BindVaultTextArg
 }
 
 export const registerBindVaultText: ToolRegistrar = (server, ctx) => {
+  if (!allowsCallerCode(ctx)) return;
   server.registerTool(
     "bind_vault_text",
     {
       title: "Bind a Text DAT to a vault note",
       description:
-        "CREATE a Text DAT in TouchDesigner whose `file` parameter points at a vault note, so the note's text loads into TD (and, with sync:true, stays live as you edit it in Obsidian) — turning the vault into the text/lyrics source for your visuals. Side effect is node creation in TD plus reading the note file; it does not write to the vault. Wire the DAT into a Text TOP to render it. Returns the DAT path, the resolved note, the absolute file path, and whether sync is on. Requires a configured TDMCP_VAULT_PATH.",
+        "CREATE a Text DAT in TouchDesigner whose `file` parameter points at a vault note, so " +
+        "the note's text loads into TD (and, with sync:true, stays live as you edit it in " +
+        "Obsidian) — turning the vault into the text/lyrics source for your visuals. Side " +
+        "effect is node creation in TD plus reading the note file; it does not write to the " +
+        "vault. Wire the DAT into a Text TOP to render it. Returns the DAT path, the resolved " +
+        "note, the absolute file path, and whether sync is on. Requires a configured " +
+        "TDMCP_VAULT_PATH, TDMCP_RAW_PYTHON=on, and TDMCP_BRIDGE_ALLOW_EXEC=1.",
       inputSchema: bindVaultTextSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

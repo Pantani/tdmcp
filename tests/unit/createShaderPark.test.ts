@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { z } from "zod";
+import { compileShaderParkToTouchDesigner } from "../../src/integrations/shaderPark.js";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
@@ -135,6 +136,23 @@ describe("createShaderPark schema", () => {
 });
 
 describe("createShaderPark build", () => {
+  it("rejects Shader Park source before compile or bridge mutation in raw-off mode", async () => {
+    const compile = vi.mocked(compileShaderParkToTouchDesigner);
+    compile.mockClear();
+    const { scripts, bodies } = captureBuild();
+    const result = await createShaderParkImpl(
+      { ...makeCtx(), allowRawPython: false },
+      createShaderParkSchema.parse({ code: "sphere(0.45);" }),
+    );
+
+    expect(result.isError).toBe(true);
+    const text = result.content.find((item) => item.type === "text");
+    expect(text?.type === "text" ? text.text : "").toContain("raw Python is disabled");
+    expect(compile).not.toHaveBeenCalled();
+    expect(bodies).toEqual([]);
+    expect(scripts).toEqual([]);
+  });
+
   it("creates a renderable GLSL MAT scene from Shader Park code", async () => {
     const { bodies } = captureBuild();
     const result = await run({ code: "sphere(0.45);" });

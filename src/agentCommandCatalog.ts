@@ -526,6 +526,13 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
+    command: "code search",
+    summary: "Search authored DAT text and parameter expressions with bounded redacted excerpts.",
+    mutates: false,
+    unsafe: false,
+    source: "tool",
+  },
+  {
     command: "collect-assets",
     summary:
       "Scan a COMP subtree for external file dependencies into an inventory + optional manifest.",
@@ -3186,7 +3193,8 @@ export const AGENT_COMMAND_CATALOG = [
   },
   {
     command: "set-expr",
-    summary: "Set a parameter to an expression/bind/constant without raw Python.",
+    summary:
+      "Set a parameter mode; expression/bind require raw Python, while constant/reset/unbind work in restricted mode.",
     mutates: true,
     unsafe: false,
     source: "tool",

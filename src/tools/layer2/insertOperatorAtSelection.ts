@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
 import { errorResult, guardTd, jsonStructuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -112,6 +117,10 @@ export async function insertOperatorAtSelectionImpl(
   ctx: ToolContext,
   args: InsertOperatorAtSelectionArgs,
 ) {
+  const codeSources = genericNodeCodeBearingSources(args.type, args.parameters);
+  if (!allowsCallerCode(ctx) && codeSources.length > 0) {
+    return callerCodeDenied(`Editor insertion with ${codeSources.join(", ")}`);
+  }
   const client = ctx.client as unknown as EditorInsertClient;
   return guardTd(
     () => client.insertOperatorAtSelection(args),

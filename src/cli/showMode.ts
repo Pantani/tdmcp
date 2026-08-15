@@ -10,6 +10,7 @@ import {
 } from "../tools/showPreflightReportCore.js";
 import type { ToolContext } from "../tools/types.js";
 import { loadConfig, type TdmcpConfig, tdBaseUrl } from "../utils/config.js";
+import { getVersion } from "../utils/version.js";
 import { type DoctorReport, runDoctor as runEnvironmentDoctor } from "./doctor.js";
 import {
   type RuntimeStatusDeps,
@@ -147,7 +148,7 @@ const HELP = [
   "                  [--allow-warn] [--allow-unverified] [--dry-run] [--json]",
   "",
   "Run fail-closed show gates for one exact venue profile, then enter Perform Mode.",
-  "Availability: source-only; enter, already-on and failure/rollback passed on TD 2025.32820. Other builds and headless runtimes remain unverified.",
+  `Availability: included in v${getVersion()}; enter, already-on and failure/rollback passed on TD 2025.32820. Other builds and headless runtimes remain unverified.`,
   "This command never loads a project and never falls back to raw Python.",
 ].join("\n");
 
