@@ -1054,6 +1054,44 @@ path is the one validatable without a local GPU.
 - ✅ `create_llm_chain` (dotsimulate LOPs).
 - ✅ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
 
+### Milestone 4b — ACE-Step music-generation bridge · 🧪 Built offline ([Unreleased])
+
+A new generative-AI bridge in the Milestone 4 mold: a wrapper around the
+[ACE-Step](https://github.com/ace-step/ACE-Step) model (Apache-2.0,
+text/tags/lyrics → WAV) that users install themselves — never bundled. Same
+discipline as the rest of M4: every tool registers, is unit-tested offline, and
+degrades to a friendly `errorResult` when the model is absent. Everything is
+gated behind **`TDMCP_ACE_ENABLED` (default off)** so a fresh install is
+untouched. The contract is source-verified against `ace-step/ACE-Step@main`. Live
+generation, warm-cache/VRAM residency, GPU/TD coexistence, and the async
+round-trip stay **UNVERIFIED — probe live** until run against a real ACE server +
+GPU. Decision study: `_workspace/acestep-study/STUDY.md`.
+
+Honest framing from the study: on one machine/one consumer GPU this is an
+**offline / pre-render bed generator**, not a real-time AI jam — TD's render owns
+the GPU continuously and the model's ~24 GB peak contends with it. Design around
+"queue the next bed," not "jam live."
+
+- 🧪 `generate_music` (L3) — prompt/tags (+ optional `[verse]`/`[chorus]` lyrics,
+  duration, `manual_seeds`, `infer_step`, `guidance_scale`) → `{ wavPath, seconds,
+  seed }`. `mode: auto|sync|job` ships **inert** (stays sync until `TDMCP_ACE_RTF`
+  is calibrated; the sync branch returns `observed_rtf` to self-calibrate).
+- 🧪 `generate_music_reactive` (L1) — generates a bed and drops it into an
+  audio-reactive network by reusing the existing `create_audio_reactive`
+  `audio_source:"file"` seam.
+- 🧪 `submit_music_job` / `get_music_job` / `cancel_music_job` (L3) — async job
+  contract for long generations; cancel kills the worker subprocess to reclaim
+  VRAM. Backed by an additive `POST /jobs` on the tdmcp-owned warm-pipeline
+  FastAPI wrapper under `ace/`; the P0 `POST /generate` sync route stays frozen.
+- 🧪 `song_to_show` MCP prompt — guidance for turning a song idea into a generated
+  bed + reactive show.
+- 🧪 Infra: `src/ace-client/` (typed client mirroring the TD client) + `ace/`
+  wrapper + `TDMCP_ACE_*` config + optional `TDMCP_ACE_MODE=native` on-ramp
+  targeting ACE-Step's own `infer-api.py`. Per-call progress uses the SDK's
+  `extra` (`notifications/progress`, synthesized from real job state) with
+  `AbortSignal`→cancel; whether a client resets its tool-call timeout on progress
+  is client-dependent and itself UNVERIFIED.
+
 ### Milestone 5 — AI Show Director mixer scene arming · ⬜ Planned (design-stage)
 
 Still fully ⬜ — no `arm_mixer_scene` tool exists yet; all five rows below stay

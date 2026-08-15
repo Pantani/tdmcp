@@ -143,6 +143,7 @@ import { registerDetectTempo } from "./detectTempo.js";
 import { registerDriveStreamdiffusion } from "./driveStreamdiffusion.js";
 import { registerEnhanceBuild } from "./enhanceBuild.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
+import { registerGenerateMusicReactive } from "./generateMusicReactive.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportIsfShader } from "./importIsfShader.js";
 import { registerImportModel } from "./importModel.js";
@@ -345,6 +346,10 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVertexDisplacementMat,
   registerControlledDisorderGrid,
   registerCreateBlobTrace,
+  // ACE-Step P1 (2026-07-11) — song->show flagship tool. Disabled-by-default: the
+  // registrar early-returns unless the built context has `ctx.aceClient` (env OR
+  // config-file). Gating on the context, not process.env, covers the config path.
+  registerGenerateMusicReactive,
 ];
 
 // v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).
