@@ -1075,6 +1075,35 @@ path is the one validatable without a local GPU.
 - ✅ `create_llm_chain` (dotsimulate LOPs).
 - ✅ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
 
+### Milestone 4b — ACE-Step music-generation bridge · 🧪 Built offline ([Unreleased])
+
+A generative-AI bridge in the Milestone 4 mold: a client for the REST server of
+[ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) (MIT, text/tags/lyrics →
+audio), which users install themselves and tdmcp never bundles. Every tool
+registers, is unit-tested offline, and degrades to a friendly `errorResult` when
+the server is absent. Everything is gated behind **`TDMCP_ACE_ENABLED` (default
+off)**. The contract is source-verified against upstream's `acestep/api/http/*`.
+Live status and the probe runbook live in [the guide](guide/ace-step.md).
+
+Sharing one GPU with TD's render makes this a pre-render bed generator, not a
+real-time jam: design around "queue the next bed."
+
+- 🧪 `generate_music` (L3) — prompt/tags (+ optional `[verse]`/`[chorus]` lyrics,
+  duration, `seed`, `inference_steps`, `guidance_scale`) → `{ wavPath, seconds,
+  seed }`, downloaded to a local path TD can open. `mode: auto|sync|job` ships
+  **inert** (stays sync until `TDMCP_ACE_RTF` is calibrated; the sync branch
+  returns `observed_rtf` to calibrate it from).
+- 🧪 `generate_music_reactive` (L1) — generates a bed and drops it into an
+  audio-reactive network through the existing `create_audio_reactive`
+  `audio_source:"file"` seam.
+- 🧪 `submit_music_job` / `get_music_job` (L3) — async jobs on upstream's
+  `/release_task` + `/query_result`. No cancel tool: upstream has no cancel API.
+- 🧪 `song_to_show` MCP prompt — turns a song idea into a generated bed + reactive
+  show.
+- 🧪 Infra: `src/ace-client/` (typed client mirroring the TD client) + `TDMCP_ACE_*`
+  config. Per-call progress uses the SDK's `extra`; whether a client resets its
+  tool-call timeout on progress is client-dependent and UNVERIFIED.
+
 ### Milestone 5 — AI Show Director mixer scene arming · 🧪 Dry-run MVP shipped (v0.10.0); live backends ⬜
 
 The offline dry-run MVP shipped in v0.10.0. `arm_mixer_scene` is a Show Director

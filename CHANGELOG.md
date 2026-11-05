@@ -61,6 +61,30 @@ post-v0.13.1 mainline work below.
 
 ### Added
 
+- **ACE-Step 1.5 music generation (opt-in, off by default).** Turns a text/tags
+  prompt and optional `[verse]`/`[chorus]` lyrics into a WAV through a local
+  [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) API server that you
+  install yourself. Everything is gated behind `TDMCP_ACE_ENABLED` (default
+  **false**), so a fresh install registers none of it. See
+  [the guide](docs/guide/ace-step.md).
+  - `generate_music` (Layer 3) — returns `{ wavPath, seconds, seed }`, or a `job_id`
+    with `mode: "job"`. `mode: "auto"` stays blocking unless `TDMCP_ACE_RTF` is
+    calibrated, and blocking calls return `observed_rtf` to calibrate it from.
+  - `generate_music_reactive` (Layer 1) — generates a bed and builds an
+    audio-reactive network over it through `create_audio_reactive`.
+  - `submit_music_job` / `get_music_job` (Layer 3) — async jobs. The first poll
+    after completion downloads the audio into `TDMCP_ACE_OUTPUT_DIR`.
+  - `song_to_show` MCP prompt, and `music generate|reactive|submit|job` CLI verbs.
+  - MCP `notifications/progress` during generation, built from real job state and
+    elapsed time; `total` is omitted unless `TDMCP_ACE_RTF` is set.
+  - ACE-Step 1.5 has no cancel API, so a client abort or `TDMCP_ACE_TIMEOUT_MS`
+    only stops the waiting: the job keeps running on the server and can still be
+    collected with `get_music_job`.
+  - Internal: tool `…Impl` handlers can opt into the SDK's per-call `extra`
+    (`ToolExtra` in `src/tools/types.ts`), a type-only, backwards-compatible
+    addition; existing tools are unchanged.
+- **Authenticated one-request operation closure (Wave 16, unreleased source
+  tree)** — live QA on the isolated TouchDesigner 099 build 2025.32820 process
 - **Bounded live authored-code search** — added `search_td_code` and the
   structured `POST /api/code/search` bridge route for deterministic lexical
   discovery across DAT bodies and parameter expressions. Results use

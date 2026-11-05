@@ -178,6 +178,19 @@ export function isRagFeatureFlagEnabled(value: string | undefined): boolean {
   return normalized === "1" || normalized === "true";
 }
 
+/**
+ * Centralized "boolean-ish env" parser for the ACE-Step feature flag. Mirrors
+ * {@link isRagFeatureFlagEnabled}: config.ts (parsed config) and call sites that
+ * read env BEFORE config is built (tool registration, layer index, CLI) must
+ * agree on what counts as enabled — accept "1"/"true" (case-insensitive),
+ * trim whitespace; anything else → disabled.
+ */
+export function isAceFeatureFlagEnabled(value: string | undefined): boolean {
+  if (value === undefined || value === null) return false;
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === "1" || normalized === "true";
+}
+
 const RAG_INJECT_K_DEFAULT = 3;
 const RAG_INJECT_K_MAX = 5;
 const RAG_INJECT_TIMEOUT_MS_DEFAULT = 3000;
@@ -499,6 +512,39 @@ export const ConfigSchema = z.object({
   projectRagScoreWeights: z
     .preprocess(parseScoreWeights, ScoreWeightsSchema)
     .default({ technical: 0.45, license: 0.25, freshness: 0.15, reliability: 0.15 }),
+  /**
+   * Opt-in switch for the ACE-Step 1.5 music-generation feature (`generate_music`
+   * tools + `music` CLI verbs). Off by default; accepts "1"/"true"
+   * (case-insensitive) as true, "0"/"false"/"" as false. Tools register only when
+   * the built context has an ACE client, so env and config-file enablement match.
+   */
+  aceEnabled: z.preprocess(ragEnabledFlag, z.boolean().default(false)),
+  /** Host of the local ACE-Step 1.5 API server (`acestep-api`). */
+  aceHost: z.string().min(1).default("127.0.0.1"),
+  /** Port of the local ACE-Step 1.5 API server (upstream default 8001). */
+  acePort: z.coerce.number().int().positive().max(65535).default(8001),
+  /** Directory finished audio is downloaded into. Use an absolute path TD can read. */
+  aceOutputDir: z.string().min(1).default(".tdmcp/ace-output"),
+  /** Optional API key (upstream `ACESTEP_API_KEY`), sent as `Authorization: Bearer <token>`. */
+  aceToken: z.string().min(1).optional(),
+  /** Per-request timeout and blocking-generation deadline (ms); default 10 min. */
+  aceTimeoutMs: z.coerce.number().int().positive().default(600000),
+  /** Steps sent when the caller omits `inference_steps`. 8 suits turbo; base models want 32-64. */
+  aceDefaultSteps: z.coerce.number().int().positive().default(8),
+  /**
+   * In `mode:"auto"`, an estimated generation longer than this
+   * hands off to a background job instead of blocking the tool call.
+   */
+  aceSyncMaxSeconds: z.coerce.number().int().positive().default(120),
+  /**
+   * Real-time factor: wall-clock seconds of compute per second of audio, at
+   * `aceDefaultSteps`. **Operator-calibrated, no default** — run one
+   * `generate_music` and read `observed_rtf` off the result, then set this.
+   * Unset ⇒ no estimate ⇒ `mode:"auto"` stays sync (today's behavior).
+   */
+  aceRtf: z.coerce.number().positive().optional(),
+  /** Job-poll and progress-notification cadence (ms). */
+  acePollMs: z.coerce.number().int().positive().default(2000),
 });
 
 type ParsedConfig = z.infer<typeof ConfigSchema>;
@@ -636,6 +682,16 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     projectRagAnalyzeTimeoutMs: env.TDMCP_PROJECT_RAG_ANALYZE_TIMEOUT_MS || undefined,
     projectRagLicenseAllowlist: env.TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST || undefined,
     projectRagScoreWeights: env.TDMCP_PROJECT_RAG_SCORE_WEIGHTS || undefined,
+    aceEnabled: env.TDMCP_ACE_ENABLED,
+    aceHost: env.TDMCP_ACE_HOST || undefined,
+    acePort: env.TDMCP_ACE_PORT || undefined,
+    aceOutputDir: env.TDMCP_ACE_OUTPUT_DIR || undefined,
+    aceToken: env.TDMCP_ACE_TOKEN || undefined,
+    aceTimeoutMs: env.TDMCP_ACE_TIMEOUT_MS || undefined,
+    aceDefaultSteps: env.TDMCP_ACE_DEFAULT_STEPS || undefined,
+    aceSyncMaxSeconds: env.TDMCP_ACE_SYNC_MAX_SECONDS || undefined,
+    aceRtf: env.TDMCP_ACE_RTF || undefined,
+    acePollMs: env.TDMCP_ACE_POLL_MS || undefined,
   };
 }
 
@@ -835,6 +891,7 @@ const SECRET_KEYS: ReadonlyArray<keyof LoadedTdmcpConfig> = [
   "ragSmithsonianKey",
   "ragEuropeanaKey",
   "projectRagGhToken",
+  "aceToken",
 ];
 
 /** A copy of the config safe to print/share — secrets are masked. */
@@ -849,4 +906,9 @@ export function describeConfig(config: TdmcpConfig | LoadedTdmcpConfig): Record<
 /** Base URL for the TouchDesigner REST bridge. */
 export function tdBaseUrl(config: Pick<TdmcpConfig, "tdHost" | "tdPort">): string {
   return `http://${config.tdHost}:${config.tdPort}`;
+}
+
+/** Base URL for the local ACE-Step server. */
+export function aceBaseUrl(config: Pick<TdmcpConfig, "aceHost" | "acePort">): string {
+  return `http://${config.aceHost}:${config.acePort}`;
 }
