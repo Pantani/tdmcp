@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Enforces that tests/smoke/bridgeExecOff.baseline.json only shrinks in a PR.
+// Enforces that tests/smoke/bridgeExecOff.baseline.json only improves in a PR: its
+// exec-dependent lists may only shrink, and its `core` list may only grow.
 //
 // The vitest smoke compares tools against the committed baseline, so it cannot see
 // a PR that edits both a tool and its baseline entry. This compares the baseline to
@@ -30,6 +31,11 @@ export function baselineGrowth(baseJson, headJson) {
   for (const [tool, status] of statusByTool(headJson)) {
     const was = base.get(tool) ?? "clean";
     if (ORDER.indexOf(status) > ORDER.indexOf(was)) growth.push(`${tool}: ${was} -> ${status}`);
+  }
+  // The core set is the opposite ratchet: it may only grow.
+  const headCore = new Set(headJson.core ?? []);
+  for (const tool of baseJson.core ?? []) {
+    if (!headCore.has(tool)) growth.push(`${tool}: removed from core`);
   }
   return growth.sort();
 }

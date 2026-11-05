@@ -1,3 +1,5 @@
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -5,6 +7,8 @@ export default defineConfig({
     environment: "node",
     globals: true,
     include: ["tests/**/*.test.ts"],
+    // Tests must never write to the real ~/.tdmcp (the build log is on by default).
+    env: { HOME: join(tmpdir(), "tdmcp-vitest-home") },
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],

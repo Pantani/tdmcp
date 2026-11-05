@@ -41,7 +41,8 @@
         "TDMCP_TD_PORT": "${user_config.TDMCP_TD_PORT}",
         "TDMCP_BRIDGE_TOKEN": "${user_config.TDMCP_BRIDGE_TOKEN}",
         "TDMCP_RAW_PYTHON": "${user_config.TDMCP_RAW_PYTHON}",
-        "TDMCP_TOOL_PROFILE": "${user_config.TDMCP_TOOL_PROFILE}"
+        "TDMCP_TOOL_PROFILE": "${user_config.TDMCP_TOOL_PROFILE}",
+        "TDMCP_BUILD_LOG": "${user_config.TDMCP_BUILD_LOG}"
       }
     }
   },
@@ -80,9 +81,16 @@
     "TDMCP_TOOL_PROFILE": {
       "type": "string",
       "title": "Tool profile",
-      "description": "Use full for all tools, safe to hide destructive/raw-code tools, or directory for a compact registry-facing surface.",
+      "description": "Use full for all tools, safe to hide destructive/raw-code tools, directory for a compact registry-facing surface, or core for a small everyday set with the rest available through find_tool.",
       "required": false,
       "default": "full"
+    },
+    "TDMCP_BUILD_LOG": {
+      "type": "string",
+      "title": "Local build log",
+      "description": "Keep a private record of finished builds in ~/.tdmcp/builds on this machine. Use off to disable it.",
+      "required": false,
+      "default": "on"
     }
   }
 }

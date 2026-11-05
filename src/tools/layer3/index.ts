@@ -31,6 +31,7 @@ import { registerExportSopToSvg } from "./exportSopToSvg.js";
 import { registerExtractPalette } from "./extractPalette.js";
 import { registerFindTdNodes } from "./findTdNodes.js";
 import { registerFindTdParameters } from "./findTdParameters.js";
+import { registerFindTool } from "./findTool.js";
 import { registerGenerateReadme } from "./generateReadme.js";
 import { registerGetBridgeLogs } from "./getBridgeLogs.js";
 import { registerGetDatContent } from "./getDatContent.js";
@@ -193,4 +194,6 @@ export const layer3Registrars: ToolRegistrar[] = [
   // (patterns inspired by Derivative's official TouchDesigner TDMCP, Shared Use License):
   registerGetDatContent,
   registerGetParameterMenu,
+  // Discovery for the `core` tool profile:
+  registerFindTool,
 ];

@@ -1,5 +1,15 @@
 {
-  "_comment": "Layer 1/2 tools that are not exec-free under TDMCP_BRIDGE_ALLOW_EXEC=0, on their default path, against a mock. Any tool absent here must stay 'clean'. May only shrink: see tests/smoke/bridgeExecOff.test.ts and scripts/check-exec-off-baseline.mjs.",
+  "_comment": "Layer 1/2 exec-off results under TDMCP_BRIDGE_ALLOW_EXEC=0, on the default path, against a mock. `core` tools must stay clean or placement_only, and the list may only grow. The other lists may only shrink, and any tool absent from them must stay clean. See tests/smoke/bridgeExecOff.test.ts and scripts/check-exec-off-baseline.mjs.",
+  "core": [
+    "add_custom_parameters",
+    "batch_operations",
+    "connect_nodes",
+    "create_container",
+    "create_node_chain",
+    "duplicate_network",
+    "insert_operator_at_selection",
+    "set_parameters_batch"
+  ],
   "placement_only": [
     "apply_post_processing",
     "create_container",

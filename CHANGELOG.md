@@ -8,6 +8,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Local build log** — every build that goes through `finalize` (most Layer 1 tools)
+  is now recorded in `~/.tdmcp/builds/builds.jsonl`, with a preview image: tool and
+  arguments, node types and parameters, wiring, warnings and errors. This starts the
+  corpus for retrieving past projects; nothing reads it back yet. It is local, private
+  (`0600`), redacted, bounded, and never fails a build. **On by default**; set
+  `TDMCP_BUILD_LOG=off` to disable it. See also `TDMCP_BUILD_LOG_DIR` and
+  `TDMCP_BUILD_LOG_MAX_RECORDS`. Tools that bypass `finalize`, including the
+  `connect_*` scaffolds, are not recorded.
+- **`core` tool profile and `find_tool`** — `TDMCP_TOOL_PROFILE=core` lists about 60
+  everyday tools and keeps the rest disabled until the new `find_tool` enables them
+  (notifying the client through `tools/list_changed`). It saves context and is not a
+  security boundary: `safe` and `TDMCP_RAW_PYTHON=off` still remove tools outright.
+  The default stays `full`, so existing clients are unaffected.
+- **Tool API stability gate** — `npm run api:check` (new CI job and part of
+  `release:check`) fails when a change breaks the pinned surface in
+  `docs/reference/API_STABILITY.md`, compared with the committed
+  `api-surface/baseline.json`. An intentional break is accepted through a reviewed
+  entry in `api-surface/acknowledged-breaks.json`, and `npm run api:update` moves
+  the baseline at release.
 - **Exec-off CI smoke for G4** — a new `Bridge Exec OFF Smoke` job runs every
   Layer 1 and Layer 2 tool's default path against an msw bridge that refuses what
   a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge refuses, including code-bearing node
@@ -16,6 +35,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   are exec-free today, 290 are blocked), and a shared fixture holds the mock to the
   real Python router. This is an offline check: it does not cook anything, covers
   default paths only, and makes no claim about live TouchDesigner behavior.
+  The smoke enforces a named core set of eight network-building tools that must keep
+  building, and requires other tools to name the policy when it refuses their work.
+
+### Fixed
+
+- **Exec-off refusals no longer disappear inside composed tools** —
+  `moodboard_to_system` and `scaffold_vj_deck` now pass on warnings from the tools
+  they compose, and `connect_comfyui` reports why its `.tox` step failed instead of
+  always saying no candidates were found.
+
 ### Changed
 
 - **API stability clock restarted at v0.13.2 (roadmap G1)** — an audit of every
@@ -34,6 +63,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   configuration, marks the Milestone 5 dry-run MVP as shipped offline with its
   limits stated, closes the G5 per-arc guide item, and corrects stale
   Experimental claims. No live-evidence boundary is upgraded.
+
+### Fixed
+
+- **Flaky HTTP transport integration tests** — the suite no longer hardcodes
+  loopback ports, which could randomly fail CI with `EADDRINUSE`. It now allocates
+  free ports at runtime, reports a failed bridge bind immediately instead of as a
+  hook timeout, and cleans up after incomplete setup. Test code only.
 
 ### Security
 

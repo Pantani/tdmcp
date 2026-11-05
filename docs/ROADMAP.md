@@ -1303,15 +1303,20 @@ structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
   Previously a refused exec read as "not performing", so previews ran mid-show on
   exec-off bridges. `get_preview` is now clean in the smoke. Not yet validated against
   a live TouchDesigner.
-- ⬜ **Decision needed — this gate is not achievable as written.** The original
-  wording, "keep `/api/exec` working when `ALLOW_EXEC=0`: every Layer-1/Layer-2 tool
-  must build with exec disabled", conflicts with itself (the policy exists to refuse
-  `/api/exec`) and with the bullets above (exec callers "correctly stay on exec").
-  It also can't hold for tools whose purpose is caller code, because the bridge
-  refuses creating `glslTOP`, script and execute DAT operators, and writing DAT text,
-  whichever route is used. Reaching it would take new bridge endpoints for most of
-  the 290 blocked tools, plus a policy call on GLSL. Choose a 1.0 bar, for example a
-  named core set that must be clean, with the rest failing clearly.
+- 🧪 **The 1.0 bar is a named core set, not every tool (decided 2026-11-05).** The
+  original wording, "keep `/api/exec` working when `ALLOW_EXEC=0`: every
+  Layer-1/Layer-2 tool must build with exec disabled", conflicted with itself and
+  can't hold for tools whose purpose is caller code, because the bridge refuses
+  `glslTOP`, script and execute operators and DAT text writes on any route. The smoke
+  now enforces the replacement:
+  - The `core` list in the baseline must build, and may only grow: `create_node_chain`,
+    `connect_nodes`, `set_parameters_batch`, `batch_operations`, `duplicate_network`,
+    `add_custom_parameters`, `insert_operator_at_selection` and `create_container`.
+    Artist-level tools such as `apply_recipe` and `create_audio_reactive` are not in
+    it; adding them takes new endpoints, and a policy call on GLSL.
+  - Every other tool may fail, but must name the policy when it refuses work.
+- ⬜ Remaining before this gate closes: validate the core set and the Perform-mode
+  preview guard on a live exec-off bridge.
 - ✅ Resilience patch — atomic writes, clean HTTP listen failure, event-stream
   close — landed in v0.8.1.
 

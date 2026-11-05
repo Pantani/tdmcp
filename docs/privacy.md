@@ -10,9 +10,11 @@ _Last updated: 6 July 2026_
 
 ## Summary
 
-**tdmcp does not collect, store, or transmit any personal data.** It runs entirely
-on your own machine, requires no account or sign-in, and contains no telemetry or
-analytics. It sends nothing to the author or any third party.
+**tdmcp does not collect or transmit any personal data.** It runs entirely on your
+own machine, requires no account or sign-in, and contains no telemetry or analytics.
+It sends nothing to the author or any third party. The only thing it stores without
+being asked is a local build log on your own disk, described below, which you can
+turn off.
 
 ## What tdmcp is
 
@@ -55,6 +57,13 @@ source you chose. There is no other egress.
 Any files you ask tdmcp to write — recipes, presets, snapshots, or
 [vault](/reference/tools) exports — are saved to your own local disk and never
 uploaded anywhere.
+
+tdmcp also keeps a **local build log** in `~/.tdmcp/builds`: a private record of each
+network it finishes (tool name and arguments, node types and parameters, wiring,
+warnings, errors and a preview image), so your past work can be found again. It stays
+on your machine and is never sent anywhere. Secret-looking values are redacted before
+they are written, and only the newest 1,000 builds are kept. Set `TDMCP_BUILD_LOG=off`
+to turn it off, and delete that folder to remove what it recorded.
 
 ## Your AI client
 

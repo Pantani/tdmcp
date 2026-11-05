@@ -328,6 +328,8 @@ function checkTools(config: TdmcpConfig): DoctorCheck {
     locked.push("destructive/raw-code tools (TDMCP_TOOL_PROFILE=safe)");
   if (config.toolProfile === "directory")
     locked.push("non-directory tools (TDMCP_TOOL_PROFILE=directory)");
+  if (config.toolProfile === "core")
+    locked.push("non-core tools until find_tool enables them (TDMCP_TOOL_PROFILE=core)");
   return {
     id: "tools",
     title: "Tool exposure",

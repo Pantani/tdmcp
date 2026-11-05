@@ -1,5 +1,6 @@
 import os from "node:os";
 import path from "node:path";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
@@ -352,6 +353,42 @@ const TOX_EXPECTED_PARS = [
 // ---------------------------------------------------------------------------
 // Impl
 // ---------------------------------------------------------------------------
+interface ToxDropProbe {
+  modeResolved: "tox_drop" | "webclient";
+  loadedContainerPath?: string;
+  toxDropFailure: string;
+}
+
+/** Tries the .tox strategy when the mode allows it, keeping the reason if it fails. */
+async function probeToxDrop(
+  ctx: ToolContext,
+  args: ConnectComfyuiArgs,
+): Promise<ToxDropProbe | { fatal: CallToolResult }> {
+  const noDrop: ToxDropProbe = {
+    modeResolved: "webclient",
+    toxDropFailure: "tox candidates not found",
+  };
+  if (args.mode !== "auto" && args.mode !== "tox_drop") return noDrop;
+  const drop = await dropExternalTox(ctx, {
+    parent_path: args.parent_path,
+    candidate_paths: toxCandidates(args.tox_path),
+    expected_custom_pars: Array.from(TOX_EXPECTED_PARS),
+    on_missing: "warn",
+  });
+  if ("ok" in drop) {
+    return {
+      ...noDrop,
+      modeResolved: "tox_drop",
+      loadedContainerPath: drop.ok.container_path,
+    };
+  }
+  // Forced tox_drop and it failed — surface the helper's error directly.
+  if (args.mode === "tox_drop") return { fatal: drop.error };
+  // auto + drop failed → continue to webclient, keeping the reason for the error below.
+  const reason = drop.error.content.find((part) => part.type === "text");
+  return reason?.type === "text" ? { ...noDrop, toxDropFailure: reason.text } : noDrop;
+}
+
 export async function connectComfyuiImpl(ctx: ToolContext, args: ConnectComfyuiArgs) {
   const containerName = args.name ?? "comfyui";
 
@@ -363,31 +400,14 @@ export async function connectComfyuiImpl(ctx: ToolContext, args: ConnectComfyuiA
   }
 
   // --- tox_drop probe (runs outside guardTd so we can return early on forced failure) ---
-  let modeResolved: "tox_drop" | "webclient" = "webclient";
-  let loadedContainerPath: string | undefined;
-
-  if (args.mode === "auto" || args.mode === "tox_drop") {
-    const candidates = toxCandidates(args.tox_path);
-    const drop = await dropExternalTox(ctx, {
-      parent_path: args.parent_path,
-      candidate_paths: candidates,
-      expected_custom_pars: Array.from(TOX_EXPECTED_PARS),
-      on_missing: "warn",
-    });
-    if ("ok" in drop) {
-      modeResolved = "tox_drop";
-      loadedContainerPath = drop.ok.container_path;
-    } else if (args.mode === "tox_drop") {
-      // Forced tox_drop and it failed — surface the helper's error directly.
-      return drop.error;
-    }
-    // auto + drop failed → continue to webclient
-  }
+  const probe = await probeToxDrop(ctx, args);
+  if ("fatal" in probe) return probe.fatal;
+  const { modeResolved, loadedContainerPath, toxDropFailure } = probe;
 
   // webclient auto-fallback also needs workflow_json_path.
   if (modeResolved === "webclient" && !args.workflow_json_path) {
     return errorResult(
-      "Both ComfyUI strategies failed: tox candidates not found AND webclient mode requires workflow_json_path.",
+      `Both ComfyUI strategies failed: ${toxDropFailure} AND webclient mode requires workflow_json_path.`,
     );
   }
 

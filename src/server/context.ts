@@ -1,3 +1,4 @@
+import { createBuildRecorder } from "../builds/buildLog.js";
 import {
   type CreativeRagService,
   createCreativeRagService,
@@ -66,7 +67,18 @@ export function buildToolContext(
     vault,
     allowRawPython: config.rawPython !== "off",
     yolo: config.yolo,
-    toolProfile: config.toolProfile,
+    // `core` exposes what `full` does, just not all of it up front.
+    toolProfile: config.toolProfile === "core" ? "full" : config.toolProfile,
+    ...(config.toolProfile === "core" ? { deferNonCoreTools: true } : {}),
+    ...(config.buildLog === "on"
+      ? {
+          buildLog: createBuildRecorder({
+            ...(config.buildLogDir !== undefined ? { dir: config.buildLogDir } : {}),
+            maxRecords: config.buildLogMaxRecords,
+            logger,
+          }),
+        }
+      : {}),
     projectRoot: config.projectRoot,
     copilotReceipts: config.copilotReceipts,
     copilotReceiptsPath: config.copilotReceiptsPath,
