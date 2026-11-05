@@ -770,7 +770,7 @@ export const AGENT_COMMAND_CATALOG = [
   {
     command: "create-ai-video-backdrop",
     summary:
-      "Prompt → a fully wired AI-generated video-backdrop system (movie/level/transform + Play/Speed/Brightness/Scale).",
+      "Prompt → a fully wired AI-generated video-backdrop system (movie/level/transform/blur + Play/Speed/Brightness/Scale/Blur).",
     mutates: true,
     unsafe: false,
     source: "tool",
