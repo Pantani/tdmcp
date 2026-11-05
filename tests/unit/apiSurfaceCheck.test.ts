@@ -11,11 +11,14 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // End-to-end through the real CLI against a miniature project, so extraction,
 // baseline, acknowledgements and exit codes are tested together.
 const REPO = process.cwd();
+
+// Each case spawns tsx several times, which is slow while the whole suite is running.
+vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 let root: string;
 
@@ -127,7 +130,7 @@ describe("api-surface check", () => {
     expect(output).toContain("ToolContext.logger field-removed");
   });
 
-  it("sees a superRefine and a shared schema on every field that uses it", () => {
+  it("sees a superRefine added to an existing field but not one on a new field", () => {
     writeRegistry(
       `name: shared, other: shared, limit: z.number().max(100).default(10)`,
       `const shared = z.string().superRefine((value, ctx) => {
@@ -138,18 +141,26 @@ describe("api-surface check", () => {
     expect(code).toBe(1);
     expect(output).toContain("demo.name refinement-added");
     expect(output).not.toContain("demo.other refinement-added");
+  });
 
-    writeFileSync(acksPath(), JSON.stringify({ acknowledged: [], history: [] }));
-    rmSync(baselinePath());
+  it("reports a shared refined schema on every field that uses it", () => {
+    writeRegistry(
+      `name: shared, limit: z.number().max(100).default(10)`,
+      `const shared = z.string().refine((value) => value !== "x");`,
+    );
+    const first = run();
+    expect(first.output).toContain("demo.name refinement-added");
+
     writeRegistry(`name: z.string(), other: z.string()`);
+    rmSync(baselinePath());
     expect(run("--update-baseline").code).toBe(0);
     writeRegistry(
       `name: shared, other: shared`,
       `const shared = z.string().refine((value) => value !== "x");`,
     );
-    const shared = run();
-    expect(shared.output).toContain("demo.name refinement-added");
-    expect(shared.output).toContain("demo.other refinement-added");
+    const { output } = run();
+    expect(output).toContain("demo.name refinement-added");
+    expect(output).toContain("demo.other refinement-added");
   });
 
   it("does not depend on the environment of whoever runs it", () => {
