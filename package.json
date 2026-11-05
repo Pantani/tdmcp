@@ -128,10 +128,10 @@
     "derivative"
   ],
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.30.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "express": "5.2.1",
     "yaml": "^2.9.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
     "@lancedb/lancedb": "^0.30.0",
