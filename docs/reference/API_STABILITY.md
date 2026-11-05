@@ -49,6 +49,9 @@ optional dependency is absent.
 | `server?` | no | The live `McpServer`, assigned before registration so a few tools can introspect the registry. |
 | `creativeRag?` | no | Optional local Creative RAG service (`TDMCP_RAG_ENABLED=1`); backs read-only `tdmcp://creative/*` resources only. |
 | `projectRag?` | no | Optional local Project RAG service (`TDMCP_RAG_ENABLED=1 && TDMCP_PROJECT_RAG_ENABLED=1`); backs read-only `tdmcp://project/*` resources only. |
+| `deferNonCoreTools?` | no | Set by `TDMCP_TOOL_PROFILE=core`: every tool is registered as under `full`, but only an everyday set is listed until `find_tool` enables the rest. |
+| `toolCatalog?` | no | Every tool registered on this server, filled in during registration; backs `find_tool`. |
+| `buildLog?` | no | Local build log (`TDMCP_BUILD_LOG`); `undefined` when off. `finalize` writes to it. |
 
 This table is descriptive, not the source of truth — `src/tools/types.ts` is.
 The stability **rule** below is what is pinned, not this exact field list (the

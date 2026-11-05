@@ -1,4 +1,5 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer, RegisteredTool } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { BuildRecorder } from "../builds/buildLog.js";
 import type { CreativeRagService } from "../creativeRag/index.js";
 import type { KnowledgeBase } from "../knowledge/index.js";
 import type { LlmClientLike } from "../llm/client.js";
@@ -35,6 +36,18 @@ export interface ToolContext {
    * Undefined means `"full"` (the default).
    */
   toolProfile?: "full" | "safe" | "directory";
+  /**
+   * Set by `TDMCP_TOOL_PROFILE=core`: register every tool as `full` does, but list only
+   * an everyday set and keep the rest disabled until `find_tool` enables them.
+   */
+  deferNonCoreTools?: boolean;
+  /**
+   * Every tool registered on this server, including those the `core` profile keeps
+   * disabled until `find_tool` enables them. Filled in during registration.
+   */
+  toolCatalog?: Map<string, RegisteredTool>;
+  /** Local build log (`TDMCP_BUILD_LOG`); undefined when off. `finalize` writes to it. */
+  buildLog?: BuildRecorder;
   /** Effective project root from env, config file, or selected profile. */
   projectRoot?: string;
   /** Effective local-copilot receipt policy from the loaded config. */

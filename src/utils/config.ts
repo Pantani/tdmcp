@@ -281,10 +281,17 @@ export const ConfigSchema = z.object({
    * additionally hides the destructive/raw-code tools (a superset of
    * TDMCP_RAW_PYTHON=off) so an autonomous in-TD agent (e.g. via LOPs) gets a
    * curated, non-destructive surface; `directory` exposes only a compact
-   * registry-facing build/inspect set. Default `full` keeps existing clients
-   * unaffected.
+   * registry-facing build/inspect set; `core` lists a small everyday set and keeps
+   * the rest reachable through `find_tool` (a context saving, not a security
+   * boundary). Default `full` keeps existing clients unaffected.
    */
-  toolProfile: z.enum(["full", "safe", "directory"]).default("full"),
+  toolProfile: z.enum(["full", "safe", "directory", "core"]).default("full"),
+  /** Local record of finished builds, read back by project retrieval. `off` disables it. */
+  buildLog: z.enum(["on", "off"]).default("on"),
+  /** Build log directory. Defaults to `~/.tdmcp/builds`. */
+  buildLogDir: z.string().min(1).optional(),
+  /** Newest build records to keep; older records and their previews are deleted. */
+  buildLogMaxRecords: z.coerce.number().int().min(1).max(100_000).default(1000),
   /**
    * Optional shared bearer token for the TD bridge. When set, the server sends it
    * as `Authorization: Bearer <token>` and the bridge requires a match. Leave unset
@@ -577,6 +584,9 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     rawPython: env.TDMCP_RAW_PYTHON,
     yolo: env.TDMCP_YOLO,
     toolProfile: env.TDMCP_TOOL_PROFILE,
+    buildLog: env.TDMCP_BUILD_LOG || undefined,
+    buildLogDir: env.TDMCP_BUILD_LOG_DIR || undefined,
+    buildLogMaxRecords: env.TDMCP_BUILD_LOG_MAX_RECORDS || undefined,
     bridgeToken: env.TDMCP_BRIDGE_TOKEN || undefined,
     httpAuthToken: env.TDMCP_HTTP_AUTH_TOKEN || undefined,
     publicBaseUrl: env.TDMCP_PUBLIC_BASE_URL || undefined,

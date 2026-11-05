@@ -8,6 +8,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Local build log** — every build that goes through `finalize` (most Layer 1 tools)
+  is now recorded in `~/.tdmcp/builds/builds.jsonl`, with a preview image: tool and
+  arguments, node types and parameters, wiring, warnings and errors. This starts the
+  corpus for retrieving past projects; nothing reads it back yet. It is local, private
+  (`0600`), redacted, bounded, and never fails a build. **On by default**; set
+  `TDMCP_BUILD_LOG=off` to disable it. See also `TDMCP_BUILD_LOG_DIR` and
+  `TDMCP_BUILD_LOG_MAX_RECORDS`. Tools that bypass `finalize`, including the
+  `connect_*` scaffolds, are not recorded.
+- **`core` tool profile and `find_tool`** — `TDMCP_TOOL_PROFILE=core` lists about 60
+  everyday tools and keeps the rest disabled until the new `find_tool` enables them
+  (notifying the client through `tools/list_changed`). It saves context and is not a
+  security boundary: `safe` and `TDMCP_RAW_PYTHON=off` still remove tools outright.
+  The default stays `full`, so existing clients are unaffected.
 - **Tool API stability gate** — `npm run api:check` (new CI job and part of
   `release:check`) fails when a change breaks the pinned surface in
   `docs/reference/API_STABILITY.md`, compared with the committed

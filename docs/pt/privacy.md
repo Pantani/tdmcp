@@ -10,9 +10,11 @@ _Última atualização: 6 de julho de 2026_
 
 ## Resumo
 
-**O tdmcp não coleta, armazena nem transmite nenhum dado pessoal.** Ele roda
-inteiramente na sua própria máquina, não exige conta nem login, e não tem
-telemetria nem análise. Não envia nada para o autor nem para terceiros.
+**O tdmcp não coleta nem transmite nenhum dado pessoal.** Ele roda inteiramente na
+sua própria máquina, não exige conta nem login, e não tem telemetria nem análise.
+Não envia nada para o autor nem para terceiros. A única coisa que ele guarda sem você
+pedir é um registro local de builds no seu próprio disco, descrito abaixo, que você
+pode desligar.
 
 ## O que é o tdmcp
 
@@ -57,6 +59,15 @@ pediu, da fonte que você escolheu. Não há nenhuma outra saída de dados.
 Quaisquer arquivos que você pedir para o tdmcp gravar — receitas, presets,
 snapshots ou exportações para o [vault](/reference/tools) — são salvos no seu
 próprio disco local e nunca são enviados para lugar nenhum.
+
+O tdmcp também mantém um **registro local de builds** em `~/.tdmcp/builds`: um
+histórico privado de cada rede que ele termina (nome e argumentos da ferramenta, tipos
+e parâmetros dos nós, conexões, avisos, erros e uma imagem de preview), para que seu
+trabalho anterior possa ser encontrado de novo. Ele fica na sua máquina e nunca é
+enviado para lugar nenhum. Valores que parecem segredos são mascarados antes da
+gravação, e só os 1.000 builds mais recentes são mantidos. Defina
+`TDMCP_BUILD_LOG=off` para desligar, e apague essa pasta para remover o que foi
+registrado.
 
 ## Seu cliente de IA
 
