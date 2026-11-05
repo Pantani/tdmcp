@@ -104,6 +104,28 @@ rehearsal POC used by `npm run ai-party:*`.
 | `HARDWARE_ENABLED` | `false` | Future-adapter gate for physical-effect dispatch. Leave false for local rehearsal. |
 | `DMX_LIVE_ENABLED` | `false` | Future-adapter gate for DMX/live physical dispatch. Leave false unless a venue-safe adapter and kill path have been validated. |
 
+## AI media generation
+
+Generate ahead, then play back live: these power `create_ai_texture`,
+`create_ai_backdrop`, `create_ai_video` and `create_ai_video_backdrop`. They stay in
+Node and are never sent to the TouchDesigner bridge. Hosted providers are billed per
+generation; the local ComfyUI path needs a GPU and the workflow in
+[`assets/comfyui/`](https://github.com/Pantani/tdmcp/tree/main/assets/comfyui).
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `TDMCP_IMAGE_GEN_PROVIDER` | `none` | Image provider: `fal` or `none`. `replicate` is accepted but not implemented yet, so it leaves generation disabled. |
+| `TDMCP_IMAGE_GEN_MODEL` | `fal-ai/flux/schnell` | Default image model when a call omits `model`. |
+| `TDMCP_IMAGE_CACHE_DIR` | `.tdmcp/image-gen` | Where generated images are cached. Safe to clear. |
+| `TDMCP_VIDEO_GEN_PROVIDER` | `none` | Video provider: `comfyui` (local, no per-generation cost), `fal` (hosted, paid) or `none`. |
+| `TDMCP_VIDEO_GEN_MODEL` | `ltx-video` | Default video model when a call omits `model`. On `fal`, a value other than `ltx-video` or `ltx-2` is used as a raw fal model slug. |
+| `TDMCP_VIDEO_CACHE_DIR` | `.tdmcp/video-gen` | Where generated clips are cached. Safe to clear. |
+| `TDMCP_VIDEO_GEN_TIMEOUT_MS` | `600000` | Time limit for one video generation, in milliseconds. |
+| `TDMCP_COMFYUI_URL` | `http://127.0.0.1:8188` | ComfyUI server used by the `comfyui` video provider. |
+| `TDMCP_COMFYUI_VIDEO_WORKFLOW` | _(unset)_ | Absolute path to a ComfyUI workflow exported with **Save (API Format)**. Required for `comfyui`. |
+| `TDMCP_FAL_KEY` | _(unset)_ | fal.ai API key. Required for `fal`. Treat it as a secret: `doctor` and `config --write-env` redact it. |
+| `TDMCP_REPLICATE_KEY` | _(unset)_ | Reserved for the future Replicate provider. Also redacted. |
+
 ## TouchDesigner side
 
 Set these in **TouchDesigner's** environment (not the server's) for defense in

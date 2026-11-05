@@ -110,8 +110,10 @@ export async function createAiBackdropImpl(
   const { cachePath, image } = gen.value;
   // Cache-aware try/catch (NOT plain runBuild): a hard bridge failure after the
   // image is on disk must still cite the cache path so the asset is never lost.
+  let containerPath: string | undefined;
   try {
     const builder = await createSystemContainer(ctx, args.parent_path, "ai_backdrop");
+    containerPath = builder.containerPath;
     const src = await builder.add("moviefileinTOP", "backdrop", { file: cachePath, play: 1 });
     const level = await builder.add("levelTOP", "grade", { brightness1: args.brightness });
     const xform = await builder.add("transformTOP", "frame", { sx: args.scale, sy: args.scale });
@@ -166,6 +168,8 @@ export async function createAiBackdropImpl(
       },
     });
   } catch (err) {
+    // Best-effort: a failed build must not leave a broken graph behind.
+    if (containerPath) await ctx.client.deleteNode(containerPath).catch(() => undefined);
     return errorResult(
       `Image generated and cached at ${cachePath}, but building the backdrop network failed: ${friendlyTdError(err)}.`,
       { cache_path: cachePath },

@@ -3440,7 +3440,7 @@ const COMMANDS: Record<string, Command> = {
   "create-ai-video-backdrop": r(
     createAiVideoBackdropSchema,
     createAiVideoBackdropImpl,
-    "Prompt → a fully wired AI-generated video-backdrop system (movie/level/transform + Play/Speed/Brightness/Scale).",
+    "Prompt → a fully wired AI-generated video-backdrop system (movie/level/transform/blur + Play/Speed/Brightness/Scale/Blur).",
     { mutates: true },
   ),
   "evolve-parameters": r(

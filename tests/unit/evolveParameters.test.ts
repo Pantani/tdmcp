@@ -175,15 +175,20 @@ describe("evolveParametersImpl — evolution loop", () => {
     expect(a.best_fitness).toEqual(b.best_fitness);
   });
 
-  it("scores an unresolved fitness_target_path as -Infinity with a warning, never throwing", async () => {
+  it("reports an error instead of a winner when no candidate can be scored", async () => {
     const fake = makeFake();
     const result = await evolveParametersImpl(
       makeCtx(fake),
       baseArgs({ fitness_target_path: "does_not_exist", population: 3, generations: 2 }),
     );
-    // Best is still defined (all -Infinity), so the winner is rebuilt — not an error.
-    expect(result.isError).toBeFalsy();
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("no candidate could be scored");
     expect(textOf(result)).toContain("did not resolve");
+    // Stops after the failed first generation: 3 candidates, not 6, and no winner rebuilt.
+    expect(fake.createNode.mock.calls.some(([input]) => input.name === "evolve_winner")).toBe(
+      false,
+    );
+    expect(textOf(result)).toMatch(/"evaluated":\s*3/);
   });
 
   it.each([
@@ -209,6 +214,19 @@ describe("evolveParametersImpl — evolution loop", () => {
       baseArgs({ population: 2, generations: 1 }),
     );
     expect(result.isError).toBeFalsy();
+  });
+
+  it("explains the exec requirement when an exec-off bridge refuses audio_energy", async () => {
+    const fake = makeFake();
+    (fake.client.executePythonScript as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("exec disabled"),
+    );
+    const result = await evolveParametersImpl(
+      makeCtx(fake),
+      baseArgs({ population: 2, generations: 2 }),
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("TDMCP_BRIDGE_ALLOW_EXEC=1");
   });
 
   it("surfaces a mid-loop client failure as a friendly result, not an exception", async () => {

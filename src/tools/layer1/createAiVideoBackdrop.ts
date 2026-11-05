@@ -3,6 +3,7 @@ import { z } from "zod";
 import { friendlyTdError } from "../../td-client/types.js";
 import {
   checkProvider,
+  checkVideoModel,
   generateVideoToCache,
   refineVideoModel,
   toVideoRequest,
@@ -128,7 +129,7 @@ export async function createAiVideoBackdropImpl(
   ctx: VideoToolContext,
   args: CreateAiVideoBackdropArgs,
 ): Promise<CallToolResult> {
-  const mismatch = checkProvider(ctx, args.provider);
+  const mismatch = checkProvider(ctx, args.provider) ?? checkVideoModel(ctx, args);
   if (mismatch) return mismatch;
   // Same generation code path as create_ai_video — one clip, cached to disk BEFORE
   // any TD call. A missing provider returns here with NO TD call (builds nothing).
@@ -138,8 +139,10 @@ export async function createAiVideoBackdropImpl(
   const { cachePath, video } = gen.value;
   // Cache-aware try/catch (NOT plain runBuild): a hard bridge failure after the
   // clip is on disk must still cite the cache path so the asset is never lost.
+  let containerPath: string | undefined;
   try {
     const builder = await createSystemContainer(ctx, args.parent_path, "ai_video");
+    containerPath = builder.containerPath;
     const clip = await builder.add("moviefileinTOP", "clip", {
       file: cachePath,
       play: args.play ? 1 : 0,
@@ -170,6 +173,8 @@ export async function createAiVideoBackdropImpl(
       },
     });
   } catch (err) {
+    // Best-effort: a failed build must not leave a broken graph behind.
+    if (containerPath) await ctx.client.deleteNode(containerPath).catch(() => undefined);
     return errorResult(
       `Video generated and cached at ${cachePath}, but building the backdrop network failed: ${friendlyTdError(err)}.`,
       { cache_path: cachePath },
@@ -191,6 +196,11 @@ export const registerCreateAiVideoBackdrop: ToolRegistrar = (server, ctx) => {
       inputSchema: createAiVideoBackdropInputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    (args) => createAiVideoBackdropImpl(ctx, createAiVideoBackdropSchema.parse(args)),
+    (args) => {
+      const parsed = createAiVideoBackdropSchema.safeParse(args);
+      if (!parsed.success)
+        return errorResult(`create_ai_video_backdrop: ${z.prettifyError(parsed.error)}`);
+      return createAiVideoBackdropImpl(ctx, parsed.data);
+    },
   );
 };

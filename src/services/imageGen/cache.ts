@@ -51,8 +51,9 @@ export async function findCachedImage(cacheDir: string, key: string): Promise<st
     try {
       await access(candidate);
       return candidate;
-    } catch {
-      // not this extension — try the next
+    } catch (err) {
+      // A missing file is a miss; permission and I/O failures must surface.
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
     }
   }
   return undefined;

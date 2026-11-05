@@ -69,6 +69,12 @@ export type CreateAiTextureArgs = z.infer<typeof createAiTextureSchema>;
 // ---------------------------------------------------------------------------
 
 /** The outcome of generating (or cache-reusing) one image, before any TD delivery. */
+const DEFAULT_IMAGE_CACHE_DIR = ".tdmcp/image-gen";
+
+type TextureGenerationOutcome =
+  | { ok: true; value: TextureGeneration }
+  | { ok: false; error: CallToolResult };
+
 export interface TextureGeneration {
   /** Absolute path to the cached image on disk. */
   cachePath: string;
@@ -103,7 +109,23 @@ function mimeFromPath(filePath: string): string {
 export async function generateTextureToCache(
   ctx: ToolContext,
   req: ImageGenRequest,
-): Promise<{ ok: true; value: TextureGeneration } | { ok: false; error: CallToolResult }> {
+): Promise<TextureGenerationOutcome> {
+  try {
+    return await generateThroughCache(ctx, req);
+  } catch (err) {
+    return {
+      ok: false,
+      error: errorResult(
+        `Image cache at ${ctx.imageCacheDir ?? DEFAULT_IMAGE_CACHE_DIR} failed: ${(err as Error).message} — the network was not built.`,
+      ),
+    };
+  }
+}
+
+async function generateThroughCache(
+  ctx: ToolContext,
+  req: ImageGenRequest,
+): Promise<TextureGenerationOutcome> {
   if (!ctx.imageGen) {
     return {
       ok: false,
@@ -114,7 +136,7 @@ export async function generateTextureToCache(
   }
 
   const model = req.model ?? ctx.imageGen.defaultModel;
-  const cacheDir = ctx.imageCacheDir ?? ".tdmcp/image-gen";
+  const cacheDir = ctx.imageCacheDir ?? DEFAULT_IMAGE_CACHE_DIR;
   const cacheKey = imageCacheKey(req, ctx.imageGen.id, model);
 
   const hit = await findCachedImage(cacheDir, cacheKey);
@@ -182,6 +204,7 @@ export async function createAiTextureImpl(
       type: "moviefileinTOP",
       name: args.name,
       parameters: { file: cachePath, play: args.play ? 1 : 0 },
+      placement: "auto",
     });
 
     let previewBase64: string | undefined;

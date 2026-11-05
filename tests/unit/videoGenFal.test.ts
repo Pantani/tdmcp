@@ -56,6 +56,14 @@ function mockQueue(result: FalResultBody, capturedSlug?: { slug?: string; input?
 }
 
 describe("FalVideoProvider queue path", () => {
+  it("passes an unknown model through as a raw fal slug", async () => {
+    const cap: { slug?: string; input?: unknown } = {};
+    mockQueue({ video: { url: CLIP } }, cap);
+
+    await provider().generate(baseReq({ model: "fal-ai/custom/model" }));
+    expect(cap.slug).toBe("fal-ai/custom/model");
+  });
+
   it("text-to-video: resolves the t2v slug and returns clip bytes + flat cost", async () => {
     const cap: { slug?: string; input?: unknown } = {};
     mockQueue({ video: { url: CLIP }, seed: 7 }, cap);

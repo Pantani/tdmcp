@@ -104,6 +104,8 @@ export interface ToolContext {
    * Node, never threaded to the TD bridge.
    */
   videoGen?: VideoGenProvider;
+  /** `TDMCP_VIDEO_GEN_TIMEOUT_MS`: per-generation abort budget; undefined uses the default. */
+  videoGenTimeoutMs?: number;
   /**
    * Cache dir for generated clips (`config.videoCacheDir`). Set together with
    * `videoGen`. The generation helper writes the clip here (absolute path) BEFORE

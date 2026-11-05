@@ -43,9 +43,9 @@ export const evolveParametersSchema = z.object({
     ),
   fitness: z
     .enum(["audio_energy", "top_luma", "top_motion"])
-    .default("audio_energy")
+    .default("top_luma")
     .describe(
-      "audio_energy = Info-CHOP channel energy (default, cheapest); top_luma = mean preview luma; top_motion = frame-delta luma.",
+      "top_luma = mean preview luma (default; works on a default bridge). audio_energy = Info-CHOP channel energy and top_motion = per-pixel frame difference both need TDMCP_BRIDGE_ALLOW_EXEC=1 in TouchDesigner.",
     ),
   fitness_target_path: z
     .string()
@@ -147,7 +147,7 @@ async function scoreCandidate(
     if (args.fitness === "top_motion") {
       const motion = await topMotion(ctx.client, scorePath, args.frame_gap);
       warnings.push(...motion.warnings);
-      return motion.delta;
+      return motion.delta ?? Number.NEGATIVE_INFINITY;
     }
     return await scoreAudioEnergy(ctx, scorePath);
   } catch (err) {
@@ -179,7 +179,8 @@ async function evaluateCandidate(
   const { builder, outputPath } = await buildFromRecipe(ctx, recipe, scratchPath, name);
   try {
     await applyGenome(builder, genome, warnings);
-    await forceCook(ctx, outputPath, warnings);
+    // Capturing a preview pulls a cook itself, so top_luma stays exec-free.
+    if (args.fitness !== "top_luma") await forceCook(ctx, outputPath, warnings);
     const scorePath = builder.pathOf(args.fitness_target_path);
     if (!scorePath) {
       warnings.push(
@@ -252,6 +253,12 @@ async function scoreGeneration(
   return scored;
 }
 
+function fittest(current: Scored | undefined, scored: readonly Scored[]): Scored | undefined {
+  let best = current;
+  for (const s of scored) if (!best || s.fitness > best.fitness) best = s;
+  return best;
+}
+
 async function runEvolution(
   ctx: ToolContext,
   args: EvolveParametersArgs,
@@ -285,14 +292,16 @@ async function runEvolution(
         warnings,
       );
       evaluated += scored.length;
-      for (const s of scored) if (!best || s.fitness > best.fitness) best = s;
+      best = fittest(best, scored);
+      // A whole failed generation means the fitness cannot be read; stop building candidates.
+      if (!scored.some((s) => Number.isFinite(s.fitness))) break;
       population = nextGeneration(scored, args.genes, opts, rng);
     }
-    if (!best) {
-      return errorResult("evolve_parameters: no candidate could be scored; nothing to rebuild.", {
-        evaluated,
-        warnings,
-      });
+    if (!best || !Number.isFinite(best.fitness)) {
+      return errorResult(
+        `evolve_parameters: no candidate could be scored with fitness "${args.fitness}", so nothing was rebuilt. audio_energy and top_motion need TDMCP_BRIDGE_ALLOW_EXEC=1 in TouchDesigner; top_luma does not.`,
+        { evaluated, warnings: warnings.slice(0, 10) },
+      );
     }
     return await rebuildWinner(ctx, args, recipe, best, evaluated, warnings);
   } finally {

@@ -4,12 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildToolContext } from "../../src/server/context.js";
 import type { VideoGenProvider } from "../../src/services/videoGen/types.js";
 import {
   type CreateAiVideoBackdropArgs,
   createAiVideoBackdropImpl,
+  createAiVideoBackdropSchema,
 } from "../../src/tools/layer1/createAiVideoBackdrop.js";
 import type { VideoToolContext } from "../../src/tools/layer2/createAiVideo.js";
 import { loadConfig } from "../../src/utils/config.js";
@@ -207,5 +208,22 @@ describe("create_ai_video_backdrop", () => {
     const cachePath = jsonBlock(textOf(result)).cache_path as string;
     expect(existsSync(cachePath)).toBe(true);
     expect(cachePath.startsWith(cacheDir)).toBe(true);
+  });
+
+  it("deletes the partially built container when a later step fails", async () => {
+    const ctx = videoCtx(await freshCacheDir(), fakeProvider());
+    const createNode = vi.spyOn(ctx.client, "createNode");
+    createNode.mockResolvedValueOnce({
+      path: "/project1/ai_video",
+      type: "baseCOMP",
+      name: "ai_video",
+    } as never);
+    createNode.mockRejectedValueOnce(new Error("bridge went away"));
+    const deleteNode = vi.spyOn(ctx.client, "deleteNode").mockResolvedValue({} as never);
+
+    const args = createAiVideoBackdropSchema.parse({ prompt: "x" });
+    const result = await createAiVideoBackdropImpl(ctx, args);
+    expect(result.isError).toBe(true);
+    expect(deleteNode).toHaveBeenCalledWith("/project1/ai_video");
   });
 });

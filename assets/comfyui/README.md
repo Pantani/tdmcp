@@ -31,6 +31,8 @@ This folder ships a matching workflow: [`ltx-video-t2v.api.json`](./ltx-video-t2
 ```bash
 export TDMCP_VIDEO_GEN_PROVIDER=comfyui
 export TDMCP_COMFYUI_URL=http://127.0.0.1:8188          # default; override if remote
+# In a repo checkout: <repo>/assets/comfyui/...
+# In an npm install:  $(npm root -g)/@dpantani/tdmcp/assets/comfyui/...
 export TDMCP_COMFYUI_VIDEO_WORKFLOW=/abs/path/to/assets/comfyui/ltx-video-t2v.api.json
 export TDMCP_VIDEO_GEN_MODEL=ltx-video                  # default
 ```

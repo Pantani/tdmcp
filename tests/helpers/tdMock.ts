@@ -88,14 +88,17 @@ export const tdHandlers = [
       name?: string;
       node_x?: number;
       node_y?: number;
+      placement?: string;
     };
+    // The real bridge allocates a free cell and reports it back for placement: "auto".
+    const autoCell = body.placement === "auto" ? 0 : undefined;
     const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
     return ok({
       path: `${body.parent_path}/${name}`,
       type: body.type,
       name,
-      nodeX: body.node_x,
-      nodeY: body.node_y,
+      nodeX: body.node_x ?? autoCell,
+      nodeY: body.node_y ?? autoCell,
     });
   }),
 

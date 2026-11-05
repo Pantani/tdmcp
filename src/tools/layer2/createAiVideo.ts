@@ -25,6 +25,7 @@ import type { ToolContext, ToolRegistrar } from "../types.js";
 export interface VideoToolContext extends ToolContext {
   videoGen?: VideoGenProvider;
   videoCacheDir?: string;
+  videoGenTimeoutMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -52,9 +53,9 @@ export const videoGenFields = {
     .describe("Explicit provider override; falls back to TDMCP_VIDEO_GEN_PROVIDER."),
   model: z
     .enum(["ltx-video", "ltx-2"])
-    .default("ltx-video")
+    .optional()
     .describe(
-      "ltx-video = cheapest, fixed 5s. ltx-2 = per-second, higher-res + audio (10–50× cost).",
+      "ltx-video = cheapest, fixed 5s. ltx-2 = per-second, higher-res + audio (10–50× cost). Omitted = TDMCP_VIDEO_GEN_MODEL, else ltx-video.",
     ),
   duration_seconds: z.coerce
     .number()
@@ -87,24 +88,46 @@ export const videoGenFields = {
  * not silent-ignore). Kept its own function to hold CC ≤ 10.
  */
 export function refineVideoModel(
-  args: { model: string; duration_seconds: number; resolution: string },
+  args: { model?: string; duration_seconds: number; resolution: string },
   ctx: z.RefinementCtx,
 ): void {
-  if (args.model === "ltx-video" && args.duration_seconds !== 5) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["duration_seconds"],
+  if (!args.model) return; // resolved against the configured default in checkVideoModel
+  const issue = videoModelIssue(args.model, args.duration_seconds, args.resolution);
+  if (issue) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [issue.field], message: issue.message });
+  }
+}
+
+function videoModelIssue(
+  model: string,
+  durationSeconds: number,
+  resolution: string,
+): { field: string; message: string } | undefined {
+  if (model !== "ltx-video") return undefined;
+  if (durationSeconds !== 5) {
+    return {
+      field: "duration_seconds",
       message:
         "ltx-video base is fixed at 5s — omit duration_seconds or use model: ltx-2 for variable length.",
-    });
+    };
   }
-  if (args.resolution === "4k" && args.model !== "ltx-2") {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["resolution"],
-      message: "4k output requires model: ltx-2.",
-    });
-  }
+  if (resolution === "4k")
+    return { field: "resolution", message: "4k output requires model: ltx-2." };
+  return undefined;
+}
+
+/**
+ * Apply the same model limits once an omitted `model` has resolved against the provider
+ * default, which the schema cannot see. Builds nothing on a mismatch.
+ */
+export function checkVideoModel(
+  ctx: VideoToolContext,
+  args: { model?: string; duration_seconds: number; resolution: string },
+): CallToolResult | undefined {
+  const model = args.model ?? ctx.videoGen?.defaultModel;
+  if (!model) return undefined;
+  const issue = videoModelIssue(model, args.duration_seconds, args.resolution);
+  return issue ? errorResult(`${issue.field}: ${issue.message}`) : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +172,12 @@ export function resolutionDims(resolution: string): { width: number; height: num
 // Shared generation code path (imported by create_ai_video_backdrop too)
 // ---------------------------------------------------------------------------
 
+const DEFAULT_VIDEO_CACHE_DIR = ".tdmcp/video-gen";
+
+type VideoGenerationOutcome =
+  | { ok: true; value: VideoGeneration }
+  | { ok: false; error: CallToolResult };
+
 /** The outcome of generating (or cache-reusing) one clip, before any TD delivery. */
 export interface VideoGeneration {
   /** Absolute path to the cached clip on disk. */
@@ -162,7 +191,10 @@ export interface VideoGeneration {
 }
 
 function mimeFromPath(filePath: string): string {
-  return filePath.toLowerCase().endsWith(".webm") ? "video/webm" : "video/mp4";
+  const lower = filePath.toLowerCase();
+  if (lower.endsWith(".webm")) return "video/webm";
+  if (lower.endsWith(".gif")) return "image/gif";
+  return "video/mp4";
 }
 
 /**
@@ -174,7 +206,23 @@ function mimeFromPath(filePath: string): string {
 export async function generateVideoToCache(
   ctx: VideoToolContext,
   req: VideoGenRequest,
-): Promise<{ ok: true; value: VideoGeneration } | { ok: false; error: CallToolResult }> {
+): Promise<VideoGenerationOutcome> {
+  try {
+    return await generateThroughCache(ctx, req);
+  } catch (err) {
+    return {
+      ok: false,
+      error: errorResult(
+        `Video cache at ${ctx.videoCacheDir ?? DEFAULT_VIDEO_CACHE_DIR} failed: ${(err as Error).message} — the network was not built.`,
+      ),
+    };
+  }
+}
+
+async function generateThroughCache(
+  ctx: VideoToolContext,
+  req: VideoGenRequest,
+): Promise<VideoGenerationOutcome> {
   if (!ctx.videoGen) {
     return {
       ok: false,
@@ -188,10 +236,14 @@ export async function generateVideoToCache(
   if (init && !init.ok) {
     return { ok: false, error: errorResult(`${init.reason} — the network was not built.`) };
   }
-  const request: VideoGenRequest = init ? { ...req, initImagePath: init.path } : req;
+  const request: VideoGenRequest = {
+    ...req,
+    ...(init ? { initImagePath: init.path } : {}),
+    timeoutMs: req.timeoutMs ?? ctx.videoGenTimeoutMs,
+  };
 
   const model = request.model ?? ctx.videoGen.defaultModel;
-  const cacheDir = ctx.videoCacheDir ?? ".tdmcp/video-gen";
+  const cacheDir = ctx.videoCacheDir ?? DEFAULT_VIDEO_CACHE_DIR;
   const cacheKey = videoCacheKey(request, ctx.videoGen.id, model, init?.digest);
 
   const hit = await findCachedVideo(cacheDir, cacheKey);
@@ -243,7 +295,7 @@ export function toVideoRequest(args: {
   prompt: string;
   negative_prompt?: string;
   init_image?: string;
-  model: string;
+  model?: string;
   duration_seconds: number;
   resolution: string;
   guidance_scale: number;
@@ -290,7 +342,7 @@ export async function createAiVideoImpl(
   ctx: VideoToolContext,
   args: CreateAiVideoArgs,
 ): Promise<CallToolResult> {
-  const mismatch = checkProvider(ctx, args.provider);
+  const mismatch = checkProvider(ctx, args.provider) ?? checkVideoModel(ctx, args);
   if (mismatch) return mismatch;
   const gen = await generateVideoToCache(ctx, toVideoRequest(args));
   if (!gen.ok) return gen.error;
@@ -302,6 +354,7 @@ export async function createAiVideoImpl(
       type: "moviefileinTOP",
       name: args.name,
       parameters: { file: cachePath, play: args.play ? 1 : 0 },
+      placement: "auto",
     });
 
     let previewBase64: string | undefined;
@@ -357,6 +410,10 @@ export const registerCreateAiVideo: ToolRegistrar = (server, ctx) => {
       inputSchema: createAiVideoInputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    (args) => createAiVideoImpl(ctx, createAiVideoSchema.parse(args)),
+    (args) => {
+      const parsed = createAiVideoSchema.safeParse(args);
+      if (!parsed.success) return errorResult(`create_ai_video: ${z.prettifyError(parsed.error)}`);
+      return createAiVideoImpl(ctx, parsed.data);
+    },
   );
 };

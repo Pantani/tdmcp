@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
+import { extname } from "node:path";
 import {
   DEFAULT_VIDEO_GEN_TIMEOUT_MS,
   type VideoGenProvider,
@@ -58,6 +58,7 @@ interface HistoryOutput {
 }
 interface HistoryEntry {
   outputs?: Record<string, HistoryOutput>;
+  status?: { status_str?: string; completed?: boolean; messages?: unknown[] };
 }
 
 interface ClipRef {
@@ -91,13 +92,15 @@ function injectMedia(
 ): void {
   if ("length" in inputs && req.durationSeconds !== undefined)
     inputs.length = secondsToLtxFrames(req.durationSeconds);
+  if ("width" in inputs && req.width !== undefined) inputs.width = req.width;
+  if ("height" in inputs && req.height !== undefined) inputs.height = req.height;
   if ("image" in inputs && uploadedImage) inputs.image = uploadedImage;
 }
 
 /**
  * Inject request fields into an API-format graph in place, tolerant of the exact
  * node ids: matches by well-known input keys (`text`/`seed`/`steps`/`cfg`/`length`/
- * `image`). Clear error surfaced upstream if the workflow has no prompt node.
+ * `width`/`height`/`image`). Clear error surfaced upstream if the workflow has no prompt node.
  */
 export function injectWorkflowInputs(
   graph: WorkflowGraph,
@@ -160,8 +163,8 @@ export class ComfyuiVideoProvider implements VideoGenProvider {
   private async uploadImage(path: string, signal: AbortSignal): Promise<string> {
     const bytes = await readFile(path);
     const form = new FormData();
-    form.append("image", new Blob([bytes]), basename(path));
-    form.append("overwrite", "true");
+    // Unique server-side name: concurrent runs must never overwrite each other's anchor.
+    form.append("image", new Blob([bytes]), `tdmcp_${randomUUID()}${extname(path)}`);
     const res = await fetch(`${this.serverUrl}/upload/image`, {
       method: "POST",
       body: form,
@@ -200,8 +203,11 @@ export class ComfyuiVideoProvider implements VideoGenProvider {
         throw new Error(`ComfyUI /history returned HTTP ${res.status}: ${body.slice(0, 300)}`);
       }
       const history = (await res.json()) as Record<string, HistoryEntry>;
-      const clip = extractClip(history[promptId]);
+      const entry = history[promptId];
+      const clip = extractClip(entry);
       if (clip) return clip;
+      const failure = historyFailure(entry);
+      if (failure) throw new Error(failure);
       await this.sleep(HISTORY_POLL_INTERVAL_MS, signal);
     }
   }
@@ -221,7 +227,7 @@ export class ComfyuiVideoProvider implements VideoGenProvider {
     const bytes = new Uint8Array(await res.arrayBuffer());
     return {
       bytes,
-      mimeType: clip.filename.toLowerCase().endsWith(".webm") ? "video/webm" : "video/mp4",
+      mimeType: clipMimeType(clip.filename),
       provider: this.id,
       model: this.defaultModel,
       ...(req.durationSeconds !== undefined ? { durationSec: req.durationSeconds } : {}),
@@ -246,6 +252,39 @@ export class ComfyuiVideoProvider implements VideoGenProvider {
       signal.addEventListener("abort", onAbort, { once: true });
     });
   }
+}
+
+function clipMimeType(filename: string): string {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".webm")) return "video/webm";
+  if (lower.endsWith(".gif")) return "image/gif";
+  return "video/mp4";
+}
+
+/** The detail of a ComfyUI `execution_error` status message, when there is one. */
+function executionErrorDetail(messages: readonly unknown[] | undefined): string {
+  for (const message of messages ?? []) {
+    if (!Array.isArray(message) || message[0] !== "execution_error") continue;
+    const detail = message[1] as { node_type?: string; exception_message?: string } | undefined;
+    return ` (${detail?.node_type ?? "unknown node"}: ${String(
+      detail?.exception_message ?? "no detail",
+    )
+      .trim()
+      .slice(0, 300)})`;
+  }
+  return "";
+}
+
+/** Why a finished history entry will never yield a clip; undefined while still running. */
+function historyFailure(entry: HistoryEntry | undefined): string | undefined {
+  const status = entry?.status;
+  if (status?.status_str === "error") {
+    return `ComfyUI workflow failed${executionErrorDetail(status.messages)}`;
+  }
+  if (status?.completed === true) {
+    return "ComfyUI workflow finished without a video output (a VHS_VideoCombine-style save node is required)";
+  }
+  return undefined;
 }
 
 /** Find the first gifs/videos output in a history entry. Returns undefined until ready. */

@@ -59,6 +59,28 @@ Estas configuram o [copiloto LLM local](/reference/cli#local-copilot-tdmcp-chat)
 | `TDMCP_COPILOT_RECEIPTS_PATH` | `~/.tdmcp/session-receipts.json` | Path absoluto opcional, controlado pelo proprietário, para o store de recibos. Paths relativos são rejeitados. |
 | `TDMCP_CHAT_PORT` | `4141` | Porta de loopback em que a UI web do `tdmcp chat` escuta. |
 
+## Geração de mídia com IA
+
+Gere antes e reproduza ao vivo: estas variáveis alimentam `create_ai_texture`,
+`create_ai_backdrop`, `create_ai_video` e `create_ai_video_backdrop`. Elas ficam no Node
+e nunca são enviadas ao bridge do TouchDesigner. Provedores hospedados cobram por
+geração; o caminho local com ComfyUI precisa de GPU e do workflow em
+[`assets/comfyui/`](https://github.com/Pantani/tdmcp/tree/main/assets/comfyui).
+
+| Variável | Padrão | Descrição |
+| --- | --- | --- |
+| `TDMCP_IMAGE_GEN_PROVIDER` | `none` | Provedor de imagem: `fal` ou `none`. `replicate` é aceito, mas ainda não foi implementado, então a geração fica desativada. |
+| `TDMCP_IMAGE_GEN_MODEL` | `fal-ai/flux/schnell` | Modelo de imagem usado quando a chamada omite `model`. |
+| `TDMCP_IMAGE_CACHE_DIR` | `.tdmcp/image-gen` | Onde as imagens geradas ficam em cache. Pode ser apagado. |
+| `TDMCP_VIDEO_GEN_PROVIDER` | `none` | Provedor de vídeo: `comfyui` (local, sem custo por geração), `fal` (hospedado, pago) ou `none`. |
+| `TDMCP_VIDEO_GEN_MODEL` | `ltx-video` | Modelo de vídeo usado quando a chamada omite `model`. No `fal`, um valor diferente de `ltx-video` ou `ltx-2` é usado como slug bruto de modelo do fal. |
+| `TDMCP_VIDEO_CACHE_DIR` | `.tdmcp/video-gen` | Onde os clipes gerados ficam em cache. Pode ser apagado. |
+| `TDMCP_VIDEO_GEN_TIMEOUT_MS` | `600000` | Limite de tempo de uma geração de vídeo, em milissegundos. |
+| `TDMCP_COMFYUI_URL` | `http://127.0.0.1:8188` | Servidor ComfyUI usado pelo provedor de vídeo `comfyui`. |
+| `TDMCP_COMFYUI_VIDEO_WORKFLOW` | _(não definido)_ | Caminho absoluto de um workflow do ComfyUI exportado com **Save (API Format)**. Obrigatório para `comfyui`. |
+| `TDMCP_FAL_KEY` | _(não definido)_ | Chave de API do fal.ai. Obrigatória para `fal`. Trate como segredo: `doctor` e `config --write-env` a ocultam. |
+| `TDMCP_REPLICATE_KEY` | _(não definido)_ | Reservada para o futuro provedor Replicate. Também é ocultada. |
+
 ## Lado do TouchDesigner
 
 Defina estas no ambiente do **TouchDesigner** (não no do servidor) para defesa em

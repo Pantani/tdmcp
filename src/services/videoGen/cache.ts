@@ -16,6 +16,7 @@ import type { VideoGenRequest, VideoGenResult } from "./types.js";
 const MIME_EXT: Record<string, string> = {
   "video/mp4": "mp4",
   "video/webm": "webm",
+  "image/gif": "gif",
 };
 
 function extFromMime(mime: string): string {
@@ -60,8 +61,9 @@ export async function findCachedVideo(cacheDir: string, key: string): Promise<st
     try {
       await access(candidate);
       return candidate;
-    } catch {
-      // not this extension — try the next
+    } catch (err) {
+      // A missing file is a miss; permission and I/O failures must surface.
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
     }
   }
   return undefined;

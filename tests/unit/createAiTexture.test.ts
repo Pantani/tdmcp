@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -11,6 +11,7 @@ import {
   type CreateAiTextureArgs,
   createAiTextureImpl,
   createAiTextureSchema,
+  generateTextureToCache,
 } from "../../src/tools/layer2/createAiTexture.js";
 import { loadConfig } from "../../src/utils/config.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
@@ -83,7 +84,7 @@ function captureCreateBodies(): CreatedNodeBody[] {
       const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
       return HttpResponse.json({
         ok: true,
-        data: { path: `${body.parent_path}/${name}`, type: body.type, name },
+        data: { path: `${body.parent_path}/${name}`, type: body.type, name, nodeX: 0, nodeY: 0 },
       });
     }),
   );
@@ -190,5 +191,29 @@ describe("create_ai_texture", () => {
     expect(parsed.play).toBe(true);
     expect(parsed.name).toBe("ai_texture");
     expect(parsed.parent_path).toBe("/project1");
+  });
+
+  it("returns a tool error instead of throwing on cache I/O failure", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "tdmcp-ai-texture-io-"));
+    const notADirectory = join(dir, "file");
+    await writeFile(notADirectory, "x");
+    try {
+      const ctx = buildToolContext(loadConfig({}), {
+        imageGen: {
+          id: "fal",
+          defaultModel: "m",
+          generate: async () => ({
+            bytes: new Uint8Array([1]),
+            mimeType: "image/png",
+            provider: "fal",
+          }),
+        },
+      });
+      ctx.imageCacheDir = notADirectory;
+      const gen = await generateTextureToCache(ctx, { prompt: "x" });
+      expect(gen.ok).toBe(false);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

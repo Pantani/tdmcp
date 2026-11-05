@@ -103,8 +103,8 @@ export class FalVideoProvider implements VideoGenProvider {
 
   /** Map a friendly model key onto the fal slug for the requested mode. */
   private resolveSlug(modelKey: string, req: VideoGenRequest): string {
-    const entry = MODEL_SLUGS[modelKey] ?? MODEL_SLUGS[DEFAULT_FAL_VIDEO_MODEL];
-    if (!entry) return modelKey; // caller passed a raw slug
+    const entry = MODEL_SLUGS[modelKey];
+    if (!entry) return modelKey; // a raw slug, e.g. from TDMCP_VIDEO_GEN_MODEL
     return req.initImagePath ? entry.i2v : entry.t2v;
   }
 

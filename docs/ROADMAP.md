@@ -928,6 +928,11 @@ they're considered solid.
   and prompt assembly are unit-tested; output quality is gated on a stable
   multimodal endpoint — see *Out of scope* below. The Wave 13-14 exact-model vision
   evidence covers `enhance_build.visualCritique` only, not these two tools.
+- **AI media lane, merged but not yet released or live-tested**: `create_ai_texture`,
+  `create_ai_backdrop`, `create_ai_video`, `create_ai_video_backdrop` and
+  `evolve_parameters`. Offline-tested only; the fal and ComfyUI contracts, Movie File
+  In playback and the `evolve_parameters` cook and scoring loop still need a run against
+  a live provider and TouchDesigner.
 - **Live rollback pending**: `repair_network` has an offline regression test for
   the rollback result contract (a mocked bridge reports `rolled_back` and reverted
   steps when errors don't improve). The snapshot/restore Python itself still needs

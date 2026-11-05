@@ -20,14 +20,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   genetic-algorithm *method* (arXiv 2607.02317, CC BY 4.0), retargeting its
   fMRI-based fitness to a **TouchDesigner-measurable** one. Evolves a genome of
   operator parameters (`genes` keyed `"<node>.<param>"`) against a fitness the
-  bridge can read back — `audio_energy` (Info CHOP `.chan.eval()`, default),
-  `top_luma`, or `top_motion` (two-frame luma delta) — using μ+λ elitism
+  bridge can read back — `top_luma` (default), or `audio_energy` (Info CHOP
+  `.chan.eval()`) and `top_motion` (per-pixel frame difference), which both need
+  `TDMCP_BRIDGE_ALLOW_EXEC=1` — using μ+λ elitism
   (population 20, generations 6, elite 0.3, crossover 0.5, mutation 0.2; hard
   cap population×generations ≤ 300). Deterministic under `seed` (seeded RNG, no
   `Math.random`). Each losing candidate is torn down as it is scored and only the
   champion is rebuilt, so the project graph is never flooded. It is a **design-time
   search tool, not a real-time controller** — a full run is minutes of build→cook→
-  score cycles. No bridge endpoint, no config. Live cook behavior is
+  score cycles. A run that cannot score any candidate returns an error instead of a
+  winner, and genes naming code-bearing parameters are refused under
+  `TDMCP_RAW_PYTHON=off` and the `safe`/`directory` profiles. No bridge endpoint, no config. Live cook behavior is
   UNVERIFIED-pending (bridge offline); all offline gates pass.
 - **AI video asset lane** — a provider-agnostic text/image-to-video lane that turns
   a prompt (and optional init image) into a real TouchDesigner clip, extending the
@@ -45,9 +48,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     **`fal`** (hosted fal.ai, pay-per-generation). Both write the render to a local
     cache file handed to a Movie File In TOP — no new bridge endpoint. Model default
     `ltx-video`, `ltx-2` opt-in; the schema rejects controls a model lacks
-    (fixed-length / 4K) instead of silently ignoring them.
+    (fixed-length / 4K) instead of silently ignoring them. `init_image` must be an
+    absolute path to a PNG, JPEG or WebP of at most 32 MiB, because it is uploaded to the
+    provider.
   - New config (Node-only, never sent to the TD bridge): `TDMCP_VIDEO_GEN_PROVIDER`,
-    `TDMCP_VIDEO_GEN_MODEL`, `TDMCP_VIDEO_GEN_CACHE_DIR`, `TDMCP_VIDEO_GEN_TIMEOUT_MS`,
+    `TDMCP_VIDEO_GEN_MODEL`, `TDMCP_VIDEO_CACHE_DIR`, `TDMCP_VIDEO_GEN_TIMEOUT_MS`,
     `TDMCP_COMFYUI_URL`, `TDMCP_COMFYUI_VIDEO_WORKFLOW`; reuses `TDMCP_FAL_KEY` (no new
     secret, redacted in `doctor`). Generation is "generate-ahead, then play back
     live" — the clip plays in real time, generation is not per-frame. Live fal/comfyui

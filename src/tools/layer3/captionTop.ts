@@ -103,6 +103,14 @@ function decodeFailureWarning(failure: PngDecodeFailure): string {
       return `PNG colour type ${failure.colorType} (palette) unsupported; ${tail}`;
     case "no-image-data":
       return `PNG had no decodable image data; ${tail}`;
+    case "unsupported-interlace":
+      return `interlaced PNG unsupported; ${tail}`;
+    case "unsupported-filter":
+      return `PNG scanline filter ${failure.filter} unsupported; ${tail}`;
+    case "truncated":
+      return `PNG image data was truncated; ${tail}`;
+    case "too-large":
+      return `PNG exceeds the decode size limit; ${tail}`;
     default:
       return `PNG decode failed (${failure.detail}); ${tail}`;
   }

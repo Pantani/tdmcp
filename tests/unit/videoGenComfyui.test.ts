@@ -5,7 +5,11 @@ import { isAbsolute, join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { videoCacheKey, writeCachedVideo } from "../../src/services/videoGen/cache.js";
+import {
+  findCachedVideo,
+  videoCacheKey,
+  writeCachedVideo,
+} from "../../src/services/videoGen/cache.js";
 import { ComfyuiVideoProvider } from "../../src/services/videoGen/comfyuiProvider.js";
 import type { VideoGenRequest } from "../../src/services/videoGen/types.js";
 
@@ -41,7 +45,7 @@ function fixtureWorkflow(): Record<string, unknown> {
       inputs: { text: "PLACEHOLDER" },
       _meta: { title: "Negative" },
     },
-    "10": { class_type: "EmptyLTXVLatentVideo", inputs: { length: 25 } },
+    "10": { class_type: "EmptyLTXVLatentVideo", inputs: { width: 64, height: 64, length: 25 } },
     "12": { class_type: "LoadImage", inputs: { image: "placeholder.png" } },
     "20": { class_type: "SaveVideo", inputs: {} },
   };
@@ -151,5 +155,86 @@ describe("ComfyuiVideoProvider", () => {
     const provider = new ComfyuiVideoProvider(COMFY, path);
 
     await expect(provider.generate(baseReq())).rejects.toThrow(/no text-prompt node/);
+  });
+
+  it("injects the requested dimensions into the latent node", async () => {
+    const dir = await freshDir();
+    const provider = new ComfyuiVideoProvider(COMFY, await writeWorkflow(dir));
+    const captured: SubmittedGraph = {};
+    mockComfy(captured);
+
+    await provider.generate(baseReq({ width: 1280, height: 720 }));
+    expect(captured.graph?.["10"]?.inputs?.width).toBe(1280);
+    expect(captured.graph?.["10"]?.inputs?.height).toBe(720);
+  });
+
+  it("uploads the init image under a unique name without overwriting", async () => {
+    const dir = await freshDir();
+    const initImage = join(dir, "seed.png");
+    await writeFile(initImage, MP4_BYTES);
+    const provider = new ComfyuiVideoProvider(COMFY, await writeWorkflow(dir));
+    mockComfy({});
+    const names: string[] = [];
+    let overwrite: unknown = null;
+    server.use(
+      http.post(`${COMFY}/upload/image`, async ({ request }) => {
+        const form = await request.formData();
+        names.push((form.get("image") as File).name);
+        overwrite = form.get("overwrite");
+        return HttpResponse.json({ name: "anchor.png" });
+      }),
+    );
+
+    await provider.generate(baseReq({ initImagePath: initImage }));
+    await provider.generate(baseReq({ initImagePath: initImage }));
+    expect(names[0]).toMatch(/^tdmcp_.*\.png$/);
+    expect(names[0]).not.toBe(names[1]);
+    expect(overwrite).toBeNull();
+  });
+
+  it.each([
+    [
+      "an execution error",
+      {
+        status_str: "error",
+        completed: false,
+        messages: [
+          ["execution_start", {}],
+          ["execution_error", { node_type: "KSampler", exception_message: "out of memory\n" }],
+        ],
+      },
+      /KSampler: out of memory/,
+    ],
+    ["a run with no video output", { status_str: "success", completed: true }, /without a video/],
+  ])("fails fast on %s instead of polling until the timeout", async (_label, status, expected) => {
+    const dir = await freshDir();
+    const provider = new ComfyuiVideoProvider(COMFY, await writeWorkflow(dir));
+    mockComfy({});
+    server.use(
+      http.get(`${COMFY}/history/pid-1`, () =>
+        HttpResponse.json({ "pid-1": { outputs: {}, status } }),
+      ),
+    );
+
+    await expect(provider.generate(baseReq())).rejects.toThrow(expected);
+  });
+
+  it("labels a GIF output as a GIF and caches it with its own extension", async () => {
+    const dir = await freshDir();
+    const provider = new ComfyuiVideoProvider(COMFY, await writeWorkflow(dir));
+    mockComfy({});
+    server.use(
+      http.get(`${COMFY}/history/pid-1`, () =>
+        HttpResponse.json({
+          "pid-1": { outputs: { "20": { gifs: [{ filename: "out.gif", type: "output" }] } } },
+        }),
+      ),
+    );
+
+    const result = await provider.generate(baseReq());
+    expect(result.mimeType).toBe("image/gif");
+    const path = await writeCachedVideo(dir, "k", result);
+    expect(path.endsWith(".gif")).toBe(true);
+    expect(await findCachedVideo(dir, "k")).toBe(path);
   });
 });

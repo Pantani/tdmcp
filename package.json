@@ -36,6 +36,7 @@
     "training/showintent/Modelfile",
     "recipes",
     "skills/curated",
+    "assets/comfyui",
     "docs/guide/prompt-cookbook.md",
     "docs/pt/guide/prompt-cookbook.md",
     "td/bootstrap.py",

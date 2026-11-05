@@ -90,5 +90,6 @@ export function buildToolContext(
     imageCacheDir: config.imageCacheDir,
     videoGen,
     videoCacheDir: config.videoCacheDir,
+    videoGenTimeoutMs: config.videoGenTimeoutMs,
   };
 }

@@ -51,6 +51,23 @@ function fakeClient(): TouchDesignerClient {
 
 beforeEach(() => capturePreviewMock.mockReset());
 
+/** One-row grayscale PNG with explicit pixel values, for per-pixel comparisons. */
+function pixelPng(pixels: number[]): Buffer {
+  const solid = grayPng(pixels.length, 1, 0);
+  const ihdrEnd = 8 + 8 + 13 + 4;
+  const raw = Buffer.from([0, ...pixels]);
+  const idat = zlib.deflateSync(raw);
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(idat.length, 0);
+  return Buffer.concat([
+    solid.subarray(0, ihdrEnd),
+    len,
+    Buffer.from("IDAT", "ascii"),
+    idat,
+    Buffer.alloc(4),
+  ]);
+}
+
 describe("topMotion", () => {
   it("returns delta ≈ 0 for two identical frames", async () => {
     capturePreviewMock
@@ -76,8 +93,7 @@ describe("topMotion", () => {
     expect(String(exec.mock.calls[0]?.[0])).toContain("_t.frame + 12");
   });
 
-  it("folds an undecodable frame into a warning, not a throw", async () => {
-    // Non-PNG buffers decode via the byte-histogram fallback (decoded: false).
+  it("returns null delta and a warning for an undecodable frame, never scoring raw bytes", async () => {
     const junk = (mean: number) => ({
       path: "/p/out",
       width: 1,
@@ -87,7 +103,32 @@ describe("topMotion", () => {
     });
     capturePreviewMock.mockResolvedValueOnce(junk(10)).mockResolvedValueOnce(junk(200));
     const result = await topMotion(fakeClient(), "/p/out", 6);
-    expect(result.delta).toBeGreaterThan(0);
+    expect(result.delta).toBeNull();
     expect(result.warnings.some((w) => w.includes("could not decode"))).toBe(true);
+  });
+
+  it("scores spatial motion that keeps the same mean luma", async () => {
+    const preview = (rows: number[]) => ({
+      path: "/p/out",
+      width: 2,
+      height: 1,
+      base64: pixelPng(rows).toString("base64"),
+      mimeType: "image/png",
+    });
+    capturePreviewMock
+      .mockResolvedValueOnce(preview([0, 255]))
+      .mockResolvedValueOnce(preview([255, 0]));
+    const result = await topMotion(fakeClient(), "/p/out", 6);
+    expect(result.delta).toBeCloseTo(1, 5);
+  });
+
+  it("returns null delta when the timeline could not be advanced", async () => {
+    capturePreviewMock.mockResolvedValue(pngPreview(50));
+    const client = {
+      executePythonScript: vi.fn().mockRejectedValue(new Error("exec disabled")),
+    } as unknown as TouchDesignerClient;
+    const result = await topMotion(client, "/p/out", 6);
+    expect(result.delta).toBeNull();
+    expect(result.warnings.some((w) => w.includes("exec disabled"))).toBe(true);
   });
 });

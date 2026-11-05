@@ -2,6 +2,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildToolContext } from "../../src/server/context.js";
+import type { ImageProvider } from "../../src/services/imageGen/types.js";
+import type { VideoGenProvider } from "../../src/services/videoGen/types.js";
 import { TdApiError } from "../../src/td-client/types.js";
 import { layer1Registrars } from "../../src/tools/layer1/index.js";
 import { layer2Registrars } from "../../src/tools/layer2/index.js";
@@ -103,6 +105,13 @@ const ARG_OVERRIDES: Record<string, Record<string, unknown>> = {
   create_preset_morph: { target_path: "/project1/smoke" },
   create_scheduler: { target: "/project1/smoke" },
   drive_streamdiffusion: { tox_path: TOX },
+  evolve_parameters: {
+    genes: { "level.opacity": ["0.5", "1"] },
+    build_target: "audio_reactive_basic",
+    fitness_target_path: "out1",
+    population: 2,
+    generations: 1,
+  },
   get_preview: { node_path: "/project1/smoke" },
   import_isf_shader: {
     source: '/*{"ISFVSN":"2"}*/\nvoid main(){gl_FragColor=vec4(1.0);}',
@@ -157,11 +166,31 @@ function renderBaseline(outcomes: readonly ToolOutcome[]): Baseline {
   };
 }
 
+// The AI media tools generate Node-side before touching the bridge; fake that half so
+// the sweep reaches the bridge calls this smoke exists to measure.
+const FAKE_IMAGE_GEN: ImageProvider = {
+  id: "fal",
+  defaultModel: "fake",
+  generate: async () => ({ bytes: new Uint8Array([1]), mimeType: "image/png", provider: "fal" }),
+};
+const FAKE_VIDEO_GEN: VideoGenProvider = {
+  id: "fal",
+  defaultModel: "ltx-video",
+  generate: async () => ({ bytes: new Uint8Array([1]), mimeType: "video/mp4", provider: "fal" }),
+};
+
 const bridge = makeExecOffBridge();
 const outcomes: ToolOutcome[] = [];
 let baseline: Baseline;
 const makeCtx = () =>
-  buildToolContext(loadConfig({ XDG_CONFIG_HOME: sandbox }), { logger: silentLogger });
+  buildToolContext(
+    loadConfig({
+      XDG_CONFIG_HOME: sandbox,
+      TDMCP_IMAGE_CACHE_DIR: `${sandbox}/image-gen`,
+      TDMCP_VIDEO_CACHE_DIR: `${sandbox}/video-gen`,
+    }),
+    { logger: silentLogger, imageGen: FAKE_IMAGE_GEN, videoGen: FAKE_VIDEO_GEN },
+  );
 
 beforeAll(async () => {
   bridge.server.listen({ onUnhandledRequest: "error" });

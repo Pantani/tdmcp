@@ -1,7 +1,12 @@
 import zlib from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { decodePngStats } from "../../src/feedback/frameStats.js";
-import { channelsForColorType, decodePngPixels, unfilter } from "../../src/feedback/pngDecode.js";
+import {
+  channelsForColorType,
+  decodePngPixels,
+  MAX_PNG_DIMENSION,
+  unfilter,
+} from "../../src/feedback/pngDecode.js";
 
 const SIG = Buffer.from("89504e470d0a1a0a", "hex");
 
@@ -17,6 +22,7 @@ function makePng(opts: {
   bitDepth?: number;
   rows: number[][];
   corruptIdat?: boolean;
+  interlace?: number;
 }): Buffer {
   const bitDepth = opts.bitDepth ?? 8;
   const ihdr = Buffer.alloc(13);
@@ -24,6 +30,7 @@ function makePng(opts: {
   ihdr.writeUInt32BE(opts.height, 4);
   ihdr[8] = bitDepth;
   ihdr[9] = opts.colorType;
+  ihdr[12] = opts.interlace ?? 0;
   const chunk = (type: string, data: Buffer): Buffer => {
     const len = Buffer.alloc(4);
     len.writeUInt32BE(data.length, 0);
@@ -146,5 +153,61 @@ describe("decodePngStats (frameStats over the shared decoder)", () => {
     expect(stats.decoded).toBe(false);
     expect(stats.saturation).toBe(0);
     expect(stats.meanLuma).toBeGreaterThan(0);
+  });
+});
+
+describe("decodePngPixels refuses what it cannot represent faithfully", () => {
+  const gray = { width: 2, height: 2, colorType: 0 };
+
+  it("rejects interlaced images", () => {
+    const png = makePng({
+      ...gray,
+      interlace: 1,
+      rows: [
+        [0, 1, 2],
+        [0, 3, 4],
+      ],
+    });
+    expect(decodePngPixels(png)).toMatchObject({ ok: false, reason: "unsupported-interlace" });
+  });
+
+  it("rejects filter bytes outside the PNG spec", () => {
+    const png = makePng({
+      ...gray,
+      rows: [
+        [0, 1, 2],
+        [9, 3, 4],
+      ],
+    });
+    expect(decodePngPixels(png)).toMatchObject({
+      ok: false,
+      reason: "unsupported-filter",
+      filter: 9,
+    });
+  });
+
+  it("rejects truncated image data instead of inventing zero pixels", () => {
+    const png = makePng({ ...gray, rows: [[0, 1, 2]] });
+    expect(decodePngPixels(png)).toMatchObject({ ok: false, reason: "truncated" });
+  });
+
+  it("rejects dimensions past the limit before allocating", () => {
+    const png = makePng({ width: MAX_PNG_DIMENSION + 1, height: 1, colorType: 0, rows: [[0]] });
+    expect(decodePngPixels(png)).toMatchObject({ ok: false, reason: "too-large" });
+  });
+
+  it("rejects a decoded size past the limit even within the per-side limit", () => {
+    const png = makePng({
+      width: MAX_PNG_DIMENSION,
+      height: MAX_PNG_DIMENSION,
+      colorType: 6,
+      rows: [[0]],
+    });
+    expect(decodePngPixels(png)).toMatchObject({ ok: false, reason: "too-large" });
+  });
+
+  it("bounds inflation when the stream decompresses past the declared size", () => {
+    const png = makePng({ ...gray, rows: [[0, 1, 2], [0, 3, 4], new Array(4096).fill(0)] });
+    expect(decodePngPixels(png)).toMatchObject({ ok: false, reason: "decode-error" });
   });
 });

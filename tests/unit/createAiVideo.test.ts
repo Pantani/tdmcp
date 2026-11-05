@@ -2,16 +2,18 @@ import { existsSync } from "node:fs";
 import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildToolContext } from "../../src/server/context.js";
 import { FalVideoProvider } from "../../src/services/videoGen/falProvider.js";
-import type { VideoGenProvider } from "../../src/services/videoGen/types.js";
+import type { VideoGenProvider, VideoGenRequest } from "../../src/services/videoGen/types.js";
 import {
   type CreateAiVideoArgs,
   createAiVideoImpl,
   createAiVideoSchema,
+  registerCreateAiVideo,
   type VideoToolContext,
 } from "../../src/tools/layer2/createAiVideo.js";
 import { loadConfig } from "../../src/utils/config.js";
@@ -99,7 +101,7 @@ function captureCreateBodies(): CreatedNodeBody[] {
       const name = body.name ?? `${body.type.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}1`;
       return HttpResponse.json({
         ok: true,
-        data: { path: `${body.parent_path}/${name}`, type: body.type, name },
+        data: { path: `${body.parent_path}/${name}`, type: body.type, name, nodeX: 0, nodeY: 0 },
       });
     }),
   );
@@ -336,8 +338,9 @@ describe("create_ai_video", () => {
   });
 
   it("enforces the schema refinements (ltx-video 5s lock, 4k only on ltx-2)", () => {
-    expect(() => createAiVideoSchema.parse({ prompt: "x", duration_seconds: 6 })).toThrow();
-    expect(() => createAiVideoSchema.parse({ prompt: "x", resolution: "4k" })).toThrow(); // 4k on default ltx-video
+    const lockedTo = { prompt: "x", model: "ltx-video" };
+    expect(() => createAiVideoSchema.parse({ ...lockedTo, duration_seconds: 6 })).toThrow();
+    expect(() => createAiVideoSchema.parse({ ...lockedTo, resolution: "4k" })).toThrow();
     // Valid: ltx-2 unlocks 4k and variable duration.
     const ok = createAiVideoSchema.parse({
       prompt: "x",
@@ -349,10 +352,98 @@ describe("create_ai_video", () => {
     expect(ok.duration_seconds).toBe(8);
     // Defaults on a bare prompt.
     const base = createAiVideoSchema.parse({ prompt: "x" });
-    expect(base.model).toBe("ltx-video");
+    expect(base.model).toBeUndefined(); // resolved against TDMCP_VIDEO_GEN_MODEL at call time
     expect(base.duration_seconds).toBe(5);
     expect(base.resolution).toBe("768x512");
     expect(base.play).toBe(true);
     expect(base.name).toBe("ai_video");
+  });
+
+  function modelProvider(defaultModel: string): VideoGenProvider & { seen: VideoGenRequest[] } {
+    const seen: VideoGenRequest[] = [];
+    return {
+      id: "fal",
+      defaultModel,
+      seen,
+      async generate(req) {
+        seen.push(req);
+        return { bytes: MP4_BYTES, mimeType: "video/mp4", provider: "fal", model: req.model };
+      },
+    };
+  }
+
+  it("honors the configured default model when the caller omits one", async () => {
+    const provider = modelProvider("ltx-2");
+    const ctx = videoCtx(await freshCacheDir(), provider);
+    captureCreateBodies();
+
+    const args = createAiVideoSchema.parse({ prompt: "x", duration_seconds: 8, resolution: "4k" });
+    const result = await createAiVideoImpl(ctx, args);
+    expect(result.isError).toBeFalsy();
+    expect(provider.seen[0]?.model).toBe("ltx-2");
+  });
+
+  it("applies the ltx-video limits to an omitted model that resolves to ltx-video", async () => {
+    const provider = modelProvider("ltx-video");
+    const ctx = videoCtx(await freshCacheDir(), provider);
+
+    const args = createAiVideoSchema.parse({ prompt: "x", duration_seconds: 8 });
+    const result = await createAiVideoImpl(ctx, args);
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("duration_seconds");
+    expect(provider.seen).toHaveLength(0);
+  });
+
+  it("forwards TDMCP_VIDEO_GEN_TIMEOUT_MS to the provider request", async () => {
+    const provider = modelProvider("ltx-video");
+    const ctx = videoCtx(await freshCacheDir(), provider);
+    ctx.videoGenTimeoutMs = 1234;
+    captureCreateBodies();
+
+    await createAiVideoImpl(ctx, makeArgs());
+    expect(provider.seen[0]?.timeoutMs).toBe(1234);
+  });
+
+  it("wires TDMCP_VIDEO_GEN_TIMEOUT_MS from config into the tool context", () => {
+    const ctx = buildToolContext(
+      loadConfig({ TDMCP_VIDEO_GEN_TIMEOUT_MS: "1234" }),
+    ) as VideoToolContext;
+    expect(ctx.videoGenTimeoutMs).toBe(1234);
+  });
+
+  it("asks the bridge to place the standalone TOP", async () => {
+    const ctx = videoCtx(await freshCacheDir(), modelProvider("ltx-video"));
+    const bodies = captureCreateBodies();
+
+    await createAiVideoImpl(ctx, makeArgs());
+    expect((bodies[0] as unknown as { placement?: string }).placement).toBe("auto");
+  });
+
+  it("returns a tool error instead of throwing on cache I/O failure", async () => {
+    const dir = await freshCacheDir();
+    const notADirectory = join(dir, "file");
+    await writeFile(notADirectory, "x");
+    const ctx = videoCtx(notADirectory, modelProvider("ltx-video"));
+
+    const result = await createAiVideoImpl(ctx, makeArgs());
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("Video cache");
+  });
+
+  it("returns a tool error instead of throwing on invalid model limits at the handler", async () => {
+    const ctx = videoCtx(await freshCacheDir(), modelProvider("ltx-video"));
+    let handler: ((args: unknown) => Promise<CallToolResult>) | undefined;
+    registerCreateAiVideo(
+      {
+        registerTool: (_name: string, _config: unknown, fn: typeof handler) => {
+          handler = fn;
+        },
+      } as unknown as McpServer,
+      ctx,
+    );
+
+    const result = await handler?.({ prompt: "x", model: "ltx-video", duration_seconds: 6 });
+    expect(result?.isError).toBe(true);
+    expect(result && textOf(result)).toContain("duration_seconds");
   });
 });
