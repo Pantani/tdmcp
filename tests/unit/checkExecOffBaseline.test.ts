@@ -32,6 +32,12 @@ describe("exec-off baseline shrink-only guard", () => {
     ]);
   });
 
+  it("flags a tool leaving the core set, and allows one joining", () => {
+    expect(baselineGrowth(baseline({ core: ["a"] }), baseline({ core: ["b"] }))).toEqual([
+      "a: removed from core",
+    ]);
+  });
+
   it("allows an unverified tool to become measured, even if blocked", () => {
     expect(baselineGrowth(baseline({ unverified: ["a"] }), baseline({ blocked: ["a"] }))).toEqual(
       [],
