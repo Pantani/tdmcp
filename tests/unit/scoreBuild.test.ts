@@ -258,6 +258,33 @@ describe("scoreBuildImpl", () => {
     expect(out.warnings.join("\n")).toMatch(/Perform mode is active/);
   });
 
+  it("checks Perform mode again before the second motion frame", async () => {
+    let reads = 0;
+    let captures = 0;
+    useTopology([{ path: "/project1/out1", type: "nullTOP", name: "out1" }]);
+    useInfo();
+    server.use(
+      http.get(`${TD_BASE}/api/system`, () => {
+        reads += 1;
+        return HttpResponse.json({ ok: true, data: { storedPerformMode: reads > 1 } });
+      }),
+      http.get(`${TD_BASE}/api/preview/:seg`, () => {
+        captures += 1;
+        return HttpResponse.json({
+          ok: true,
+          data: { path: "/project1/out1", width: 8, height: 8, format: "png", base64: PNG_VIVID },
+        });
+      }),
+    );
+    const r = await scoreBuildImpl(
+      makeCtx(),
+      fullArgs({ criteria: ["palette", "motion"], previewTopPath: "/project1/out1" }),
+    );
+    const out = r.structuredContent as { warnings: string[] };
+    expect(captures).toBe(1);
+    expect(out.warnings).toContain("Second motion frame unreadable; motion omitted.");
+  });
+
   it("monochrome PNG → palette near 0, vivid PNG → palette high", async () => {
     useTopology([{ path: "/project1/out1", type: "outTOP", name: "out1" }]);
     usePreview([PNG_BLACK, PNG_BLACK]);

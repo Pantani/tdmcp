@@ -360,6 +360,7 @@ export async function scoreBuildImpl(ctx: ToolContext, args: ScoreBuildArgs) {
             await new Promise((r) => setTimeout(r, 250));
             let frame2: DecodedImage | null = null;
             try {
+              await assertNotPerforming(ctx.client);
               const p2 = await ctx.client.getPreview(topPath, 64, 36);
               frame2 = decodePng(p2.base64);
             } catch {

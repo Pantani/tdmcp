@@ -938,7 +938,8 @@ describe("aiPartyLive service", () => {
 
     expect(result).toMatchObject({ ok: false, previews: [] });
     expect(result.message).toMatch(/Perform mode is active/);
-    expect(requested.some((path) => path.startsWith("/api/preview/"))).toBe(false);
+    // Neither captures nor writes the status parameters that exist for the preview.
+    expect(requested).toEqual(["/api/system"]);
     expect(service.snapshot().showState.td_status).toBe(before);
   });
 

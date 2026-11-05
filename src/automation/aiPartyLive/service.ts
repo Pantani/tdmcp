@@ -1952,12 +1952,11 @@ export class AiPartyLiveService {
   async tdPreview() {
     const previews: AiPartyTdPreviewPayload[] = [];
     const capturedAt = nowIso();
-    let lastError = (await this.refreshTdPreviewState()) ?? "Bridge preview unavailable";
-
     const withheld = await this.previewWithheldReason();
     if (withheld !== undefined) {
       return { ok: false, message: withheld, previews, captured_at: capturedAt };
     }
+    let lastError = (await this.refreshTdPreviewState()) ?? "Bridge preview unavailable";
 
     for (const output of AI_PARTY_TD_PREVIEW_OUTPUTS) {
       try {

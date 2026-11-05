@@ -1812,11 +1812,21 @@ export class TouchDesignerClient {
     return this.request("PATCH", `/api/nodes/${segment(path)}`, NodeDetailSchema, { parameters });
   }
 
-  executePythonScript(script: string, returnOutput = true) {
-    return this.request("POST", "/api/exec", ExecResultSchema, {
-      script,
-      return_output: returnOutput,
-    });
+  executePythonScript(
+    script: string,
+    returnOutput = true,
+    options: Pick<TdReadRequestOptions, "timeoutMs" | "signal"> = {},
+  ) {
+    return this.request(
+      "POST",
+      "/api/exec",
+      ExecResultSchema,
+      { script, return_output: returnOutput },
+      undefined,
+      options.timeoutMs,
+      undefined,
+      options.signal,
+    );
   }
 
   execNodeMethod(

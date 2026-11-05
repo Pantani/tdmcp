@@ -69,7 +69,7 @@ function verification(status: "PASS" | "FAIL" | "UNVERIFIED"): MutationVerificat
       },
     ],
     mutationRetry: "blocked",
-    limits: { callsUsed: 1, maxCalls: 4, maxTotalMs: 3500, retryGet: false },
+    limits: { callsUsed: 1, maxCalls: 5, maxTotalMs: 3500, retryGet: false },
   };
 }
 

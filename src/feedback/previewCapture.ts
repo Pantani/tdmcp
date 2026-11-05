@@ -82,18 +82,20 @@ async function readStoredPerformMode(
   }
   if (typeof flag === "boolean") return flag;
   if (flag) return { unreadable: flag.error };
-  return readStoredPerformModeViaExec(client);
+  return readStoredPerformModeViaExec(client, options);
 }
 
 /** Older bridges have no `storedPerformMode` section, so ask over exec. */
 async function readStoredPerformModeViaExec(
   client: TouchDesignerClient,
+  options?: TdReadRequestOptions,
 ): Promise<PerformModeState> {
   let stdout: string | undefined;
   try {
     const exec = await client.executePythonScript(
       "import json\nprint(json.dumps({'perform': bool(op('/').fetch('tdmcp_perform_mode', False))}))",
       true,
+      options,
     );
     stdout = exec.stdout;
   } catch (err) {

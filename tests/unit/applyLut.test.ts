@@ -157,6 +157,9 @@ describe("applyLutImpl", () => {
     const result = await applyLutImpl(ctx, args);
     expect(result.isError).toBeFalsy();
     expect(ctx.client.getPreview).not.toHaveBeenCalled();
+    expect(parseJsonFence(result).warnings).toEqual([
+      expect.stringMatching(/Preview unavailable: Perform mode is active/),
+    ]);
   });
 
   it("OCIO absent + image LUT → lookup branch, creates moviefileinTOP and lookupTOP", async () => {

@@ -72,7 +72,7 @@ export interface MutationVerificationReport {
   };
   limits: {
     callsUsed: number;
-    maxCalls: 4;
+    maxCalls: typeof MAX_CALLS;
     maxTotalMs: 3500;
     retryGet: false;
   };
@@ -263,7 +263,7 @@ function missingPlanReport(kind: MutationKind): MutationVerificationReport {
       },
     ],
     mutationRetry: "blocked",
-    limits: { callsUsed: 0, maxCalls: 4, maxTotalMs: 3500, retryGet: false },
+    limits: { callsUsed: 0, maxCalls: MAX_CALLS, maxTotalMs: 3500, retryGet: false },
   };
 }
 
@@ -588,7 +588,12 @@ export async function verifyMutation(
     checks: boundedChecks(checks),
     mutationRetry: "blocked",
     ...(preview ? { preview } : {}),
-    limits: { callsUsed: runtime.callsUsed, maxCalls: 4, maxTotalMs: 3500, retryGet: false },
+    limits: {
+      callsUsed: runtime.callsUsed,
+      maxCalls: MAX_CALLS,
+      maxTotalMs: 3500,
+      retryGet: false,
+    },
   };
 }
 

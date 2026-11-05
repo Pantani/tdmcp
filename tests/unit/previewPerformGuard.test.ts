@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { capturePreview } from "../../src/feedback/previewCapture.js";
+import { assertNotPerforming, capturePreview } from "../../src/feedback/previewCapture.js";
 import { runBridgeAnalyze } from "../../src/projectRag/extractors/bridgeAnalyze.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import { TdConnectionError, TdTimeoutError } from "../../src/td-client/types.js";
@@ -145,6 +145,33 @@ describe("capturePreview Perform-mode guard", () => {
       await expect(capturePreview(client(), NODE)).rejects.toThrow(UNKNOWN);
       expect(calls.preview).toBe(0);
     });
+  });
+
+  it("applies the caller's timeout to the exec fallback too", async () => {
+    server.use(
+      http.get(`${TD_BASE}/api/system`, routeMissing),
+      http.post(`${TD_BASE}/api/exec`, async () => {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        return execReply('{"perform": false}');
+      }),
+    );
+    const guard = assertNotPerforming(client(), { timeoutMs: 20 });
+    await expect(guard).rejects.toBeInstanceOf(TdTimeoutError);
+  });
+
+  it("stops the exec fallback when the caller aborts", async () => {
+    const abort = new AbortController();
+    server.use(
+      http.get(`${TD_BASE}/api/system`, routeMissing),
+      http.post(`${TD_BASE}/api/exec`, async () => {
+        abort.abort();
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        return execReply('{"perform": false}');
+      }),
+    );
+    const started = Date.now();
+    await expect(assertNotPerforming(client(), { signal: abort.signal })).rejects.toThrow();
+    expect(Date.now() - started).toBeLessThan(400);
   });
 
   describe("unreachable bridge", () => {

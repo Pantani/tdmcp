@@ -331,7 +331,7 @@ describe("local copilot mutation verification", () => {
       idempotency: "none",
       applied: true,
     });
-    expect(bounded.limits.callsUsed).toBe(5);
+    expect(bounded.limits).toMatchObject({ callsUsed: 5, maxCalls: 5 });
     expect(bounded.status).toBe("UNVERIFIED");
     expect(JSON.stringify(bounded).length).toBeLessThanOrEqual(16 * 1024);
 
