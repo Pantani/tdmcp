@@ -22,7 +22,6 @@ const ACE_TOOL_NAMES = [
   "generate_music",
   "submit_music_job",
   "get_music_job",
-  "cancel_music_job",
   "generate_music_reactive",
 ] as const;
 
@@ -55,7 +54,7 @@ describe("FIX 4 — ACE tool registration is gated on the built context", () => 
     }
   });
 
-  it("config-file path: config.aceEnabled=true (no env) registers all 5 ACE tools", () => {
+  it("config-file path: config.aceEnabled=true (no env) registers all 4 ACE tools", () => {
     // Simulate a config-file/profile flip — NOT an env var. The base config is
     // built without TDMCP_ACE_ENABLED; we set aceEnabled directly, as a loaded
     // config file would, then confirm the tools register off the built context.

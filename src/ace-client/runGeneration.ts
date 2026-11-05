@@ -1,41 +1,41 @@
 import type { ToolExtra } from "../tools/types.js";
 import type { Logger } from "../utils/logger.js";
 import type { AceStepClient } from "./aceStepClient.js";
-import { AceApiError } from "./types.js";
-import type { AceGenerateRequest, GenerateResult } from "./validators.js";
+import { AceApiError, AceTimeoutError } from "./types.js";
+import type { AceGenerateRequest, GenerateResult, JobStatus } from "./validators.js";
 
 /**
  * The single generation driver shared by `generate_music`,
  * `generate_music_reactive` and `submit_music_job`: submit -> poll -> emit honest
- * progress -> honor client cancellation -> decide sync-vs-job.
+ * progress -> honor client aborts -> decide sync-vs-job.
  *
- * Honesty constraint (see `_workspace/01_design_p2_ace.md`): ACE-Step exposes no
- * per-step hook, so there is NO real progress signal. What we report is real job
- * state plus real elapsed wall-clock; `total` is omitted (MCP-legal indeterminate
- * progress) unless the operator calibrated `TDMCP_ACE_RTF`. No fake percentages,
- * no tqdm scraping.
+ * What we report as progress is real elapsed wall-clock plus the server's own
+ * job state; `total` is omitted (MCP-legal indeterminate progress) unless the
+ * operator calibrated `TDMCP_ACE_RTF`. No fake percentages.
  */
 
-/** ACE randomizes ~30-240 s when `audio_duration <= 0`; 120 is that midpoint. */
+/** Rough stand-in when the model picks the length, used only for the RTF estimate. */
 export const UNSPECIFIED_DURATION_ASSUMPTION = 120;
 
 export interface RunGenerationOptions {
-  /** Per-call MCP context (F4). Undefined on the CLI path -> progress + abort are no-ops. */
+  /** Per-call MCP context. Undefined on the CLI path -> progress + abort are no-ops. */
   extra?: ToolExtra;
-  /** "auto" (F6 decision), "sync" (always block), "job" (always return a job_id). */
+  /** "auto" (estimate decides), "sync" (always block), "job" (always return a job_id). */
   mode: "auto" | "sync" | "job";
   /** TDMCP_ACE_SYNC_MAX_SECONDS. Estimates above this go async in "auto". */
   syncMaxSeconds: number;
   /**
    * TDMCP_ACE_RTF — wall-clock seconds of compute per second of audio at
    * `defaultSteps`. 0/undefined = UNCALIBRATED -> no estimate, no `total`, and
-   * "auto" stays SYNC (F6 is inert by default, on purpose).
+   * "auto" stays SYNC.
    */
   rtf?: number;
   /** TDMCP_ACE_DEFAULT_STEPS — the RTF calibration baseline. */
   defaultSteps: number;
   /** TDMCP_ACE_POLL_MS — poll + progress cadence. */
   pollMs: number;
+  /** TDMCP_ACE_TIMEOUT_MS — how long a blocking generation may run. */
+  timeoutMs: number;
   logger?: Logger;
   /** Injectable clock/sleep for deterministic tests. */
   now?: () => number;
@@ -52,13 +52,13 @@ export function estimateSeconds(
   opts: { rtf?: number; defaultSteps: number },
 ): number | undefined {
   if (!opts.rtf || opts.rtf <= 0) return undefined;
-  const audio = req.audio_duration > 0 ? req.audio_duration : UNSPECIFIED_DURATION_ASSUMPTION;
+  const audio = req.audio_duration ?? UNSPECIFIED_DURATION_ASSUMPTION;
   return audio * opts.rtf * stepScale(req, opts.defaultSteps);
 }
 
 /** Diffusion steps are ~linear in wall-clock, so scale the estimate by them. */
 function stepScale(req: AceGenerateRequest, defaultSteps: number): number {
-  const steps = req.infer_step ?? defaultSteps;
+  const steps = req.inference_steps ?? defaultSteps;
   return defaultSteps > 0 ? steps / defaultSteps : 1;
 }
 
@@ -83,7 +83,7 @@ export function progressReporter(
   let last = -1;
   return {
     emit(progressSeconds: number, message: string) {
-      // Never report 100% before the WAV exists.
+      // Never report 100% before the audio exists.
       const progress =
         total !== undefined ? Math.min(progressSeconds, total * 0.99) : progressSeconds;
       if (progress <= last) return; // MCP requires strictly increasing progress
@@ -136,29 +136,20 @@ export async function runGeneration(
     opts.mode === "job" || (opts.mode === "auto" && est !== undefined && est > opts.syncMaxSeconds);
   const started = now();
   const elapsed = () => (now() - started) / 1000;
-
-  if (client.mode === "native") {
-    return runNative(client, req, opts, { est, wantJob, elapsed });
-  }
+  const reporter = progressReporter(opts.extra, est);
 
   const { job_id: jobId } = await client.submitGenerate(req);
 
   if (wantJob) {
-    progressReporter(opts.extra, est).emit(0, `job ${jobId} submitted`);
+    reporter.emit(0, `job ${jobId} submitted`);
     return { kind: "job", jobId, estimatedSeconds: est };
   }
-
-  const reporter = progressReporter(opts.extra, est);
-  const signal = opts.extra?.signal;
-  const onAbort = () => {
-    void client.cancelJob(jobId).catch(() => {});
-  };
-  signal?.addEventListener("abort", onAbort, { once: true });
-  try {
-    return await pollToCompletion(client, req, jobId, opts, { reporter, elapsed, sleep, signal });
-  } finally {
-    signal?.removeEventListener("abort", onAbort);
-  }
+  return pollToCompletion(client, req, jobId, opts, {
+    reporter,
+    elapsed,
+    sleep,
+    signal: opts.extra?.signal,
+  });
 }
 
 interface PollDeps {
@@ -168,35 +159,39 @@ interface PollDeps {
   signal?: AbortSignal;
 }
 
-/** A job status row as returned by `getJob`. */
-type JobStatus = Awaited<ReturnType<AceStepClient["getJob"]>>;
-
 /**
- * Maps a terminal job status to an outcome (or throws on error/cancelled).
+ * Maps a terminal job status to an outcome (or throws on error).
  * Returns `undefined` while the job is still running, so the poll loop keeps going.
  */
 function terminalOutcome(
   st: JobStatus,
   req: AceGenerateRequest,
-  jobId: string,
   elapsedSeconds: number,
   defaultSteps: number,
 ): RunGenerationOutcome | undefined {
-  if (st.status === "done") {
-    if (!st.wavPath) throw new AceApiError("ACE job finished without a wavPath.");
-    const seconds = st.seconds ?? 0;
-    return {
-      kind: "sync",
-      result: { wavPath: st.wavPath, seconds, seed: st.seed ?? 0 },
-      elapsedSeconds,
-      observedRtf: observedRtf(req, seconds, elapsedSeconds, defaultSteps),
-    };
-  }
-  if (st.status === "error") throw new AceApiError(st.error ?? "ACE job failed.");
-  if (st.status === "cancelled") throw new AceApiError(`Job ${jobId} was cancelled.`);
-  return undefined;
+  if (st.status === "error") throw new AceApiError(st.error ?? "ACE-Step job failed.");
+  if (st.status !== "done") return undefined;
+  if (!st.wavPath) throw new AceApiError("ACE-Step job finished without an audio file.");
+  // Upstream may omit both when the model chose the length and the seed: 0 = unknown.
+  const seconds = st.seconds ?? req.audio_duration ?? 0;
+  const seed = st.seed ?? req.seed;
+  return {
+    kind: "sync",
+    result: { wavPath: st.wavPath, seconds, ...(seed !== undefined ? { seed } : {}) },
+    elapsedSeconds,
+    observedRtf: observedRtf(req, seconds, elapsedSeconds, defaultSteps),
+  };
 }
 
+function statusMessage(st: JobStatus, elapsedSeconds: number): string {
+  return `${st.stage ?? st.status} — ${Math.round(elapsedSeconds)}s elapsed`;
+}
+
+/**
+ * Upstream has no cancel route, so aborting or timing out only stops the waiting.
+ * Both errors say so and name the job: the server keeps generating, and the result
+ * can still be collected.
+ */
 async function pollToCompletion(
   client: AceStepClient,
   req: AceGenerateRequest,
@@ -204,57 +199,25 @@ async function pollToCompletion(
   opts: RunGenerationOptions,
   deps: PollDeps,
 ): Promise<RunGenerationOutcome> {
-  const cancelled = () => {
+  const stopIfAsked = () => {
     if (deps.signal?.aborted) {
       throw new AceApiError(
-        `Generation cancelled by the client (job ${jobId} killed; VRAM released).`,
+        `Stopped waiting: the client cancelled. ACE-Step has no cancel API, so job ${jobId} keeps running on the server; collect it later with get_music_job.`,
+      );
+    }
+    if (deps.elapsed() * 1000 > opts.timeoutMs) {
+      throw new AceTimeoutError(
+        `Stopped waiting after ${opts.timeoutMs}ms (TDMCP_ACE_TIMEOUT_MS). Job ${jobId} keeps running on the server; collect it later with get_music_job.`,
       );
     }
   };
   for (;;) {
-    cancelled();
+    stopIfAsked();
     const st = await client.getJob(jobId);
     const elapsedSeconds = deps.elapsed();
-    deps.reporter.emit(elapsedSeconds, `${st.status} — ${Math.round(elapsedSeconds)}s elapsed`);
-    const outcome = terminalOutcome(st, req, jobId, elapsedSeconds, opts.defaultSteps);
+    deps.reporter.emit(elapsedSeconds, statusMessage(st, elapsedSeconds));
+    const outcome = terminalOutcome(st, req, elapsedSeconds, opts.defaultSteps);
     if (outcome) return outcome;
     await deps.sleep(opts.pollMs);
-    cancelled();
-  }
-}
-
-/**
- * Native ACE (`infer-api.py`) has no job API: one blocking call, no cancellation,
- * heartbeat progress only (elapsed seconds — the honest maximum).
- */
-async function runNative(
-  client: AceStepClient,
-  req: AceGenerateRequest,
-  opts: RunGenerationOptions,
-  ctx: { est?: number; wantJob: boolean; elapsed: () => number },
-): Promise<RunGenerationOutcome> {
-  if (ctx.wantJob) {
-    throw new AceApiError(
-      "Job control is not supported in native ACE mode (infer-api.py is synchronous " +
-        "and has no job API). Set TDMCP_ACE_MODE=wrapper.",
-    );
-  }
-  const reporter = progressReporter(opts.extra, ctx.est);
-  reporter.emit(0, "generating (native, no job control — cannot cancel)");
-  const heartbeat = setInterval(() => {
-    const e = ctx.elapsed();
-    reporter.emit(e, `running — ${Math.round(e)}s elapsed`);
-  }, opts.pollMs);
-  try {
-    const result = await client.generate(req);
-    const elapsedSeconds = ctx.elapsed();
-    return {
-      kind: "sync",
-      result,
-      elapsedSeconds,
-      observedRtf: observedRtf(req, result.seconds, elapsedSeconds, opts.defaultSteps),
-    };
-  } finally {
-    clearInterval(heartbeat);
   }
 }

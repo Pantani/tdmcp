@@ -61,55 +61,27 @@ post-v0.13.1 mainline work below.
 
 ### Added
 
-- **ACE-Step music generation (P0 slice, opt-in, off by default).** New Layer 3
-  tool `generate_music` turns a text/tags prompt (+ optional `[verse]`/`[chorus]`
-  lyrics, duration, `manual_seeds`, `infer_step`, `guidance_scale`) into a WAV via
-  the [ACE-Step](https://github.com/ace-step/ACE-Step) model, returning
-  `{ wavPath, seconds, seed }` for downstream audio-reactive networks. Ships a new
-  `src/ace-client/` HTTP client (mirrors the TD client: Zod-validated envelopes,
-  typed `AceConnectionError`/`AceTimeoutError`/`AceApiError`, `guardAce`), a
-  `TDMCP_ACE_*` config block gated behind `TDMCP_ACE_ENABLED` (default **false** —
-  a fresh install is untouched), and a minimal warm-pipeline FastAPI wrapper under
-  `ace/` (`POST /generate`, `GET /health`, killable worker). Contract is
-  source-verified against `ace-step/ACE-Step@main`. Offline-degradable (friendly
-  `errorResult` when the ACE server is unreachable or disabled; handlers never
-  throw). Live generation, warm-cache residency, and GPU/TD coexistence remain
-  **UNVERIFIED — probe live** (require a running ACE server + GPU).
-- **ACE-Step P1 — async jobs, reactive network, native mode (opt-in).** Builds on
-  the P0 slice, all gated behind `TDMCP_ACE_ENABLED` (default false):
-  - `generate_music_reactive` (Layer 1) — generates a bed and drops it straight
-    into an audio-reactive network by reusing the existing `create_audio_reactive`
-    `audio_source:"file"` seam (`audiofilein` CHOP → reactive build → preview);
-    returns the network summary + `wavPath` + preview.
-  - `submit_music_job` / `get_music_job` / `cancel_music_job` (Layer 3) — an async
-    job contract for long generations: the `ace/` wrapper gains additive
-    `POST /jobs`, `GET /jobs/{id}`, `POST /jobs/{id}/cancel` (cancel kills the
-    worker subprocess to reclaim VRAM), leaving the P0 `POST /generate` sync path
-    frozen. Job tools return a friendly "not supported" result in native mode.
-  - `TDMCP_ACE_MODE=native` — the ace client can target ACE-Step's own
-    `infer-api.py` (`:8000`, sync, text2music-only) as a zero-extra-server on-ramp;
-    the tdmcp-owned warm wrapper stays the default.
-  Async round-trip, cancel-frees-VRAM, and native shape remain
-  **UNVERIFIED — probe live**.
-- **ACE-Step P2 — progress, cancellation, auto sync/job, prompt (opt-in).** Still
-  gated behind `TDMCP_ACE_ENABLED` (default false):
-  - `generate_music`, `generate_music_reactive`, and `submit_music_job` now emit
-    MCP `notifications/progress` during generation (synthesized from real job
-    state + elapsed wall-clock — `total` is omitted unless `TDMCP_ACE_RTF` is
-    calibrated; no fabricated percentage). An SDK-native `AbortSignal` now cancels
-    the underlying job, killing the worker to reclaim VRAM. Whether a given MCP
-    client resets its tool-call timeout on progress is client-dependent and
-    **UNVERIFIED — probe live**; progress is not yet a guaranteed timeout
-    extension.
-  - `generate_music` gains `mode: "auto" | "sync" | "job"`. `auto` **stays sync
-    unless `TDMCP_ACE_RTF` is set** (ships inert — identical to prior behavior);
-    the sync branch measures and returns `observed_rtf` so an operator can
-    calibrate the auto sync/job threshold (`TDMCP_ACE_SYNC_MAX_SECONDS`, default
-    120). New knobs: `TDMCP_ACE_RTF` (no default), `TDMCP_ACE_POLL_MS` (2000).
-  - New `song_to_show` MCP prompt — guidance for turning a song idea into a
-    generated bed + reactive show; self-references `TDMCP_ACE_ENABLED`.
-  - Internal: tool `…Impl` handlers can now opt into the SDK's per-call `extra`
-    (`ToolExtra` in `src/tools/types.ts`) — a type-only, backwards-compatible
+- **ACE-Step 1.5 music generation (opt-in, off by default).** Turns a text/tags
+  prompt and optional `[verse]`/`[chorus]` lyrics into a WAV through a local
+  [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) API server that you
+  install yourself. Everything is gated behind `TDMCP_ACE_ENABLED` (default
+  **false**), so a fresh install registers none of it. See
+  [the guide](docs/guide/ace-step.md).
+  - `generate_music` (Layer 3) — returns `{ wavPath, seconds, seed }`, or a `job_id`
+    with `mode: "job"`. `mode: "auto"` stays blocking unless `TDMCP_ACE_RTF` is
+    calibrated, and blocking calls return `observed_rtf` to calibrate it from.
+  - `generate_music_reactive` (Layer 1) — generates a bed and builds an
+    audio-reactive network over it through `create_audio_reactive`.
+  - `submit_music_job` / `get_music_job` (Layer 3) — async jobs. The first poll
+    after completion downloads the audio into `TDMCP_ACE_OUTPUT_DIR`.
+  - `song_to_show` MCP prompt, and `music generate|reactive|submit|job` CLI verbs.
+  - MCP `notifications/progress` during generation, built from real job state and
+    elapsed time; `total` is omitted unless `TDMCP_ACE_RTF` is set.
+  - ACE-Step 1.5 has no cancel API, so a client abort or `TDMCP_ACE_TIMEOUT_MS`
+    only stops the waiting: the job keeps running on the server and can still be
+    collected with `get_music_job`.
+  - Internal: tool `…Impl` handlers can opt into the SDK's per-call `extra`
+    (`ToolExtra` in `src/tools/types.ts`), a type-only, backwards-compatible
     addition; existing tools are unchanged.
 - **Authenticated one-request operation closure (Wave 16, unreleased source
   tree)** — live QA on the isolated TouchDesigner 099 build 2025.32820 process

@@ -43,7 +43,6 @@ describe("song_to_show prompt", () => {
       "generate_music_reactive",
       "submit_music_job",
       "get_music_job",
-      "cancel_music_job",
       "create_audio_reactive",
       "bind_to_channel",
       "manage_cue",

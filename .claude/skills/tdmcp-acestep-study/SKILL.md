@@ -1,6 +1,6 @@
 ---
 name: tdmcp-acestep-study
-description: "Explore ALL ways to implement the ACE-Step music-generation model inside tdmcp and produce a decision-grade study. Use whenever the user wants to study, explore, scope, or compare how to integrate ACE-Step (github.com/ace-step/ACE-Step, AI music generation) into tdmcp — 'como implementar ACE-Step', 'explorar todos os tipos de implementação', 'estudar integração de geração de música', 'começar o estudo do ACE-Step'. ALSO for every follow-up: continue/re-run the study, re-explore one axis, deepen a trade-off, re-decide the reference architecture after new info, or refresh an ACE-Step claim after a release. This is the EXPLORATION/IDEATION harness — it produces a STUDY.md with a recommended architecture + phased build plan; it does NOT build. Once the path is chosen, hand the P0 slice to tdmcp-pipeline. Simple questions can be answered directly."
+description: "Explore ALL ways to implement the ACE-Step music-generation model inside tdmcp and produce a decision-grade study. Use whenever the user wants to study, explore, scope, or compare how to integrate ACE-Step (github.com/ace-step/ACE-Step-1.5, AI music generation) into tdmcp — 'como implementar ACE-Step', 'explorar todos os tipos de implementação', 'estudar integração de geração de música', 'começar o estudo do ACE-Step'. ALSO for every follow-up: continue/re-run the study, re-explore one axis, deepen a trade-off, re-decide the reference architecture after new info, or refresh an ACE-Step claim after a release. This is the EXPLORATION/IDEATION harness — it produces a STUDY.md with a recommended architecture + phased build plan; it does NOT build. Once the path is chosen, hand the P0 slice to tdmcp-pipeline. Simple questions can be answered directly."
 ---
 
 # tdmcp-acestep-study — orchestrate the ACE-Step implementation study
@@ -31,7 +31,7 @@ Spawn **five** `acestep-explorer` sub-agents in a single message (so they run co
 | `gpu-perf` | single-GPU contention (TD render vs diffusion), generate-then-play vs concurrent, VRAM tiers, Mac/remote fallback, live verdict |
 | `tool-surface` | which tools/config (`TDMCP_ACE_*`)/CLI/prompts to expose + offline-degradation UX |
 
-Each explorer loads the `acestep-explore` skill, grounds ACE-Step facts against `github.com/ace-step/ACE-Step` (cite), inventories the real tdmcp source for its axis, enumerates the full option space, scores trade-offs, and writes `_workspace/acestep-study/01_explore_<axis>.md`.
+Each explorer loads the `acestep-explore` skill, grounds ACE-Step facts against `github.com/ace-step/ACE-Step-1.5` (cite), inventories the real tdmcp source for its axis, enumerates the full option space, scores trade-offs, and writes `_workspace/acestep-study/01_explore_<axis>.md`.
 
 **Prompt each explorer with:** its axis string, the path to write, the reminder to load `acestep-explore` first, and the hard constraints (never-throw handlers, offline-usable, same-machine, house file pattern). Keep scopes disjoint per the axis boundaries.
 

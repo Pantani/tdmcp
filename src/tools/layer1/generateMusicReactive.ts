@@ -2,7 +2,9 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { runGeneration } from "../../ace-client/runGeneration.js";
 import { friendlyAceError } from "../../ace-client/types.js";
+import type { GenerateResult } from "../../ace-client/validators.js";
 import {
+  ACE_DISABLED_MESSAGE,
   type AceToolContext,
   generateMusicSchema,
   runOptions,
@@ -36,8 +38,6 @@ export const generateMusicReactiveSchema = z.object({
   parent_path: createAudioReactiveSchema.shape.parent_path,
 });
 
-type GenerationFacts = { wavPath: string; seconds: number; seed: number };
-
 /**
  * Augment the reactive tool's result with the generation facts:
  * - prepend a text line describing the generated bed,
@@ -45,14 +45,15 @@ type GenerationFacts = { wavPath: string; seconds: number; seed: number };
  *   `structuredContent` so it never collides with the reactive tool's own keys,
  * - preserve `isError` and every existing content item (incl. the preview image).
  */
-function augmentWithGeneration(reactive: CallToolResult, gen: GenerationFacts): CallToolResult {
-  const line = `Generated ${gen.seconds.toFixed(1)}s bed (seed ${gen.seed}) -> ${gen.wavPath}`;
+function augmentWithGeneration(reactive: CallToolResult, gen: GenerateResult): CallToolResult {
+  const seed = gen.seed !== undefined ? ` (seed ${gen.seed})` : "";
+  const line = `Generated ${gen.seconds.toFixed(1)}s bed${seed} -> ${gen.wavPath}`;
   return {
     ...reactive,
     content: [{ type: "text", text: line }, ...reactive.content],
     structuredContent: {
       ...(reactive.structuredContent ?? {}),
-      generation: { wavPath: gen.wavPath, seconds: gen.seconds, seed: gen.seed },
+      generation: { ...gen },
     },
   };
 }
@@ -70,18 +71,16 @@ export async function generateMusicReactiveImpl(
   }
   const client = ctx.aceClient;
   if (!client) {
-    return errorResult(
-      "ACE-Step music generation is disabled. Set TDMCP_ACE_ENABLED=1 (and run the ace/ wrapper) to enable.",
-    );
+    return errorResult(ACE_DISABLED_MESSAGE);
   }
   const a = parsed.data;
 
   // 1) Generate the bed through the shared driver, forced to the SYNC branch (we
   //    need the WAV to build the network). This is what buys progress notifications
-  //    + AbortSignal->cancelJob on the longest-running call in the repo. Do NOT nest
+  //    + abort handling on the longest-running call in the repo. Do NOT nest
   //    the async reactive build inside guardAce's sync onOk; use an explicit
   //    try/catch so guardAce's shared signature stays untouched and we never throw.
-  let gen: GenerationFacts;
+  let gen: GenerateResult;
   try {
     const outcome = await runGeneration(client, toAceRequest(a), runOptions(client, "sync", extra));
     if (outcome.kind !== "sync") {
@@ -118,11 +117,11 @@ export const registerGenerateMusicReactive: ToolRegistrar = (server, ctx) => {
     {
       title: "Generate music + audio-reactive visual (ACE-Step)",
       description:
-        "Generate a music bed from a text prompt via a local ACE-Step server, then build an " +
+        "Generate a music bed from a text prompt via a local ACE-Step 1.5 server, then build an " +
         "audio-reactive visual network driven by that generated WAV (spectrum + level + optional beat + " +
         "a GLSL spectrum visual, auto-laid-out with a live Sensitivity control and an inline preview). " +
         "Synchronous end-to-end (generation can take minutes). Requires TDMCP_ACE_ENABLED=1 and a running " +
-        "ace/ wrapper. Returns the generation facts plus the built network summary and preview.",
+        "ACE-Step 1.5 API server. Returns the generation facts plus the built network summary and preview.",
       inputSchema: generateMusicReactiveSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

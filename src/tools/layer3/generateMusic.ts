@@ -11,8 +11,8 @@ import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolExtra, ToolRegistrar } from "../types.js";
 
 /**
- * Field names mirror `ACEStepPipeline.__call__` verbatim. Defaults are applied
- * at parse time, so every defaulted field is REQUIRED in `z.infer` — callers of
+ * Field names mirror ACE-Step 1.5's `/release_task`. Defaults are applied at parse
+ * time, so every defaulted field is REQUIRED in `z.infer` — callers of
  * `generateMusicImpl` (tests) must pass them.
  */
 export const generateMusicSchema = z.object({
@@ -20,40 +20,40 @@ export const generateMusicSchema = z.object({
     .string()
     .min(1)
     .describe(
-      "Tags / genre / mood description, comma-separated (e.g. 'lofi hip hop, mellow, rainy, 80 bpm'). Maps to ACE-Step `prompt`.",
+      "Tags / genre / mood description, comma-separated (e.g. 'lofi hip hop, mellow, rainy, 80 bpm').",
     ),
   lyrics: z
     .string()
     .optional()
     .describe(
-      "Optional lyrics with structure markers like [verse], [chorus], [bridge]. Omit for an instrumental. Maps to ACE-Step `lyrics`.",
+      "Optional lyrics with structure markers like [verse], [chorus], [bridge]. Omit for an instrumental.",
     ),
   audio_duration: z
     .number()
-    .default(-1)
-    .describe(
-      "Target length in seconds. -1 lets the model choose (randomizes ~30-240 s). Maps to ACE-Step `audio_duration` (upstream default 60).",
-    ),
-  manual_seeds: z
+    .min(10)
+    .max(600)
+    .optional()
+    .describe("Target length in seconds (10-600). Omit to let the model choose."),
+  seed: z
     .number()
     .int()
+    .nonnegative()
     .optional()
-    .describe(
-      "Optional integer seed for reproducible output. Omit for a random seed. Maps to ACE-Step `manual_seeds` (the native FastAPI layer renames this to `actual_seeds`).",
-    ),
-  infer_step: z
+    .describe("Optional integer seed for reproducible output. Omit for a random seed."),
+  inference_steps: z
     .number()
     .int()
     .positive()
+    .max(200)
     .optional()
     .describe(
-      "Diffusion steps; more = higher quality + slower. Omitted uses the tdmcp default of 27 (ACE-Step's own default is 60).",
+      "Diffusion steps; more = higher quality + slower. Turbo models take 1-20 (8 recommended), base models 1-200 (32-64 recommended). Omitted uses TDMCP_ACE_DEFAULT_STEPS (8).",
     ),
   guidance_scale: z
     .number()
     .positive()
     .optional()
-    .describe("Prompt-adherence strength. Omitted uses 15.0 (ACE-Step default)."),
+    .describe("Prompt-adherence strength. Only base models use it. Omitted uses upstream's 7.0."),
   mode: z
     .enum(["auto", "sync", "job"])
     .default("auto")
@@ -79,6 +79,10 @@ export const generateMusicOutputSchema = z.object({
   estimated_seconds: z.number().optional(),
 });
 
+/** Shared by every ACE tool. */
+export const ACE_DISABLED_MESSAGE =
+  "ACE-Step music generation is disabled. Set TDMCP_ACE_ENABLED=1 and start the ACE-Step 1.5 API server (acestep-api) to enable.";
+
 /**
  * The tool reads `ctx.aceClient`, which the integrator threads onto
  * `ToolContext`. Declared here as an intersection so this file compiles green in
@@ -87,20 +91,13 @@ export const generateMusicOutputSchema = z.object({
 export type AceToolContext = ToolContext & { aceClient?: AceStepClient };
 
 /** Maps the parsed args onto the client's request shape (shared by the ACE tools). */
-export function toAceRequest(a: {
-  prompt: string;
-  lyrics?: string;
-  audio_duration: number;
-  manual_seeds?: number;
-  infer_step?: number;
-  guidance_scale?: number;
-}): AceGenerateRequest {
+export function toAceRequest(a: AceGenerateRequest): AceGenerateRequest {
   return {
     prompt: a.prompt,
     lyrics: a.lyrics,
     audio_duration: a.audio_duration,
-    manual_seeds: a.manual_seeds,
-    infer_step: a.infer_step,
+    seed: a.seed,
+    inference_steps: a.inference_steps,
     guidance_scale: a.guidance_scale,
   };
 }
@@ -118,11 +115,13 @@ export function runOptions(
     rtf: client.rtf,
     defaultSteps: client.steps,
     pollMs: client.pollMs,
+    timeoutMs: client.generationTimeoutMs,
   };
 }
 
 function syncSummary(o: Extract<RunGenerationOutcome, { kind: "sync" }>): string {
-  const base = `Generated ${o.result.seconds.toFixed(1)}s of music (seed ${o.result.seed}) -> ${o.result.wavPath}`;
+  const seed = o.result.seed !== undefined ? ` (seed ${o.result.seed})` : "";
+  const base = `Generated ${o.result.seconds.toFixed(1)}s of music${seed} -> ${o.result.wavPath}`;
   const wall = ` [${o.elapsedSeconds.toFixed(1)}s wall-clock`;
   if (o.observedRtf === undefined) return `${base}${wall}]`;
   const r = o.observedRtf.toFixed(2);
@@ -137,10 +136,7 @@ function jobSummary(o: Extract<RunGenerationOutcome, { kind: "job" }>): string {
     o.estimatedSeconds !== undefined
       ? `Estimated ~${Math.round(o.estimatedSeconds)}s of generation, so this ran as a job. `
       : "Ran as a job (mode=job). ";
-  return (
-    `${est}job_id=${o.jobId} — poll get_music_job {job_id} until status=done, then read ` +
-    "wavPath. Stop it early with cancel_music_job."
-  );
+  return `${est}job_id=${o.jobId} — poll get_music_job {job_id} until status=done, then read wavPath.`;
 }
 
 export async function generateMusicImpl(ctx: AceToolContext, rawArgs: unknown, extra?: ToolExtra) {
@@ -152,9 +148,7 @@ export async function generateMusicImpl(ctx: AceToolContext, rawArgs: unknown, e
   }
   const client = ctx.aceClient;
   if (!client) {
-    return errorResult(
-      "ACE-Step music generation is disabled. Set TDMCP_ACE_ENABLED=1 (and run the ace/ wrapper) to enable.",
-    );
+    return errorResult(ACE_DISABLED_MESSAGE);
   }
   const a = parsed.data;
   return guardAce(
@@ -165,7 +159,7 @@ export async function generateMusicImpl(ctx: AceToolContext, rawArgs: unknown, e
             mode: "sync",
             wavPath: o.result.wavPath,
             seconds: o.result.seconds,
-            seed: o.result.seed,
+            ...(o.result.seed !== undefined ? { seed: o.result.seed } : {}),
             ...(o.observedRtf !== undefined ? { observed_rtf: o.observedRtf } : {}),
           })
         : structuredResult(jobSummary(o), {
@@ -187,9 +181,9 @@ export const registerGenerateMusic: ToolRegistrar = (server, ctx) => {
       title: "Generate music (ACE-Step)",
       description:
         "Generate a WAV from a text prompt (tags/genre) and optional lyrics via a local " +
-        "ACE-Step server. Returns the written file path, realized duration, and seed (mode=sync), " +
+        "ACE-Step 1.5 server. Returns the written file path, realized duration, and seed (mode=sync), " +
         "or a job_id when the bed is long enough to hand off (mode=job). Offline/pre-render " +
-        "bed generator, not real-time. Requires TDMCP_ACE_ENABLED=1 and a running ace/ wrapper.",
+        "bed generator, not real-time. Requires TDMCP_ACE_ENABLED=1 and a running ACE-Step 1.5 API server.",
       inputSchema: generateMusicSchema.shape,
       outputSchema: generateMusicOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },

@@ -69,11 +69,9 @@ export function buildToolContext(
           outputDir: config.aceOutputDir,
           timeoutMs: config.aceTimeoutMs,
           defaultSteps: config.aceDefaultSteps,
-          mode: config.aceMode,
           syncMaxSeconds: config.aceSyncMaxSeconds,
           rtf: config.aceRtf,
           pollMs: config.acePollMs,
-          checkpointPath: config.aceCheckpointPath,
           logger,
         })
       : undefined);

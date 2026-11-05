@@ -407,7 +407,7 @@ this environment runs the team as sub-agents (no `TeamCreate`).
 ## Harness: ACE-Step implementation study
 
 **Goal:** explore **all** the ways the ACE-Step music-generation model
-(`github.com/ace-step/ACE-Step` — Apache-2.0, text/tags/lyrics → WAV, GPU-bound)
+(`github.com/ace-step/ACE-Step-1.5` — MIT, text/tags/lyrics → audio, GPU-bound)
 could be integrated into tdmcp, across five coupled axes (runtime/serving, async
 tool contract, TD audio integration, GPU/perf coexistence, tool/UX surface), and
 converge on one decision-grade `STUDY.md`: per-axis option matrix → recommended
@@ -424,6 +424,13 @@ architecture, refresh an ACE-Step claim after a release) — use the
 the **exploration** harness — it produces a study to decide from; it does **not**
 build. Once the path is chosen, hand the P0 slice to `tdmcp-pipeline`. Simple
 questions can be answered directly. Note: sub-agents (no `TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-07-07 | Initial harness | 2 agents (`acestep-explorer`, `acestep-study-synthesizer`) + 3 skills (`acestep-explore`, `acestep-synthesize`, `tdmcp-acestep-study`) | study how to integrate the ACE-Step music-gen model into tdmcp: 5-axis fan-out → 1 synthesized STUDY.md with a recommended architecture + phased plan; feeds `tdmcp-pipeline`. Exploration only, no build |
+| 2026-11-05 | Retargeted to ACE-Step 1.5 | `src/ace-client/`, tools, docs; removed `ace/` wrapper, native mode and `cancel_music_job` | the v1 repo is dormant and points at 1.5, whose `acestep-api` already has the job queue the wrapper existed to add |
+
 ## Harness: RayTK integration
 
 **Goal:** integrate the external **RayTK** (t3kt/raytk) raymarching/SDF toolkit into
@@ -445,6 +452,5 @@ can be answered directly. Note: sub-agents (no `TeamCreate`).
 **Change log:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
-| 2026-07-07 | Initial harness | 2 agents (`acestep-explorer`, `acestep-study-synthesizer`) + 3 skills (`acestep-explore`, `acestep-synthesize`, `tdmcp-acestep-study`) | study how to integrate the ACE-Step music-gen model into tdmcp: 5-axis fan-out → 1 synthesized STUDY.md with a recommended architecture + phased plan; feeds `tdmcp-pipeline`. Exploration only, no build |
 | 2026-07-08 | Initial harness | 2 agents (`raytk-cartographer`, `raytk-integration-lead`) + 1 skill (`tdmcp-raytk-integration`); reuses `td-architect`/`td-builder`/`tdmcp-bridge-engineer`/`td-qa`/`td-releaser` | RayTK already staged via package registry but not driven as native operators; map→plan→build→integrate→QA harness for the node-graph integration gap, version-gate + async-shader aware |
 | 2026-07-08 | Built W1–W4 (offline) | registry version-gate drift fix + doctor honesty; `tdmcp://raytk/operators` catalog resource; `create_raytk_op` (L3) + `create_raytk_scene` (L1) via live-probed `COMP.copy(master)`; 2 CLI verbs (`raytk-op`/`raytk-scene`) | node-graph-native RayTK. Gates green offline (typecheck/build/biome/5129 tests). Live UNVERIFIED — needs TD 2025.30770+ with the RayTK .tox loaded. No RayTK recipe (ROPs are runtime-copied masters, not RecipeSchema-native types). No tag/push per no-premature-tag |

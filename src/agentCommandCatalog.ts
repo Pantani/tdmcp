@@ -2141,24 +2141,17 @@ export const AGENT_COMMAND_CATALOG = [
     source: "tool",
   },
   {
-    command: "music cancel",
-    summary: "Cancel an ACE-Step music generation job (kills the worker, frees VRAM).",
-    mutates: true,
-    unsafe: false,
-    source: "tool",
-  },
-  {
     command: "music generate",
     summary:
-      "Generate a WAV from a text prompt (tags/genre) and optional lyrics via a local ACE-Step server. Requires TDMCP_ACE_ENABLED=1 and a running ace/ wrapper.",
+      "Generate a WAV from a text prompt (tags/genre) and optional lyrics via a local ACE-Step 1.5 server. Requires TDMCP_ACE_ENABLED=1 and a running ACE-Step 1.5 API server.",
     mutates: true,
     unsafe: false,
     source: "tool",
   },
   {
     command: "music job",
-    summary: "Poll an ACE-Step music generation job by id.",
-    mutates: false,
+    summary: "Poll an ACE-Step music generation job by id; downloads the audio once it is done.",
+    mutates: true,
     unsafe: false,
     source: "tool",
   },

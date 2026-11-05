@@ -1202,7 +1202,6 @@ import {
   bundleDependenciesImpl,
   bundleDependenciesSchema,
 } from "../tools/layer3/bundleDependencies.js";
-import { cancelMusicJobImpl, cancelMusicJobSchema } from "../tools/layer3/cancelMusicJob.js";
 import { captionTopImpl, captionTopSchema } from "../tools/layer3/captionTop.js";
 import {
   checkOperatorAvailabilityImpl,
@@ -4255,7 +4254,7 @@ const COMMANDS: Record<string, Command> = {
   "music generate": r(
     generateMusicSchema,
     generateMusicImpl,
-    "Generate a WAV from a text prompt (tags/genre) and optional lyrics via a local ACE-Step server. Requires TDMCP_ACE_ENABLED=1 and a running ace/ wrapper.",
+    "Generate a WAV from a text prompt (tags/genre) and optional lyrics via a local ACE-Step 1.5 server. Requires TDMCP_ACE_ENABLED=1 and a running ACE-Step 1.5 API server.",
     { mutates: true },
   ),
   // ACE-Step P1 (2026-07-11) — song->show flagship + async job lifecycle (same TDMCP_ACE_ENABLED gate;
@@ -4275,12 +4274,7 @@ const COMMANDS: Record<string, Command> = {
   "music job": r(
     getMusicJobSchema,
     getMusicJobImpl,
-    "Poll an ACE-Step music generation job by id.",
-  ),
-  "music cancel": r(
-    cancelMusicJobSchema,
-    cancelMusicJobImpl,
-    "Cancel an ACE-Step music generation job (kills the worker, frees VRAM).",
+    "Poll an ACE-Step music generation job by id; downloads the audio once it is done.",
     { mutates: true },
   ),
   // CLI parity wave — expose every registered MCP tool as a same-named subcommand:
@@ -5123,12 +5117,10 @@ const ENV_NAMES: Record<keyof TdmcpConfig, string> = {
   projectRagLicenseAllowlist: "TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST",
   projectRagScoreWeights: "TDMCP_PROJECT_RAG_SCORE_WEIGHTS",
   aceEnabled: "TDMCP_ACE_ENABLED",
-  aceMode: "TDMCP_ACE_MODE",
   aceHost: "TDMCP_ACE_HOST",
   acePort: "TDMCP_ACE_PORT",
   aceOutputDir: "TDMCP_ACE_OUTPUT_DIR",
   aceToken: "TDMCP_ACE_TOKEN",
-  aceCheckpointPath: "TDMCP_ACE_CHECKPOINT_PATH",
   aceTimeoutMs: "TDMCP_ACE_TIMEOUT_MS",
   aceDefaultSteps: "TDMCP_ACE_DEFAULT_STEPS",
   aceSyncMaxSeconds: "TDMCP_ACE_SYNC_MAX_SECONDS",

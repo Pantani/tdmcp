@@ -3,12 +3,12 @@ import { estimateSeconds, progressReporter } from "../../ace-client/runGeneratio
 import { guardAce } from "../../ace-client/types.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolExtra, ToolRegistrar } from "../types.js";
-import { type AceToolContext, generateMusicSchema, toAceRequest } from "./generateMusic.js";
-
-/** Shown when a job tool is invoked while the client is in native serving mode. */
-const NATIVE_JOBS_UNSUPPORTED =
-  "Job control is not supported in native ACE mode (infer-api.py is synchronous, " +
-  "text2music-only, no job API). Set TDMCP_ACE_MODE=wrapper.";
+import {
+  ACE_DISABLED_MESSAGE,
+  type AceToolContext,
+  generateMusicSchema,
+  toAceRequest,
+} from "./generateMusic.js";
 
 /**
  * Reuse the sync generate surface so submit and generate share one input, minus
@@ -27,12 +27,7 @@ export async function submitMusicJobImpl(ctx: AceToolContext, rawArgs: unknown, 
   }
   const client = ctx.aceClient;
   if (!client) {
-    return errorResult(
-      "ACE-Step music generation is disabled. Set TDMCP_ACE_ENABLED=1 (and run the ace/ wrapper) to enable.",
-    );
-  }
-  if (client.mode === "native") {
-    return errorResult(NATIVE_JOBS_UNSUPPORTED);
+    return errorResult(ACE_DISABLED_MESSAGE);
   }
   const a = parsed.data;
   const req = toAceRequest(a);
@@ -58,8 +53,9 @@ export const registerSubmitMusicJob: ToolRegistrar = (server, ctx) => {
       title: "Submit async music job (ACE-Step)",
       description:
         "Submit a non-blocking ACE-Step music generation job and get a job_id back " +
-        "immediately. Poll with get_music_job and stop with cancel_music_job. Same prompt/" +
-        "lyrics/duration surface as generate_music. Wrapper mode only. Requires TDMCP_ACE_ENABLED=1.",
+        "immediately. Poll with get_music_job. Same prompt/lyrics/duration surface as " +
+        "generate_music. A submitted job cannot be cancelled: ACE-Step 1.5 has no cancel API. " +
+        "Requires TDMCP_ACE_ENABLED=1.",
       inputSchema: submitMusicJobSchema.shape,
       outputSchema: submitMusicJobOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },

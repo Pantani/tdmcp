@@ -1,7 +1,6 @@
 import type { ToolRegistrar } from "../types.js";
 import { registerAnalyzeProject } from "./analyzeProject.js";
 import { registerBundleDependencies } from "./bundleDependencies.js";
-import { registerCancelMusicJob } from "./cancelMusicJob.js";
 // Campaign Waves 4 & 6 (backlog 2026-05-29):
 import { registerCaptionTop } from "./captionTop.js";
 import { registerCheckOperatorAvailability } from "./checkOperatorAvailability.js";
@@ -205,5 +204,4 @@ export const layer3Registrars: ToolRegistrar[] = [
   registerGenerateMusic,
   registerSubmitMusicJob,
   registerGetMusicJob,
-  registerCancelMusicJob,
 ];

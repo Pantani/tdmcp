@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
@@ -8,11 +9,12 @@ import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js"
 import { generateMusicReactiveImpl } from "../../src/tools/layer1/generateMusicReactive.js";
 import type { AceToolContext } from "../../src/tools/layer3/generateMusic.js";
 import { silentLogger } from "../../src/utils/logger.js";
+import { ACE_BASE, aceOutputDir, mockAce, succeededRow } from "../helpers/aceMock.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
-const ACE_BASE = "http://127.0.0.1:8000";
-const OUTPUT_DIR = "/out/ace-output";
-const OK_RESULT = { wavPath: "/out/bed.wav", seconds: 30, seed: 7 };
+const OUTPUT_DIR = aceOutputDir();
+const OK_RESULT = succeededRow({ duration: 30, seed_value: "7" });
+const BED_PATH = join(OUTPUT_DIR, "task-1.wav");
 
 interface CreatedNodeBody {
   parent_path: string;
@@ -30,7 +32,6 @@ function makeClient(): AceStepClient {
   return new AceStepClient({
     baseUrl: ACE_BASE,
     timeoutMs: 2000,
-    defaultSteps: 27,
     outputDir: OUTPUT_DIR,
     pollMs: 1,
   });
@@ -51,23 +52,6 @@ function textOf(result: CallToolResult): string {
     .filter((c): c is { type: "text"; text: string } => c.type === "text")
     .map((c) => c.text)
     .join("\n");
-}
-
-/**
- * Capture the ACE submit body and reply with a crafted result. P2: the bed is now
- * generated through the shared driver's sync branch (POST /jobs + poll), not
- * POST /generate — same worker, but it buys progress + real cancellation.
- */
-function captureGenerate(result: Record<string, unknown>): { bodies: Record<string, unknown>[] } {
-  const bodies: Record<string, unknown>[] = [];
-  server.use(
-    http.post(`${ACE_BASE}/jobs`, async ({ request }) => {
-      bodies.push((await request.json()) as Record<string, unknown>);
-      return HttpResponse.json({ job_id: "job-r" });
-    }),
-    http.get(`${ACE_BASE}/jobs/job-r`, () => HttpResponse.json({ status: "done", ...result })),
-  );
-  return { bodies };
 }
 
 /** Capture the bodies of TD node-create calls. */
@@ -102,7 +86,7 @@ function captureExecScripts(): string[] {
 
 describe("generate_music_reactive", () => {
   it("happy path: generation facts nested under structuredContent.generation, reactive keys preserved", async () => {
-    captureGenerate(OK_RESULT);
+    mockAce(server, [OK_RESULT]);
     const result = await generateMusicReactiveImpl(makeCtx(makeClient()), {
       prompt: "lofi hip hop, mellow",
       visual_style: "glsl",
@@ -110,10 +94,10 @@ describe("generate_music_reactive", () => {
     expect(result.isError).toBeFalsy();
     const text = textOf(result);
     expect(text).toContain("bed (seed 7)");
-    expect(text).toContain("/out/bed.wav");
+    expect(text).toContain(BED_PATH);
     const structured = (result as { structuredContent?: Record<string, unknown> })
       .structuredContent;
-    expect(structured?.generation).toEqual({ wavPath: "/out/bed.wav", seconds: 30, seed: 7 });
+    expect(structured?.generation).toEqual({ wavPath: BED_PATH, seconds: 30, seed: 7 });
     // The reactive tool's own JSON-fence report (container path etc.) survives augmentation.
     expect(text).toContain('"container"');
     // The reactive preview image survives too.
@@ -121,7 +105,7 @@ describe("generate_music_reactive", () => {
   });
 
   it("forces audio_source=file with the generated wavPath (user cannot override the source)", async () => {
-    captureGenerate(OK_RESULT);
+    mockAce(server, [OK_RESULT]);
     const bodies = captureCreateBodies();
     await generateMusicReactiveImpl(makeCtx(makeClient()), {
       prompt: "techno",
@@ -129,13 +113,13 @@ describe("generate_music_reactive", () => {
     });
     const src = bodies.find((b) => b.name === "audioin");
     expect(src?.type).toBe("audiofileinCHOP");
-    expect(src?.parameters).toMatchObject({ file: "/out/bed.wav", play: 1 });
+    expect(src?.parameters).toMatchObject({ file: BED_PATH, play: 1 });
     // No microphone/device source was created.
     expect(bodies.some((b) => b.type === "audiodeviceinCHOP")).toBe(false);
   });
 
   it("passes visual_style and frequency_bands through to the reactive build", async () => {
-    captureGenerate(OK_RESULT);
+    mockAce(server, [OK_RESULT]);
     const bodies = captureCreateBodies();
     const scripts = captureExecScripts();
     await generateMusicReactiveImpl(makeCtx(makeClient()), {
@@ -149,17 +133,17 @@ describe("generate_music_reactive", () => {
     expect(scripts.some((s) => s.includes("0.159155"))).toBe(true);
   });
 
-  it("reuses the client default injection (infer_step 27, guidance_scale 15) when omitted", async () => {
-    const { bodies } = captureGenerate(OK_RESULT);
+  it("reuses the client's request defaults when options are omitted", async () => {
+    const { bodies } = mockAce(server, [OK_RESULT]);
     await generateMusicReactiveImpl(makeCtx(makeClient()), {
       prompt: "orchestral",
       visual_style: "glsl",
     });
     expect(bodies).toHaveLength(1);
     const body = bodies[0] ?? {};
-    expect(body.infer_step).toBe(27);
-    expect(body.guidance_scale).toBe(15);
-    expect(body.save_path).toBe(OUTPUT_DIR);
+    expect(body.inference_steps).toBe(8);
+    expect(body.audio_format).toBe("wav");
+    expect(body).not.toHaveProperty("guidance_scale");
   });
 
   it("disabled gate: aceClient undefined -> friendly error, no TD build attempted", async () => {
@@ -174,7 +158,7 @@ describe("generate_music_reactive", () => {
   });
 
   it("generation failure (ACE unreachable) -> friendly error, no reactive build attempted", async () => {
-    server.use(http.post(`${ACE_BASE}/jobs`, () => HttpResponse.error()));
+    server.use(http.post(`${ACE_BASE}/release_task`, () => HttpResponse.error()));
     // Any TD node-create means the build was wrongly attempted → fail loudly.
     let tdTouched = false;
     server.use(
@@ -188,12 +172,12 @@ describe("generate_music_reactive", () => {
       visual_style: "glsl",
     });
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("Cannot reach the ACE-Step wrapper");
+    expect(textOf(result)).toContain("Cannot reach the ACE-Step API server");
     expect(tdTouched).toBe(false);
   });
 
   it("build failure after generation -> surfaces the reactive error result as-is, no throw", async () => {
-    captureGenerate(OK_RESULT);
+    mockAce(server, [OK_RESULT]);
     // TD bridge rejects node creation → the reactive build returns an isError result.
     server.use(
       http.post(`${TD_BASE}/api/nodes`, () =>

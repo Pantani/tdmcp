@@ -513,42 +513,26 @@ export const ConfigSchema = z.object({
     .preprocess(parseScoreWeights, ScoreWeightsSchema)
     .default({ technical: 0.45, license: 0.25, freshness: 0.15, reliability: 0.15 }),
   /**
-   * Opt-in switch for the ACE-Step music-generation feature (`generate_music`
-   * tool + `music generate` CLI verb). Off by default; accepts "1"/"true"
-   * (case-insensitive) as true, "0"/"false"/"" as false. Note: tool
-   * registration runs BEFORE the parsed config is available, so the layer index
-   * and CLI read `process.env.TDMCP_ACE_ENABLED` via the shared
-   * `isAceFeatureFlagEnabled` helper. This field is the source of truth
-   * everywhere else.
+   * Opt-in switch for the ACE-Step 1.5 music-generation feature (`generate_music`
+   * tools + `music` CLI verbs). Off by default; accepts "1"/"true"
+   * (case-insensitive) as true, "0"/"false"/"" as false. Tools register only when
+   * the built context has an ACE client, so env and config-file enablement match.
    */
   aceEnabled: z.preprocess(ragEnabledFlag, z.boolean().default(false)),
-  /**
-   * ACE-Step serving mode. `wrapper` (default) talks to the local `ace/` FastAPI
-   * wrapper; `native` targets ACE-Step's own FastAPI layer. Only `wrapper` is
-   * wired in P0.
-   */
-  aceMode: z.enum(["wrapper", "native"]).default("wrapper"),
-  /** Host of the local ACE-Step server. */
+  /** Host of the local ACE-Step 1.5 API server (`acestep-api`). */
   aceHost: z.string().min(1).default("127.0.0.1"),
-  /** Port of the local ACE-Step server. */
-  acePort: z.coerce.number().int().positive().max(65535).default(8000),
-  /** Directory the wrapper writes generated WAVs into (passed as `save_path`). */
+  /** Port of the local ACE-Step 1.5 API server (upstream default 8001). */
+  acePort: z.coerce.number().int().positive().max(65535).default(8001),
+  /** Directory finished audio is downloaded into. Use an absolute path TD can read. */
   aceOutputDir: z.string().min(1).default(".tdmcp/ace-output"),
-  /** Optional bearer token for the ACE-Step server (sent as `Authorization: Bearer <token>`). */
+  /** Optional API key (upstream `ACESTEP_API_KEY`), sent as `Authorization: Bearer <token>`. */
   aceToken: z.string().min(1).optional(),
-  /**
-   * Filesystem path to the ACE-Step checkpoint directory. Sent as the native
-   * `infer-api.py` `ACEStepInput.checkpoint_path` (required upstream, no default).
-   * Only consulted in `aceMode:"native"`; the `wrapper` mode loads the checkpoint
-   * from its own env. UNVERIFIED — native mode is a live probe.
-   */
-  aceCheckpointPath: z.string().min(1).optional(),
-  /** Wall-clock timeout (ms) for a generation request; generation is slow, so default 10 min. */
+  /** Per-request timeout and blocking-generation deadline (ms); default 10 min. */
   aceTimeoutMs: z.coerce.number().int().positive().default(600000),
-  /** Diffusion steps injected when the caller omits `infer_step` (ACE-Step's own default is 60). */
-  aceDefaultSteps: z.coerce.number().int().positive().default(27),
+  /** Steps sent when the caller omits `inference_steps`. 8 suits turbo; base models want 32-64. */
+  aceDefaultSteps: z.coerce.number().int().positive().default(8),
   /**
-   * F6 threshold: in `mode:"auto"`, an estimated generation longer than this
+   * In `mode:"auto"`, an estimated generation longer than this
    * hands off to a background job instead of blocking the tool call.
    */
   aceSyncMaxSeconds: z.coerce.number().int().positive().default(120),
@@ -699,12 +683,10 @@ function envValues(env: NodeJS.ProcessEnv): Record<string, unknown> {
     projectRagLicenseAllowlist: env.TDMCP_PROJECT_RAG_LICENSE_ALLOWLIST || undefined,
     projectRagScoreWeights: env.TDMCP_PROJECT_RAG_SCORE_WEIGHTS || undefined,
     aceEnabled: env.TDMCP_ACE_ENABLED,
-    aceMode: env.TDMCP_ACE_MODE || undefined,
     aceHost: env.TDMCP_ACE_HOST || undefined,
     acePort: env.TDMCP_ACE_PORT || undefined,
     aceOutputDir: env.TDMCP_ACE_OUTPUT_DIR || undefined,
     aceToken: env.TDMCP_ACE_TOKEN || undefined,
-    aceCheckpointPath: env.TDMCP_ACE_CHECKPOINT_PATH || undefined,
     aceTimeoutMs: env.TDMCP_ACE_TIMEOUT_MS || undefined,
     aceDefaultSteps: env.TDMCP_ACE_DEFAULT_STEPS || undefined,
     aceSyncMaxSeconds: env.TDMCP_ACE_SYNC_MAX_SECONDS || undefined,
