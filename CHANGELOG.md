@@ -42,6 +42,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   limits stated, closes the G5 per-arc guide item, and corrects stale
   Experimental claims. No live-evidence boundary is upgraded.
 
+### Fixed
+
+- **Flaky HTTP transport integration tests** — the suite no longer hardcodes
+  loopback ports, which could randomly fail CI with `EADDRINUSE`. It now allocates
+  free ports at runtime, reports a failed bridge bind immediately instead of as a
+  hook timeout, and cleans up after incomplete setup. Test code only.
+
 ### Security
 
 - **Production dependency advisories resolved** — bumped
