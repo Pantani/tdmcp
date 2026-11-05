@@ -9,7 +9,9 @@ import { registerComposeCueList } from "./composeCueList.js";
 import { registerControlledDisorderGrid } from "./controlledDisorderGrid.js";
 import { registerCreate3dAudioReactive } from "./create3dAudioReactive.js";
 import { registerCreate3dScene } from "./create3dScene.js";
+import { registerCreateAiBackdrop } from "./createAiBackdrop.js";
 import { registerCreateAiMirror } from "./createAiMirror.js";
+import { registerCreateAiVideoBackdrop } from "./createAiVideoBackdrop.js";
 import { registerCreateAsciiRender } from "./createAsciiRender.js";
 import { registerCreateAsemicWriting } from "./createAsemicWriting.js";
 import { registerCreateAudioReactive } from "./createAudioReactive.js";
@@ -142,6 +144,7 @@ import { registerDetectPitch } from "./detectPitch.js";
 import { registerDetectTempo } from "./detectTempo.js";
 import { registerDriveStreamdiffusion } from "./driveStreamdiffusion.js";
 import { registerEnhanceBuild } from "./enhanceBuild.js";
+import { registerEvolveParameters } from "./evolveParameters.js";
 import { registerExtractAudioFeatures } from "./extractAudioFeatures.js";
 import { registerGetPreview } from "./getPreview.js";
 import { registerImportIsfShader } from "./importIsfShader.js";
@@ -345,6 +348,12 @@ export const layer1Registrars: ToolRegistrar[] = [
   registerCreateVertexDisplacementMat,
   registerControlledDisorderGrid,
   registerCreateBlobTrace,
+  // AI backdrop generation (2026-07-07) — prompt → wired AI-generated backdrop system:
+  registerCreateAiBackdrop,
+  // AI video backdrop (2026-07-10) — prompt → wired AI-generated video-backdrop system:
+  registerCreateAiVideoBackdrop,
+  // NEvo Deliverable 2 (2026-07-10) — experimental, offline GA parameter search:
+  registerEvolveParameters,
 ];
 
 // v0.6.0 — Creative RAG inspiration -> execution loop (gated behind env flag).

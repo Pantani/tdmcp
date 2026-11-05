@@ -15,7 +15,45 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   are ratcheted against a committed baseline that may only shrink (16 of 363 tools
   are exec-free today, 290 are blocked), and a shared fixture holds the mock to the
   real Python router. This is an offline check: it does not cook anything, covers
-  default paths only, and makes no claim about live TouchDesigner behavior.
+- **`evolve_parameters`** (Layer 1, CLI `evolve-parameters`, **experimental /
+  offline**) — an evolutionary parameter search that adopts NEvo's categorical
+  genetic-algorithm *method* (arXiv 2607.02317, CC BY 4.0), retargeting its
+  fMRI-based fitness to a **TouchDesigner-measurable** one. Evolves a genome of
+  operator parameters (`genes` keyed `"<node>.<param>"`) against a fitness the
+  bridge can read back — `audio_energy` (Info CHOP `.chan.eval()`, default),
+  `top_luma`, or `top_motion` (two-frame luma delta) — using μ+λ elitism
+  (population 20, generations 6, elite 0.3, crossover 0.5, mutation 0.2; hard
+  cap population×generations ≤ 300). Deterministic under `seed` (seeded RNG, no
+  `Math.random`). Each losing candidate is torn down as it is scored and only the
+  champion is rebuilt, so the project graph is never flooded. It is a **design-time
+  search tool, not a real-time controller** — a full run is minutes of build→cook→
+  score cycles. No bridge endpoint, no config. Live cook behavior is
+  UNVERIFIED-pending (bridge offline); all offline gates pass.
+- **AI video asset lane** — a provider-agnostic text/image-to-video lane that turns
+  a prompt (and optional init image) into a real TouchDesigner clip, extending the
+  hosted AI texture lane. Adopts the evolutionary-video-synthesis project NEvo's
+  *off-the-shelf generator choice* (LTX-Video), never NEvo code (arXiv 2607.02317,
+  CC BY 4.0):
+  - `create_ai_video` (Layer 2, CLI `create-ai-video`) — generate a clip and drop
+    it into TouchDesigner as a Movie File In TOP pointing at the cached asset.
+  - `create_ai_video_backdrop` (Layer 1, CLI `create-ai-video-backdrop`) — prompt →
+    a fully wired AI-generated moving backdrop (Movie File In → Level → Transform →
+    Blur → Null) with exposed **Brightness / Blur / Scale / Play / Speed** controls.
+  - New `src/services/videoGen/` provider seam with **two first-class backends**
+    selected by `TDMCP_VIDEO_GEN_PROVIDER`: **`comfyui`** (local ComfyUI REST,
+    zero per-generation cost, fully offline, runs LTX-Video on a local GPU) and
+    **`fal`** (hosted fal.ai, pay-per-generation). Both write the render to a local
+    cache file handed to a Movie File In TOP — no new bridge endpoint. Model default
+    `ltx-video`, `ltx-2` opt-in; the schema rejects controls a model lacks
+    (fixed-length / 4K) instead of silently ignoring them.
+  - New config (Node-only, never sent to the TD bridge): `TDMCP_VIDEO_GEN_PROVIDER`,
+    `TDMCP_VIDEO_GEN_MODEL`, `TDMCP_VIDEO_GEN_CACHE_DIR`, `TDMCP_VIDEO_GEN_TIMEOUT_MS`,
+    `TDMCP_COMFYUI_URL`, `TDMCP_COMFYUI_VIDEO_WORKFLOW`; reuses `TDMCP_FAL_KEY` (no new
+    secret, redacted in `doctor`). Generation is "generate-ahead, then play back
+    live" — the clip plays in real time, generation is not per-frame. Live fal/comfyui
+    contracts + TD cook are UNVERIFIED-pending (bridge offline, no fal key / GPU probe
+    at build time); all offline gates pass.
+
 ### Changed
 
 - **API stability clock restarted at v0.13.2 (roadmap G1)** — an audit of every
@@ -730,6 +768,27 @@ post-v0.13.1 mainline work below.
     scene. `create_raytk_op` connects an existing op into a new op's input. Wiring uses
     connector-to-connector (`dst.inputConnectors[i].connect(src.outputConnectors[0])`) —
     RayTK COMP connectors reject `.connect(op)`.
+- **AI texture asset lane** — a hosted text-to-image (txt2img) lane that turns a
+  prompt into a real TouchDesigner texture, complementing the realtime img2img
+  path shipped in Milestone 4:
+  - `create_ai_texture` (Layer 2, CLI `create-ai-texture`) — generate an image
+    from a text prompt via a hosted provider (fal.ai) and drop it into
+    TouchDesigner as a Movie File In TOP pointing at the cached asset.
+  - `create_ai_backdrop` (Layer 1, CLI `create-ai-backdrop`) — prompt → a fully
+    wired AI-generated backdrop (Movie File In → Level → Transform → Blur → Null)
+    with exposed **Brightness / Blur / Scale** live controls.
+  - New `src/services/imageGen/` hosted image-generation provider seam (fal.ai;
+    Flux-schnell default, WAN 2.5 selectable) that writes the render to a local
+    cache file and hands it to a Movie File In TOP — no new bridge endpoint, a
+    colocated filesystem handoff. On a post-generation bridge failure the tool
+    still cites the on-disk cache path so the rendered asset is never lost.
+  - New config (Node-only, never sent to the TD bridge):
+    `TDMCP_IMAGE_GEN_PROVIDER` (`fal` | `replicate` | `none`, default `none`),
+    `TDMCP_FAL_KEY`, `TDMCP_REPLICATE_KEY`, `TDMCP_IMAGE_GEN_MODEL`, and
+    `TDMCP_IMAGE_CACHE_DIR`. The provider keys are redacted in `doctor` /
+    `doctor --json`. Live TD cook + fal contract validation is pending (bridge
+    offline + no fal key at release time); all offline gates and safety checks
+    pass.
 
 ### Changed
 

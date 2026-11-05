@@ -425,3 +425,26 @@ can be answered directly. Note: sub-agents (no `TeamCreate`).
 |------|--------|--------|--------|
 | 2026-07-08 | Initial harness | 2 agents (`raytk-cartographer`, `raytk-integration-lead`) + 1 skill (`tdmcp-raytk-integration`); reuses `td-architect`/`td-builder`/`tdmcp-bridge-engineer`/`td-qa`/`td-releaser` | RayTK already staged via package registry but not driven as native operators; map→plan→build→integrate→QA harness for the node-graph integration gap, version-gate + async-shader aware |
 | 2026-07-08 | Built W1–W4 (offline) | registry version-gate drift fix + doctor honesty; `tdmcp://raytk/operators` catalog resource; `create_raytk_op` (L3) + `create_raytk_scene` (L1) via live-probed `COMP.copy(master)`; 2 CLI verbs (`raytk-op`/`raytk-scene`) | node-graph-native RayTK. Gates green offline (typecheck/build/biome/5129 tests). Live UNVERIFIED — needs TD 2025.30770+ with the RayTK .tox loaded. No RayTK recipe (ROPs are runtime-copied masters, not RecipeSchema-native types). No tag/push per no-premature-tag |
+
+## Harness: NEvo integration study
+
+**Goal:** study whether/how the external **NEvo** research project (EPFL/JHU —
+Neural-Guided Evolutionary Video Synthesis, arXiv 2607.02317) can feed tdmcp, then
+draft the resulting project — separating NEvo's reusable pieces (LTX-Video generator,
+its evolutionary prompt-search *method*) from its non-reusable objective (fMRI-guided
+fitness). Two phases: **levantar os pontos** (INTEGRATION_POINTS) → **rascunhar o
+projeto** (PROJECT_DRAFT). Studies + drafts; does NOT build.
+
+**Trigger:** when asked to survey/raise NEvo integration points, assess NEvo for video
+generation / real-time / any interaction in tdmcp, or draft a tdmcp project from it —
+and follow-ups (re-run, refresh after a new NEvo release, scope to one surface like
+"só o LTX-Video" / "só o método evolutivo", go from points map to draft) — use the
+`tdmcp-nevo-integration` skill (fan-out of `nevo-integration-scout`s → 1
+`nevo-integration-architect`). Once a deliverable is chosen, hand it to
+`tdmcp-pipeline`. Simple questions can be answered directly. Note: sub-agents (no
+`TeamCreate`).
+
+**Change log:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| 2026-07-10 | Initial harness | 2 agents (`nevo-integration-scout`, `nevo-integration-architect`) + 1 skill (`tdmcp-nevo-integration`) | assess an external AI-video/evolutionary-synthesis research project for tdmcp: parallel primary-source scouts over 5 surfaces (media-lane/td-realtime/evolutionary-method/scoring-backbone/availability-license) → synthesized INTEGRATION_POINTS then PROJECT_DRAFT; reuses `tdmcp-pipeline` to build |
