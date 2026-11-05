@@ -25,6 +25,11 @@ export interface ToolOutcome {
   status: ExecOffStatus;
   gates: string[];
   detail?: string;
+  /**
+   * For `degraded` and `blocked`: whether the result tells the caller the policy
+   * refused something. Without this, a partial build reads as a complete one.
+   */
+  reportsRefusal?: boolean;
 }
 
 interface CapturedTool {
@@ -62,6 +67,13 @@ export function isPlacementScript(script: string | undefined): boolean {
   return script !== undefined && PLACEMENT_SCRIPT.test(script);
 }
 
+/** Every message the policy produces names the variable, so a report must too. */
+function resultReportsRefusal(result: CallToolResult): boolean {
+  return JSON.stringify([result.content, result.structuredContent]).includes(
+    "TDMCP_BRIDGE_ALLOW_EXEC",
+  );
+}
+
 function classify(calls: BridgeCall[], result: CallToolResult): Omit<ToolOutcome, "tool"> {
   const refused = calls.filter((call) => call.gate);
   const substantive = refused.filter((call) => !isPlacementScript(call.script));
@@ -72,17 +84,20 @@ function classify(calls: BridgeCall[], result: CallToolResult): Omit<ToolOutcome
     .join("\n")
     .slice(0, 300);
 
-  if (result.isError && substantive.length > 0) return { status: "blocked", gates, detail: text };
+  const reportsRefusal = resultReportsRefusal(result);
+  if (result.isError && substantive.length > 0) {
+    return { status: "blocked", gates, detail: text, reportsRefusal };
+  }
   // A tool whose whole job is placement (arrange_network) fails on the "cosmetic" script.
   if (result.isError && refused.length > 0 && text.includes("TDMCP_BRIDGE_ALLOW_EXEC")) {
-    return { status: "blocked", gates: gatesOf(refused), detail: text };
+    return { status: "blocked", gates: gatesOf(refused), detail: text, reportsRefusal };
   }
   if (calls.some((call) => call.mockGap)) {
     const gaps = calls.filter((c) => c.mockGap).map((c) => `${c.method} ${c.path}`);
     return { status: "unverified", gates, detail: `mock gap: ${gaps.join(", ")}` };
   }
   if (result.isError) return { status: "unverified", gates, detail: text };
-  if (substantive.length > 0) return { status: "degraded", gates };
+  if (substantive.length > 0) return { status: "degraded", gates, reportsRefusal };
   if (refused.length > 0) return { status: "placement_only", gates: [] };
   return { status: "clean", gates: [] };
 }

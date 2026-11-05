@@ -128,7 +128,19 @@ const ARG_OVERRIDES: Record<string, Record<string, unknown>> = {
  */
 const ENVIRONMENT_DEPENDENT = new Set(["create_shader_park"]);
 
-type Baseline = Record<Exclude<ExecOffStatus, "clean">, string[]> & { _comment: string };
+/**
+ * Refused work the result doesn't mention. Fix a tool rather than adding it here.
+ *
+ * get_preview: capturePreview's Perform-mode probe uses exec and treats a refusal as
+ * "not performing", so the guard fails open under exec-off. /api/system reads different
+ * state from the flag set_perform_mode stores, so this needs a bridge change.
+ */
+const KNOWN_SILENT = new Set(["get_preview"]);
+
+type Baseline = Record<Exclude<ExecOffStatus, "clean">, string[]> & {
+  _comment: string;
+  core: string[];
+};
 
 const BASELINE_PATH = fileURLToPath(new URL("./bridgeExecOff.baseline.json", import.meta.url));
 const BASELINE_STATUSES = ["placement_only", "degraded", "blocked", "unverified"] as const;
@@ -141,15 +153,15 @@ function baselineStatusByTool(baseline: Baseline): Map<string, ExecOffStatus> {
   return byTool;
 }
 
-function renderBaseline(outcomes: readonly ToolOutcome[]): Baseline {
+function renderBaseline(outcomes: readonly ToolOutcome[], previous: Baseline): Baseline {
   const names = (status: ExecOffStatus) =>
     outcomes
       .filter((o) => o.status === status)
       .map((o) => o.tool)
       .sort();
   return {
-    _comment:
-      "Layer 1/2 tools that are not exec-free under TDMCP_BRIDGE_ALLOW_EXEC=0, on their default path, against a mock. Any tool absent here must stay 'clean'. May only shrink: see tests/smoke/bridgeExecOff.test.ts and scripts/check-exec-off-baseline.mjs.",
+    _comment: previous._comment,
+    core: previous.core,
     placement_only: names("placement_only"),
     degraded: names("degraded"),
     blocked: names("blocked"),
@@ -170,7 +182,11 @@ beforeAll(async () => {
     outcomes.push(await sweepTool(tool, bridge, ARG_OVERRIDES[tool.name]));
   }
   if (process.env.EXEC_OFF_UPDATE_BASELINE === "1") {
-    writeFileSync(BASELINE_PATH, `${JSON.stringify(renderBaseline(outcomes), null, 2)}\n`);
+    const previous = JSON.parse(readFileSync(BASELINE_PATH, "utf8")) as Baseline;
+    writeFileSync(
+      BASELINE_PATH,
+      `${JSON.stringify(renderBaseline(outcomes, previous), null, 2)}\n`,
+    );
   }
   if (process.env.EXEC_OFF_REPORT) {
     // Per-tool gates and error text, for reporting; not committed.
@@ -277,6 +293,18 @@ describe("exec-off sweep can tell the outcomes apart", () => {
     expect(await statusOf(run)).toBe("degraded");
   });
 
+  it("notices when a tool hides the refusal from its result", async () => {
+    const [silent] = captureTools(makeCtx(), [
+      fake("silent", (ctx) => ctx.client.executePythonScript("print(1)").catch(() => undefined)),
+    ]);
+    const [loud] = captureTools(makeCtx(), [
+      fake("loud", (ctx) => ctx.client.executePythonScript("print(1)")),
+    ]);
+    if (!silent || !loud) throw new Error("control tools did not register");
+    expect((await sweepTool(silent, bridge, undefined)).reportsRefusal).toBe(false);
+    expect((await sweepTool(loud, bridge, undefined)).reportsRefusal).toBe(true);
+  });
+
   it("flags swallowed placement scripts as placement_only", async () => {
     const run = (ctx: ReturnType<typeof makeCtx>) =>
       ctx.client
@@ -342,6 +370,31 @@ describe("Layer 1/2 tools under TDMCP_BRIDGE_ALLOW_EXEC=0 (mocked bridge, defaul
         : [];
     });
     expect(stale, "Run `npm run smoke:exec-off:update` to lock in these improvements.").toEqual([]);
+  });
+
+  it("keeps the named core set buildable", () => {
+    // The G4 bar for 1.0: these tools build a network from structured routes alone.
+    const byTool = new Map(outcomes.map((o) => [o.tool, o]));
+    const broken = baseline.core.flatMap((tool) => {
+      const status = byTool.get(tool)?.status ?? "not registered";
+      return status === "clean" || status === "placement_only" ? [] : [`${tool}: ${status}`];
+    });
+    expect(baseline.core.length).toBeGreaterThan(0);
+    expect(broken, "Core tools must build under TDMCP_BRIDGE_ALLOW_EXEC=0.").toEqual([]);
+  });
+
+  it("has every other tool name the policy when it refuses work", () => {
+    // The other half of the bar: outside the core a tool may fail, but not quietly.
+    const refused = outcomes.filter((o) => o.status === "degraded" || o.status === "blocked");
+    const silent = refused.filter((o) => !o.reportsRefusal).map((o) => o.tool);
+    expect(
+      silent.filter((tool) => !KNOWN_SILENT.has(tool)),
+      "These tools hide a TDMCP_BRIDGE_ALLOW_EXEC=0 refusal; surface it in the result.",
+    ).toEqual([]);
+    expect(
+      [...KNOWN_SILENT].filter((tool) => !silent.includes(tool)),
+      "These now report the refusal: remove them from KNOWN_SILENT.",
+    ).toEqual([]);
   });
 
   it("states a baseline with no duplicates", () => {

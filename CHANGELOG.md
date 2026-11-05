@@ -35,6 +35,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   are exec-free today, 290 are blocked), and a shared fixture holds the mock to the
   real Python router. This is an offline check: it does not cook anything, covers
   default paths only, and makes no claim about live TouchDesigner behavior.
+  The smoke enforces a named core set of eight network-building tools that must keep
+  building, and requires other tools to name the policy when it refuses their work.
+
+### Fixed
+
+- **Exec-off refusals no longer disappear inside composed tools** —
+  `moodboard_to_system` and `scaffold_vj_deck` now pass on warnings from the tools
+  they compose, and `connect_comfyui` reports why its `.tox` step failed instead of
+  always saying no candidates were found.
 
 ### Changed
 

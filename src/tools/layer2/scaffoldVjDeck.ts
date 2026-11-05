@@ -90,6 +90,7 @@ interface DecksReport {
   deck_b?: { gain?: string };
   output?: string;
   output_path?: string;
+  warnings?: string[];
 }
 
 type ControlName = "crossfader" | "gain_a" | "gain_b";
@@ -182,6 +183,8 @@ export async function scaffoldVjDeckImpl(
     );
   }
   const decks = parseFence<DecksReport>(decksResult);
+  // Keep the deck build's own warnings: a refused step must not read as a complete deck.
+  warnings.push(...(decks?.warnings ?? []));
   const container = decks?.container;
   const crossfader = decks?.crossfader;
   const gainA = decks?.deck_a?.gain;

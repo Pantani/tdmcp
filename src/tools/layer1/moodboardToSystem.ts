@@ -385,6 +385,13 @@ function extractContainerPath(result: unknown): string | undefined {
   }
 }
 
+/** A composed tool's own warnings, so a refused step can't read as a complete build. */
+function subResultWarnings(result: unknown): string[] {
+  const warnings = (result as { structuredContent?: { warnings?: unknown } } | undefined)
+    ?.structuredContent?.warnings;
+  return Array.isArray(warnings) ? warnings.filter((w) => typeof w === "string") : [];
+}
+
 interface DispatchDeps {
   createAudioReactive: typeof createAudioReactiveImpl;
   createGenerativeArt: typeof createGenerativeArtImpl;
@@ -613,6 +620,7 @@ export async function moodboardToSystemImpl(
     );
   }
 
+  warnings.push(...subResultWarnings(genResult));
   const systemPath = extractContainerPath(genResult);
 
   let postFxApplied: PostFx[] = [];
@@ -639,6 +647,7 @@ export async function moodboardToSystemImpl(
           if ((postResult as { isError?: boolean }).isError) {
             warnings.push("apply_post_processing returned an error; effects not applied.");
           } else {
+            warnings.push(...subResultWarnings(postResult));
             postFxApplied = effects as PostFx[];
           }
         }
