@@ -1812,11 +1812,21 @@ export class TouchDesignerClient {
     return this.request("PATCH", `/api/nodes/${segment(path)}`, NodeDetailSchema, { parameters });
   }
 
-  executePythonScript(script: string, returnOutput = true) {
-    return this.request("POST", "/api/exec", ExecResultSchema, {
-      script,
-      return_output: returnOutput,
-    });
+  executePythonScript(
+    script: string,
+    returnOutput = true,
+    options: Pick<TdReadRequestOptions, "timeoutMs" | "signal"> = {},
+  ) {
+    return this.request(
+      "POST",
+      "/api/exec",
+      ExecResultSchema,
+      { script, return_output: returnOutput },
+      undefined,
+      options.timeoutMs,
+      undefined,
+      options.signal,
+    );
   }
 
   execNodeMethod(
@@ -2158,10 +2168,20 @@ export class TouchDesignerClient {
   }
 
   // --- System info (GPU + monitors + perform mode) — survives ALLOW_EXEC=0 ---
-  getSystemInfo(include?: Array<"gpu" | "monitors" | "performMode">): Promise<TdSystemInfo> {
-    return this.request("GET", "/api/system", SystemInfoSchema, undefined, {
-      include: include?.length ? include.join(",") : undefined,
-    });
+  getSystemInfo(
+    include?: Array<"gpu" | "monitors" | "performMode" | "storedPerformMode">,
+    options: TdReadRequestOptions = {},
+  ): Promise<TdSystemInfo> {
+    return this.request(
+      "GET",
+      "/api/system",
+      SystemInfoSchema,
+      undefined,
+      { include: include?.length ? include.join(",") : undefined },
+      options.timeoutMs,
+      options.retryGet,
+      options.signal,
+    );
   }
 
   // --- Perform-mode write (survives ALLOW_EXEC=0) ---

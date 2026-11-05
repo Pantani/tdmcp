@@ -78,7 +78,7 @@ const currentBridgeHandlers = [
   http.post(`${TD_BASE}/api/param_modes/batch`, () => ok({ items: [] })),
   http.get(`${TD_BASE}/api/logs`, () => ok({ lines: [], count: 0, available: true, warnings: [] })),
   http.get(`${TD_BASE}/api/system`, () =>
-    ok({ gpu: { name: "mock" }, monitors: [], performMode: false }),
+    ok({ gpu: { name: "mock" }, monitors: [], performMode: false, storedPerformMode: false }),
   ),
   http.get(`${TD_BASE}/api/optypes`, () => ok({ optypes: [], families: {}, count: 0 })),
   http.post(`${TD_BASE}/api/params/watch`, async ({ request }) => {

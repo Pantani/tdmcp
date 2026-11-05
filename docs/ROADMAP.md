@@ -1293,9 +1293,16 @@ structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
   (`tests/smoke/bridgeExecOff.test.ts`) runs every Layer-1/Layer-2 tool's default
   path against a mocked bridge that refuses what `TDMCP_BRIDGE_ALLOW_EXEC=0` refuses,
   and holds the result to `tests/smoke/bridgeExecOff.baseline.json`, which may only
-  shrink. Of 363 tools: 16 clean, 2 placement-only, 51 degraded (return success with
+  shrink. Of 363 tools: 17 clean, 6 placement-only, 46 degraded (return success with
   real work refused), 290 blocked, 4 unverified. Offline only: nothing cooks and
   optional branches don't run, so this is a request-level result, not live proof.
+- 🧪 **The Perform-mode preview guard no longer depends on exec.** It reads the stored
+  flag from `GET /api/system?include=storedPerformMode`, falling back to exec only on
+  bridges without that section, and refuses the capture if the state can't be read.
+  Every direct capture path now checks it too, not only `capturePreview`.
+  Previously a refused exec read as "not performing", so previews ran mid-show on
+  exec-off bridges. `get_preview` is now clean in the smoke. Not yet validated against
+  a live TouchDesigner.
 - 🧪 **The 1.0 bar is a named core set, not every tool (decided 2026-11-05).** The
   original wording, "keep `/api/exec` working when `ALLOW_EXEC=0`: every
   Layer-1/Layer-2 tool must build with exec disabled", conflicted with itself and
@@ -1308,10 +1315,8 @@ structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
     Artist-level tools such as `apply_recipe` and `create_audio_reactive` are not in
     it; adding them takes new endpoints, and a policy call on GLSL.
   - Every other tool may fail, but must name the policy when it refuses work.
-- ⬜ Remaining before this gate closes: validate the core set on a live exec-off
-  bridge, and fix `get_preview`, the one known exception. Its Perform-mode probe uses
-  exec and treats a refusal as "not performing", so that guard fails open under
-  exec-off, on the capture path every previewing tool shares.
+- ⬜ Remaining before this gate closes: validate the core set and the Perform-mode
+  preview guard on a live exec-off bridge.
 - ✅ Resilience patch — atomic writes, clean HTTP listen failure, event-stream
   close — landed in v0.8.1.
 

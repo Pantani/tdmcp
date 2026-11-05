@@ -893,16 +893,18 @@ describe("aiPartyLive service", () => {
     const service = createAiPartyLiveService({
       dashboardPort: 0,
       eventLogPath: tempLogPath(),
-      fetchImpl: async () =>
+      fetchImpl: async (input) =>
         okJson({
           ok: true,
-          data: {
-            path: "/project1/ai_party_poc/preview_out",
-            width: 1,
-            height: 1,
-            format: "png",
-            base64: "x",
-          },
+          data: String(input).includes("/api/system")
+            ? { storedPerformMode: false }
+            : {
+                path: "/project1/ai_party_poc/preview_out",
+                width: 1,
+                height: 1,
+                format: "png",
+                base64: "x",
+              },
         }),
     });
     const brokenSocket = new Socket();
@@ -914,6 +916,43 @@ describe("aiPartyLive service", () => {
 
     await expect(service.tdPreview()).resolves.toMatchObject({ ok: true });
     expect(sockets.has(brokenSocket)).toBe(false);
+  });
+
+  it("withholds dashboard previews while performing, without reporting a TD failure", async () => {
+    const requested: string[] = [];
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      fetchImpl: async (input) => {
+        const { pathname } = new URL(String(input));
+        requested.push(pathname);
+        return okJson({
+          ok: true,
+          data: pathname === "/api/system" ? { storedPerformMode: true } : {},
+        });
+      },
+    });
+    const before = service.snapshot().showState.td_status;
+
+    const result = await service.tdPreview();
+
+    expect(result).toMatchObject({ ok: false, previews: [] });
+    expect(result.message).toMatch(/Perform mode is active/);
+    // Neither captures nor writes the status parameters that exist for the preview.
+    expect(requested).toEqual(["/api/system"]);
+    expect(service.snapshot().showState.td_status).toBe(before);
+  });
+
+  it("still reports a TD failure when the Perform-mode read cannot reach the bridge", async () => {
+    const service = createAiPartyLiveService({
+      dashboardPort: 0,
+      eventLogPath: tempLogPath(),
+      fetchImpl: async () => {
+        throw new TypeError("fetch failed");
+      },
+    });
+    await expect(service.tdPreview()).resolves.toMatchObject({ ok: false, previews: [] });
+    expect(service.snapshot().showState.td_status).toBe("error");
   });
 
   it("sends slim dirty pings on events and survives >64 KiB snapshot pushes", () => {
@@ -977,6 +1016,9 @@ describe("aiPartyLive service", () => {
               parameters: {},
             },
           });
+        }
+        if (url.pathname === "/api/system") {
+          return okJson({ ok: true, data: { storedPerformMode: false } });
         }
         const path = decodeURIComponent(url.pathname.replace("/api/preview/", ""));
         return okJson({

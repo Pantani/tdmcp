@@ -72,6 +72,22 @@ def _read_perform_mode(td):
     return None
 
 
+def _read_stored_perform_mode(td):
+    """Read the flag ``set_perform_mode`` stores. Returns bool or {'error': ...}.
+
+    Separate from ``_read_perform_mode``: the native values are set best-effort
+    and can change independently, so they can disagree with this flag. A flag
+    that was never stored reads as False; only a failed read is an error.
+    """
+    op_fn = getattr(td, "op", None)
+    if op_fn is None:
+        return {"error": "td.op unavailable"}
+    try:
+        return bool(op_fn("/").fetch("tdmcp_perform_mode", False))
+    except Exception as exc:  # noqa: BLE001
+        return {"error": str(exc)}
+
+
 def set_perform_mode(enabled):
     """Toggle perform-mode advisory flag + best-effort native ui/project knobs.
 
@@ -134,6 +150,7 @@ def get_system_info(include=None):
     ``include`` — optional iterable of section names ("gpu", "monitors",
     "performMode"); when omitted, all three sections are returned. Unknown
     section names are ignored (forward-compat with newer Node clients).
+    "storedPerformMode" is opt-in: it is returned only when requested by name.
     """
     import td
 
@@ -145,4 +162,6 @@ def get_system_info(include=None):
         out["monitors"] = _read_monitors(td)
     if "performMode" in want:
         out["performMode"] = _read_perform_mode(td)
+    if "storedPerformMode" in want:
+        out["storedPerformMode"] = _read_stored_perform_mode(td)
     return out

@@ -16,15 +16,9 @@ function client() {
   return new TouchDesignerClient({ baseUrl: TD_BASE, timeoutMs: 2000 });
 }
 
-/** Mocks the perform-mode exec probe (false) + a preview capture. */
+/** Mocks a preview capture; the default bridge mock reports Perform mode off. */
 function mockPreview(base64 = B64): void {
   server.use(
-    http.post(`${TD_BASE}/api/exec`, () =>
-      HttpResponse.json({
-        ok: true,
-        data: { result: null, stdout: JSON.stringify({ perform: false }) },
-      }),
-    ),
     http.get(`${TD_BASE}/api/preview/:seg`, ({ params }) =>
       HttpResponse.json({
         ok: true,

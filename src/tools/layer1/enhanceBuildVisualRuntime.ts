@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { assertNotPerforming } from "../../feedback/previewCapture.js";
 import {
   CALIBRATION_SCHEMA_VERSION,
   CalibrationManifestSchema,
@@ -230,6 +231,11 @@ export function createVisualCritiqueDependencies(
         signal: input.signal,
       });
       if (context.perform_mode === true) throw new Error("perform_mode");
+      await assertNotPerforming(ctx.client, {
+        timeoutMs: 2_000,
+        retryGet: false,
+        signal: input.signal,
+      });
       const errors = await ctx.client.getNetworkErrors(scopePath, {
         timeoutMs: 2_000,
         retryGet: false,

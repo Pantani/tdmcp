@@ -26,7 +26,11 @@ function decodePayload(script: string): LutPayload {
   return JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as LutPayload;
 }
 
-function fakeCtx(execResult: object, previewResult?: object): ToolContext {
+function fakeCtx(
+  execResult: object,
+  previewResult?: object,
+  storedPerformMode = false,
+): ToolContext {
   const executePythonScript = vi.fn().mockResolvedValue({
     result: null,
     stdout: JSON.stringify(execResult),
@@ -41,7 +45,11 @@ function fakeCtx(execResult: object, previewResult?: object): ToolContext {
     },
   );
   return {
-    client: { executePythonScript, getPreview },
+    client: {
+      executePythonScript,
+      getPreview,
+      getSystemInfo: vi.fn().mockResolvedValue({ storedPerformMode }),
+    },
     logger: silentLogger,
   } as unknown as ToolContext;
 }
@@ -140,6 +148,20 @@ describe("applyLutImpl", () => {
   // -------------------------------------------------------------------------
   // 2. OCIO absent → Lookup fallback (image LUT)
   // -------------------------------------------------------------------------
+  it("applies the LUT but withholds the preview while performing", async () => {
+    const ctx = fakeCtx(happyReport(), undefined, true);
+    const args = applyLutSchema.parse({
+      lut_path: "/looks/grade.cube",
+      source_path: "/project1/render1",
+    });
+    const result = await applyLutImpl(ctx, args);
+    expect(result.isError).toBeFalsy();
+    expect(ctx.client.getPreview).not.toHaveBeenCalled();
+    expect(parseJsonFence(result).warnings).toEqual([
+      expect.stringMatching(/Preview unavailable: Perform mode is active/),
+    ]);
+  });
+
   it("OCIO absent + image LUT → lookup branch, creates moviefileinTOP and lookupTOP", async () => {
     const report = happyReport({
       grade_branch: "lookup",

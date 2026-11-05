@@ -53,7 +53,13 @@ export const olderBridgeNotFoundHandlers = [
   http.post(`${TD_BASE}/api/disconnect`, notFound),
   http.get(`${TD_BASE}/api/logs`, notFound),
   http.post(`${TD_BASE}/api/transport`, notFound),
-  http.get(`${TD_BASE}/api/system`, notFound),
+  // capturePreview's guard reads this section and treats a state it can't read as a
+  // refusal, so default to "not performing" rather than making every preview test mock it.
+  http.get(`${TD_BASE}/api/system`, ({ request }) =>
+    new URL(request.url).searchParams.get("include") === "storedPerformMode"
+      ? ok({ storedPerformMode: false })
+      : notFound(),
+  ),
   http.get(`${TD_BASE}/api/projects/:seg/analysis`, notFound),
   http.post(`${TD_BASE}/api/project/load`, notFound),
   http.get(`${TD_BASE}/api/nodes/:seg/custom_params`, notFound),

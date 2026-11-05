@@ -1425,6 +1425,10 @@ class StructuredEndpointTests(unittest.TestCase):
         ac._route("GET", "/api/system", {"include": ["gpu,monitors"]}, {})
         ac.system_service.get_system_info.assert_called_once_with(["gpu", "monitors"])
 
+    def test_stored_perform_mode_read_dispatches_with_exec_disabled(self):
+        ac._route("GET", "/api/system", {"include": ["storedPerformMode"]}, {})
+        ac.system_service.get_system_info.assert_called_once_with(["storedPerformMode"])
+
     def test_custom_params_dispatches_with_exec_disabled(self):
         ac._route("GET", "/api/nodes/project1/comp1/custom_params", {}, {})
         ac.custom_params_service.get_custom_params.assert_called_once_with(

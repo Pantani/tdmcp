@@ -112,6 +112,13 @@ def _preview_b64(root_path):
     return None
 
 
+def _preview_allowed(td):
+    """Same rule as the Node preview guard: capture only if Perform mode is known off."""
+    from mcp.services import system_service
+
+    return system_service._read_stored_perform_mode(td) is False
+
+
 def _load_tox(td, path):
     """Import a ``.tox`` component into a fresh COMP under the root and return its
     path. ``project.load`` is the project-file (``.toe``) path and would either
@@ -159,7 +166,7 @@ def load(path, timeout_ms=None):
         "node_count": _node_count(td, root_path),
         "errors": _collect_errors(td, root_path),
     }
-    preview = _preview_b64(root_path)
+    preview = _preview_b64(root_path) if _preview_allowed(td) else None
     if preview is not None:
         report["preview_b64"] = preview
     return report

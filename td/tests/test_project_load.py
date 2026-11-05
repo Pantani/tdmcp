@@ -13,6 +13,7 @@ import sys
 import tempfile
 import types
 import unittest
+from unittest import mock
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _MODULES = os.path.abspath(os.path.join(_HERE, "..", "modules"))
@@ -159,6 +160,46 @@ class LoadReportTests(unittest.TestCase):
         report = pl.load(self.toe)
         self.assertEqual(report["node_count"], 1)
         self.assertEqual(report["errors"], [])
+
+
+class LoadPreviewGuardTests(unittest.TestCase):
+    def setUp(self):
+        self.toe = _toe_file()
+
+    def tearDown(self):
+        os.unlink(self.toe)
+
+    def _load(self, fetch):
+        root = _FakeNode("/project1", is_comp=True)
+
+        class _Root(_FakeRootSlash):
+            def fetch(self, key, default):
+                return fetch(key, default)
+
+        _install(_td_stub, slash_children=[root], by_path={"/project1": root})
+        _td_stub.op = lambda p: _Root(root) if p == "/" else {"/project1": root}.get(p)
+        shot = {"base64": "AAAA"}
+        with mock.patch("mcp.services.preview_service.capture", return_value=shot) as capture:
+            return pl.load(self.toe), capture
+
+    def test_captures_when_perform_mode_is_known_off(self):
+        report, capture = self._load(lambda _key, default: default)
+        self.assertEqual(report["preview_b64"], "AAAA")
+        capture.assert_called_once()
+
+    def test_skips_capture_while_performing_but_still_reports(self):
+        report, capture = self._load(lambda _key, _default: True)
+        self.assertNotIn("preview_b64", report)
+        self.assertEqual(report["root_path"], "/project1")
+        capture.assert_not_called()
+
+    def test_skips_capture_when_the_flag_cannot_be_read(self):
+        def boom(_key, _default):
+            raise RuntimeError("boom")
+
+        report, capture = self._load(boom)
+        self.assertNotIn("preview_b64", report)
+        capture.assert_not_called()
 
 
 class _FakeToxHolder(_FakeNode):

@@ -31,7 +31,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Layer 1 and Layer 2 tool's default path against an msw bridge that refuses what
   a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge refuses, including code-bearing node
   creation, expression modes, and DAT text writes as well as `/api/exec`. Results
-  are ratcheted against a committed baseline that may only shrink (16 of 363 tools
+  are ratcheted against a committed baseline that may only shrink (17 of 363 tools
   are exec-free today, 290 are blocked), and a shared fixture holds the mock to the
   real Python router. This is an offline check: it does not cook anything, covers
   default paths only, and makes no claim about live TouchDesigner behavior.
@@ -81,6 +81,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   lockfile for transitive `proxy-addr`, `body-parser`, `qs`, `fast-uri`, `hono`,
   `@hono/node-server` and `ip-address`. `npm audit --omit=dev` now reports zero
   vulnerabilities.
+
+### Fixed
+
+- **Preview capture is skipped during a show on exec-off bridges** — the Perform-mode
+  check ran over `/api/exec`, so on a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge the refusal
+  read as "not performing" and previews rendered mid-show. The check now reads the
+  flag `set_perform_mode` stores through a new opt-in `storedPerformMode` section of
+  `GET /api/system`, and uses exec only on older bridges without it.
+- **Every preview capture now honors Perform mode** — several paths called the bridge
+  directly and rendered during a show on any bridge: `get_inline_preview`, `apply_lut`,
+  `score_build`, `get_preview` with `sample_grid`, `pre_pulses` or `delay_frames`, the
+  enhance-build visual capture, the tutorial companion pack, the copilot's post-mutation
+  sample, the AI party dashboard, and the project RAG analyzer, including the preview
+  `POST /api/project/load` captures on the bridge. Collecting a deferred
+  `get_preview` job is still allowed, because it only returns an existing capture.
+  **Behavior change:** if the state can't be read, the capture is now refused with the
+  reason instead of going ahead. Older bridges with exec disabled get this every time
+  until the bridge is updated with `tdmcp install-bridge`. Build tools still finish
+  and report the missing preview as a warning. The AI party dashboard's live preview
+  panel shows the reason instead of frames while Perform mode is on, without marking
+  TD as failed, and stops writing its status parameters until previews resume. The copilot's sample has no exec fallback, so it reports the preview as
+  unavailable on bridges without the new section.
 
 ## [0.13.2] - 2026-08-11
 

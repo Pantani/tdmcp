@@ -128,15 +128,6 @@ const ARG_OVERRIDES: Record<string, Record<string, unknown>> = {
  */
 const ENVIRONMENT_DEPENDENT = new Set(["create_shader_park"]);
 
-/**
- * Refused work the result doesn't mention. Fix a tool rather than adding it here.
- *
- * get_preview: capturePreview's Perform-mode probe uses exec and treats a refusal as
- * "not performing", so the guard fails open under exec-off. /api/system reads different
- * state from the flag set_perform_mode stores, so this needs a bridge change.
- */
-const KNOWN_SILENT = new Set(["get_preview"]);
-
 type Baseline = Record<Exclude<ExecOffStatus, "clean">, string[]> & {
   _comment: string;
   core: string[];
@@ -387,14 +378,7 @@ describe("Layer 1/2 tools under TDMCP_BRIDGE_ALLOW_EXEC=0 (mocked bridge, defaul
     // The other half of the bar: outside the core a tool may fail, but not quietly.
     const refused = outcomes.filter((o) => o.status === "degraded" || o.status === "blocked");
     const silent = refused.filter((o) => !o.reportsRefusal).map((o) => o.tool);
-    expect(
-      silent.filter((tool) => !KNOWN_SILENT.has(tool)),
-      "These tools hide a TDMCP_BRIDGE_ALLOW_EXEC=0 refusal; surface it in the result.",
-    ).toEqual([]);
-    expect(
-      [...KNOWN_SILENT].filter((tool) => !silent.includes(tool)),
-      "These now report the refusal: remove them from KNOWN_SILENT.",
-    ).toEqual([]);
+    expect(silent, "These tools hide a TDMCP_BRIDGE_ALLOW_EXEC=0 refusal; surface it.").toEqual([]);
   });
 
   it("states a baseline with no duplicates", () => {

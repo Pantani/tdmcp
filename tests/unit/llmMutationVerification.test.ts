@@ -24,6 +24,7 @@ function fakeClient(overrides: Record<string, unknown> = {}) {
     getNetworkTopology: vi.fn().mockResolvedValue({ connections: [] }),
     getNetworkErrors: vi.fn().mockResolvedValue({ errors: [] }),
     sampleGrid: vi.fn().mockResolvedValue({ grid: 3, width: 1280, height: 720 }),
+    getSystemInfo: vi.fn().mockResolvedValue({ storedPerformMode: false }),
     ...overrides,
   };
 }
@@ -255,6 +256,42 @@ describe("local copilot mutation verification", () => {
     expect(client.sampleGrid).toHaveBeenCalledOnce();
   });
 
+  it.each([
+    ["the flag is on", { storedPerformMode: true }],
+    ["the bridge could not read it", { storedPerformMode: { error: "boom" } }],
+    ["the bridge ignores the section", {}],
+  ])("withholds the preview sample when %s", async (_name, system) => {
+    const plan = generatorMutationDescriptor().plan(
+      {},
+      { container: "/project1/generated", output: "/project1/generated/out1", errors: [] },
+    );
+    const client = fakeClient({
+      getNode: vi.fn(async (path: string) => ({ path, family: "TOP" })),
+      getSystemInfo: vi.fn().mockResolvedValue(system),
+    });
+    const report = await verifyMutation(client, planOrThrow(plan), { allowPreview: true });
+    expect(report.preview).toMatchObject({
+      status: "unavailable",
+      reason: "perform_mode_not_ruled_out",
+    });
+    expect(client.sampleGrid).not.toHaveBeenCalled();
+  });
+
+  it("withholds the preview sample, without exec, when the bridge lacks the route", async () => {
+    const plan = generatorMutationDescriptor().plan(
+      {},
+      { container: "/project1/generated", output: "/project1/generated/out1", errors: [] },
+    );
+    const client = fakeClient({
+      getNode: vi.fn(async (path: string) => ({ path, family: "TOP" })),
+      getSystemInfo: vi.fn().mockRejectedValue(new Error("Unsupported GET /api/system")),
+    });
+    const report = await verifyMutation(client, planOrThrow(plan), { allowPreview: true });
+    expect(report.preview).toMatchObject({ status: "unavailable", reason: "preview_unavailable" });
+    expect(client.sampleGrid).not.toHaveBeenCalled();
+    expect(client).not.toHaveProperty("executePythonScript");
+  });
+
   it("treats reported or scoped cook errors as FAIL without aesthetic judgment", async () => {
     const reported = generatorMutationDescriptor().plan(
       {},
@@ -294,7 +331,7 @@ describe("local copilot mutation verification", () => {
       idempotency: "none",
       applied: true,
     });
-    expect(bounded.limits.callsUsed).toBe(4);
+    expect(bounded.limits).toMatchObject({ callsUsed: 5, maxCalls: 5 });
     expect(bounded.status).toBe("UNVERIFIED");
     expect(JSON.stringify(bounded).length).toBeLessThanOrEqual(16 * 1024);
 

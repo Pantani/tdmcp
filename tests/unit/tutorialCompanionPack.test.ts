@@ -116,6 +116,32 @@ describe("tutorialCompanionPackImpl", () => {
     expect(snapshot.nodes[0]?.source_path).toBe("/project1/scene/noise1");
   });
 
+  it("writes the pack without previews, and says why, while performing", async () => {
+    const vault = makeVault();
+    let captures = 0;
+    mockTopology([{ path: "/project1/scene/out1", type: "nullTOP", name: "out1" }]);
+    server.use(
+      http.get(`${TD_BASE}/api/system`, () => ok({ storedPerformMode: true })),
+      http.get(`${TD_BASE}/api/preview/:seg`, () => {
+        captures += 1;
+        return ok({});
+      }),
+    );
+    const result = await tutorialCompanionPackImpl(makeCtx(vault), {
+      source_comp: "/project1/scene",
+      folder: "Tutorials",
+      lesson_count: 3,
+      preview_width: 128,
+      preview_height: 72,
+      tags: [],
+    });
+    expect(result.isError).toBeFalsy();
+    const r = jsonOf(result);
+    expect(captures).toBe(0);
+    expect(r.previews).toEqual([]);
+    expect(r.warnings.join("\n")).toMatch(/Perform mode is active/);
+  });
+
   it("surfaces a bridge failure as an error result", async () => {
     const vault = makeVault();
     server.use(

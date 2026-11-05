@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { assertNotPerforming } from "../../feedback/previewCapture.js";
 import { NodeErrorSchema } from "../../td-client/validators.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, structuredResult } from "../result.js";
@@ -470,6 +471,7 @@ function assemble(
 export async function getInlinePreviewImpl(ctx: ToolContext, args: GetInlinePreviewArgs) {
   return guardTd(
     async () => {
+      await assertNotPerforming(ctx.client);
       const preview = await ctx.client.getPreview(args.path, args.width, args.height);
       const script = buildGetInlinePreviewScript({
         path: args.path,

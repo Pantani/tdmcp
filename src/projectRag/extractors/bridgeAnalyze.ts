@@ -28,6 +28,7 @@
 
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { assertNotPerforming } from "../../feedback/previewCapture.js";
 import { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
 import { TdConnectionError, TdTimeoutError } from "../../td-client/types.js";
 
@@ -124,7 +125,10 @@ function buildClient(opts: BridgeAnalyzeOptions, inputs: ValidatedInputs): Minim
     loadProject: (artifactPath: string) =>
       real.loadProject(artifactPath, Math.min(inputs.timeoutMs, 10_000)),
     getTdNodeErrors: () => real.getNetworkErrors("/"),
-    getPreview: (opPath: string) => real.getPreview(opPath),
+    getPreview: async (opPath: string) => {
+      await assertNotPerforming(real);
+      return real.getPreview(opPath);
+    },
   };
 }
 

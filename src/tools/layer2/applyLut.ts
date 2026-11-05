@@ -1,5 +1,7 @@
 import { existsSync } from "node:fs";
 import { z } from "zod";
+import { assertNotPerforming } from "../../feedback/previewCapture.js";
+import { friendlyTdError } from "../../td-client/types.js";
 import { buildPayloadScript, parsePythonReport } from "../pythonReport.js";
 import { errorResult, guardTd, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -392,10 +394,12 @@ export async function applyLutImpl(ctx: ToolContext, args: ApplyLutArgs) {
       let preview_image: string | undefined;
       if (report.output) {
         try {
+          await assertNotPerforming(ctx.client);
           const prev = await ctx.client.getPreview(report.output);
           preview_image = prev.base64;
-        } catch {
-          // preview is best-effort
+        } catch (err) {
+          // Preview is best-effort: the LUT is applied, so only say why it's missing.
+          report.warnings.push(`Preview unavailable: ${friendlyTdError(err)}`);
         }
       }
 
