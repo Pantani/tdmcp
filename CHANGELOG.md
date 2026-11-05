@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Exec-off CI smoke for G4** — a new `Bridge Exec OFF Smoke` job runs every
+  Layer 1 and Layer 2 tool's default path against an msw bridge that refuses what
+  a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge refuses, including code-bearing node
+  creation, expression modes, and DAT text writes as well as `/api/exec`. Results
+  are ratcheted against a committed baseline that may only shrink (16 of 363 tools
+  are exec-free today, 290 are blocked), and a shared fixture holds the mock to the
+  real Python router. This is an offline check: it does not cook anything, covers
+  default paths only, and makes no claim about live TouchDesigner behavior.
+
 ## [0.13.2] - 2026-08-11
 
 This patch release realigns the package, bridge, manifests, bootstrap URLs and

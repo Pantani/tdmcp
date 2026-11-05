@@ -16,10 +16,11 @@ import { makeTdServer } from "../helpers/tdMock.js";
 
 // G4 — Bridge hardening (ledger item `g4_exec_off_ci_smoke`).
 //
-// Proves that EVERY Layer-1 + Layer-2 tool registers/builds when raw Python
-// exec is disabled at the SERVER layer — i.e. no tool throws at registration
-// time, and the exec-only escape hatches stay hidden, when the venue turns
-// exec off.
+// Proves that EVERY Layer-1 + Layer-2 tool REGISTERS when raw Python exec is
+// disabled at the SERVER layer — i.e. no tool throws at registration time, and
+// the exec-only escape hatches stay hidden. No tool handler runs here, so this
+// says nothing about whether a tool can build: see bridgeExecOff.test.ts for
+// that, under `TDMCP_BRIDGE_ALLOW_EXEC=0`.
 //
 // Two distinct "exec off" switches exist; this smoke runs against the FIRST:
 //
@@ -35,7 +36,8 @@ import { makeTdServer } from "../helpers/tdMock.js";
 //      ROADMAP / architecture). It refuses `/api/exec` INSIDE TouchDesigner.
 //      It is orthogonal to (1): (1) hides the tools from the MCP surface;
 //      (2) makes the bridge reject exec even if a tool tried it. The smoke
-//      asserts the Node-layer contract (1); the bridge is msw-mocked here.
+//      asserts the Node-layer contract (1); the bridge is msw-mocked here and
+//      still answers `/api/exec`. Switch (2) is bridgeExecOff.test.ts.
 //
 // The bridge is mocked with msw (no TouchDesigner needed), so this runs
 // anywhere CI runs.

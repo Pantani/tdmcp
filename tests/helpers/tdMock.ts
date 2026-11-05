@@ -38,6 +38,38 @@ function seg(params: { seg?: string | readonly string[] }): string {
   return decodeURIComponent(Array.isArray(raw) ? (raw[0] ?? "") : String(raw));
 }
 
+/**
+ * v0.6.0+ first-class endpoints — default to 404 so the rewired tools fall back to
+ * the legacy /api/exec path (which the existing tests mock). Tests asserting the
+ * endpoint path override these per-test. Exported so a mock of a CURRENT bridge
+ * (`execOffBridge.ts`) can drop them.
+ */
+export const olderBridgeNotFoundHandlers = [
+  http.get(`${TD_BASE}/api/nodes/:seg/params`, notFound),
+  http.patch(`${TD_BASE}/api/nodes/:seg/params/:param/mode`, notFound),
+  http.get(`${TD_BASE}/api/nodes/:seg/text`, notFound),
+  http.put(`${TD_BASE}/api/nodes/:seg/text`, notFound),
+  http.post(`${TD_BASE}/api/connect`, notFound),
+  http.post(`${TD_BASE}/api/disconnect`, notFound),
+  http.get(`${TD_BASE}/api/logs`, notFound),
+  http.post(`${TD_BASE}/api/transport`, notFound),
+  http.get(`${TD_BASE}/api/system`, notFound),
+  http.get(`${TD_BASE}/api/projects/:seg/analysis`, notFound),
+  http.post(`${TD_BASE}/api/project/load`, notFound),
+  http.get(`${TD_BASE}/api/nodes/:seg/custom_params`, notFound),
+  http.post(`${TD_BASE}/api/param_modes/batch`, notFound),
+  // Roadmap Wave 2 first-class endpoints — same 404-then-fallback default.
+  http.post(`${TD_BASE}/api/nodes/:seg/save`, notFound),
+  http.post(`${TD_BASE}/api/duplicate`, notFound),
+  http.get(`${TD_BASE}/api/optypes`, notFound),
+  http.get(`${TD_BASE}/api/nodes/search`, notFound),
+  http.post(`${TD_BASE}/api/params/search`, notFound),
+  http.post(`${TD_BASE}/api/code/search`, notFound),
+  http.post(`${TD_BASE}/api/params/watch`, notFound),
+  http.delete(`${TD_BASE}/api/params/watch`, notFound),
+  http.get(`${TD_BASE}/api/params/watch`, notFound),
+];
+
 /** Default happy-path handlers mirroring the TD bridge REST contract. */
 export const tdHandlers = [
   http.get(`${TD_BASE}/api/info`, () =>
@@ -96,33 +128,7 @@ export const tdHandlers = [
     ok({ errors: [], _path: seg(params) }),
   ),
 
-  // v0.6.0 first-class endpoints — default to 404 so the rewired tools fall back to
-  // the legacy /api/exec path (which the existing tests mock). Tests asserting the
-  // endpoint path override these per-test.
-  http.get(`${TD_BASE}/api/nodes/:seg/params`, notFound),
-  http.patch(`${TD_BASE}/api/nodes/:seg/params/:param/mode`, notFound),
-  http.get(`${TD_BASE}/api/nodes/:seg/text`, notFound),
-  http.put(`${TD_BASE}/api/nodes/:seg/text`, notFound),
-  http.post(`${TD_BASE}/api/connect`, notFound),
-  http.post(`${TD_BASE}/api/disconnect`, notFound),
-  http.get(`${TD_BASE}/api/logs`, notFound),
-  http.post(`${TD_BASE}/api/transport`, notFound),
-  http.get(`${TD_BASE}/api/system`, notFound),
-  http.get(`${TD_BASE}/api/projects/:seg/analysis`, notFound),
-  http.post(`${TD_BASE}/api/project/load`, notFound),
-  http.get(`${TD_BASE}/api/nodes/:seg/custom_params`, notFound),
-  http.post(`${TD_BASE}/api/param_modes/batch`, notFound),
-  // Roadmap Wave 2 first-class endpoints — default to 404 so callers fall back to
-  // /api/exec; tests asserting the endpoint path override these per-test.
-  http.post(`${TD_BASE}/api/nodes/:seg/save`, notFound),
-  http.post(`${TD_BASE}/api/duplicate`, notFound),
-  http.get(`${TD_BASE}/api/optypes`, notFound),
-  http.get(`${TD_BASE}/api/nodes/search`, notFound),
-  http.post(`${TD_BASE}/api/params/search`, notFound),
-  http.post(`${TD_BASE}/api/code/search`, notFound),
-  http.post(`${TD_BASE}/api/params/watch`, notFound),
-  http.delete(`${TD_BASE}/api/params/watch`, notFound),
-  http.get(`${TD_BASE}/api/params/watch`, notFound),
+  ...olderBridgeNotFoundHandlers,
 
   http.post(`${TD_BASE}/api/nodes/:seg/method`, () => ok({ result: "ok" })),
 

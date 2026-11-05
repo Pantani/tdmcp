@@ -1254,8 +1254,22 @@ structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
   `duplicate_network` off exec (exactly the "new-endpoint authoring" this gate
   named). Remaining work is further new-endpoint authoring (e.g. batch
   create+write) via `tdmcp-bridge-endpoint`; it needs live TD to validate.
-- ⬜ Keep `/api/exec` working when `TDMCP_BRIDGE_ALLOW_EXEC=0` is the venue
-  policy: every Layer-1/Layer-2 tool must build with exec disabled (CI smoke).
+- 🧪 **Exec-off CI smoke landed, with a ratchet.** The `Bridge Exec OFF Smoke` job
+  (`tests/smoke/bridgeExecOff.test.ts`) runs every Layer-1/Layer-2 tool's default
+  path against a mocked bridge that refuses what `TDMCP_BRIDGE_ALLOW_EXEC=0` refuses,
+  and holds the result to `tests/smoke/bridgeExecOff.baseline.json`, which may only
+  shrink. Of 363 tools: 16 clean, 2 placement-only, 51 degraded (return success with
+  real work refused), 290 blocked, 4 unverified. Offline only: nothing cooks and
+  optional branches don't run, so this is a request-level result, not live proof.
+- ⬜ **Decision needed — this gate is not achievable as written.** The original
+  wording, "keep `/api/exec` working when `ALLOW_EXEC=0`: every Layer-1/Layer-2 tool
+  must build with exec disabled", conflicts with itself (the policy exists to refuse
+  `/api/exec`) and with the bullets above (exec callers "correctly stay on exec").
+  It also can't hold for tools whose purpose is caller code, because the bridge
+  refuses creating `glslTOP`, script and execute DAT operators, and writing DAT text,
+  whichever route is used. Reaching it would take new bridge endpoints for most of
+  the 290 blocked tools, plus a policy call on GLSL. Choose a 1.0 bar, for example a
+  named core set that must be clean, with the rest failing clearly.
 - ✅ Resilience patch — atomic writes, clean HTTP listen failure, event-stream
   close — landed in v0.8.1.
 
