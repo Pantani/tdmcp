@@ -33,6 +33,8 @@ npm test                     # vitest run
 
 npm run dev                  # run the server from TS (tsx src/index.ts), no build
 npm run validate:recipes     # validate recipes/*.json against RecipeSchema
+npm run api:check            # fail on a break of the pinned tool API (api-surface/baseline.json)
+npm run api:update           # move the baseline; run in the version-bump commit
 
 # Tests (offline; the bridge is mocked with msw — no TouchDesigner needed)
 npx vitest run tests/unit/createWaveform.test.ts   # single file

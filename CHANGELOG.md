@@ -6,6 +6,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Tool API stability gate** — `npm run api:check` (new CI job and part of
+  `release:check`) fails when a change breaks the pinned surface in
+  `docs/reference/API_STABILITY.md`, compared with the committed
+  `api-surface/baseline.json`. An intentional break is accepted through a reviewed
+  entry in `api-surface/acknowledged-breaks.json`, and `npm run api:update` moves
+  the baseline at release.
+
 ### Security
 
 - **Production dependency advisories resolved** — bumped

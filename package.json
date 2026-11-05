@@ -74,6 +74,8 @@
     "complexity:cognitive:py:update": "node scripts/check-python-cognitive-complexity.mjs --update-baseline",
     "deps:check": "depcruise --config .dependency-cruiser.cjs src",
     "typecheck": "tsc --noEmit",
+    "api:check": "tsx scripts/api-surface/check.ts",
+    "api:update": "tsx scripts/api-surface/check.ts --update-baseline",
     "import:bottobot": "tsx scripts/import-bottobot-data.ts",
     "validate:recipes": "tsx scripts/validate-recipes.ts",
     "lint:recipes": "tsx scripts/lint-recipes.ts",
@@ -101,7 +103,7 @@
     "ai-party:telegram": "tsx src/automation/aiPartyLive/cli.ts telegram",
     "version": "node scripts/sync-manifest-version.mjs",
     "prepack": "node scripts/clean-pycache.mjs",
-    "release:check": "npm run typecheck && npm run lint && npm run validate:recipes && npm run lint:recipes && npm test && npm run test:bridge && npm run build && npm run build:mcpb",
+    "release:check": "npm run typecheck && npm run lint && npm run api:check && npm run validate:recipes && npm run lint:recipes && npm test && npm run test:bridge && npm run build && npm run build:mcpb",
     "prepublishOnly": "npm run release:check"
   },
   "allowScripts": {

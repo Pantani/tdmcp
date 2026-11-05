@@ -1,0 +1,9 @@
+{
+  "acknowledged": [
+    {
+      "id": "tool:component_changelog_trail|.entry.ts|constraint-changed:pattern|89c01ec1",
+      "reason": "Not a schema edit: the Zod 4.4.3 to 4.6.7 bump in #153 makes z.string().datetime() require seconds, so 2026-01-01T10:00Z passed on v0.13.2 and fails now. Recorded so the break stays visible; whether to relax it is an open decision."
+    }
+  ],
+  "history": []
+}

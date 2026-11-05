@@ -86,6 +86,69 @@ breaks an existing caller.
 
 Any change marked breaking requires a **major** version bump.
 
+## How this is enforced
+
+`npm run api:check` runs as the **Tool API Stability** job in CI and as part of
+`npm run release:check`. It reads the surface from source, using the real tool
+registry and the TypeScript compiler, and compares it with the committed baseline
+in `api-surface/baseline.json`. For each tool it asks whether the new schema still
+accepts everything the baseline accepted. The check fails when:
+
+- a change is breaking under the table above and has not been acknowledged;
+- a custom Zod refinement is added to an existing field, or a `.refine()` or
+  transform is rewritten;
+- `package.json` has moved to a version the baseline does not pin.
+
+Additive changes pass without touching the baseline. A changed default is printed
+as a note, because this policy does not classify it.
+
+### Acknowledging an intentional break
+
+A failing run prints an `id` for each break. To accept one, add it to
+`api-surface/acknowledged-breaks.json` with the reason, in the same PR:
+
+```json
+{
+  "acknowledged": [
+    {
+      "id": "tool:find_td_nodes|.limit|bound-tightened:maximum|d4e5f6a7",
+      "reason": "Caps the result size to protect the bridge. Agreed in #123; major bump planned."
+    }
+  ],
+  "history": []
+}
+```
+
+An `id` includes a hash of the exact change, so an acknowledgement does not cover
+a later, further tightening of the same field. An acknowledgement that no longer
+matches a break fails the check until it is removed. Acknowledging a break does
+not change this policy: it still needs the major bump described above, and it
+still counts against the G1 cycle.
+
+### At each release
+
+Run `npm run api:update` in the same commit as the version bump, so the baseline
+pins what the release ships. It refuses to run while a break is unacknowledged. It
+moves acknowledged breaks to `history` with the version that accepted them, which
+is the record to check when judging a G1 cycle. Copy them into `CHANGELOG.md`.
+
+### What the check cannot see
+
+- **Handler behaviour.** A handler that starts rejecting an input the schema still
+  accepts is not detected.
+- **The inside of a `.superRefine()`.** Zod hides its body in a closure, so adding
+  one is detected but rewriting one is not. Values a `.refine()` captures from an
+  enclosing scope are not compared either.
+- **Types behind `ToolContext` fields.** The field's type text is compared, not the
+  definition of a type it names, such as `TouchDesignerClient`.
+
+A tool counts as deprecated, and so removable without an acknowledgement, only if
+its description starts with `Deprecated`. Removing it in a patch of the minor that
+announced the deprecation still fails.
+
+A Zod upgrade can change what a built-in check accepts. The check reports that as a
+break to review, because it reaches clients the same way a schema edit does.
+
 ## Deprecation policy
 
 Removals are never silent. The policy is **one-minor warn, next-minor remove**:
