@@ -295,5 +295,52 @@ class SetPerformModeTests(unittest.TestCase):
         self.assertTrue(out["ui_perform_mode_set"])
 
 
+class StoredPerformModeTests(unittest.TestCase):
+    def _read(self, **patch):
+        with _PerformModeTdPatch(**patch):
+            return ss.get_system_info(include=["storedPerformMode"])
+
+    def test_reads_the_stored_flag(self):
+        root = _FakeRoot(initial=True)
+        self.assertEqual(self._read(op=lambda _p: root), {"storedPerformMode": True})
+
+    def test_never_stored_reads_false(self):
+        root = _FakeRoot(initial=None)
+        self.assertEqual(self._read(op=lambda _p: root), {"storedPerformMode": False})
+
+    def test_independent_of_native_flag(self):
+        # The native flag says no; the stored flag is what set_perform_mode wrote.
+        root = _FakeRoot(initial=True)
+        ui = _FakeUi()
+        out = self._read(op=lambda _p: root, ui=ui)
+        self.assertFalse(ui.performMode)
+        self.assertIs(out["storedPerformMode"], True)
+
+    def test_reads_back_what_set_perform_mode_stored(self):
+        root = _FakeRoot(initial=False)
+        with _PerformModeTdPatch(op=lambda _p: root, ui=_FakeUi()):
+            ss.set_perform_mode(True)
+            out = ss.get_system_info(include=["storedPerformMode"])
+        self.assertIs(out["storedPerformMode"], True)
+
+    def test_no_td_op_is_an_error_not_false(self):
+        self.assertIn("error", self._read()["storedPerformMode"])
+
+    def test_failed_fetch_is_an_error_not_false(self):
+        class _ExplodingRoot:
+            def fetch(self, _key, _default):
+                raise RuntimeError("boom")
+
+        out = self._read(op=lambda _p: _ExplodingRoot())
+        self.assertEqual(out["storedPerformMode"], {"error": "boom"})
+
+    def test_not_in_default_sections(self):
+        root = _FakeRoot(initial=True)
+        out = self._read(op=lambda _p: root)
+        self.assertEqual(set(out), {"storedPerformMode"})
+        with _PerformModeTdPatch(op=lambda _p: root):
+            self.assertNotIn("storedPerformMode", ss.get_system_info())
+
+
 if __name__ == "__main__":
     unittest.main()

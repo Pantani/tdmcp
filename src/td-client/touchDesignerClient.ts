@@ -2158,7 +2158,9 @@ export class TouchDesignerClient {
   }
 
   // --- System info (GPU + monitors + perform mode) — survives ALLOW_EXEC=0 ---
-  getSystemInfo(include?: Array<"gpu" | "monitors" | "performMode">): Promise<TdSystemInfo> {
+  getSystemInfo(
+    include?: Array<"gpu" | "monitors" | "performMode" | "storedPerformMode">,
+  ): Promise<TdSystemInfo> {
     return this.request("GET", "/api/system", SystemInfoSchema, undefined, {
       include: include?.length ? include.join(",") : undefined,
     });

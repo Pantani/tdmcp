@@ -165,7 +165,7 @@ function makeFinalizeCtx(behaviour: FinalizeClientBehaviour): ToolContext {
     createNode: async () => ({ path: "/project1/sys/op1", name: "op1", type: "noiseTOP" }),
     updateNodeParameters: async () => ({}),
     connectNodes: async () => ({ actual_input: 0 }),
-    // Default: perform-mode probe + panel/layout scripts succeed with empty report.
+    // Default: panel/layout scripts succeed with empty report.
     executePythonScript:
       behaviour.executePythonScript ??
       (async () => ({ stdout: '{"created": [], "bound": [], "warnings": []}' })),

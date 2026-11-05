@@ -113,9 +113,8 @@ function previewHandler(base64: string) {
   });
 }
 
-// capturePreview probes perform-mode via /api/exec first; the default mock returns
-// {result:null, stdout:""} → JSON.parse fails → treated as NOT in perform mode, so
-// the preview proceeds. Each test overrides the preview handler with a known PNG.
+// capturePreview reads the stored Perform-mode flag first; the default mock says it is
+// off, so the preview proceeds. Each test overrides the preview handler with a known PNG.
 
 describe("caption_top", () => {
   it("schema defaults: width 320, height 180, use_vision true", () => {
@@ -250,8 +249,8 @@ describe("caption_top", () => {
   it("TD offline (bridge error) returns isError and does not throw", async () => {
     server.use(
       http.get(`${TD_BASE}/api/preview/:seg`, () => HttpResponse.error()),
-      // perform-mode probe also fails offline; both should be handled gracefully.
-      http.post(`${TD_BASE}/api/exec`, () => HttpResponse.error()),
+      // The Perform-mode read also fails offline; both should be handled gracefully.
+      http.get(`${TD_BASE}/api/system`, () => HttpResponse.error()),
     );
 
     const result = await captionTopImpl(makeCtx(), {

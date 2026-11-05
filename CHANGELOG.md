@@ -12,7 +12,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Layer 1 and Layer 2 tool's default path against an msw bridge that refuses what
   a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge refuses, including code-bearing node
   creation, expression modes, and DAT text writes as well as `/api/exec`. Results
-  are ratcheted against a committed baseline that may only shrink (16 of 363 tools
+  are ratcheted against a committed baseline that may only shrink (17 of 363 tools
   are exec-free today, 290 are blocked), and a shared fixture holds the mock to the
   real Python router. This is an offline check: it does not cook anything, covers
   default paths only, and makes no claim about live TouchDesigner behavior.
@@ -45,6 +45,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   lockfile for transitive `proxy-addr`, `body-parser`, `qs`, `fast-uri`, `hono`,
   `@hono/node-server` and `ip-address`. `npm audit --omit=dev` now reports zero
   vulnerabilities.
+
+### Fixed
+
+- **Preview capture is skipped during a show on exec-off bridges** — the Perform-mode
+  check ran over `/api/exec`, so on a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge the refusal
+  read as "not performing" and previews rendered mid-show. The check now reads the
+  flag `set_perform_mode` stores through a new opt-in `storedPerformMode` section of
+  `GET /api/system`, and uses exec only on older bridges without it. This affects
+  `get_preview` and every tool that captures a preview.
+  **Behavior change:** if the state can't be read, the capture is now refused with the
+  reason instead of going ahead. Older bridges with exec disabled get this every time
+  until the bridge is updated with `tdmcp install-bridge`. Build tools still finish
+  and report the missing preview as a warning.
 
 ## [0.13.2] - 2026-08-11
 

@@ -102,11 +102,11 @@ describe("captureThumbnail", () => {
 
   // ── perform-mode skip (capturePreview throws TdApiError) ────────────────────
   it("degrades gracefully when perform mode is active (capturePreview throws)", async () => {
-    // capturePreview probes perform mode via /api/exec reading tdmcp_perform_mode.
-    // Returning perform:true makes it throw before any preview call.
+    // capturePreview reads the stored flag from /api/system.
+    // Returning true makes it throw before any preview call.
     server.use(
-      http.post(`${TD_BASE}/api/exec`, () =>
-        HttpResponse.json({ ok: true, data: { result: null, stdout: '{"perform": true}' } }),
+      http.get(`${TD_BASE}/api/system`, () =>
+        HttpResponse.json({ ok: true, data: { storedPerformMode: true } }),
       ),
     );
 

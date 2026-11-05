@@ -1454,6 +1454,9 @@ export const SystemInfoSchema = z.object({
     .union([z.boolean(), z.object({ error: z.string() })])
     .nullable()
     .optional(),
+  // Opt-in section: the flag set_perform_mode stores. Absent on older bridges,
+  // which ignore section names they don't know.
+  storedPerformMode: z.union([z.boolean(), z.object({ error: z.string() })]).optional(),
 });
 export type TdSystemInfo = z.infer<typeof SystemInfoSchema>;
 
