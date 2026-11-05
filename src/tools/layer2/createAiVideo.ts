@@ -2,6 +2,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { capturePreview } from "../../feedback/previewCapture.js";
 import { findCachedVideo, videoCacheKey, writeCachedVideo } from "../../services/videoGen/cache.js";
+import { loadInitImage } from "../../services/videoGen/initImage.js";
 import {
   DEFAULT_VIDEO_GEN_TIMEOUT_MS,
   type VideoGenProvider,
@@ -43,7 +44,7 @@ export const videoGenFields = {
     .string()
     .optional()
     .describe(
-      "Optional ABSOLUTE path to an init/anchor image (e.g. a create_ai_texture cache file) for image-to-video. Omitted = text-to-video where supported.",
+      "Optional ABSOLUTE path to an init/anchor image (PNG, JPEG or WebP, at most 32 MiB; e.g. a create_ai_texture cache file) for image-to-video. It is uploaded to the selected provider. Omitted = text-to-video where supported.",
     ),
   provider: z
     .enum(["fal", "comfyui"])
@@ -183,9 +184,15 @@ export async function generateVideoToCache(
     };
   }
 
-  const model = req.model ?? ctx.videoGen.defaultModel;
+  const init = req.initImagePath ? await loadInitImage(req.initImagePath) : undefined;
+  if (init && !init.ok) {
+    return { ok: false, error: errorResult(`${init.reason} — the network was not built.`) };
+  }
+  const request: VideoGenRequest = init ? { ...req, initImagePath: init.path } : req;
+
+  const model = request.model ?? ctx.videoGen.defaultModel;
   const cacheDir = ctx.videoCacheDir ?? ".tdmcp/video-gen";
-  const cacheKey = videoCacheKey(req, ctx.videoGen.id, model);
+  const cacheKey = videoCacheKey(request, ctx.videoGen.id, model, init?.digest);
 
   const hit = await findCachedVideo(cacheDir, cacheKey);
   if (hit) {
@@ -198,8 +205,8 @@ export async function generateVideoToCache(
           mimeType: mimeFromPath(hit),
           provider: ctx.videoGen.id,
           model,
-          durationSec: req.durationSeconds,
-          seed: req.seed,
+          durationSec: request.durationSeconds,
+          seed: request.seed,
         },
         cacheKey,
         cacheHit: true,
@@ -208,10 +215,13 @@ export async function generateVideoToCache(
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), req.timeoutMs ?? DEFAULT_VIDEO_GEN_TIMEOUT_MS);
+  const timer = setTimeout(
+    () => controller.abort(),
+    request.timeoutMs ?? DEFAULT_VIDEO_GEN_TIMEOUT_MS,
+  );
   let video: VideoGenResult;
   try {
-    video = await ctx.videoGen.generate({ ...req, model }, controller.signal);
+    video = await ctx.videoGen.generate({ ...request, model }, controller.signal);
   } catch (err) {
     return {
       ok: false,

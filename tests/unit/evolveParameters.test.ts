@@ -186,6 +186,31 @@ describe("evolveParametersImpl — evolution loop", () => {
     expect(textOf(result)).toContain("did not resolve");
   });
 
+  it.each([
+    { allowRawPython: false },
+    { toolProfile: "safe" as const },
+    { toolProfile: "directory" as const },
+  ])("refuses a code-bearing gene before any bridge call under %o", async (policy) => {
+    const fake = makeFake();
+    const result = await evolveParametersImpl(
+      { ...makeCtx(fake), ...policy },
+      baseArgs({ genes: { "outTop.brightness1": ["1"], "src.bindexpr": ["__import__('os')"] } }),
+    );
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("src.bindexpr");
+    expect(fake.createNode).not.toHaveBeenCalled();
+    expect(fake.updateNodeParameters).not.toHaveBeenCalled();
+  });
+
+  it("still allows plain parameter genes when raw Python is off", async () => {
+    const fake = makeFake();
+    const result = await evolveParametersImpl(
+      { ...makeCtx(fake), allowRawPython: false },
+      baseArgs({ population: 2, generations: 1 }),
+    );
+    expect(result.isError).toBeFalsy();
+  });
+
   it("surfaces a mid-loop client failure as a friendly result, not an exception", async () => {
     const fake = makeFake({ createNodeThrows: true });
     const result = await evolveParametersImpl(makeCtx(fake), baseArgs());

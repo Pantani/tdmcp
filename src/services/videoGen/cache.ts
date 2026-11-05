@@ -27,13 +27,19 @@ function extFromMime(mime: string): string {
  * mime type (a hit reuses whatever extension is on disk) so the same request always
  * maps to one key regardless of output container.
  */
-export function videoCacheKey(req: VideoGenRequest, providerId: string, model: string): string {
+export function videoCacheKey(
+  req: VideoGenRequest,
+  providerId: string,
+  model: string,
+  initImageDigest?: string,
+): string {
   const payload = JSON.stringify({
     providerId,
     model,
     prompt: req.prompt,
     negativePrompt: req.negativePrompt,
-    initImagePath: req.initImagePath,
+    // Content digest, not the path: overwriting the anchor image must miss the cache.
+    initImage: initImageDigest,
     durationSeconds: req.durationSeconds,
     width: req.width,
     height: req.height,

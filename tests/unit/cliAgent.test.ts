@@ -677,6 +677,25 @@ describe("tdmcp-agent CLI", () => {
     }
   });
 
+  it("redacts AI provider keys in config --write-env", async () => {
+    vi.stubEnv("TDMCP_FAL_KEY", "fal-secret-value");
+    vi.stubEnv("TDMCP_REPLICATE_KEY", "replicate-secret-value");
+    try {
+      const r = await runCli(["config", "--write-env"], {
+        makeCtx: () => {
+          throw new Error("config --write-env must not build a TD context");
+        },
+      });
+      expect(r.code).toBe(0);
+      expect(r.stdout).toContain("# export TDMCP_FAL_KEY=<set manually>");
+      expect(r.stdout).toContain("# export TDMCP_REPLICATE_KEY=<set manually>");
+      expect(r.stdout).not.toContain("fal-secret-value");
+      expect(r.stdout).not.toContain("replicate-secret-value");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("propagates top-level --dry-run into JSON run-file steps", async () => {
     const dir = mkdtempSync(join(tmpdir(), "tdmcp-agent-run-"));
     try {

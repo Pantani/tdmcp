@@ -5,6 +5,11 @@ import { capturePreview } from "../../feedback/previewCapture.js";
 import { topMotion } from "../../feedback/topMotion.js";
 import type { Recipe } from "../../recipes/schema.js";
 import {
+  allowsCallerCode,
+  callerCodeDenied,
+  genericNodeCodeBearingSources,
+} from "../codeBearing.js";
+import {
   buildFromRecipe,
   finalize,
   type NetworkBuilder,
@@ -295,6 +300,24 @@ async function runEvolution(
   }
 }
 
+/**
+ * Genes name arbitrary `<node>.<param>` targets, so they reach the bridge as
+ * caller-supplied parameter writes. Apply the same code-bearing policy as the generic
+ * create/update primitives so a gene cannot smuggle an expression, callback or script
+ * past TDMCP_RAW_PYTHON=off or the safe/directory tool profiles.
+ */
+function codeBearingGene(recipe: Recipe, genes: Record<string, string[]>): string | undefined {
+  for (const key of Object.keys(genes)) {
+    const dot = key.lastIndexOf(".");
+    if (dot <= 0) continue;
+    const nodeName = key.slice(0, dot);
+    const node = recipe.nodes.find((candidate) => candidate.name === nodeName);
+    const sources = genericNodeCodeBearingSources(node?.type, { [key.slice(dot + 1)]: true });
+    if (sources.length > 0) return key;
+  }
+  return undefined;
+}
+
 export async function evolveParametersImpl(
   ctx: ToolContext,
   args: EvolveParametersArgs,
@@ -310,6 +333,10 @@ export async function evolveParametersImpl(
     return errorResult(
       `evolve_parameters: unknown build_target "${args.build_target}". Available recipe ids: ${ids.join(", ")}.`,
     );
+  }
+  if (!allowsCallerCode(ctx)) {
+    const gene = codeBearingGene(recipe, args.genes);
+    if (gene) return callerCodeDenied(`evolve_parameters gene "${gene}"`);
   }
   const budget = args.population * args.generations;
   if (budget > HARD_CAP) {

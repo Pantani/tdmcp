@@ -1,10 +1,10 @@
 import { existsSync } from "node:fs";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildToolContext } from "../../src/server/context.js";
 import { FalVideoProvider } from "../../src/services/videoGen/falProvider.js";
 import type { VideoGenProvider } from "../../src/services/videoGen/types.js";
@@ -24,6 +24,9 @@ afterAll(() => server.close());
 
 // A tiny "mp4" payload — the cache only cares that real bytes land on disk.
 const MP4_BYTES = new Uint8Array([0, 0, 0, 24, 102, 116, 121, 112]);
+
+// Just the PNG signature: the init-image gate sniffs magic bytes, nothing decodes it.
+const PNG_BYTES = Buffer.from("89504e470d0a1a0a", "hex");
 
 const tmpDirs: string[] = [];
 async function freshCacheDir(): Promise<string> {
@@ -194,7 +197,7 @@ describe("create_ai_video", () => {
   it("uploads the init image to fal storage and takes the image-to-video slug", async () => {
     const cacheDir = await freshCacheDir();
     const initImage = join(cacheDir, "anchor.png");
-    await writeFile(initImage, MP4_BYTES);
+    await writeFile(initImage, PNG_BYTES);
     const provider = new FalVideoProvider("fake-key", { defaultModel: "ltx-video" });
     const ctx = videoCtx(cacheDir, provider);
     captureCreateBodies();
@@ -211,6 +214,71 @@ describe("create_ai_video", () => {
     const result = await createAiVideoImpl(ctx, makeArgs({ init_image: initImage }));
     expect(result.isError).toBeFalsy();
     expect(uploaded).toBe(true);
+  });
+
+  it.each([
+    ["a secret with an image extension", "fake.png", "BEGIN PRIVATE KEY"],
+    ["a non-image extension", "id_rsa", "BEGIN PRIVATE KEY"],
+  ])("refuses to upload %s as init_image", async (_label, file, contents) => {
+    const cacheDir = await freshCacheDir();
+    const initImage = join(cacheDir, file);
+    await writeFile(initImage, contents);
+    const generate = vi.fn();
+    const ctx = videoCtx(cacheDir, {
+      id: "fal",
+      defaultModel: "ltx-video",
+      generate,
+    } as unknown as VideoGenProvider);
+
+    const result = await createAiVideoImpl(ctx, makeArgs({ init_image: initImage }));
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("init_image");
+    expect(textOf(result)).not.toContain("PRIVATE");
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("refuses a symlink that disguises a secret as an image, and relative paths", async () => {
+    const cacheDir = await freshCacheDir();
+    const secret = join(cacheDir, "credentials");
+    const link = join(cacheDir, "pretty.png");
+    await writeFile(secret, PNG_BYTES);
+    await symlink(secret, link);
+    const generate = vi.fn();
+    const ctx = videoCtx(cacheDir, {
+      id: "fal",
+      defaultModel: "ltx-video",
+      generate,
+    } as unknown as VideoGenProvider);
+
+    expect((await createAiVideoImpl(ctx, makeArgs({ init_image: link }))).isError).toBe(true);
+    expect((await createAiVideoImpl(ctx, makeArgs({ init_image: "a.png" }))).isError).toBe(true);
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("misses the cache when the init image contents change at the same path", async () => {
+    const cacheDir = await freshCacheDir();
+    const initImage = join(cacheDir, "anchor.png");
+    await writeFile(initImage, PNG_BYTES);
+    const generate = vi.fn(async () => ({
+      bytes: MP4_BYTES,
+      mimeType: "video/mp4",
+      provider: "fal",
+      model: "ltx-video",
+    }));
+    const ctx = videoCtx(cacheDir, {
+      id: "fal",
+      defaultModel: "ltx-video",
+      generate,
+    } as unknown as VideoGenProvider);
+    captureCreateBodies();
+
+    await createAiVideoImpl(ctx, makeArgs({ init_image: initImage, seed: 7 }));
+    await createAiVideoImpl(ctx, makeArgs({ init_image: initImage, seed: 7 }));
+    expect(generate).toHaveBeenCalledTimes(1);
+
+    await writeFile(initImage, Buffer.concat([PNG_BYTES, Buffer.from([1])]));
+    await createAiVideoImpl(ctx, makeArgs({ init_image: initImage, seed: 7 }));
+    expect(generate).toHaveBeenCalledTimes(2);
   });
 
   it("returns a provider error and makes ZERO bridge requests when videoGen is unset", async () => {
