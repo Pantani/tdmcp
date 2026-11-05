@@ -13,21 +13,26 @@ import {
 } from "../../src/server/transportFactory.js";
 import { loadConfig } from "../../src/utils/config.js";
 import { silentLogger } from "../../src/utils/logger.js";
+import { listenOnLoopback, startOnFreeLoopbackPort } from "../helpers/loopbackPort.js";
 
-const PORT = 39411;
-let handle: TransportHandle;
+let PORT: number;
+let handle: TransportHandle | undefined;
 
 beforeAll(async () => {
-  const config = loadConfig({ TDMCP_TRANSPORT: "http", TDMCP_HTTP_PORT: String(PORT) });
-  handle = await startTransport(
-    () => createTdmcpServer(config, { logger: silentLogger }),
-    config,
-    silentLogger,
-  );
+  const started = await startOnFreeLoopbackPort((port) => {
+    const config = loadConfig({ TDMCP_TRANSPORT: "http", TDMCP_HTTP_PORT: String(port) });
+    return startTransport(
+      () => createTdmcpServer(config, { logger: silentLogger }),
+      config,
+      silentLogger,
+    );
+  });
+  PORT = started.port;
+  handle = started.value;
 });
 
 afterAll(async () => {
-  await handle.close();
+  await handle?.close();
 });
 
 describe("integration: Streamable HTTP transport", () => {
@@ -190,24 +195,28 @@ describe("HTTP transport guards (unit)", () => {
 });
 
 describe("integration: Streamable HTTP transport OAuth bearer", () => {
-  const AUTH_PORT = 39412;
-  let authHandle: TransportHandle;
+  let AUTH_PORT: number;
+  let authHandle: TransportHandle | undefined;
 
   beforeAll(async () => {
-    const config = loadConfig({
-      TDMCP_TRANSPORT: "http",
-      TDMCP_HTTP_PORT: String(AUTH_PORT),
-      TDMCP_HTTP_AUTH_TOKEN: "s3cret",
+    const started = await startOnFreeLoopbackPort((port) => {
+      const config = loadConfig({
+        TDMCP_TRANSPORT: "http",
+        TDMCP_HTTP_PORT: String(port),
+        TDMCP_HTTP_AUTH_TOKEN: "s3cret",
+      });
+      return startTransport(
+        () => createTdmcpServer(config, { logger: silentLogger }),
+        config,
+        silentLogger,
+      );
     });
-    authHandle = await startTransport(
-      () => createTdmcpServer(config, { logger: silentLogger }),
-      config,
-      silentLogger,
-    );
+    AUTH_PORT = started.port;
+    authHandle = started.value;
   });
 
   afterAll(async () => {
-    await authHandle.close();
+    await authHandle?.close();
   });
 
   const post = (headers: Record<string, string>) =>
@@ -238,31 +247,35 @@ describe("integration: Streamable HTTP transport OAuth bearer", () => {
 });
 
 describe("integration: explicit HTTP auth policy", () => {
-  const HYBRID_PORT = 39415;
-  let hybridHandle: TransportHandle;
+  let HYBRID_PORT: number;
+  let hybridHandle: TransportHandle | undefined;
   let stateRoot: string;
 
   beforeAll(async () => {
     stateRoot = mkdtempSync(join(tmpdir(), "tdmcp-oauth-policy-"));
-    const config = loadConfig({
-      TDMCP_TRANSPORT: "http",
-      TDMCP_HTTP_PORT: String(HYBRID_PORT),
-      TDMCP_HTTP_AUTH_MODE: "hybrid",
-      TDMCP_HTTP_AUTH_TOKEN: "migration-secret",
-      TDMCP_PUBLIC_BASE_URL: `http://127.0.0.1:${HYBRID_PORT}`,
-      TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK: "1",
-      TDMCP_OAUTH_STATE_DIR: join(stateRoot, "hybrid"),
+    const started = await startOnFreeLoopbackPort((port) => {
+      const config = loadConfig({
+        TDMCP_TRANSPORT: "http",
+        TDMCP_HTTP_PORT: String(port),
+        TDMCP_HTTP_AUTH_MODE: "hybrid",
+        TDMCP_HTTP_AUTH_TOKEN: "migration-secret",
+        TDMCP_PUBLIC_BASE_URL: `http://127.0.0.1:${port}`,
+        TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK: "1",
+        TDMCP_OAUTH_STATE_DIR: join(stateRoot, "hybrid"),
+      });
+      return startTransport(
+        () => createTdmcpServer(config, { logger: silentLogger }),
+        config,
+        silentLogger,
+      );
     });
-    hybridHandle = await startTransport(
-      () => createTdmcpServer(config, { logger: silentLogger }),
-      config,
-      silentLogger,
-    );
+    HYBRID_PORT = started.port;
+    hybridHandle = started.value;
   });
 
   afterAll(async () => {
-    await hybridHandle.close();
-    rmSync(stateRoot, { force: true, recursive: true });
+    await hybridHandle?.close();
+    if (stateRoot) rmSync(stateRoot, { force: true, recursive: true });
   });
 
   it("keeps legacy static bearer access only in explicit hybrid migration mode", async () => {
@@ -354,23 +367,24 @@ describe("integration: explicit HTTP auth policy", () => {
   });
 
   it("wires bounded trusted proxy hops into the OAuth source gate", async () => {
-    const port = 39421;
-    const base = `http://127.0.0.1:${port}`;
-    const config = loadConfig({
-      TDMCP_TRANSPORT: "http",
-      TDMCP_HTTP_PORT: String(port),
-      TDMCP_HTTP_AUTH_MODE: "oauth",
-      TDMCP_PUBLIC_BASE_URL: base,
-      TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK: "1",
-      TDMCP_OAUTH_STATE_DIR: join(stateRoot, "trusted-proxy"),
-      TDMCP_OAUTH_TRUSTED_PROXY_HOPS: "127.0.0.1",
-      TDMCP_EVENTS: "off",
+    const { port, value: handle } = await startOnFreeLoopbackPort((candidate) => {
+      const config = loadConfig({
+        TDMCP_TRANSPORT: "http",
+        TDMCP_HTTP_PORT: String(candidate),
+        TDMCP_HTTP_AUTH_MODE: "oauth",
+        TDMCP_PUBLIC_BASE_URL: `http://127.0.0.1:${candidate}`,
+        TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK: "1",
+        TDMCP_OAUTH_STATE_DIR: join(stateRoot, "trusted-proxy"),
+        TDMCP_OAUTH_TRUSTED_PROXY_HOPS: "127.0.0.1",
+        TDMCP_EVENTS: "off",
+      });
+      return startTransport(
+        () => createTdmcpServer(config, { logger: silentLogger }),
+        config,
+        silentLogger,
+      );
     });
-    const handle = await startTransport(
-      () => createTdmcpServer(config, { logger: silentLogger }),
-      config,
-      silentLogger,
-    );
+    const base = `http://127.0.0.1:${port}`;
     try {
       expect(
         (
@@ -392,39 +406,47 @@ describe("integration: explicit HTTP auth policy", () => {
 });
 
 describe("integration: bounded HTTP abuse and session initialization", () => {
-  const CAPACITY_PORT = 39419;
-  const FAILURE_PORT = 39420;
-  let capacityHandle: TransportHandle;
-  let failureHandle: TransportHandle;
+  let CAPACITY_PORT: number;
+  let FAILURE_PORT: number;
+  let capacityHandle: TransportHandle | undefined;
+  let failureHandle: TransportHandle | undefined;
 
   beforeAll(async () => {
-    const capacityConfig = loadConfig({
-      TDMCP_TRANSPORT: "http",
-      TDMCP_HTTP_PORT: String(CAPACITY_PORT),
-      TDMCP_EVENTS: "off",
+    const capacity = await startOnFreeLoopbackPort((port) => {
+      const capacityConfig = loadConfig({
+        TDMCP_TRANSPORT: "http",
+        TDMCP_HTTP_PORT: String(port),
+        TDMCP_EVENTS: "off",
+      });
+      return startTransport(
+        () => new McpServer({ name: "capacity-test", version: "0.0.0" }),
+        capacityConfig,
+        silentLogger,
+      );
     });
-    capacityHandle = await startTransport(
-      () => new McpServer({ name: "capacity-test", version: "0.0.0" }),
-      capacityConfig,
-      silentLogger,
-    );
-    const failureConfig = loadConfig({
-      TDMCP_TRANSPORT: "http",
-      TDMCP_HTTP_PORT: String(FAILURE_PORT),
-      TDMCP_HTTP_AUTH_MODE: "static",
-      TDMCP_HTTP_AUTH_TOKEN: "expected-secret",
-      TDMCP_EVENTS: "off",
+    CAPACITY_PORT = capacity.port;
+    capacityHandle = capacity.value;
+    const failure = await startOnFreeLoopbackPort((port) => {
+      const failureConfig = loadConfig({
+        TDMCP_TRANSPORT: "http",
+        TDMCP_HTTP_PORT: String(port),
+        TDMCP_HTTP_AUTH_MODE: "static",
+        TDMCP_HTTP_AUTH_TOKEN: "expected-secret",
+        TDMCP_EVENTS: "off",
+      });
+      return startTransport(
+        () => new McpServer({ name: "auth-rate-test", version: "0.0.0" }),
+        failureConfig,
+        silentLogger,
+      );
     });
-    failureHandle = await startTransport(
-      () => new McpServer({ name: "auth-rate-test", version: "0.0.0" }),
-      failureConfig,
-      silentLogger,
-    );
+    FAILURE_PORT = failure.port;
+    failureHandle = failure.value;
   });
 
   afterAll(async () => {
-    await capacityHandle.close();
-    await failureHandle.close();
+    await capacityHandle?.close();
+    await failureHandle?.close();
   });
 
   it("reserves initialization capacity before awaiting concurrent handshakes", async () => {
@@ -474,19 +496,18 @@ describe("integration: bounded HTTP abuse and session initialization", () => {
 });
 
 describe("integration: opt-in OAuth PKCE with TD-native consent", () => {
-  const OAUTH_PORT = 39413;
-  const BRIDGE_PORT = 39414;
-  const OAUTH_BASE = `http://127.0.0.1:${OAUTH_PORT}`;
+  let OAUTH_PORT: number;
+  let OAUTH_BASE: string;
   const REDIRECT = "http://127.0.0.1:49152/callback";
-  let oauthHandle: TransportHandle;
-  let bridgeServer: HttpServer;
+  let oauthHandle: TransportHandle | undefined;
+  let bridgeServer: HttpServer | undefined;
   let stateRoot: string;
   const bridgeAuth: string[] = [];
   const bridgeBodies: string[] = [];
 
   beforeAll(async () => {
     stateRoot = mkdtempSync(join(tmpdir(), "tdmcp-oauth-integration-"));
-    bridgeServer = createHttpServer((req, res) => {
+    const bridge = createHttpServer((req, res) => {
       const chunks: Buffer[] = [];
       req.on("data", (chunk: Buffer) => chunks.push(chunk));
       req.on("end", () => {
@@ -534,29 +555,38 @@ describe("integration: opt-in OAuth PKCE with TD-native consent", () => {
         res.end(JSON.stringify({ ok: false, error: { code: "not_found", message: "not found" } }));
       });
     });
-    await new Promise<void>((resolve) => bridgeServer.listen(BRIDGE_PORT, "127.0.0.1", resolve));
+    bridgeServer = bridge;
+    const bridgePort = await listenOnLoopback(bridge);
 
-    const config = loadConfig({
-      TDMCP_TRANSPORT: "http",
-      TDMCP_HTTP_PORT: String(OAUTH_PORT),
-      TDMCP_HTTP_AUTH_MODE: "oauth",
-      TDMCP_PUBLIC_BASE_URL: OAUTH_BASE,
-      TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK: "1",
-      TDMCP_OAUTH_STATE_DIR: join(stateRoot, "oauth-state"),
-      TDMCP_TD_PORT: String(BRIDGE_PORT),
-      TDMCP_BRIDGE_TOKEN: "bridge-secret",
+    const started = await startOnFreeLoopbackPort((port) => {
+      const config = loadConfig({
+        TDMCP_TRANSPORT: "http",
+        TDMCP_HTTP_PORT: String(port),
+        TDMCP_HTTP_AUTH_MODE: "oauth",
+        TDMCP_PUBLIC_BASE_URL: `http://127.0.0.1:${port}`,
+        TDMCP_OAUTH_ALLOW_INSECURE_LOOPBACK: "1",
+        TDMCP_OAUTH_STATE_DIR: join(stateRoot, "oauth-state"),
+        TDMCP_TD_PORT: String(bridgePort),
+        TDMCP_BRIDGE_TOKEN: "bridge-secret",
+      });
+      return startTransport(
+        () => createTdmcpServer(config, { logger: silentLogger }),
+        config,
+        silentLogger,
+      );
     });
-    oauthHandle = await startTransport(
-      () => createTdmcpServer(config, { logger: silentLogger }),
-      config,
-      silentLogger,
-    );
+    OAUTH_PORT = started.port;
+    OAUTH_BASE = `http://127.0.0.1:${OAUTH_PORT}`;
+    oauthHandle = started.value;
   });
 
   afterAll(async () => {
-    await oauthHandle.close();
-    await new Promise<void>((resolve) => bridgeServer.close(() => resolve()));
-    rmSync(stateRoot, { force: true, recursive: true });
+    await oauthHandle?.close();
+    if (bridgeServer?.listening) {
+      const bridge = bridgeServer;
+      await new Promise<void>((resolve) => bridge.close(() => resolve()));
+    }
+    if (stateRoot) rmSync(stateRoot, { force: true, recursive: true });
   });
 
   async function issueToken(clientName: string): Promise<{
