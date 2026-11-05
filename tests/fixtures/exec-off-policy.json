@@ -1,0 +1,386 @@
+{
+  "messages": {
+    "exec": "Forbidden: arbitrary code execution is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).",
+    "method": "Forbidden: arbitrary method calls are disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).",
+    "param_mode": "Forbidden: parameter expression/bind source is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).",
+    "dat_text": "Forbidden: DAT text mutation is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).",
+    "custom_params": "Forbidden: custom-parameter expression/bind assignment is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0).",
+    "node_code": "Forbidden: generic node creation with operator type glslTOP is disabled (TDMCP_BRIDGE_ALLOW_EXEC=0)."
+  },
+  "executableOperatorFragments": [
+    "script",
+    "execute",
+    "expression",
+    "evaluate",
+    "glsl",
+    "shaderpark"
+  ],
+  "codeParameterPrefixes": ["callback", "python", "script", "glsl", "shader"],
+  "codeParameterNames": ["code", "expr", "expression", "bindexpr"],
+  "typeSpecificCodeParameters": {
+    "groupsop": ["filter"],
+    "deletesop": ["filter"],
+    "grouppop": ["filter"],
+    "deletepop": ["filter"],
+    "textcomp": ["customformatting"]
+  },
+  "datFileParameterNames": ["file", "syncfile", "loadonstart", "loadonstartpulse"],
+  "genericNodeCodeCases": [
+    {
+      "type": "noiseTOP",
+      "parameters": {
+        "period": 1
+      },
+      "sources": []
+    },
+    {
+      "type": "nullTOP",
+      "sources": []
+    },
+    {
+      "type": "glslTOP",
+      "sources": ["operator type glslTOP"]
+    },
+    {
+      "type": "glslmultiTOP",
+      "sources": ["operator type glslmultiTOP"]
+    },
+    {
+      "type": "scriptTOP",
+      "sources": ["operator type scriptTOP"]
+    },
+    {
+      "type": "executeDAT",
+      "sources": ["operator type executeDAT"]
+    },
+    {
+      "type": "parameterexecuteDAT",
+      "sources": ["operator type parameterexecuteDAT"]
+    },
+    {
+      "type": "evaluateDAT",
+      "sources": ["operator type evaluateDAT"]
+    },
+    {
+      "type": "baseCOMP",
+      "parameters": {
+        "ext0object": "x"
+      },
+      "sources": ["parameter ext0object"]
+    },
+    {
+      "type": "baseCOMP",
+      "parameters": {
+        "extension": "x"
+      },
+      "sources": []
+    },
+    {
+      "type": "noiseTOP",
+      "parameters": {
+        "expr": "1",
+        "bindExpr": "2",
+        "periodexpr": "3"
+      },
+      "sources": ["parameter expr", "parameter bindExpr", "parameter periodexpr"]
+    },
+    {
+      "type": "noiseTOP",
+      "parameters": {
+        "callbacks": "x",
+        "pythonpath": "y",
+        "scriptname": "z",
+        "shader1": "s",
+        "glslversion": "4"
+      },
+      "sources": [
+        "parameter callbacks",
+        "parameter pythonpath",
+        "parameter scriptname",
+        "parameter shader1",
+        "parameter glslversion"
+      ]
+    },
+    {
+      "type": "groupSOP",
+      "parameters": {
+        "filter": "x"
+      },
+      "sources": ["parameter filter"]
+    },
+    {
+      "type": "noiseSOP",
+      "parameters": {
+        "filter": "x"
+      },
+      "sources": []
+    },
+    {
+      "type": "textDAT",
+      "parameters": {
+        "file": "a.txt",
+        "syncfile": 1
+      },
+      "sources": ["parameter file", "parameter syncfile"]
+    },
+    {
+      "type": "moviefileinTOP",
+      "parameters": {
+        "file": "a.mov"
+      },
+      "sources": []
+    },
+    {
+      "type": "textCOMP",
+      "parameters": {
+        "customformatting": "x"
+      },
+      "sources": ["parameter customformatting"]
+    }
+  ],
+  "customParamsCases": [
+    {
+      "body": {
+        "operations": [
+          {
+            "action": "edit_parameter",
+            "fields": {
+              "mode": "expression"
+            }
+          }
+        ]
+      },
+      "contains": true
+    },
+    {
+      "body": {
+        "operations": [
+          {
+            "action": "edit_parameter",
+            "fields": {
+              "mode": "BIND"
+            }
+          }
+        ]
+      },
+      "contains": true
+    },
+    {
+      "body": {
+        "operations": [
+          {
+            "action": "edit_parameter",
+            "fields": {
+              "bind_expression": "x"
+            }
+          }
+        ]
+      },
+      "contains": true
+    },
+    {
+      "body": {
+        "operations": [
+          {
+            "action": "edit_parameter",
+            "fields": {
+              "mode": "constant",
+              "value": 1
+            }
+          }
+        ]
+      },
+      "contains": false
+    },
+    {
+      "body": {
+        "operations": [
+          {
+            "action": "add_parameter",
+            "fields": {
+              "mode": "expression"
+            }
+          }
+        ]
+      },
+      "contains": false
+    },
+    {
+      "body": {},
+      "contains": false
+    }
+  ],
+  "refusedRoutes": [
+    {
+      "gate": "exec",
+      "method": "POST",
+      "path": "/api/exec",
+      "body": {
+        "script": "print(1)"
+      }
+    },
+    {
+      "gate": "method",
+      "method": "POST",
+      "path": "/api/nodes/project1/geo1/method",
+      "body": {
+        "method": "cook"
+      }
+    },
+    {
+      "gate": "param_mode",
+      "method": "PATCH",
+      "path": "/api/nodes/project1/noise1/params/amp/mode",
+      "body": {
+        "mode": "expression",
+        "expr": "1"
+      }
+    },
+    {
+      "gate": "dat_text",
+      "method": "PUT",
+      "path": "/api/nodes/project1/text1/text",
+      "body": {
+        "text": "x"
+      }
+    },
+    {
+      "gate": "custom_params",
+      "method": "POST",
+      "path": "/api/nodes/project1/base1/custom_params",
+      "body": {
+        "operations": [
+          {
+            "action": "edit_parameter",
+            "fields": {
+              "mode": "expression"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "gate": "node_code",
+      "method": "POST",
+      "path": "/api/nodes",
+      "body": {
+        "parent_path": "/project1",
+        "type": "glslTOP"
+      }
+    }
+  ],
+  "currentBridgeRoutes": [
+    {
+      "method": "POST",
+      "path": "/api/connect",
+      "body": {
+        "source_path": "/a",
+        "target_path": "/b"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/disconnect",
+      "body": {
+        "to_path": "/b"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/search",
+      "query": {
+        "name": "a"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/project1/noise1/params",
+      "query": {
+        "modes": "true"
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/nodes/project1/noise1/params/amp/mode",
+      "body": {
+        "mode": "constant",
+        "value": 1
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/project1/text1/text"
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/project1/base1/custom_params"
+    },
+    {
+      "method": "POST",
+      "path": "/api/nodes/project1/base1/custom_params",
+      "body": {
+        "operations": []
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/param_modes/batch",
+      "body": {
+        "items": []
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs"
+    },
+    {
+      "method": "GET",
+      "path": "/api/system"
+    },
+    {
+      "method": "GET",
+      "path": "/api/optypes"
+    },
+    {
+      "method": "POST",
+      "path": "/api/params/watch",
+      "body": {
+        "path": "/a"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/params/watch",
+      "query": {
+        "path": "/a"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/params/watch"
+    },
+    {
+      "method": "POST",
+      "path": "/api/duplicate",
+      "body": {
+        "source": "/a"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/perform",
+      "body": {
+        "enabled": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/editor/insert",
+      "body": {
+        "type": "noiseTOP",
+        "expected_context": {},
+        "idempotency_key": "k"
+      }
+    }
+  ]
+}

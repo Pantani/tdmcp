@@ -80,6 +80,8 @@
     "agent:catalog:gen": "tsx scripts/gen-agent-command-catalog.ts && biome check --write src/agentCommandCatalog.ts",
     "smoke": "tsx scripts/smoke.ts",
     "contract:gen": "tsx scripts/gen-skill-contract.ts",
+    "smoke:exec-off": "node scripts/run-vitest.mjs run tests/smoke/bridgeExecOff.test.ts",
+    "smoke:exec-off:update": "EXEC_OFF_UPDATE_BASELINE=1 node scripts/run-vitest.mjs run tests/smoke/bridgeExecOff.test.ts && biome format --write tests/smoke/bridgeExecOff.baseline.json",
     "smoke:live": "tsx scripts/smoke-live.ts",
     "shader-park:tox": "node scripts/fetch-shader-park-td.mjs",
     "smoke:packages": "tsx scripts/smoke-packages.ts",
