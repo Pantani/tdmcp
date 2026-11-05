@@ -1207,10 +1207,13 @@ The contract for a "tdmcp tool" is the `ToolContext` shape
   (one-minor warn, next-minor remove).
 - ⬜ One full minor release cycle (one tagged minor) with **no breaking change**
   to `ToolContext` or to any existing tool's `inputSchema` (additive optional
-  fields are allowed; renames / removals / required-field additions are not).
-  The 20 new #128 tools are **additive-only** — they don't break the contract —
-  and per the pin doc the clock starts at the first tagged minor published after
-  it landed, so this is the only open G1 item.
+  fields are allowed; renames / removals / tightened types / required-field
+  additions are not). **The clock restarted at v0.13.2:** that patch tightened
+  existing fields on `find_td_nodes`, `focus_network_editor`,
+  `add_custom_parameters` and `plan_visual`, so it is the new baseline. This item
+  closes when **v0.14.0** is tagged with no breaking change against v0.13.2; see
+  [when the clock starts](/reference/API_STABILITY#when-the-clock-starts). It is
+  the only open G1 item.
 
 ### G2 — Test coverage · 🧪
 
