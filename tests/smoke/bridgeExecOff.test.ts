@@ -209,9 +209,14 @@ describe("exec-off mock matches the bridge's policy fixture", () => {
   });
 
   it("serves every first-class route the Python parity test validates", async () => {
-    for (const route of policy.currentBridgeRoutes) {
-      const query =
-        "query" in route ? `?${new URLSearchParams(route.query as Record<string, string>)}` : "";
+    const routes = policy.currentBridgeRoutes as unknown as Array<{
+      method: string;
+      path: string;
+      query?: Record<string, string>;
+      body?: unknown;
+    }>;
+    for (const route of routes) {
+      const query = route.query ? `?${new URLSearchParams(route.query)}` : "";
       // The real client percent-encodes the node path into one segment.
       const path = route.path.replace(
         /^\/api\/nodes\/(project1\/\w+)/,
@@ -220,7 +225,7 @@ describe("exec-off mock matches the bridge's policy fixture", () => {
       const response = await fetch(`http://127.0.0.1:9980${path}${query}`, {
         method: route.method,
         headers: { "content-type": "application/json" },
-        ...("body" in route ? { body: JSON.stringify(route.body) } : {}),
+        ...(route.body !== undefined ? { body: JSON.stringify(route.body) } : {}),
       });
       expect([route.path, response.status]).toEqual([route.path, 200]);
     }

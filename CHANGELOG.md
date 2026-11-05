@@ -17,6 +17,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   real Python router. This is an offline check: it does not cook anything, covers
   default paths only, and makes no claim about live TouchDesigner behavior.
 
+### Security
+
+- **Production dependency advisories resolved** — bumped
+  `@modelcontextprotocol/sdk` from 1.30.0 to 1.32.2 (HTTP request size and
+  batch limits, bearer-token audience checks, cross-origin redirect handling,
+  OAuth and task-session fixes) and raised the `zod` floor to `^4.6.7`
+  (memory exhaustion on oversized constrained collections). Refreshed the
+  lockfile for transitive `proxy-addr`, `body-parser`, `qs`, `fast-uri`, `hono`,
+  `@hono/node-server` and `ip-address`. `npm audit --omit=dev` now reports zero
+  vulnerabilities.
+
 ## [0.13.2] - 2026-08-11
 
 This patch release realigns the package, bridge, manifests, bootstrap URLs and
