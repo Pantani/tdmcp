@@ -10,12 +10,12 @@ can build real visual systems from plain language — no node-wiring by hand. Th
 page is the honest, bird's-eye picture of **what already works, what's still
 rough, and what's coming next** on the way to a stable 1.0.
 
-**Where things stand today.** The source tree targets **v0.13.2**. The last
-verified public npm package and GitHub Release/tag remain **v0.13.1** (published
-2026-07-09) until the 0.13.2 npm publication, tag and Release are completed and
-verified independently. The v0.13.2 candidate includes the post-v0.13.1
-TD-native discovery campaign through Wave 16 while preserving every live-
-evidence boundary below. The CHANGELOG blocks list every entry; the
+**Where things stand today.** The latest public release is **v0.13.2**: npm
+`@dpantani/tdmcp@0.13.2` and the GitHub Release (marked Latest, from the `v0.13.2`
+tag) were published on 2026-08-12 UTC. It includes the post-v0.13.1 TD-native discovery
+campaign through Wave 16, and every live-evidence boundary below still applies:
+publishing a release does not upgrade an UNVERIFIED item. The CHANGELOG blocks
+list every entry; the
 always-current tool list is the
 [Tools reference](/reference/tools). 1.0 is **not** the next minor — the v0.1x
 line is the active feature/consolidation line, and v1.0 will land only once the
@@ -58,23 +58,24 @@ The project has grown through five arcs:
 
 ## ✅ Current Release Line
 
-### v0.13.2 release candidate
+### v0.13.2 — TD-native discovery campaign and release realignment
 
-The source tree and release metadata target **v0.13.2**. Until the npm package,
-annotated tag and GitHub Release are all published and independently verified,
-**v0.13.1 remains the confirmed public baseline**. The entries below are
-included in the v0.13.2 candidate; PASS / FAIL / UNVERIFIED boundaries remain
-unchanged:
+Published on **2026-08-12 UTC** (npm + GitHub Release + `v0.13.2` tag; the
+CHANGELOG entry is dated 2026-08-11). This patch realigns the package, bridge,
+manifests, bootstrap URLs and release artifacts after the v0.13.1 npm/source
+divergence. PASS / FAIL / UNVERIFIED boundaries are unchanged by the release:
 
-- **Native RayTK integration.** `create_raytk_op`, `create_raytk_scene`, and the
-  `tdmcp://raytk/operators` catalog drive RayTK (t3kt/raytk) as editable ROP
-  node graphs, complementary to the GLSL raymarch tools.
-- **RayTK version-gate honesty.** `manage_packages doctor raytk` now reflects
-  RayTK 0.46's TD 2025.30770+ requirement and warns on older TouchDesigner
-  builds.
-- **Registry/directory fixes.** Glama/MCP directory metadata exposes
-  `TDMCP_TOOL_PROFILE`, and the Creative RAG Smithsonian adapter now produces a
-  valid canonical URL when `record_link` is absent.
+- **Tool-integration campaign Waves 1-7.** Show-delivery, external-control and
+  scaffold tools, including `export_render_preset`, `show_preflight_report`,
+  `auto_ui_from_params`, `create_companion_surface`, `clip_audio_transport`,
+  `osc_router_matrix`, `qlab_osc_bridge`, `atem_switcher_control`,
+  `resolume_vdmx_output_chain`, `obs_stream_control`, `edit_shader_live_loop`,
+  `blender_scene_import`, `projector_calibration_wizard`,
+  `notch_touchengine_bridge`, `lidar_floor_tracker` and
+  `raytk_expr_graph_builder`. They merged after the `v0.13.1` tag, so v0.13.2 is the
+  first release containing them, although the CHANGELOG lists them under 0.13.1.
+  Physical projector alignment, real LiDAR sensors, Notch/TouchEngine license and
+  runtime paths, and `raytk_expr_graph_builder` render/cook remain live-unverified.
 - **TD-native Interaction & Safety Wave 1.** A bounded
   native broker now gates delete and Save As overwrite decisions; structured
   editor context, project save, Pulse, atomic node metadata edits and node
@@ -258,7 +259,7 @@ unchanged:
   compact redacted editor, project-brief, graph, recipe, operator and registered-
   tool evidence. The deterministic planner remains the default and typed
   fallback, and all proposed identifiers are validated before the plan is
-  returned. `tdmcp show <profile>` is implemented in the source tree as an exact-
+  returned. `tdmcp show <profile>` is included in v0.13.2 as an exact-
   profile runtime-status → doctor → preflight → Perform readback gate with
   dry-run, JSON, separate WARN/UNVERIFIED acceptance and one bounded rollback;
   it never loads a project or uses raw Python. Wave 14 live QA on TD 2025.32820
@@ -304,7 +305,7 @@ unchanged:
   undo/redo remains rejected because native labels cannot prevent same-label
   ABA.
 
-- **Receipt-authorized operation boundary Wave 15.** The release source exposes
+- **Receipt-authorized operation boundary Wave 15.** v0.13.2 exposes
   token-required structured preview, one-request
   commit and capability-authorized receipt observation through the bridge and
   typed TD client, all outside `/api/exec` and the generic request undo wrapper.
@@ -386,6 +387,20 @@ unchanged:
 - Cross-host receipt correlation and signed/exportable audit envelopes remain
   separately scoped. Wave 5 receipts are local, redacted observability records,
   not replay logs or an undo mechanism.
+
+### v0.13.1 — native RayTK and directory fixes
+
+Published on **2026-07-09** (npm + GitHub Release + `v0.13.1` tag):
+
+- **Native RayTK integration.** `create_raytk_op`, `create_raytk_scene`, and the
+  `tdmcp://raytk/operators` catalog drive RayTK (t3kt/raytk) as editable ROP
+  node graphs, complementary to the GLSL raymarch tools.
+- **RayTK version-gate honesty.** `manage_packages doctor raytk` now reflects
+  RayTK 0.46's TD 2025.30770+ requirement and warns on older TouchDesigner
+  builds.
+- **Registry/directory fixes.** Glama/MCP directory metadata exposes
+  `TDMCP_TOOL_PROFILE`, and the Creative RAG Smithsonian adapter now produces a
+  valid canonical URL when `record_link` is absent.
 
 ### v0.13.0 — new tools, bridge routes, CLI parity
 
@@ -911,17 +926,23 @@ they're considered solid.
   `create_phone_gesture` (smartphone sensors).
 - **Multimodal-LLM dependent**: `caption_top`, `copilot_vision`. Tool schema
   and prompt assembly are unit-tested; output quality is gated on a stable
-  multimodal endpoint — see *Out of scope* below.
-- **Rollback tuning** (offline-improvable): `repair_network` ships with offline
-  unit tests; the snapshot/restore loop will get a dedicated regression test
-  before it leaves experimental.
-- **Obsidian vault tools** — fully unit-tested, but their live round-trip inside a
-  running TouchDesigner hasn't been exercised end-to-end yet. The pure
-  serialization↔deserialization round-trip is offline-improvable and queued.
+  multimodal endpoint — see *Out of scope* below. The Wave 13-14 exact-model vision
+  evidence covers `enhance_build.visualCritique` only, not these two tools.
+- **Live rollback pending**: `repair_network` has an offline regression test for
+  the rollback result contract (a mocked bridge reports `rolled_back` and reverted
+  steps when errors don't improve). The snapshot/restore Python itself still needs
+  a live run against a real network before it leaves experimental.
+- **Obsidian vault tools** — fully unit-tested, including the offline recipe
+  serialization↔deserialization round-trip (`tests/unit/vaultRoundTrip.test.ts`),
+  but their live round-trip inside a running TouchDesigner hasn't been exercised
+  end-to-end yet.
 - **Signal-detection tools**:
-  - `detect_pitch` — known issue: default threshold can read near-zero on
-    quiet inputs. A regression test pinning the default behaviour is queued;
-    until then, pass an explicit `threshold` for reliable readings.
+  - `detect_pitch` — reports 0 Hz when the peak magnitude is below the gate, so
+    quiet inputs can read as silence. A regression test pins the gate and the
+    exposed `Threshold` default to the same value (`0.0005`); that default is not
+    yet validated against real audio. The tool has no `threshold` input, so tune
+    the live `Threshold` and `Sensitivity` knobs (on by default via
+    `expose_controls`).
   - `detect_tempo` — BPM lock validated against synthetic clicks; live music
     tuning still required.
   - `create_envelope_follower` — sidechain routing topology is unit-tested;
@@ -956,19 +977,18 @@ the front-of-house dashboard v2 layout; and the stronger `generate_readme` /
 `make_portable_tox` component-doc pass all shipped in the v0.8 release line.
 The pre-Round-4 Planned list was empty (all v0.8.x queued items shipped); the
 **2026-06-09 hype-scout** ([Round 4](#appendix-d-round4)) reopened it with a
-trend-driven set of buildable wins. The remaining work toward a tagged 1.0
-splits in two: **consolidation** (API stability, coverage, recipes, bridge
-hardening, docs, one-click install) tracked in
-[v1.0.0 — Consolidation](#v100-consolidation), **plus the small Round-4
-quick-win wave** (force multipliers + the top-5 hand-to-pipeline items) listed
-under Milestone 3 just below. Only items that still need a future code change
+trend-driven set of buildable wins, and that quick-win wave (Milestone 3 below)
+shipped in v0.9.0. The remaining work toward a tagged 1.0 is **consolidation**
+(API stability, coverage, recipes, bridge hardening, docs, one-click install),
+tracked in [v1.0.0 — Consolidation](#v100-consolidation), plus the open live-backend
+rows of Milestone 5. Only items that still need a future code change
 (not a hardware/service blocker) belong in this Planned section.
 Hardware-, live-music-, multimodal-LLM- and GPU/CUDA-gated items have been
 moved to **Out of scope (for now)** below. Version targets are a rough
-sequence, **not a promise**. One additional design-stage slice is tracked here:
-a Soundcraft Ui24R / mixer-aware expansion of AI-Controlled Party. It belongs in
-Planned because it needs future code changes, but it is **not shipped** and
-**not a live hardware claim**. The exhaustive, item-by-item backlog lives in the
+sequence, **not a promise**. One partly delivered slice is tracked here: a
+Soundcraft Ui24R / mixer-aware expansion of the AI Show Director. Its offline
+dry-run MVP shipped in v0.10.0; the live backends still need future code changes,
+and **nothing in it is a live hardware claim**. The exhaustive, item-by-item backlog lives in the
 [planning archive](#full-backlog).
 
 ### Creative RAG follow-ups (post-#76) {#planned-creative-rag}
@@ -976,16 +996,17 @@ Planned because it needs future code changes, but it is **not shipped** and
 The Creative RAG MVP (#75) and the post-MVP robustness wave (#76 — embedding
 batching, `indexVersion` migration, Content-Type binary extension, Smithsonian
 + Wikimedia Commons + Europeana sources, optional `TDMCP_RAG_BACKEND=lancedb`)
-are **Shipped** above. The remaining follow-ups are tracked here:
+are **Shipped** above. The follow-ups tracked here have all shipped too:
 
-- **[P2 product]** `SourceSkippedError` — distinguish "no key" from "empty
-  source" so a misconfigured key-gated source never tombstones real cards.
+- **[Shipped]** `SourceSkippedError` carries a `reason: "no-key" | "empty"`
+  discriminator so a misconfigured key-gated source never tombstones real cards.
+  (v0.13.0)
 - **[Shipped]** Configurable multilingual embedding model (`bge-m3`) — env +
   docs + CI smoke (`creative-rag-multilingual-smoke` job). Default unchanged
   (`nomic-embed-text`); rebuild required when switching.
-- **[P2 product]** `canonicalizeGuid` regression test pinning the rule that
-  source URLs / ids never embed an API key (the lesson from the Europeana
-  `wskey` strip).
+- **[Shipped]** `canonicalizeGuid` regression coverage pins the rule that source
+  URLs / ids never embed an API key (the lesson from the Europeana `wskey` strip;
+  `tests/unit/creativeRag/europeana.test.ts`).
 - **[Shipped]** Optional RAG context injection in `tdmcp ask` (flag-
   gated; must not change tool tiers or confirmation gates). (#87, v0.6.0)
 - **[Shipped]** MCP prompt `creative-inspiration` returning a curated
@@ -1029,7 +1050,7 @@ force multipliers are in place when those wrappers land.
   that quantizes cues to Ableton bars/phrases. (shipped v0.9.0)
 - ✅ `create_audio_glsl_uniforms` — Layer-2 helper that binds audio CHOPs as
   uniforms on `glslTOP`. (shipped v0.9.0)
-- ⬜ `create_external_io` outbound — itself FM-01 above.
+- ✅ `create_external_io` outbound — itself FM-01 above. (shipped v0.9.0)
 
 ### Milestone 4 — Generative-AI bridge wave (gated on FM-01 + FM-02) · ✅ v0.9.0
 
@@ -1054,21 +1075,24 @@ path is the one validatable without a local GPU.
 - ✅ `create_llm_chain` (dotsimulate LOPs).
 - ✅ `create_ai_mirror` combo recipe (depends on the bridge above + FM-01).
 
-### Milestone 5 — AI Show Director mixer scene arming · ⬜ Planned (design-stage)
+### Milestone 5 — AI Show Director mixer scene arming · 🧪 Dry-run MVP shipped (v0.10.0); live backends ⬜
 
-Still fully ⬜ — no `arm_mixer_scene` tool exists yet; all five rows below stay
-dry-run, manifest-gated and approval-gated before any live adapter is built.
-Design status: `_workspace/ai-party-mixer/05_synthesis_design.md` and
-`docs/superpowers/specs/2026-06-04-ai-party-ui24r-scene-arming-design.md`
-define the first safe slice.
+The offline dry-run MVP shipped in v0.10.0. `arm_mixer_scene` is a Show Director
+**intent** (used through flows such as the `show-director` CLI), not a registered MCP tool. The
+policy returns `require_approval` at best and never `allow`, and the live AI-party
+dispatcher blocks the intent outright. No Soundcraft, Companion or Node client is
+constructed, so **no Ui24R hardware has been driven and every live claim stays
+UNVERIFIED**. Notes such as "Bench-validated" in the built-in demo manifest are
+fixture text, not evidence. Design spec:
+`docs/superpowers/specs/2026-06-04-ai-party-ui24r-scene-arming-design.md`.
 
 | Item | Delivers | Status | Gate |
 | --- | --- | --- | --- |
-| `arm_mixer_scene` contract | A new Show Director intent for operator-approved Soundcraft Ui24R show/snapshot/cue arming, separate from blocked `mixer_gain`, `pa_mute` and `audio_routing` effects. | ⬜ Planned | Must remain dry-run and approval-gated; valid targets come only from a trusted scene catalog. |
-| Mixer scene catalog / manifest | Venue-side allowlist with stable scene IDs, Ui24R show/snapshot/cue refs, policy hash/checksum, allowed setlist sections, rollback target and safety notes. | ⬜ Planned | Any scene that may hide gain, PA mute, routing, patching, channel-strip, mute-group or phantom-power changes stays operator-only/manual. |
-| Dry-run mixer adapter | Adapter interface and dry-run backend that consumes approved mixer-scene plans and returns `hardware_changed:false`. | ⬜ Planned | No Soundcraft, Companion, Node or TouchDesigner hardware client may be constructed in this slice. |
-| Companion live backend spike | Bitfocus Companion backend for one bench-validated Ui24R scene mapped to one preconfigured button. | ⬜ Planned | Isolated bench validation required; `sent`/`acknowledged`/`confirmed` must be separate audit states. |
-| Direct Node bridge research | Protocol proof for show/snapshot/cue recall against the target Ui24R firmware. | ⬜ Planned | No raw commands; no gain/mute/routing/channel operations; fixture tests before any live backend. |
+| `arm_mixer_scene` contract | A Show Director intent for operator-approved Soundcraft Ui24R show/snapshot/cue arming, separate from blocked `mixer_gain`, `pa_mute` and `audio_routing` effects (`src/automation/showDirectorSchema.ts`, `showDirectorRuntime.ts`). | ✅ Shipped v0.10.0 (offline) | Remains dry-run and approval-gated; valid targets come only from the supplied scene catalog, whose hash proves self-consistency, not venue trust. |
+| Mixer scene catalog / manifest | Venue-side allowlist with stable scene IDs, Ui24R show/snapshot/cue refs, content hash, allowed setlist sections, rollback target and safety notes (`src/automation/mixerSceneCatalog.ts`). | ✅ Shipped v0.10.0 (offline) | A scene is blocked unless its manifest attests that it excludes every forbidden delta (gain, PA mute, routing, patching, channel-strip, mute-group, phantom power). The attestation is operator-supplied: the code does not inspect scene contents, so unattested or doubtful scenes stay operator-only/manual. |
+| Dry-run mixer adapter | Adapter interface and dry-run backend that consumes approved mixer-scene plans and returns `hardware_changed:false` (`src/automation/mixerSceneAdapter.ts`). | ✅ Shipped v0.10.0 (offline library boundary, exercised only by tests; `show-director` approval emits a plan and does not dispatch through it) | No Soundcraft, Companion, Node or TouchDesigner hardware client is constructed in this slice. |
+| Companion live backend spike | Bitfocus Companion backend for one bench-validated Ui24R scene mapped to one preconfigured button. | ⬜ Planned | The `companion` backend id exists only as a not-configured stub that no runtime path selects. Isolated bench validation required; `sent`/`acknowledged`/`confirmed` must be separate audit states. |
+| Direct Node bridge research | Protocol proof for show/snapshot/cue recall against the target Ui24R firmware. | ⬜ Planned | The `direct_node` backend id exists only as a not-configured stub that no runtime path selects. No raw commands; no gain/mute/routing/channel operations; fixture tests before any live backend. |
 
 ### What's left for 1.0
 
@@ -1077,9 +1101,9 @@ fully landed in the v0.8 release line, **and Milestones 3-4 above shipped on
 the v0.9 line**, the remaining work to 1.0 is **consolidation**. The measurable
 gates live in [v1.0.0 — Consolidation](#v100-consolidation) below; every open
 item should map to one of those gates rather than to a new entry here. The Ui24R
-mixer-scene work remains a bounded AI Show Director extension and must ship
-behind dry-run, manifest and bench-validation gates before any live adapter is
-considered.
+mixer-scene work remains a bounded AI Show Director extension: its dry-run and
+manifest gates shipped in v0.10.0, and bench validation is still required before
+any live adapter is considered.
 
 ### Later / deferred
 
@@ -1100,9 +1124,10 @@ properly:
 - **Multimodal-LLM-gated:** live-tuning `caption_top` and `copilot_vision`
   (vision-capable transcripts, smarter copilot handoff) is parked until
   there's a stable multimodal LLM endpoint to validate the prompts/output
-  against. (`repair_network` is **not** multimodal-gated — its remaining
-  hardening is offline rollback-regression testing, tracked in the
-  Experimental section above.)
+  against. The Wave 13-14 vision evidence is scoped to
+  `enhance_build.visualCritique` and doesn't lift this gate. (`repair_network` is
+  **not** multimodal-gated — its remaining hardening is live rollback validation,
+  tracked in the Experimental section above.)
 - **Live-music-gated reactivity validation:** graduating the chroma /
   percussive-vs-tonal / song-structure detectors out of experimental requires
   validating defaults against real music sources in a live setting.
@@ -1111,7 +1136,7 @@ properly:
   or as a cloud option — never bundled. GPU fluid simulation and any
   optical-flow particle path that depends on CUDA can't be validated on the
   current macOS dev machine and remain parked (the new stock-TOP
-  `create_optical_flow` ships in main).
+  `create_optical_flow` has shipped).
 - **Hardware-bound:** depth cameras (Kinect / Azure / RealSense), SMPTE/LTC
   timecode genlock, and laser (ILDA) output. Where possible we prefer the lighter,
   camera-only paths (MediaPipe face/hand/body, stock-TOP optical flow). The
@@ -1120,9 +1145,9 @@ properly:
   validation.
 - **Mixer/PA live control beyond scene arming:** autonomous PA control, mixer
   gain, PA mute, routing, patching, phantom power, mute groups and channel-strip
-  edits remain out of scope for the AI path. The planned Ui24R work is limited
-  to operator-approved show/snapshot/cue arming with a manifest and dry-run
-  first.
+  edits remain out of scope for the AI path. The Ui24R work is limited to
+  operator-approved show/snapshot/cue arming with a manifest; only the dry-run
+  path has shipped.
 - **Multi-machine / multi-instance:** managing several TouchDesigner processes and
   cross-machine genlock — parked until there's hardware to test against.
 - **Paid TouchDesigner license:** the Engine COMP / TouchEngine headless path.
@@ -1162,9 +1187,12 @@ properly:
 
 ## v1.0.0 — Consolidation {#v100-consolidation}
 
-With the feature surface at **378 tools** on HEAD (the generated Tools-reference
-total), the road to 1.0 is
-a set of **measurable consolidation gates**, not a new feature wave. Each gate
+With the feature surface at **508 tools** in v0.13.2 (the generated Tools-reference
+total, and what the built server lists with default config), the road to 1.0 is
+a set of **measurable consolidation gates**, not a new feature wave. Configuration
+changes what a client sees: `TDMCP_RAW_PYTHON=off` lists 493,
+`TDMCP_TOOL_PROFILE=safe` 457 and `TDMCP_TOOL_PROFILE=directory` 17, while the
+opt-in `TDMCP_RAG_APPLY_CARD=1` adds `apply_creative_card` for 509. Each gate
 below states the current posture and what "done" looks like, using the same
 legend as the rest of the page (✅ shipped / 🧪 in progress / ⬜ planned).
 
@@ -1196,7 +1224,8 @@ Coverage is tracked by `npm run test:coverage` + the
   (2026-07-07: statements 86 / branches 73 / functions 85 / lines 88) and only
   ever move up.
 - ⬜ Reach the **+5 pp** stretch target (lines ≥ 91, branches ≥ 75) — currently
-  at lines 88.85 / branches 73.36; raising the floors as coverage improves.
+  at about lines 88.9 / branches 74.2 (`npm run test:coverage` at v0.13.2); raising the
+  floors as coverage improves.
 - ✅ Bridge tests (`npm run test:bridge`) and recipe validation
   (`npm run validate:recipes`) run green alongside the four PR gates.
 
@@ -1211,7 +1240,7 @@ knowledge base by `npm run lint:recipes`).
   `histogram_scope`, `ascii_render_post`, `dither_post`, `halftone_post`,
   `audio_glsl_uniforms`, `front_of_house_dashboard` (dashboard-v2), `sidechain_pump`.
   All validated against `RecipeSchema` with real optypes **and now live-cook-validated**
-  (the `[Unreleased]` recipe fixes closed `histogram_scope` and verified the other
+  (the v0.13.0 recipe fixes closed `histogram_scope` and verified the other
   nine cook with `errors:[]`).
 - 🧪 **Orchestrator JSON twins — partial (60 recipes total).** The prior set of
   eight twins (glitch, kaleidoscope, slime simulation, spectrum, waveform,
@@ -1243,42 +1272,62 @@ structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
   existing-endpoint sweep is complete**: every tool whose operation maps directly
   to a typed REST method already prefers it (15 tools — 9 via the canonical
   `tryEndpoint` helper + 6 with intentionally-manual conditional fallbacks),
-  promoted across v0.8.1/0.8.2. Of the 183 exec callers, the remaining 168 are
-  legitimate custom-Python / composite builds (create→wire→set→verify in one
-  atomic pass) with **no typed REST equivalent**, or map only to the exec-gated
-  `/method` route (no hardening value) — they correctly stay on exec, the
-  intended escape hatch. **What's left is new-endpoint authoring**, not a rewire.
+  promoted across v0.8.1/0.8.2. Of the 183 exec callers counted in that sweep, the
+  remaining 168 were legitimate custom-Python / composite builds
+  (create→wire→set→verify in one atomic pass) with **no typed REST equivalent**, or
+  mapped only to the exec-gated `/method` route (no hardening value) — they
+  correctly stay on exec, the intended escape hatch. The surface has grown since:
+  v0.13.2 has 189 `executePythonScript(` call sites across 167 files under
+  `src/tools`, and that total has not been re-triaged. **What's left is
+  new-endpoint authoring**, not a rewire.
 - 🧪 **#128 added 4 new first-class routes** — `POST /api/nodes/{path}/save`,
   `POST /api/duplicate`, `GET /api/optypes`, and
   `POST/DELETE/GET /api/params/watch` — promoting `render_output` and
   `duplicate_network` off exec (exactly the "new-endpoint authoring" this gate
   named). Remaining work is further new-endpoint authoring (e.g. batch
   create+write) via `tdmcp-bridge-endpoint`; it needs live TD to validate.
-- ⬜ Keep `/api/exec` working when `TDMCP_BRIDGE_ALLOW_EXEC=0` is the venue
-  policy: every Layer-1/Layer-2 tool must build with exec disabled (CI smoke).
+- 🧪 **Exec-off CI smoke landed, with a ratchet.** The `Bridge Exec OFF Smoke` job
+  (`tests/smoke/bridgeExecOff.test.ts`) runs every Layer-1/Layer-2 tool's default
+  path against a mocked bridge that refuses what `TDMCP_BRIDGE_ALLOW_EXEC=0` refuses,
+  and holds the result to `tests/smoke/bridgeExecOff.baseline.json`, which may only
+  shrink. Of 363 tools: 16 clean, 2 placement-only, 51 degraded (return success with
+  real work refused), 290 blocked, 4 unverified. Offline only: nothing cooks and
+  optional branches don't run, so this is a request-level result, not live proof.
+- ⬜ **Decision needed — this gate is not achievable as written.** The original
+  wording, "keep `/api/exec` working when `ALLOW_EXEC=0`: every Layer-1/Layer-2 tool
+  must build with exec disabled", conflicts with itself (the policy exists to refuse
+  `/api/exec`) and with the bullets above (exec callers "correctly stay on exec").
+  It also can't hold for tools whose purpose is caller code, because the bridge
+  refuses creating `glslTOP`, script and execute DAT operators, and writing DAT text,
+  whichever route is used. Reaching it would take new bridge endpoints for most of
+  the 290 blocked tools, plus a policy call on GLSL. Choose a 1.0 bar, for example a
+  named core set that must be clean, with the rest failing clearly.
 - ✅ Resilience patch — atomic writes, clean HTTP listen failure, event-stream
   close — landed in v0.8.1.
 
 ### G5 — Docs completeness · 🧪
 
 The Tools reference (`docs/reference/tools.md`) is auto-generated from the live
-registry on every docs build. Guide pages (`docs/guide/*.md`) currently cover
-install, first visual, body tracking, components, recipes, shader-park,
-local-copilot, LOPs integration, AI-controlled party, prompt cookbook, FAQ,
-troubleshooting and glossary.
+registry on every docs build. Guide pages (`docs/guide/*.md`) cover setup, creating,
+performing, packaging and the TD-native runtime, in the categorized EN/PT sidebar.
 
-- ⬜ Add per-arc guides for the v0.7/v0.8 work that doesn't yet have one:
-  show timelines & setlists, dashboard-v2 / front-of-house, session profile
-  & corpus learning, MediaPipe adapters, MCP resources (glsl-snippets /
-  cheatsheets / learning).
+- ✅ **Per-arc guides for the v0.7/v0.8 work exist in EN and PT and are in the
+  sidebar:** [show timelines & setlists](/guide/show-timelines),
+  [front-of-house dashboard](/guide/dashboard-foh),
+  [session profile & corpus](/guide/session-profile),
+  [MediaPipe adapters](/guide/mediapipe-adapters) and
+  [MCP resources](/guide/mcp-resources).
 - ✅ **The 20 new #128 tools and the CLI-parity subcommands are documented.**
   All 20 tools now have EN **and** PT prompt-cookbook entries (20/20 in each,
   parity holds); `docs/reference/cli.md` documents the new `tdmcp-agent`
   subcommands (`bundle-deps`, `export-external-tree`, `narrate-set`,
   `check-optypes`, `preview --inline [--watch]`, `doctor --json`) and the full
   MCP-tool parity + the 21 vault subcommands.
-- ⬜ Every Layer-1 generator referenced in the cookbook has a one-paragraph
+- 🧪 Every Layer-1 generator referenced in the cookbook has a one-paragraph
   "what it builds + when to reach for it" entry in the relevant guide.
+  [`generators`](/guide/generators) is the reference page for this. A name search of
+  v0.13.2 found 98 Layer-1 tools in the English cookbook, 37 of them not named on
+  any other guide page, so this stays open.
 
 ### G6 — One-click install & Connectors Directory · 🧪
 
@@ -1302,7 +1351,8 @@ one-click path.
 > **Tool API contract reference.** The v1.0 invariants are documented in
 > [`docs/reference/tool-contract.md`](./reference/tool-contract.md) (naming,
 > input schema, error handling, offline behaviour, result shape, deprecation).
-> G1's `API_STABILITY.md` pin will fold this page into the formal contract.
+> When 1.0 ships, this page and G1's `API_STABILITY.md` pin become the single
+> frozen contract.
 
 ---
 
@@ -1371,8 +1421,8 @@ leaving this open backlog. The remaining open rows:
 #### A.3 · CLI & developer DX
 
 `preview_inline_and_watch` (`preview --inline [--watch]`) shipped in v0.13.0
-above and leaves this backlog. `show_mode_oneliner` is implemented in the
-unreleased source tree as `tdmcp show <profile>`; Wave 14 live QA on TD
+above and leaves this backlog. `show_mode_oneliner` shipped in v0.13.2 as
+`tdmcp show <profile>`; Wave 14 live QA on TD
 2025.32820 passed Perform entry, already-on behavior and fail-closed rollback.
 Other builds and actual headless TD remain **UNVERIFIED**. The remaining open
 rows:
@@ -1392,11 +1442,10 @@ automatically unless disabled (`--no-py-compile` / `--no-reload-bridge` opt out)
 
 #### A.4 · AI & LLM integration
 
-The optional LLM-grounded extension to `plan_visual` is integrated and offline-
-verified in the Wave 12 source tree, so it leaves the open backlog. It is
+The optional LLM-grounded extension to `plan_visual` shipped in v0.13.2 (Wave 12,
+offline-verified), so it leaves the open backlog. It is
 read-only, explicitly selected, bounded to one completion, validates grounded
-identifiers and retains the deterministic planner as default and fallback. It
-remains unreleased until a later release includes the Wave 12 work.
+identifiers and retains the deterministic planner as default and fallback.
 
 | Feature | Delivers | Effort | Impact | Conf | Priority | Novelty | Probe-first |
 |---|---|---|---|---|---|---|---|

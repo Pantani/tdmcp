@@ -14,6 +14,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `api-surface/baseline.json`. An intentional break is accepted through a reviewed
   entry in `api-surface/acknowledged-breaks.json`, and `npm run api:update` moves
   the baseline at release.
+- **Exec-off CI smoke for G4** — a new `Bridge Exec OFF Smoke` job runs every
+  Layer 1 and Layer 2 tool's default path against an msw bridge that refuses what
+  a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge refuses, including code-bearing node
+  creation, expression modes, and DAT text writes as well as `/api/exec`. Results
+  are ratcheted against a committed baseline that may only shrink (16 of 363 tools
+  are exec-free today, 290 are blocked), and a shared fixture holds the mock to the
+  real Python router. This is an offline check: it does not cook anything, covers
+  default paths only, and makes no claim about live TouchDesigner behavior.
+
+### Changed
+
+- **Roadmap reconciled with v0.13.2 and verified code state** — `docs/ROADMAP.md`
+  now reports v0.13.2 as the latest release and the current tool counts per
+  configuration, marks the Milestone 5 dry-run MVP as shipped offline with its
+  limits stated, closes the G5 per-arc guide item, and corrects stale
+  Experimental claims. No live-evidence boundary is upgraded.
 
 ### Security
 
