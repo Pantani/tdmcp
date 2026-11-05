@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **API stability clock restarted at v0.13.2 (roadmap G1)** — an audit of every
+  tagged release since the stability pin found v0.10.0 through v0.13.0 clean, but
+  v0.13.2 tightened existing input fields in a patch release, which the policy
+  does not allow and its changelog did not flag. Affected tools:
+  `find_td_nodes`, `focus_network_editor`, `add_custom_parameters` and
+  `plan_visual`. The limits stay, so calls outside them now fail validation; for
+  example `find_td_nodes` rejects `limit` above 200 and relative `parent_path`
+  values. v0.13.2 is the new baseline, and G1's release-cycle item closes when
+  v0.14.0 is tagged with no breaking change against it. `API_STABILITY.md` now
+  states when the clock starts.
+
 ### Security
 
 - **Production dependency advisories resolved** — bumped

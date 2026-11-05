@@ -114,3 +114,25 @@ guarantee window widens from "one minor cycle" to "the 1.x line": breaking the
 pinned surface then requires a **2.0** major bump, and this page plus the
 [Tool API contract](./tool-contract) become the single frozen contract clients
 can build against.
+
+### When the clock starts
+
+The cycle is measured from a **baseline tag** to the **next tagged minor**. It
+completes when that minor, and every tag between it and the baseline, has no
+breaking change against the baseline. A breaking change in any tag, patches
+included, makes that tag the new baseline.
+
+**The current baseline is v0.13.2**, so G1's first part closes when v0.14.0 is
+tagged with no breaking change against it.
+
+v0.13.2 reset the clock. It was a patch release, yet it tightened existing fields
+without a major bump, contrary to the guarantee above:
+
+| Tool | Fields tightened in v0.13.2 |
+| --- | --- |
+| `find_td_nodes` | `limit`, `parent_path`, `pattern`, `type` |
+| `focus_network_editor` | `paths` |
+| `add_custom_parameters` | `comp_path`, `page`, `params`, including stricter `params[]` entries that now reject unknown keys |
+| `plan_visual` | `description` |
+
+These limits stay in place. Calls that fall outside them now fail validation.
