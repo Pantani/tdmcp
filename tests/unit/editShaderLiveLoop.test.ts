@@ -47,6 +47,7 @@ function fakeCtx(options: FakeClientOptions = {}) {
       calls.push({ kind: "getNetworkErrors", value: { path } });
       return { errors: options.errors ?? [] };
     }),
+    getSystemInfo: vi.fn(async () => ({ storedPerformMode: false })),
     getPreview: vi.fn(async (path: string, width: number, height: number) => {
       calls.push({ kind: "getPreview", value: { path, width, height } });
       return {

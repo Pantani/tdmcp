@@ -1,7 +1,9 @@
 import { inflateSync } from "node:zlib";
 import { z } from "zod";
 import { checkPerformance } from "../../feedback/performanceMonitor.js";
+import { assertNotPerforming } from "../../feedback/previewCapture.js";
 import { LLM_SYSTEM_OPTION } from "../../llm/client.js";
+import { friendlyTdError } from "../../td-client/types.js";
 import { errorResult, structuredResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
 
@@ -333,10 +335,11 @@ export async function scoreBuildImpl(ctx: ToolContext, args: ScoreBuildArgs) {
         evidence.previewTopPath = topPath;
         let frame1: DecodedImage | null = null;
         try {
+          await assertNotPerforming(ctx.client);
           const p1 = await ctx.client.getPreview(topPath, 64, 36);
           frame1 = decodePng(p1.base64);
-        } catch {
-          warnings.push(`Preview capture failed for ${topPath}.`);
+        } catch (err) {
+          warnings.push(`Preview capture failed for ${topPath}: ${friendlyTdError(err)}`);
         }
         if (!frame1) {
           warnings.push(

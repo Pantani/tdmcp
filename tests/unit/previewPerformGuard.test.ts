@@ -1,10 +1,16 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { HttpResponse, http } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { capturePreview } from "../../src/feedback/previewCapture.js";
+import { runBridgeAnalyze } from "../../src/projectRag/extractors/bridgeAnalyze.js";
 import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js";
 import { TdConnectionError, TdTimeoutError } from "../../src/td-client/types.js";
+import { createVisualCritiqueDependencies } from "../../src/tools/layer1/enhanceBuildVisualRuntime.js";
 import { getPreviewImpl } from "../../src/tools/layer1/getPreview.js";
 import { finalize, NetworkBuilder } from "../../src/tools/layer2/orchestration.js";
+import { getInlinePreviewImpl } from "../../src/tools/layer3/getInlinePreview.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import policy from "../fixtures/exec-off-policy.json" with { type: "json" };
@@ -29,6 +35,10 @@ function bridge(system: () => Response, exec?: () => Response) {
     http.post(`${TD_BASE}/api/exec`, () => {
       calls.exec += 1;
       return exec ? exec() : execReply("");
+    }),
+    http.post(`${TD_BASE}/api/preview/:seg`, () => {
+      calls.preview += 1;
+      return data({ path: NODE, width: 8, height: 8, format: "png", base64: "AAAA" });
     }),
     http.get(`${TD_BASE}/api/preview/:seg`, () => {
       calls.preview += 1;
@@ -171,6 +181,90 @@ describe("tools sharing the guard", () => {
     expect(result.isError).toBe(true);
     expect(JSON.stringify(result.content)).toMatch(ACTIVE);
     expect(calls.preview).toBe(0);
+  });
+
+  it.each([
+    ["sample_grid", { sample_grid: 4 }],
+    ["pre_pulses", { pre_pulses: [{ path: "/project1/fb", par: "Reset" }] }],
+    ["delay_frames", { delay_frames: 2 }],
+  ])("get_preview's %s branch is guarded too", async (_name, extra) => {
+    const calls = bridge(() => data({ storedPerformMode: true }), execRefused);
+    const args = { node_path: NODE, width: 64, height: 64, ...extra };
+    const result = await getPreviewImpl(ctx(), args);
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toMatch(ACTIVE);
+    expect(calls.preview).toBe(0);
+  });
+
+  it("get_preview still collects a deferred capture while performing", async () => {
+    const calls = bridge(() => data({ storedPerformMode: true }));
+    server.use(
+      http.get(`${TD_BASE}/api/preview_job/:seg`, () =>
+        data({ job_id: "job1", status: "pending", path: NODE }),
+      ),
+    );
+    const args = { job_id: "job1", width: 64, height: 64 };
+    const result = await getPreviewImpl(ctx(), args);
+    expect(result.isError).toBeFalsy();
+    expect(calls.include).toEqual([]);
+  });
+
+  it("get_inline_preview refuses before capturing", async () => {
+    const calls = bridge(() => data({ storedPerformMode: true }), execRefused);
+    const result = await getInlinePreviewImpl(ctx(), {
+      path: NODE,
+      width: 64,
+      height: 64,
+      parent_depth: 0,
+      max_changed_params: 8,
+      include_full_params: false,
+      format: "png",
+      jpeg_quality: 70,
+    });
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toMatch(ACTIVE);
+    expect(calls).toMatchObject({ exec: 0, preview: 0 });
+  });
+
+  it("enhance-build's visual capture refuses before capturing", async () => {
+    const calls = bridge(() => data({ storedPerformMode: true }), execRefused);
+    server.use(http.get(`${TD_BASE}/api/editor/context`, () => data({ perform_mode: false })));
+    const toolCtx = ctx();
+    vi.spyOn(toolCtx.client, "getEditorContext").mockResolvedValue({
+      perform_mode: false,
+    } as never);
+    const deps = createVisualCritiqueDependencies(toolCtx, "/project1", {} as never);
+    const capture = deps.capture({ outputTopPath: NODE, width: 640, height: 360 });
+    await expect(capture).rejects.toThrow(ACTIVE);
+    expect(calls.preview).toBe(0);
+  });
+
+  it("the project RAG analyzer records no preview, and still succeeds, while performing", async () => {
+    const quarantine = "http://127.0.0.1:9981";
+    const dir = mkdtempSync(join(tmpdir(), "tdmcp-guard-"));
+    const artifactPath = join(dir, "show.toe");
+    writeFileSync(artifactPath, "");
+    let captures = 0;
+    server.use(
+      http.get(`${quarantine}/api/info`, () => data({ td_version: "2023.12000" })),
+      http.post(`${quarantine}/api/project/load`, () =>
+        data({ root_path: "/", node_count: 1, errors: [] }),
+      ),
+      http.get(`${quarantine}/api/network/:seg/errors`, () => data({ errors: [] })),
+      http.get(`${quarantine}/api/system`, () => data({ storedPerformMode: true })),
+      http.get(`${quarantine}/api/preview/:seg`, () => {
+        captures += 1;
+        return data({ path: "/", width: 8, height: 8, format: "png", base64: "AAAA" });
+      }),
+    );
+    try {
+      const result = await runBridgeAnalyze({ artifactPath, bridgePort: 9981 });
+      expect(result.status).toBe("ok");
+      expect(result.previewPng).toBeUndefined();
+      expect(captures).toBe(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("finalize keeps the build and warns when the preview is withheld", async () => {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { capturePreview } from "../../feedback/previewCapture.js";
+import { assertNotPerforming, capturePreview } from "../../feedback/previewCapture.js";
 import type { TdAdvancedCapture, TdPreviewJob } from "../../td-client/validators.js";
 import { errorResult, guardTd, imageResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -154,21 +154,26 @@ export async function getPreviewImpl(ctx: ToolContext, args: GetPreviewArgs) {
   }
   if (isAdvanced(args)) {
     return guardTd(
-      () =>
-        ctx.client.captureAdvanced(nodePath, {
+      async () => {
+        await assertNotPerforming(ctx.client);
+        return ctx.client.captureAdvanced(nodePath, {
           width: args.width,
           height: args.height,
           sampleGrid: args.sample_grid,
           prePulses: args.pre_pulses,
           delayFrames: args.delay_frames,
-        }),
+        });
+      },
       (res) => renderAdvanced(res, nodePath, args.width, args.height),
     );
   }
   if (args.sample_grid !== undefined) {
     const n = args.sample_grid;
     return guardTd(
-      () => ctx.client.sampleGrid(nodePath, n),
+      async () => {
+        await assertNotPerforming(ctx.client);
+        return ctx.client.sampleGrid(nodePath, n);
+      },
       (grid) =>
         jsonResult(
           `Sampled ${grid.path} on a ${grid.grid}×${grid.grid} grid (source ${grid.width}×${grid.height}).`,

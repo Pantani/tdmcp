@@ -2160,10 +2160,18 @@ export class TouchDesignerClient {
   // --- System info (GPU + monitors + perform mode) — survives ALLOW_EXEC=0 ---
   getSystemInfo(
     include?: Array<"gpu" | "monitors" | "performMode" | "storedPerformMode">,
+    options: TdReadRequestOptions = {},
   ): Promise<TdSystemInfo> {
-    return this.request("GET", "/api/system", SystemInfoSchema, undefined, {
-      include: include?.length ? include.join(",") : undefined,
-    });
+    return this.request(
+      "GET",
+      "/api/system",
+      SystemInfoSchema,
+      undefined,
+      { include: include?.length ? include.join(",") : undefined },
+      options.timeoutMs,
+      options.retryGet,
+      options.signal,
+    );
   }
 
   // --- Perform-mode write (survives ALLOW_EXEC=0) ---

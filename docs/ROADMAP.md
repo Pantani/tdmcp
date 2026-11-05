@@ -1299,6 +1299,7 @@ structured logs (see `src/td-client/touchDesignerClient.ts`). What's left:
 - 🧪 **The Perform-mode preview guard no longer depends on exec.** It reads the stored
   flag from `GET /api/system?include=storedPerformMode`, falling back to exec only on
   bridges without that section, and refuses the capture if the state can't be read.
+  Every direct capture path now checks it too, not only `capturePreview`.
   Previously a refused exec read as "not performing", so previews ran mid-show on
   exec-off bridges. `get_preview` is now clean in the smoke. Not yet validated against
   a live TouchDesigner.

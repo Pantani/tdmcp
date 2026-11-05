@@ -112,6 +112,10 @@ interface VerificationClient {
     grid: number,
     options?: { timeoutMs?: number; retryGet?: boolean },
   ): Promise<{ grid: number; width: number; height: number }>;
+  getSystemInfo(
+    include: ["storedPerformMode"],
+    options?: { timeoutMs?: number; retryGet?: boolean },
+  ): Promise<{ storedPerformMode?: boolean | { error: string } }>;
 }
 
 export interface VerifyMutationOptions {
@@ -121,7 +125,7 @@ export interface VerifyMutationOptions {
   now?: () => number;
 }
 
-const MAX_CALLS = 4;
+const MAX_CALLS = 5;
 const MAX_TOTAL_MS = 3500;
 const PER_CALL_MS = 800;
 const MAX_PATHS = 32;
@@ -527,6 +531,17 @@ async function verifyPreview(
     const detail = await runtime.getNode(output);
     if (detail.family !== "TOP") {
       return { status: "unavailable", path: output, reason: "not_confirmed_top" };
+    }
+    // No exec fallback here: this verifier only makes structured reads, so a bridge
+    // without the stored flag reports the preview as unavailable.
+    const { storedPerformMode } = await runtime.boundedRead(() =>
+      runtime.client.getSystemInfo(["storedPerformMode"], {
+        timeoutMs: PER_CALL_MS,
+        retryGet: false,
+      }),
+    );
+    if (storedPerformMode !== false) {
+      return { status: "unavailable", path: output, reason: "perform_mode_not_ruled_out" };
     }
     const sample = await runtime.boundedRead(() =>
       runtime.client.sampleGrid(output, 3, { timeoutMs: PER_CALL_MS, retryGet: false }),

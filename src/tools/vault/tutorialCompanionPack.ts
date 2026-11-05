@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { assertNotPerforming } from "../../feedback/previewCapture.js";
 import { friendlyTdError } from "../../td-client/types.js";
 import { errorResult, jsonResult } from "../result.js";
 import type { ToolContext, ToolRegistrar } from "../types.js";
@@ -131,6 +132,7 @@ export async function tutorialCompanionPackImpl(ctx: ToolContext, args: Tutorial
     const previews: TutorialPackReport["previews"] = [];
     for (const out of outputCandidates.slice(0, 4)) {
       try {
+        await assertNotPerforming(ctx.client);
         const preview = await ctx.client.getPreview(
           out.path,
           args.preview_width,

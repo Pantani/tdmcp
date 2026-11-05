@@ -3,6 +3,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Socket } from "node:net";
 import { dirname, join } from "node:path";
+import { assertNotPerforming, PreviewWithheldError } from "../../feedback/previewCapture.js";
 import { TouchDesignerClient } from "../../td-client/touchDesignerClient.js";
 import { DEFAULT_EFFECT_POLICY } from "../showDirectorSchema.js";
 import {
@@ -1921,10 +1922,8 @@ export class AiPartyLiveService {
     }
   }
 
-  async tdPreview() {
-    const previews: AiPartyTdPreviewPayload[] = [];
-    const capturedAt = nowIso();
-    let lastError = "Bridge preview unavailable";
+  /** Updates the status text the previews show. Returns the error message if that fails. */
+  private async refreshTdPreviewState(): Promise<string | undefined> {
     try {
       await refreshAiPartyTdPreviewState(this.tdClient, this.showState, new Date(), {
         scene: this.showState.timeline.current_scene,
@@ -1932,8 +1931,32 @@ export class AiPartyLiveService {
           ? `${this.currentTransition.from} → ${this.currentTransition.to}`
           : undefined,
       });
+      return undefined;
     } catch (err) {
-      lastError = err instanceof Error ? err.message : String(err);
+      return err instanceof Error ? err.message : String(err);
+    }
+  }
+
+  /** Why previews can't be captured now, if so. Only a bridge failure marks TD as failed. */
+  private async previewWithheldReason(): Promise<string | undefined> {
+    try {
+      await assertNotPerforming(this.tdClient);
+      return undefined;
+    } catch (err) {
+      if (err instanceof PreviewWithheldError) return err.message;
+      this.showState.td_status = "error";
+      return err instanceof Error ? err.message : String(err);
+    }
+  }
+
+  async tdPreview() {
+    const previews: AiPartyTdPreviewPayload[] = [];
+    const capturedAt = nowIso();
+    let lastError = (await this.refreshTdPreviewState()) ?? "Bridge preview unavailable";
+
+    const withheld = await this.previewWithheldReason();
+    if (withheld !== undefined) {
+      return { ok: false, message: withheld, previews, captured_at: capturedAt };
     }
 
     for (const output of AI_PARTY_TD_PREVIEW_OUTPUTS) {
