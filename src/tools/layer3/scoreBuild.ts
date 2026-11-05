@@ -277,6 +277,28 @@ function buildSuggestions(
   return out;
 }
 
+/** The frame palette and motion are measured from. Null, with a warning saying why, if none. */
+async function captureFirstFrame(
+  ctx: ToolContext,
+  topPath: string,
+  warnings: string[],
+): Promise<DecodedImage | null> {
+  try {
+    await assertNotPerforming(ctx.client);
+    const preview = await ctx.client.getPreview(topPath, 64, 36);
+    const frame = decodePng(preview.base64);
+    if (!frame) {
+      warnings.push(
+        "PNG decoder could not read the preview (non-RGB/RGBA-8 or interlaced); palette/motion omitted.",
+      );
+    }
+    return frame;
+  } catch (err) {
+    warnings.push(`Preview capture failed for ${topPath}: ${friendlyTdError(err)}`);
+    return null;
+  }
+}
+
 export async function scoreBuildImpl(ctx: ToolContext, args: ScoreBuildArgs) {
   const warnings: string[] = [];
   const per: Partial<Record<"palette" | "motion" | "complexity" | "errors" | "perf", number>> = {};
@@ -333,19 +355,8 @@ export async function scoreBuildImpl(ctx: ToolContext, args: ScoreBuildArgs) {
         warnings.push("Could not resolve a preview TOP under scope — palette/motion omitted.");
       } else {
         evidence.previewTopPath = topPath;
-        let frame1: DecodedImage | null = null;
-        try {
-          await assertNotPerforming(ctx.client);
-          const p1 = await ctx.client.getPreview(topPath, 64, 36);
-          frame1 = decodePng(p1.base64);
-        } catch (err) {
-          warnings.push(`Preview capture failed for ${topPath}: ${friendlyTdError(err)}`);
-        }
-        if (!frame1) {
-          warnings.push(
-            "PNG decoder could not read the preview (non-RGB/RGBA-8 or interlaced); palette/motion omitted.",
-          );
-        } else {
+        const frame1 = await captureFirstFrame(ctx, topPath, warnings);
+        if (frame1) {
           if (wanted.has("palette")) {
             const { chroma, hueVar } = paletteStats(frame1);
             evidence.paletteChroma = +chroma.toFixed(2);

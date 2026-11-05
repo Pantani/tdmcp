@@ -256,6 +256,8 @@ describe("scoreBuildImpl", () => {
     const out = r.structuredContent as { warnings: string[] };
     expect(captures).toBe(0);
     expect(out.warnings.join("\n")).toMatch(/Perform mode is active/);
+    // The capture never happened, so the decoder isn't to blame.
+    expect(out.warnings.join("\n")).not.toMatch(/PNG decoder/);
   });
 
   it("checks Perform mode again before the second motion frame", async () => {
