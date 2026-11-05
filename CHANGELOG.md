@@ -31,6 +31,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   limits stated, closes the G5 per-arc guide item, and corrects stale
   Experimental claims. No live-evidence boundary is upgraded.
 
+### Fixed
+
+- **`component_changelog_trail` accepts timestamps without seconds again** —
+  `entry.ts` values such as `2026-01-01T10:00Z` passed in v0.13.2 and were rejected
+  after the Zod 4.6.7 bump. The accepted form is now pinned in the tool.
+
 ### Security
 
 - **Production dependency advisories resolved** — bumped

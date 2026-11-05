@@ -9,6 +9,14 @@ import { requireVault } from "../vault/shared.js";
 
 // ── Input schema ──────────────────────────────────────────────────────────────
 
+/**
+ * UTC ISO-8601 timestamp with optional seconds. Zod 4.6 made `.datetime()` require
+ * seconds, which would reject input this field has always accepted, so the accepted
+ * form is pinned here instead of following the library default.
+ */
+const TRAIL_TIMESTAMP =
+  /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$/;
+
 export const componentChangelogTrailSchema = z.object({
   componentPath: z
     .string()
@@ -25,7 +33,11 @@ export const componentChangelogTrailSchema = z.object({
     ),
   entry: z
     .object({
-      ts: z.string().datetime().optional().describe("ISO-8601 timestamp. Defaults to now()."),
+      ts: z
+        .string()
+        .regex(TRAIL_TIMESTAMP)
+        .optional()
+        .describe("ISO-8601 UTC timestamp; seconds are optional. Defaults to now()."),
       author: z
         .string()
         .optional()

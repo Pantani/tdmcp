@@ -11,7 +11,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { describe, expect, it } from "vitest";
-import { componentChangelogTrailImpl } from "../../src/tools/library/componentChangelogTrail.js";
+import {
+  componentChangelogTrailImpl,
+  componentChangelogTrailSchema,
+} from "../../src/tools/library/componentChangelogTrail.js";
 import type { ToolContext } from "../../src/tools/types.js";
 import { silentLogger } from "../../src/utils/logger.js";
 import { Vault } from "../../src/vault/index.js";
@@ -299,5 +302,33 @@ describe("componentChangelogTrail", () => {
     });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("TDMCP_VAULT_PATH");
+  });
+});
+
+describe("component_changelog_trail entry.ts", () => {
+  const accepts = (ts: string) =>
+    componentChangelogTrailSchema.safeParse({ componentPath: "A.tox", entry: { ts, note: "n" } })
+      .success;
+
+  it.each([
+    "2026-01-01T10:00Z",
+    "2026-01-01T10:00:00Z",
+    "2026-01-01T10:00:00.123Z",
+    "2024-02-29T23:59Z",
+  ])("accepts %s", (ts) => {
+    expect(accepts(ts)).toBe(true);
+  });
+
+  it.each([
+    "2026-01-01",
+    "2026-01-01T10Z",
+    "2026-01-01T10:00",
+    "2026-01-01T10:00+01:00",
+    "2026-13-01T10:00Z",
+    "2025-02-29T10:00Z",
+    "2026-01-01T24:00Z",
+    "not a timestamp",
+  ])("rejects %s", (ts) => {
+    expect(accepts(ts)).toBe(false);
   });
 });
