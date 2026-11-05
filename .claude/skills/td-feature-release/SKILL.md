@@ -14,7 +14,7 @@ Do not release unless `td-qa`'s report is **PASS** for everything shipping. Feat
 ## Procedure
 
 1. **CHANGELOG** (`CHANGELOG.md`) — Keep a Changelog format. Add a dated version section with `### Added` / `### Changed` / `### Fixed`. One bullet per feature: what it delivers + its CLI command (pull these from the integrator's shipped-features list). Update the version link reference at the bottom to the new tag.
-2. **Version bump (SemVer)** — minor for new features, patch for fixes. Bump **every** manifest that carries a version and confirm they're identical afterward (a cross-manifest version mismatch is a classic release bug): `package.json`, the `.dxt`/plugin manifest, and any version synced into `scripts/setup.mjs` / docs. Grep the repo for the old version string to catch them all.
+2. **Version bump (SemVer)** — minor for new features, patch for fixes. Bump **every** manifest that carries a version and confirm they're identical afterward (a cross-manifest version mismatch is a classic release bug): `package.json`, the `.dxt`/plugin manifest, and any version synced into `scripts/setup.mjs` / docs. Grep the repo for the old version string to catch them all. Then run `npm run api:update` in the same commit so `api-surface/baseline.json` pins the release, and record any acknowledged breaks it moves to history in the CHANGELOG.
 3. **Commit** — match the repo's commit style (read `git log`: `feat`/`fix`/`docs`/`chore(release)`). Stage by explicit path, message via HEREDOC, end with the `Co-Authored-By: Claude` trailer.
 4. **Tag** `vX.Y.Z` and **push** the commit + tag.
 
