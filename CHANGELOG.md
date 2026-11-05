@@ -16,6 +16,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   are exec-free today, 290 are blocked), and a shared fixture holds the mock to the
   real Python router. This is an offline check: it does not cook anything, covers
   default paths only, and makes no claim about live TouchDesigner behavior.
+### Changed
+
+- **Roadmap reconciled with v0.13.2 and verified code state** — `docs/ROADMAP.md`
+  now reports v0.13.2 as the latest release and the current tool counts per
+  configuration, marks the Milestone 5 dry-run MVP as shipped offline with its
+  limits stated, closes the G5 per-arc guide item, and corrects stale
+  Experimental claims. No live-evidence boundary is upgraded.
 
 ### Security
 
