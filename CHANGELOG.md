@@ -8,6 +8,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Tool API stability gate** — `npm run api:check` (new CI job and part of
+  `release:check`) fails when a change breaks the pinned surface in
+  `docs/reference/API_STABILITY.md`, compared with the committed
+  `api-surface/baseline.json`. An intentional break is accepted through a reviewed
+  entry in `api-surface/acknowledged-breaks.json`, and `npm run api:update` moves
+  the baseline at release.
 - **Exec-off CI smoke for G4** — a new `Bridge Exec OFF Smoke` job runs every
   Layer 1 and Layer 2 tool's default path against an msw bridge that refuses what
   a `TDMCP_BRIDGE_ALLOW_EXEC=0` bridge refuses, including code-bearing node
@@ -16,6 +22,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   are exec-free today, 290 are blocked), and a shared fixture holds the mock to the
   real Python router. This is an offline check: it does not cook anything, covers
   default paths only, and makes no claim about live TouchDesigner behavior.
+
 ### Changed
 
 - **API stability clock restarted at v0.13.2 (roadmap G1)** — an audit of every
