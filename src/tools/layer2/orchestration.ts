@@ -1,4 +1,5 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import type { BuiltNode } from "../../builds/buildLog.js";
 import { checkErrors } from "../../feedback/errorChecker.js";
 import { capturePreview } from "../../feedback/previewCapture.js";
 import type { Recipe, RecipeGlslUniform } from "../../recipes/schema.js";
@@ -99,6 +100,9 @@ export class NetworkBuilder {
   // Intended data-flow wires, recorded even when the physical connect fails or is
   // satisfied via a source parameter, so auto-layout still reflects the flow.
   private readonly edges: LayoutEdge[] = [];
+  // Parameters requested per node, so a build can be recorded and reproduced. Any that
+  // did not apply also appear in `warnings`.
+  private readonly requestedParams = new Map<string, Record<string, unknown>>();
 
   constructor(
     private readonly ctx: ToolContext,
@@ -121,6 +125,7 @@ export class NetworkBuilder {
     if (ref.name) this.nameToPath.set(ref.name, ref.path);
     this.pathToType.set(ref.path, ref.type || type);
     this.created.push({ name: ref.name || name || "", path: ref.path, type: ref.type || type });
+    if (parameters) this.noteParams(ref.path, parameters);
     // The bridge creates the node regardless but reports any params it could not
     // apply (unknown token or bad value). Surface them as warnings — otherwise a
     // typo'd parameter name (e.g. a nonexistent displaceTOP token) fails silently
@@ -161,12 +166,27 @@ export class NetworkBuilder {
   async setParams(path: string, parameters: Record<string, unknown>): Promise<void> {
     try {
       await this.ctx.client.updateNodeParameters(path, parameters);
+      this.noteParams(path, parameters);
     } catch (err) {
       this.warnings.push(`Failed to set parameters on ${path}: ${friendlyTdError(err)}`);
     }
   }
 
+  private noteParams(path: string, parameters: Record<string, unknown>): void {
+    this.requestedParams.set(path, { ...this.requestedParams.get(path), ...parameters });
+  }
+
+  /** The nodes (with requested parameters) and intended wires, for the build log. */
+  buildSnapshot(): { nodes: BuiltNode[]; edges: LayoutEdge[] } {
+    const nodes = this.created.map((node) => {
+      const parameters = this.requestedParams.get(node.path);
+      return parameters ? { ...node, parameters } : { ...node };
+    });
+    return { nodes, edges: [...this.edges] };
+  }
+
   async setParamExpr(path: string, param: string, expr: string): Promise<void> {
+    this.noteParams(path, { [param]: { expr } });
     try {
       await this.ctx.client.setParameterMode(path, param, "expression", expr);
       return;
@@ -446,6 +466,29 @@ async function exposeControls(
   }
 }
 
+/** Adds the finished build to the local build log, when it is on. Never fails the build. */
+async function recordFinishedBuild(
+  ctx: ToolContext,
+  options: FinalizeOptions,
+  warnings: readonly string[],
+  errors: ReadonlyArray<{ path: string; message: string }>,
+  previewBase64: string | undefined,
+  previewMime: string | undefined,
+): Promise<void> {
+  await ctx.buildLog?.record({
+    summary: options.summary,
+    container: options.builder.containerPath,
+    ...(options.outputPath !== undefined ? { output: options.outputPath } : {}),
+    ...(options.recipeId !== undefined ? { recipe: options.recipeId } : {}),
+    ...options.builder.buildSnapshot(),
+    warnings,
+    errors,
+    ...(previewBase64
+      ? { preview: { base64: previewBase64, mimeType: previewMime ?? "image/png" } }
+      : {}),
+  });
+}
+
 /**
  * Shared "verify → preview → respond" step for Layer 1 tools: runs an error check,
  * captures a preview of the output TOP, and returns a structured result with an
@@ -500,6 +543,8 @@ export async function finalize(
     warnings,
     ...options.extra,
   };
+
+  await recordFinishedBuild(ctx, options, warnings, errors, previewBase64, previewMime);
 
   const content: CallToolResult["content"] = [
     {

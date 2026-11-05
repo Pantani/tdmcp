@@ -1,4 +1,5 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer, RegisteredTool } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { withToolCall } from "../builds/buildLog.js";
 import { aiRegistrars } from "./ai/index.js";
 import { foundationRegistrars } from "./foundation/index.js";
 import { layer1Registrars } from "./layer1/index.js";
@@ -92,6 +93,84 @@ const DIRECTORY_PROFILE_ALLOW = new Set<string>([
   "get_td_docs",
 ]);
 
+/**
+ * The everyday surface: what most builds need, listed up front so the tool list stays
+ * small. Everything else is still registered, but disabled until `find_tool` enables
+ * it. This saves context; it is not a security boundary, so use `safe` for that.
+ */
+const CORE_PROFILE_ALLOW = new Set<string>([
+  // Discovery
+  "find_tool",
+  // Connection and inspection
+  "get_td_info",
+  "get_editor_context",
+  "get_td_nodes",
+  "find_td_nodes",
+  "find_td_parameters",
+  "get_td_node_parameters",
+  "get_td_topology",
+  "search_td_code",
+  // Node editing
+  "create_td_node",
+  "update_td_node_parameters",
+  "delete_td_node",
+  "disconnect_nodes",
+  "set_parameter_expression",
+  "pulse_td_parameter",
+  "get_dat_content",
+  "set_dat_content",
+  "edit_dat_content",
+  // Wiring and batches
+  "connect_nodes",
+  "create_node_chain",
+  "batch_operations",
+  "set_parameters_batch",
+  "duplicate_network",
+  "arrange_network",
+  "create_container",
+  "add_custom_parameters",
+  // Verifying a build
+  "get_td_node_errors",
+  "summarize_td_errors",
+  "get_td_performance",
+  "get_preview",
+  "snapshot_td_graph",
+  "diff_snapshots",
+  // Knowledge
+  "search_operators",
+  "get_td_docs",
+  "search_touchdesigner_knowledge",
+  "get_operator_workflow_guide",
+  "validate_operator_chain",
+  "suggest_operator_chain",
+  // Whole-network entry points
+  "plan_visual",
+  "create_visual_system",
+  "list_recipes",
+  "apply_recipe",
+  "enhance_build",
+  "create_audio_reactive",
+  "extract_audio_features",
+  "create_feedback_network",
+  "create_particle_system",
+  "create_generative_art",
+  "create_fluid_sim",
+  "apply_post_processing",
+  "create_projection_mapping",
+  // Making it playable
+  "create_glsl_shader",
+  "create_control_panel",
+  "animate_parameter",
+  "bind_to_channel",
+  "bind_audio_reactive",
+  "manage_cue",
+  "create_external_io",
+  "create_data_source",
+  // Escape hatch and saving
+  "execute_python_script",
+  "save_td_project",
+]);
+
 export const runtimeToolRegistrars: ToolRegistrar[] = [
   ...layer3Registrars,
   ...layer2Registrars,
@@ -135,35 +214,62 @@ export function collectRuntimeToolMetadata(ctx: ToolContext): Record<string, Run
   return catalog;
 }
 
+function isExcludedByProfile(profile: ToolContext["toolProfile"], name: string): boolean {
+  if (profile === "safe") return SAFE_PROFILE_EXCLUDE.has(name);
+  if (profile === "directory") return !DIRECTORY_PROFILE_ALLOW.has(name);
+  return false;
+}
+
+/** Puts the tool's name and arguments in scope for `finalize` to attribute a build. */
+// biome-ignore lint/suspicious/noExplicitAny: forwarding the SDK's variadic registerTool signature.
+function withToolCallScope(name: string, rest: any[]): any[] {
+  const handler = rest[rest.length - 1];
+  if (typeof handler !== "function") return rest;
+  // A tool without an inputSchema receives only the request extra, never arguments.
+  const hasInput = (rest[0] as { inputSchema?: unknown } | undefined)?.inputSchema !== undefined;
+  // biome-ignore lint/suspicious/noExplicitAny: handler args are tool-specific.
+  const scoped = (...args: any[]) =>
+    withToolCall({ tool: name, args: hasInput ? args[0] : undefined }, () => handler(...args));
+  return [...rest.slice(0, -1), scoped];
+}
+
+function trackRegisteredTool(ctx: ToolContext, name: string, registered: unknown): void {
+  // The metadata-only recorder returns undefined; there is nothing to enable there.
+  if (typeof (registered as RegisteredTool | undefined)?.enable !== "function") return;
+  const tool = registered as RegisteredTool;
+  ctx.toolCatalog ??= new Map();
+  ctx.toolCatalog.set(name, tool);
+  if (ctx.deferNonCoreTools === true && !CORE_PROFILE_ALLOW.has(name)) tool.disable();
+}
+
 export function registerToolRegistrars(
   server: McpServer,
   ctx: ToolContext,
   registrars: readonly ToolRegistrar[],
 ): void {
-  // For filtered profiles, intercept registerTool and drop names in one place.
-  // The registrars ignore registerTool's return value, so returning undefined
-  // for an excluded name is safe; resources/prompts register later, untouched.
-  if (ctx.toolProfile === "safe" || ctx.toolProfile === "directory") {
-    // biome-ignore lint/suspicious/noExplicitAny: registerTool is overloaded; type the bound copy as variadic so we can forward args.
-    const realRegister = server.registerTool.bind(server) as (...args: any[]) => unknown;
-    // biome-ignore lint/suspicious/noExplicitAny: forwarding the SDK's variadic registerTool signature.
-    (server as any).registerTool = (name: string, ...rest: any[]) => {
-      if (ctx.toolProfile === "safe" && SAFE_PROFILE_EXCLUDE.has(name)) return undefined;
-      if (ctx.toolProfile === "directory" && !DIRECTORY_PROFILE_ALLOW.has(name)) {
-        return undefined;
-      }
-      return realRegister(name, ...rest);
-    };
-    try {
-      for (const register of registrars) register(server, ctx);
-    } finally {
-      // biome-ignore lint/suspicious/noExplicitAny: restore the original method.
-      (server as any).registerTool = realRegister;
-    }
-    return;
+  // Intercept registerTool to apply the profile in one place. The registrars ignore
+  // registerTool's return value, so returning undefined for an excluded name is safe;
+  // resources/prompts register later, untouched.
+  // biome-ignore lint/suspicious/noExplicitAny: registerTool is overloaded; type the bound copy as variadic so we can forward args.
+  const realRegister = server.registerTool.bind(server) as (...args: any[]) => unknown;
+  // biome-ignore lint/suspicious/noExplicitAny: forwarding the SDK's variadic registerTool signature.
+  (server as any).registerTool = (name: string, ...rest: any[]) => {
+    if (isExcludedByProfile(ctx.toolProfile, name)) return undefined;
+    const registered = realRegister(name, ...withToolCallScope(name, rest));
+    trackRegisteredTool(ctx, name, registered);
+    return registered;
+  };
+  try {
+    for (const register of registrars) register(server, ctx);
+  } finally {
+    // biome-ignore lint/suspicious/noExplicitAny: restore the original method.
+    (server as any).registerTool = realRegister;
   }
+}
 
-  for (const register of registrars) register(server, ctx);
+/** Names the `core` profile lists up front. */
+export function coreProfileToolNames(): readonly string[] {
+  return [...CORE_PROFILE_ALLOW];
 }
 
 export function registerRuntimeTools(server: McpServer, ctx: ToolContext): void {

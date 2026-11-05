@@ -11,7 +11,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
  *
  * Tools that must intentionally stay MCP-only go in ALLOWLIST (target: empty).
  */
-const ALLOWLIST: readonly string[] = [];
+const ALLOWLIST: readonly string[] = [
+  // Enables tools on the live MCP session; a one-shot CLI process has no such session.
+  "findToolImpl",
+];
 
 const TOOLS_DIR = join(root, "src", "tools");
 const AGENT_SRC = readFileSync(join(root, "src", "cli", "agent.ts"), "utf8");

@@ -129,7 +129,7 @@ export const RuntimeStatusReportSchema = z.object({
   policy: z.object({
     state: RuntimeAvailabilitySchema,
     reason_code: RuntimeReasonSchema,
-    tool_profile: z.enum(["full", "safe", "directory"]).nullable(),
+    tool_profile: z.enum(["full", "safe", "directory", "core"]).nullable(),
     raw_python_tool_surface: z.enum(["enabled", "disabled", "unknown"]),
     bridge_allow_exec: z.enum(["enabled", "disabled", "unknown"]),
     yolo_confirmation_skip: z.enum(["enabled", "disabled", "unknown"]),
@@ -178,7 +178,7 @@ export interface RuntimeEffectiveConfig {
   request_timeout_ms: number;
   bridge_token?: string;
   mcp_http_token_configured: boolean;
-  tool_profile: "full" | "safe" | "directory";
+  tool_profile: "full" | "safe" | "directory" | "core";
   raw_python: "on" | "off";
   yolo: boolean;
 }
