@@ -71,6 +71,18 @@ interface InstallBridgeFlagValues {
   explicitPackageName?: string;
 }
 
+export interface InstallBridgeRunOptions {
+  /**
+   * Keep stdout clean for a caller that reports the result itself (`init --json`). The
+   * instructions include the raw bridge token, so they must not reach machine output.
+   */
+  quiet?: boolean;
+}
+
+function installLogger(runOptions: InstallBridgeRunOptions): (message: string) => void {
+  return runOptions.quiet === true ? () => {} : console.log;
+}
+
 /**
  * `tdmcp install-bridge [--dir <path>] [--verify] [--wait] [--port <port>] [--palette]`
  *
@@ -81,6 +93,7 @@ interface InstallBridgeFlagValues {
  */
 export function runInstallBridge(
   args: string[],
+  runOptions: InstallBridgeRunOptions = {},
 ): Promise<InstallBridgeResult> | InstallBridgeResult {
   if (hasStandaloneHelpFlag(args)) {
     console.log(installBridgeHelp());
@@ -92,6 +105,7 @@ export function runInstallBridge(
     return { ok: false, detail: "invalid install-bridge arguments" };
   }
 
+  const log = installLogger(runOptions);
   const dest = join(options.targetRoot, "modules");
 
   const src = bridgeModulesDir();
@@ -117,7 +131,7 @@ export function runInstallBridge(
 
   cpSync(src, dest, { recursive: true });
 
-  console.log(
+  log(
     [
       "",
       "  tdmcp bridge installed.",
@@ -151,7 +165,7 @@ export function runInstallBridge(
   );
 
   if (options.token) {
-    console.log(
+    log(
       [
         "  Auth: a shared bridge token was provided. Set the SAME value in TouchDesigner's",
         "  environment BEFORE running the Textport command so the bridge enforces auth:",
@@ -172,7 +186,7 @@ export function runInstallBridge(
     ...palettePackageResultFields(options, palettePackageTextportCommand),
   };
   if (options.verify || options.wait) {
-    return verifyInstalledBridge(options, baseResult);
+    return verifyInstalledBridge(options, baseResult, log);
   }
   return baseResult;
 }
@@ -418,12 +432,13 @@ function palettePackageResultFields(
 async function verifyInstalledBridge(
   options: InstallBridgeOptions,
   baseResult: InstallBridgeResult,
+  log: (message: string) => void,
 ): Promise<InstallBridgeResult> {
   const url = bridgeInfoUrl(options.port);
   const deadline = Date.now() + WAIT_TIMEOUT_MS;
   let lastError: unknown;
 
-  console.log(
+  log(
     options.wait
       ? `\n  Waiting for TouchDesigner bridge at ${url} ...`
       : `\n  Checking TouchDesigner bridge at ${url} ...`,
@@ -432,7 +447,7 @@ async function verifyInstalledBridge(
   do {
     try {
       const info = await fetchBridgeInfo(url, options.verifyToken);
-      console.log(`  Bridge verified at ${url}${formatBridgeInfo(info)}.`);
+      log(`  Bridge verified at ${url}${formatBridgeInfo(info)}.`);
       return {
         ...baseResult,
         ok: true,

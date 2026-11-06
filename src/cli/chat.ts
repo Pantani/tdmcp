@@ -51,7 +51,7 @@ export function isLocalOllama(baseUrl: string): boolean {
  * touched. The daemon is spawned detached and left running (warm for next time, and
  * so quitting the chat doesn't take the model offline). Returns whether it is up.
  */
-async function ensureOllamaUp(
+export async function ensureOllamaUp(
   client: LlmClient,
   baseUrl: string,
   autoStart: boolean,
