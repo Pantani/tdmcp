@@ -302,6 +302,33 @@ describe("runAsk", () => {
     expect(process.exitCode).toBe(3);
   });
 
+  it("reports a thrown endpoint check as an unreachable endpoint and exits 3", async () => {
+    let stdout = "";
+    let stderr = "";
+    const turn = answerTurn("never", {});
+    await runAsk(["--json", "anything"], {
+      loadConfig: () => loadConfig({}),
+      createLogger: () => silentLogger,
+      buildToolContext: () => makeCtx(),
+      createClient: () => stubClient(),
+      ensureOllamaUp: async () => {
+        throw new Error("child process permission denied");
+      },
+      runAgentTurn: turn,
+      isStdinTTY: () => true,
+      writeStdout: (c) => {
+        stdout += c;
+      },
+      writeStderr: (c) => {
+        stderr += c;
+      },
+    });
+    expect(turn).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.trim()).error).toMatch(/not reachable/);
+    expect(stderr).toContain("child process permission denied");
+    expect(process.exitCode).toBe(3);
+  });
+
   /** A turn that fails the way the agent does: an error event plus a marker message. */
   function failingTurn(message: string) {
     return vi.fn(async (_ctx, _client, messages, onEvent) => {

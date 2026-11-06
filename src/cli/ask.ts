@@ -75,7 +75,7 @@ Flags:
                     (requires TDMCP_RAG_ENABLED=1). Also enabled via
                     TDMCP_RAG_INJECT_ASK=1. Card count: TDMCP_RAG_INJECT_K
                     (default 3, max 5).
-  --no-ollama       Don't auto-start local Ollama.
+  --no-ollama       Don't auto-start local Ollama. The endpoint is still checked (exit 3 if down).
   --no-receipt-persist
                     Keep this turn's receipt in memory only, even when persistence is enabled.
   --timeout <ms>    Wall-clock cap on the turn (default 120000). Exits 124 on hit.
@@ -275,7 +275,15 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
   );
 
   // Ollama health check / autostart (mirrors runChat's headless branch).
-  const up = await ensureOllama(client, config.llmBaseUrl, opts.autoStartOllama, stderrLine);
+  let up: boolean;
+  try {
+    up = await ensureOllama(client, config.llmBaseUrl, opts.autoStartOllama, stderrLine);
+  } catch (err) {
+    // Starting the daemon can throw (e.g. Node denies child processes); that is still
+    // an unreachable endpoint, and --json callers must get their error line.
+    stderrLine(`tdmcp ask: ${err instanceof Error ? err.message : String(err)}`);
+    up = false;
+  }
   if (!up) {
     const detail = `LLM endpoint not reachable at ${config.llmBaseUrl}`;
     if (opts.json) {
