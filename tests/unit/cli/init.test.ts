@@ -378,15 +378,18 @@ describe("runInit", () => {
     );
 
     expect(result.ok).toBe(true);
-    expect(deps.runInstallBridge).toHaveBeenCalledWith([
-      "--dir",
-      "/home/artist/tdmcp-bridge",
-      "--port",
-      "9980",
-      "--token",
-      "tok-deadbeef",
-      "--verify",
-    ]);
+    expect(deps.runInstallBridge).toHaveBeenCalledWith(
+      [
+        "--dir",
+        "/home/artist/tdmcp-bridge",
+        "--port",
+        "9980",
+        "--token",
+        "tok-deadbeef",
+        "--verify",
+      ],
+      { quiet: true },
+    );
     expect(deps.writeInstallClientConfig).toHaveBeenCalledWith(
       "claude",
       "/home/artist/Library/Application Support/Claude/claude_desktop_config.json",
@@ -671,5 +674,57 @@ describe("runInit", () => {
     expect(r.ok).toBe(false);
     expect(stdout.join("")).toContain("doctor: doctor boom");
     expect(stdout.join("")).toContain("Some steps failed.");
+  });
+});
+
+describe("init --json keeps the bridge token private", () => {
+  const SECRET = "tok-very-secret";
+  const baseArgs = ["--yes", "--json", "--no-open-td", "--skip", "clients,config,doctor"];
+
+  function jsonOutput(stdout: string[]): { detection: { existingConfig: { token?: string } } } {
+    return JSON.parse(stdout.join(""));
+  }
+
+  it("asks install-bridge to stay quiet so stdout carries only the JSON", async () => {
+    const { deps, stdout } = makeDeps({ token: SECRET });
+    const runInstallBridge = vi.fn(async () => ({ ok: true, detail: "copied" }));
+    await runInit(baseArgs, { ...deps, runInstallBridge });
+    expect(runInstallBridge).toHaveBeenCalledWith(expect.any(Array), { quiet: true });
+    expect(stdout.join("")).not.toContain(SECRET);
+    expect(() => jsonOutput(stdout)).not.toThrow();
+  });
+
+  it("still shows install-bridge's instructions outside --json", async () => {
+    const { deps } = makeDeps({ token: SECRET });
+    const runInstallBridge = vi.fn(async () => ({ ok: true, detail: "copied" }));
+    await runInit(["--yes", "--no-open-td", "--skip", "clients,config,doctor"], {
+      ...deps,
+      runInstallBridge,
+    });
+    expect(runInstallBridge).toHaveBeenCalledWith(expect.any(Array), { quiet: false });
+  });
+
+  it("masks a token read from an existing tdmcp.json", async () => {
+    const fs = makeFs([`${process.cwd()}/tdmcp.json`]);
+    const { deps, stdout } = makeDeps({ fs, configReadJson: { bridgeToken: SECRET } });
+    const result = await runInit(baseArgs, deps);
+    expect(stdout.join("")).not.toContain(SECRET);
+    expect(jsonOutput(stdout).detection.existingConfig.token).toBe("***");
+    expect(result.detection?.existingConfig.token).toBe("***");
+  });
+
+  it("reveals the token only with --show-token", async () => {
+    const fs = makeFs([`${process.cwd()}/tdmcp.json`]);
+    const { deps, stdout } = makeDeps({ fs, configReadJson: { bridgeToken: SECRET } });
+    await runInit([...baseArgs, "--show-token"], deps);
+    expect(jsonOutput(stdout).detection.existingConfig.token).toBe(SECRET);
+  });
+
+  it("does not tell a --json run to re-run with --json", async () => {
+    const { deps, stderr } = makeDeps({ bridgeResult: { ok: false, detail: "nope" } });
+    await runInit(baseArgs, deps);
+    expect(stderr.join("")).not.toContain("Re-run with --json");
+    expect(stderr.join("")).toContain("steps");
+    process.exitCode = 0;
   });
 });

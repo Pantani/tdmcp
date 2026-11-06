@@ -6,6 +6,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+
+- **`tdmcp init --json` no longer prints the bridge token.** It appeared in the
+  install-bridge instructions written to stdout, and in `detection.existingConfig`
+  when a `tdmcp.json` already held one. `--show-token` still reveals it on request.
+  A token printed by an earlier run may be in shell history or CI logs: rotate it if
+  those are shared.
+
+### Fixed
+
+- **`tdmcp init --json` emits valid JSON.** The install-bridge banner no longer
+  precedes it, and a failed run no longer says to re-run with `--json`.
+- **`tdmcp ask` now behaves as documented.** It checks the endpoint first, starts
+  local Ollama unless `--no-ollama` is set, and exits 3 when the LLM is unreachable.
+  This code never ran outside tests, because the production entry point did not pass
+  it in.
+- **`tdmcp ask` no longer prints an LLM failure as the answer.** The error goes to
+  stderr, or to the `error` field with `answer` empty under `--json`. A missing local
+  model now names the `ollama pull` command.
+
 ### Added
 
 - **Local build log** — every build that goes through `finalize` (most Layer 1 tools)

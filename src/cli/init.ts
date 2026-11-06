@@ -327,6 +327,22 @@ function redactToken(token: string | undefined, show: boolean): string | undefin
   return show ? token : "***";
 }
 
+function failureHint(json: boolean): string {
+  return json
+    ? 'Some steps failed. See "steps" in the JSON output.\n'
+    : "Some steps failed. Re-run with --json for details.\n";
+}
+
+/** Detection also carries a token when an existing tdmcp.json has one. */
+function redactDetection(detection: DetectionResult, show: boolean): DetectionResult {
+  const { existingConfig } = detection;
+  if (existingConfig.token === undefined) return detection;
+  return {
+    ...detection,
+    existingConfig: { ...existingConfig, token: redactToken(existingConfig.token, show) },
+  };
+}
+
 function help(): string {
   return [
     "tdmcp init [options]",
@@ -456,7 +472,9 @@ export async function runInit(argv: string[], depsIn: RunInitDeps = {}): Promise
       // On a fresh install the user has not yet pasted the Textport one-liner, so
       // /api/info is unreachable and --verify would always fail spuriously.
       if (detection.bridge.running) bridgeArgs.push("--verify");
-      const result: InstallBridgeResult = await Promise.resolve(deps.runInstallBridge(bridgeArgs));
+      const result: InstallBridgeResult = await Promise.resolve(
+        deps.runInstallBridge(bridgeArgs, { quiet: flags.json }),
+      );
       textportCommand = result.textportCommand ?? result.noPrefsTextportCommand;
       if (result.ok) {
         steps.push({
@@ -599,7 +617,7 @@ export async function runInit(argv: string[], depsIn: RunInitDeps = {}): Promise
   const result: InitResult = {
     ok,
     flags: { ...flags, token: redactToken(token, flags.showToken), tokenSet: token !== undefined },
-    detection,
+    detection: redactDetection(detection, flags.showToken),
     steps,
     textportCommand,
   };
@@ -611,7 +629,7 @@ export async function runInit(argv: string[], depsIn: RunInitDeps = {}): Promise
   }
   if (!ok) {
     process.exitCode = 1;
-    stderr("Some steps failed. Re-run with --json for details.\n");
+    stderr(failureHint(flags.json));
   }
   return result;
 }

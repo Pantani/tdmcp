@@ -77,6 +77,22 @@ afterEach(() => {
 });
 
 describe("install-bridge CLI", () => {
+  it("prints nothing to stdout when quiet, including the token", async () => {
+    const result = await runInstallBridge(
+      ["--dir", "/tmp/tdmcp-bridge", "--token", "tok-very-secret"],
+      { quiet: true },
+    );
+    expect(result.ok).toBe(true);
+    expect(vi.mocked(console.log)).not.toHaveBeenCalled();
+    expect(result.textportCommand).toBeDefined();
+  });
+
+  it("still prints the token when not quiet, because the artist must set it in TD", async () => {
+    await runInstallBridge(["--dir", "/tmp/tdmcp-bridge", "--token", "tok-very-secret"]);
+    const printed = vi.mocked(console.log).mock.calls.flat().join("\n");
+    expect(printed).toContain("tok-very-secret");
+  });
+
   it("prints help without copying bridge modules", async () => {
     const fetchImpl = vi.fn();
     vi.stubGlobal("fetch", fetchImpl);

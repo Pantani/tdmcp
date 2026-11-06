@@ -15,7 +15,12 @@ import {
   loadConfig,
 } from "../utils/config.js";
 import { createLogger } from "../utils/logger.js";
-import { applyChatFlagOverrides, CREATIVE_CHAT_TEMPERATURE, isLocalOllama } from "./chat.js";
+import {
+  applyChatFlagOverrides,
+  CREATIVE_CHAT_TEMPERATURE,
+  ensureOllamaUp,
+  isLocalOllama,
+} from "./chat.js";
 
 export interface AskCliOptions {
   help: boolean;
@@ -70,7 +75,7 @@ Flags:
                     (requires TDMCP_RAG_ENABLED=1). Also enabled via
                     TDMCP_RAG_INJECT_ASK=1. Card count: TDMCP_RAG_INJECT_K
                     (default 3, max 5).
-  --no-ollama       Don't auto-start local Ollama.
+  --no-ollama       Don't auto-start local Ollama. The endpoint is still checked (exit 3 if down).
   --no-receipt-persist
                     Keep this turn's receipt in memory only, even when persistence is enabled.
   --timeout <ms>    Wall-clock cap on the turn (default 120000). Exits 124 on hit.
@@ -189,6 +194,12 @@ async function resolveAskToolPolicy(
  * `tdmcp ask "<prompt>"` — non-interactive copilot turn. Pipes stdin into the
  * prompt, runs one agent turn, prints the answer (or a single JSON line), exits.
  */
+/** Adds the fix for the one failure a user hits first: a model that isn't pulled yet. */
+function describeTurnError(message: string, config: LoadedTdmcpConfig): string {
+  if (!/HTTP 404/.test(message) || !isLocalOllama(config.llmBaseUrl)) return message;
+  return `${message} — pull the model with: ollama pull ${config.llmModel}`;
+}
+
 export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Promise<void> {
   const writeStdout = deps.writeStdout ?? ((chunk: string) => process.stdout.write(chunk));
   const writeStderr = deps.writeStderr ?? ((chunk: string) => process.stderr.write(chunk));
@@ -230,7 +241,7 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
   const makeLogger = deps.createLogger ?? createLogger;
   const makeContext = deps.buildToolContext ?? buildToolContext;
   const makeClient = deps.createClient ?? ((config: LoadedTdmcpConfig) => new LlmClient(config));
-  const ensureOllama = deps.ensureOllamaUp;
+  const ensureOllama = deps.ensureOllamaUp ?? ensureOllamaUp;
   const turn = deps.runAgentTurn ?? runAgentTurn;
   const now = deps.now ?? (() => Date.now());
 
@@ -264,29 +275,33 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
   );
 
   // Ollama health check / autostart (mirrors runChat's headless branch).
-  if (ensureOllama) {
-    const up = await ensureOllama(client, config.llmBaseUrl, opts.autoStartOllama, stderrLine);
-    if (!up) {
-      const detail = `LLM endpoint not reachable at ${config.llmBaseUrl}`;
-      if (opts.json) {
-        writeStdout(
-          `${JSON.stringify({
-            answer: "",
-            error: detail,
-            durationMs: now() - start,
-            model: config.llmModel,
-            tier,
-            toolCalls: [],
-          })}\n`,
-        );
-      } else {
-        stderrLine(`tdmcp ask: ${detail}`);
-      }
-      process.exitCode = 3;
-      return;
+  let up: boolean;
+  try {
+    up = await ensureOllama(client, config.llmBaseUrl, opts.autoStartOllama, stderrLine);
+  } catch (err) {
+    // Starting the daemon can throw (e.g. Node denies child processes); that is still
+    // an unreachable endpoint, and --json callers must get their error line.
+    stderrLine(`tdmcp ask: ${err instanceof Error ? err.message : String(err)}`);
+    up = false;
+  }
+  if (!up) {
+    const detail = `LLM endpoint not reachable at ${config.llmBaseUrl}`;
+    if (opts.json) {
+      writeStdout(
+        `${JSON.stringify({
+          answer: "",
+          error: detail,
+          durationMs: now() - start,
+          model: config.llmModel,
+          tier,
+          toolCalls: [],
+        })}\n`,
+      );
+    } else {
+      stderrLine(`tdmcp ask: ${detail}`);
     }
-  } else if (!isLocalOllama(config.llmBaseUrl)) {
-    // No autostart in the harness — just continue; the turn itself will fail loudly.
+    process.exitCode = 3;
+    return;
   }
 
   const toolCalls: { name: string; ok: boolean }[] = [];
@@ -348,7 +363,7 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
         messages,
         (event) => {
           if (event.type === "answer") answer = event.content;
-          else if (event.type === "error") errorMessage = event.message;
+          else if (event.type === "error") errorMessage = describeTurnError(event.message, config);
           else if (event.type === "tool" && event.status === "done") {
             toolCalls.push({ name: event.name, ok: event.ok });
           } else if (event.type === "receipt") receipt = event.receipt;
@@ -365,7 +380,9 @@ export async function runAsk(argv: string[] = [], deps: AskRuntimeDeps = {}): Pr
           noPersist: opts.noReceiptPersist,
         },
       );
-      if (!answer) {
+      // A failed turn leaves a "(failed to reach the LLM…)" marker in the transcript;
+      // that is the error, not an answer. A cancelled turn may keep its partial text.
+      if (!answer && (errorMessage === undefined || errorMessage === "cancelled")) {
         const fallback = [...turnResult]
           .reverse()
           .find((m) => m.role === "assistant" && typeof m.content === "string")?.content;

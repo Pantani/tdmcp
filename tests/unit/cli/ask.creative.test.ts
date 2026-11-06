@@ -93,6 +93,7 @@ function buildRunAskDeps(extraDeps: {
         ({ chat: vi.fn() }) as unknown as import("../../../src/llm/client.js").LlmClient,
       runAgentTurn:
         runAgentTurnMock as unknown as typeof import("../../../src/llm/agent.js").runAgentTurn,
+      ensureOllamaUp: async () => true,
       writeStdout: (s: string) => extraDeps.stdout.push(s),
       writeStderr: (s: string) => extraDeps.stderr.push(s),
       isStdinTTY: () => true,

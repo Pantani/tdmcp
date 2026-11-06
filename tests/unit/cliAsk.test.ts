@@ -279,6 +279,126 @@ describe("runAsk", () => {
     expect(process.exitCode).toBe(3);
   });
 
+  it("checks the endpoint by default, so a down Ollama exits 3 without running a turn", async () => {
+    let stdout = "";
+    const turn = answerTurn("never", {});
+    await runAsk(["--no-ollama", "--json", "anything"], {
+      loadConfig: () => loadConfig({}),
+      createLogger: () => silentLogger,
+      buildToolContext: () => makeCtx(),
+      createClient: () =>
+        ({
+          health: vi.fn(async () => ({ ok: false, modelReady: false, detail: "down" })),
+        }) as unknown as LlmClient,
+      runAgentTurn: turn,
+      isStdinTTY: () => true,
+      writeStdout: (c) => {
+        stdout += c;
+      },
+      writeStderr: () => {},
+    });
+    expect(turn).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.trim()).error).toMatch(/not reachable/);
+    expect(process.exitCode).toBe(3);
+  });
+
+  it("reports a thrown endpoint check as an unreachable endpoint and exits 3", async () => {
+    let stdout = "";
+    let stderr = "";
+    const turn = answerTurn("never", {});
+    await runAsk(["--json", "anything"], {
+      loadConfig: () => loadConfig({}),
+      createLogger: () => silentLogger,
+      buildToolContext: () => makeCtx(),
+      createClient: () => stubClient(),
+      ensureOllamaUp: async () => {
+        throw new Error("child process permission denied");
+      },
+      runAgentTurn: turn,
+      isStdinTTY: () => true,
+      writeStdout: (c) => {
+        stdout += c;
+      },
+      writeStderr: (c) => {
+        stderr += c;
+      },
+    });
+    expect(turn).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout.trim()).error).toMatch(/not reachable/);
+    expect(stderr).toContain("child process permission denied");
+    expect(process.exitCode).toBe(3);
+  });
+
+  /** A turn that fails the way the agent does: an error event plus a marker message. */
+  function failingTurn(message: string) {
+    return vi.fn(async (_ctx, _client, messages, onEvent) => {
+      onEvent?.({ type: "error", message });
+      return [...messages, { role: "assistant", content: `(failed to reach the LLM: ${message})` }];
+    });
+  }
+
+  it("does not print an LLM failure on stdout as if it were the answer", async () => {
+    let stdout = "";
+    let stderr = "";
+    await runAsk(["anything"], {
+      loadConfig: () => loadConfig({}),
+      createLogger: () => silentLogger,
+      buildToolContext: () => makeCtx(),
+      createClient: () => stubClient(),
+      ensureOllamaUp: async () => true,
+      runAgentTurn: failingTurn("fetch failed") as never,
+      isStdinTTY: () => true,
+      writeStdout: (c) => {
+        stdout += c;
+      },
+      writeStderr: (c) => {
+        stderr += c;
+      },
+    });
+    expect(stdout).toBe("");
+    expect(stderr).toContain("fetch failed");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("keeps the failure out of the JSON answer and names the pull command for a missing model", async () => {
+    let stdout = "";
+    await runAsk(["--json", "--model", "qwen9:1b", "anything"], {
+      loadConfig: () => loadConfig({}),
+      createLogger: () => silentLogger,
+      buildToolContext: () => makeCtx(),
+      createClient: () => stubClient(),
+      ensureOllamaUp: async () => true,
+      runAgentTurn: failingTurn("LLM endpoint returned HTTP 404: model not found") as never,
+      isStdinTTY: () => true,
+      writeStdout: (c) => {
+        stdout += c;
+      },
+      writeStderr: () => {},
+    });
+    const obj = JSON.parse(stdout.trim());
+    expect(obj.answer).toBe("");
+    expect(obj.error).toContain("ollama pull qwen9:1b");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("does not suggest ollama pull for a remote endpoint", async () => {
+    let stdout = "";
+    await runAsk(["--json", "anything"], {
+      loadConfig: () => loadConfig({ TDMCP_LLM_BASE_URL: "https://llm.example.com/v1" }),
+      createLogger: () => silentLogger,
+      buildToolContext: () => makeCtx(),
+      createClient: () => stubClient(),
+      ensureOllamaUp: async () => true,
+      runAgentTurn: failingTurn("LLM endpoint returned HTTP 404: nope") as never,
+      isStdinTTY: () => true,
+      writeStdout: (c) => {
+        stdout += c;
+      },
+      writeStderr: () => {},
+    });
+    expect(JSON.parse(stdout.trim()).error).not.toContain("ollama pull");
+  });
+
   it("emits JSON with error and exits 1 when the agent reports an error event", async () => {
     let stdout = "";
     const errTurn = vi.fn(async (_ctx, _c, _m, onEvent) => {
