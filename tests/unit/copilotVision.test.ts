@@ -16,7 +16,7 @@ import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -157,55 +157,61 @@ describe("copilotVisionImpl", () => {
   it.each([
     ["client-managed sampling", "mcp_sampling", "client_managed"],
     ["unknown backend", "unknown", "unknown"],
-  ] as const)("requires explicit consent before capturing for %s", async (_name, transport, locality) => {
-    const llm = new StubLlm("answer", {
-      transport,
-      locality,
-      calibration: "not_checked",
-    });
-    const denied = await copilotVisionImpl(makeCtx(llm), {
-      source_top: "/project1/out1",
-      question: "Anything?",
-      width: 32,
-      height: 32,
-      max_tokens: 128,
-      allow_remote_image_egress: false,
-    });
-    expect(denied.isError).toBe(true);
-    expect(llm.lastMessages).toHaveLength(0);
-  });
+  ] as const)(
+    "requires explicit consent before capturing for %s",
+    async (_name, transport, locality) => {
+      const llm = new StubLlm("answer", {
+        transport,
+        locality,
+        calibration: "not_checked",
+      });
+      const denied = await copilotVisionImpl(makeCtx(llm), {
+        source_top: "/project1/out1",
+        question: "Anything?",
+        width: 32,
+        height: 32,
+        max_tokens: 128,
+        allow_remote_image_egress: false,
+      });
+      expect(denied.isError).toBe(true);
+      expect(llm.lastMessages).toHaveLength(0);
+    },
+  );
 
   it.each([
     ["remote", "openai_compatible", "remote"],
     ["client managed", "mcp_sampling", "client_managed"],
-  ] as const)("sends only after explicit per-frame consent for %s egress", async (_name, transport, locality) => {
-    usePreview();
-    const llm = new StubLlm("approved answer", {
-      transport,
-      locality,
-      endpointOrigin: "https://user:secret@vision.example/private?token=hidden",
-      configuredModel: "vision-model",
-      calibration: "not_checked",
-    });
-    const result = await copilotVisionImpl(makeCtx(llm), {
-      source_top: "/project1/out1",
-      question: "Anything?",
-      width: 32,
-      height: 32,
-      max_tokens: 128,
-      allow_remote_image_egress: true,
-    });
-    expect(result.isError).toBeFalsy();
-    expect(llm.lastMessages).toHaveLength(1);
-    expect(jsonOf(result).egress).toMatchObject({
-      transport,
-      locality,
-      endpoint_origin: "https://vision.example",
-      remote_consent: "explicit",
-    });
-    expect(JSON.stringify(result)).not.toContain("secret");
-    expect(JSON.stringify(result)).not.toContain("hidden");
-  });
+  ] as const)(
+    "sends only after explicit per-frame consent for %s egress",
+    async (_name, transport, locality) => {
+      usePreview();
+      const llm = new StubLlm("approved answer", {
+        transport,
+        locality,
+        endpointOrigin: "https://user:secret@vision.example/private?token=hidden",
+        configuredModel: "vision-model",
+        calibration: "not_checked",
+      });
+      const result = await copilotVisionImpl(makeCtx(llm), {
+        source_top: "/project1/out1",
+        question: "Anything?",
+        width: 32,
+        height: 32,
+        max_tokens: 128,
+        allow_remote_image_egress: true,
+      });
+      expect(result.isError).toBeFalsy();
+      expect(llm.lastMessages).toHaveLength(1);
+      expect(jsonOf(result).egress).toMatchObject({
+        transport,
+        locality,
+        endpoint_origin: "https://vision.example",
+        remote_consent: "explicit",
+      });
+      expect(JSON.stringify(result)).not.toContain("secret");
+      expect(JSON.stringify(result)).not.toContain("hidden");
+    },
+  );
 
   it("omits a malformed descriptor origin from the report", async () => {
     usePreview();

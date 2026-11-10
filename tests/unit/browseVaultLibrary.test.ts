@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 // This tool is offline-only (no bridge call). We still include the msw boilerplate
-// so the test runner satisfies onUnhandledRequest if anything slips through.
+// so the test runner satisfies onUnhandledFrame if anything slips through.
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { KnowledgeBase } from "../../src/knowledge/index.js";
 import { RecipeLibrary } from "../../src/recipes/loader.js";
@@ -17,7 +17,7 @@ import { Vault } from "../../src/vault/index.js";
 import { makeTdServer } from "../helpers/tdMock.js";
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

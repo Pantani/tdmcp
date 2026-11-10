@@ -28,7 +28,7 @@ agent can't delete nodes or run unreviewed code by accident.
 
 - The tdmcp **bridge is installed and running** inside the *same* TouchDesigner
   instance — see [install step 3, "turn on the bridge"](/guide/install#turn-on-the-bridge).
-- **Node.js 20+ on your PATH** — LOPs spawns `node`.
+- **Node.js 22+ on your PATH** — LOPs spawns `node`.
 - You have run **`npm run build`** in your tdmcp checkout, so `dist/index.js`
   exists.
 - dotsimulate's **LOPs** is installed, with the MCP Client component.
@@ -125,7 +125,7 @@ swap-in for the copilot's model backend. Use whichever fits your workflow.
 ## Troubleshooting
 
 - **"node not found"** — LOPs couldn't find Node on its PATH. Install
-  [Node.js 20+](https://nodejs.org) and make sure it's on the PATH the TD process
+  [Node.js 22+](https://nodejs.org) and make sure it's on the PATH the TD process
   inherits.
 - **"dist/index.js not found"** — the launcher prints this to stderr when the
   build is missing. Run `npm run build` in your tdmcp folder.

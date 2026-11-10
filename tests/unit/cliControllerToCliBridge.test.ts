@@ -34,7 +34,7 @@ import { TD_BASE } from "../helpers/tdMock.js";
 // MSW server (integration suite)
 // ---------------------------------------------------------------------------
 const server = setupServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -141,7 +141,7 @@ describe("bindingsFileSchema", () => {
       bindings: [{ id: "x", event: { type: "midi-note", value: 60 }, command: ["true"] }],
     });
     expect(r.bindings[0]?.debounce_ms).toBe(250);
-    expect((r.bindings[0]?.event as { edge: string }).edge).toBe("on");
+    expect((r.bindings[0]?.event as { edge: string } | undefined)?.edge).toBe("on");
   });
 });
 

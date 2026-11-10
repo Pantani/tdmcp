@@ -17,7 +17,7 @@ import policy from "../fixtures/exec-off-policy.json" with { type: "json" };
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -125,15 +125,16 @@ describe("capturePreview Perform-mode guard", () => {
       expect(calls).toMatchObject({ exec: 1, preview: 1 });
     });
 
-    it.each(
-      olderBridges,
-    )("refuses and names the fix if exec is refused: %s", async (_n, system) => {
-      const calls = bridge(system, execRefused);
-      const failure = capturePreview(client(), NODE);
-      await expect(failure).rejects.toThrow(UNKNOWN);
-      await expect(failure).rejects.toThrow(/tdmcp install-bridge/);
-      expect(calls.preview).toBe(0);
-    });
+    it.each(olderBridges)(
+      "refuses and names the fix if exec is refused: %s",
+      async (_n, system) => {
+        const calls = bridge(system, execRefused);
+        const failure = capturePreview(client(), NODE);
+        await expect(failure).rejects.toThrow(UNKNOWN);
+        await expect(failure).rejects.toThrow(/tdmcp install-bridge/);
+        expect(calls.preview).toBe(0);
+      },
+    );
 
     it.each([
       ["empty", ""],

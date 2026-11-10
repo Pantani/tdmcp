@@ -121,16 +121,12 @@ describe("curated agent skill contract", () => {
     expect(["é", "a", "z"].sort(compareUtf8Bytewise)).toEqual(["a", "z", "é"]);
   });
 
-  it.each([
-    "../x",
-    "x/../y",
-    "C:/temp/x",
-    "//server/share",
-    "x\\y",
-    "bad\u0000path",
-  ])("rejects unsafe relative path %j", (unsafe) => {
-    expect(() => assertSafeSkillRelativePath(unsafe)).toThrow(SkillManagerError);
-  });
+  it.each(["../x", "x/../y", "C:/temp/x", "//server/share", "x\\y", "bad\u0000path"])(
+    "rejects unsafe relative path %j",
+    (unsafe) => {
+      expect(() => assertSafeSkillRelativePath(unsafe)).toThrow(SkillManagerError);
+    },
+  );
 
   it("rejects a symlink and any file outside the exact descriptor", () => {
     const root = tempRoot();

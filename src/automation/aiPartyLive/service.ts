@@ -1195,7 +1195,7 @@ export class AiPartyLiveService {
   ): void {
     if (mode !== "touchdesigner") return;
     const cueAction = plan.find((action) => action.kind === "cue");
-    if (!cueAction || cueAction.kind !== "cue") return;
+    if (cueAction?.kind !== "cue") return;
     const cue = findAiPartyCue(cueAction.cue, this.cues);
     if (!cue?.camera_fx) return;
     const fx = cue.camera_fx;

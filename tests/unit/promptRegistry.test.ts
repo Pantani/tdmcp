@@ -85,18 +85,16 @@ describe("canonical prompt registry", () => {
     );
   });
 
-  it.each([
-    "",
-    "Uppercase",
-    "starts-with-dash",
-    "1numeric",
-  ])("rejects invalid registration name %j", (name) => {
-    expect(() =>
-      capturePromptRegistry((server) => {
-        server.registerPrompt(name, { argsSchema: {} }, () => result);
-      }),
-    ).toThrowError(
-      expect.objectContaining<Partial<PromptRegistryError>>({ code: "registry_invalid" }),
-    );
-  });
+  it.each(["", "Uppercase", "starts-with-dash", "1numeric"])(
+    "rejects invalid registration name %j",
+    (name) => {
+      expect(() =>
+        capturePromptRegistry((server) => {
+          server.registerPrompt(name, { argsSchema: {} }, () => result);
+        }),
+      ).toThrowError(
+        expect.objectContaining<Partial<PromptRegistryError>>({ code: "registry_invalid" }),
+      );
+    },
+  );
 });

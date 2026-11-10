@@ -19,7 +19,7 @@ beforeAll(() => {
     savedEnv[k] = process.env[k];
     delete process.env[k];
   }
-  server.listen({ onUnhandledRequest: "error" });
+  server.listen({ onUnhandledFrame: "error" });
 });
 afterEach(() => server.resetHandlers());
 afterAll(() => {

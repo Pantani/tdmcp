@@ -12,7 +12,7 @@ const OLLAMA_BASE = "http://127.0.0.1:11434";
 const EMBED_URL = `${OLLAMA_BASE}/api/embed`;
 
 const server = setupServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

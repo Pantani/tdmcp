@@ -43,7 +43,7 @@ import { makeTdServer } from "../helpers/tdMock.js";
 // anywhere CI runs.
 
 const mock = makeTdServer();
-beforeAll(() => mock.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => mock.listen({ onUnhandledFrame: "error" }));
 afterEach(() => mock.resetHandlers());
 afterAll(() => mock.close());
 

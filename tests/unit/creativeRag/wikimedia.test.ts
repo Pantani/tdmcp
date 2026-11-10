@@ -44,7 +44,7 @@ const WIKIMEDIA_RESPONSE = {
 
 const server = setupServer(http.get(WIKIMEDIA_API, () => HttpResponse.json(WIKIMEDIA_RESPONSE)));
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

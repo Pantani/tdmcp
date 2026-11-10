@@ -13,10 +13,10 @@ import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 // ---------------------------------------------------------------------------
-// Shared MSW server (onUnhandledRequest:"error" so any unexpected call fails)
+// Shared MSW server (onUnhandledFrame:"error" so any unexpected call fails)
 // ---------------------------------------------------------------------------
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

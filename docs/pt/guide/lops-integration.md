@@ -31,7 +31,7 @@ autônomo dentro do TD não apague nós nem rode código sem revisão por aciden
 
 - A **ponte do tdmcp está instalada e rodando** dentro da *mesma* instância do
   TouchDesigner — veja o [passo 3 da instalação, "ligue a ponte"](/pt/guide/install#turn-on-the-bridge).
-- **Node.js 20+ no seu PATH** — os LOPs vão iniciar o `node`.
+- **Node.js 22+ no seu PATH** — os LOPs vão iniciar o `node`.
 - Você rodou **`npm run build`** no seu clone do tdmcp, então o `dist/index.js`
   existe.
 - Os **LOPs** da dotsimulate estão instalados, com o componente MCP Client.
@@ -133,7 +133,7 @@ seu fluxo de trabalho.
 ## Algum problema?
 
 - **"node not found"** — os LOPs não acharam o Node no PATH. Instale o
-  [Node.js 20+](https://nodejs.org) e garanta que ele está no PATH que o processo
+  [Node.js 22+](https://nodejs.org) e garanta que ele está no PATH que o processo
   do TD herda.
 - **"dist/index.js not found"** — o launcher imprime isto no stderr quando o build
   está faltando. Rode `npm run build` na sua pasta do tdmcp.

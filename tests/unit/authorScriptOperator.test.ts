@@ -116,19 +116,22 @@ describe("authorScriptOperatorImpl", () => {
     ["DAT", "scriptDAT", "appendRow(['name', 'value'])"],
     ["SOP", "scriptSOP", "appendPoint()"],
     ["TOP", "scriptTOP", "copyNumpyArray"],
-  ] as const)("creates the right operator type for %s and embeds its stub", async (family, type, marker) => {
-    const { ctx, createNode, exec } = fakeCtx({});
-    const args = authorScriptOperatorSchema.parse({ family, parent_path: "/project1" });
-    const result = await authorScriptOperatorImpl(ctx, args);
-    expect(result.isError).toBeFalsy();
-    expect(createNode).toHaveBeenCalledTimes(1);
-    expect(createNode.mock.calls[0]?.[0]).toMatchObject({ parent_path: "/project1", type });
-    expect(exec).toHaveBeenCalledTimes(1);
-    expect(exec.mock.calls[0]?.[1]).toBe(true);
-    const script = exec.mock.calls[0]?.[0] as string;
-    const payload = decodePayload(script);
-    expect(payload.callbacks_text).toContain(marker);
-  });
+  ] as const)(
+    "creates the right operator type for %s and embeds its stub",
+    async (family, type, marker) => {
+      const { ctx, createNode, exec } = fakeCtx({});
+      const args = authorScriptOperatorSchema.parse({ family, parent_path: "/project1" });
+      const result = await authorScriptOperatorImpl(ctx, args);
+      expect(result.isError).toBeFalsy();
+      expect(createNode).toHaveBeenCalledTimes(1);
+      expect(createNode.mock.calls[0]?.[0]).toMatchObject({ parent_path: "/project1", type });
+      expect(exec).toHaveBeenCalledTimes(1);
+      expect(exec.mock.calls[0]?.[1]).toBe(true);
+      const script = exec.mock.calls[0]?.[0] as string;
+      const payload = decodePayload(script);
+      expect(payload.callbacks_text).toContain(marker);
+    },
+  );
 
   it("payload encodes custom_params with appendFloat/Toggle/Str defaults", async () => {
     const { ctx, exec } = fakeCtx({});

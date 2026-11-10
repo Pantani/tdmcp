@@ -366,7 +366,7 @@ export function normalizeWeights(weights: Record<string, number>): Record<string
   const clipped: Record<string, number> = {};
   for (const [k, v] of Object.entries(weights)) {
     const n = typeof v === "number" && Number.isFinite(v) ? v : 0;
-    clipped[k] = n < 0 ? 0 : n;
+    clipped[k] = Math.max(n, 0);
   }
   let sum = 0;
   for (const v of Object.values(clipped)) sum += v;

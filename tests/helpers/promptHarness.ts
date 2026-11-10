@@ -152,10 +152,10 @@ export function evalPrompt(entry: PromptEntry): EvalResult {
       failures.push("handler returned no messages");
     } else {
       const msg = result.messages[0];
-      if (!msg || msg.role !== "user") {
+      if (msg?.role !== "user") {
         failures.push("first message role is not 'user'");
       }
-      if (!msg?.content || msg.content.type !== "text") {
+      if (msg?.content?.type !== "text") {
         failures.push("first message content type is not 'text'");
       }
       text = msg?.content?.text ?? "";

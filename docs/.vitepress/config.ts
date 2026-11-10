@@ -368,7 +368,7 @@ export default defineConfig({
         ],
         [
           "Does tdmcp run on macOS and Windows?",
-          "Yes, on both — anywhere TouchDesigner and Node.js 20+ run.",
+          "Yes, on both — anywhere TouchDesigner and Node.js 22+ run.",
         ],
         [
           "Is it safe to run?",
@@ -421,7 +421,7 @@ export default defineConfig({
         ],
         [
           "O tdmcp roda no macOS e no Windows?",
-          "Sim, nos dois — onde quer que o TouchDesigner e o Node.js 20+ rodem.",
+          "Sim, nos dois — onde quer que o TouchDesigner e o Node.js 22+ rodem.",
         ],
         [
           "É seguro rodar?",

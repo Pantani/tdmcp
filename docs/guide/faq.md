@@ -43,7 +43,7 @@ is closed.
 
 ## Does tdmcp run on macOS and Windows?
 
-Yes, on both — anywhere TouchDesigner and Node.js 20+ run.
+Yes, on both — anywhere TouchDesigner and Node.js 22+ run.
 
 ## Is it safe to run?
 

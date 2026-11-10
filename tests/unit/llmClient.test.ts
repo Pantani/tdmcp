@@ -22,7 +22,7 @@ const cfg: LlmConfig = {
 };
 
 const server = setupServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => {
   server.resetHandlers();
   vi.restoreAllMocks();
@@ -220,23 +220,19 @@ describe("LlmClient.complete", () => {
     expect(cancelled).toBe(true);
   });
 
-  it.each([
-    0,
-    -1,
-    1.5,
-    Number.NaN,
-    Number.POSITIVE_INFINITY,
-    COMPLETE_RESPONSE_BYTES_MAX + 1,
-  ])("rejects invalid maxResponseBytes=%s before fetching", async (maxResponseBytes) => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, COMPLETE_RESPONSE_BYTES_MAX + 1])(
+    "rejects invalid maxResponseBytes=%s before fetching",
+    async (maxResponseBytes) => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-    await expect(
-      new LlmClient(cfg).complete([{ role: "user", content: "x" }], {
-        maxResponseBytes,
-      }),
-    ).rejects.toBeInstanceOf(InvalidCompleteOptionsError);
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
+      await expect(
+        new LlmClient(cfg).complete([{ role: "user", content: "x" }], {
+          maxResponseBytes,
+        }),
+      ).rejects.toBeInstanceOf(InvalidCompleteOptionsError);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    },
+  );
 
   it("aborts when timeoutMs elapses", async () => {
     server.use(
