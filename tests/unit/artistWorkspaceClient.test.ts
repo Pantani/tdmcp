@@ -6,7 +6,7 @@ import { ArtistWorkspaceReceiptSchema } from "../../src/td-client/validators.js"
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -224,68 +224,80 @@ describe("TouchDesignerClient artist workspaces", () => {
   it.each([
     ["restore", "restore_scheduled", "restored"],
     ["cancel", "cancel_scheduled", "cancelled"],
-  ] as const)("uses one transport key for %s and returns the verified terminal receipt", async (action, scheduled, terminal) => {
-    const bodies: Array<Record<string, unknown>> = [];
-    server.use(
-      http.post(`${TD_BASE}/api/editor/workspaces/:workspaceId/${action}`, async ({ request }) => {
-        bodies.push((await request.json()) as Record<string, unknown>);
-        return HttpResponse.json({
-          ok: true,
-          data: lifecycleReceipt(action, scheduled),
-        });
-      }),
-      http.get(`${TD_BASE}/api/editor/workspaces/:workspaceId`, () =>
-        HttpResponse.json({ ok: true, data: lifecycleReceipt("status", terminal) }),
-      ),
-    );
+  ] as const)(
+    "uses one transport key for %s and returns the verified terminal receipt",
+    async (action, scheduled, terminal) => {
+      const bodies: Array<Record<string, unknown>> = [];
+      server.use(
+        http.post(
+          `${TD_BASE}/api/editor/workspaces/:workspaceId/${action}`,
+          async ({ request }) => {
+            bodies.push((await request.json()) as Record<string, unknown>);
+            return HttpResponse.json({
+              ok: true,
+              data: lifecycleReceipt(action, scheduled),
+            });
+          },
+        ),
+        http.get(`${TD_BASE}/api/editor/workspaces/:workspaceId`, () =>
+          HttpResponse.json({ ok: true, data: lifecycleReceipt("status", terminal) }),
+        ),
+      );
 
-    const result = await new TouchDesignerClient({ baseUrl: TD_BASE }).manageArtistWorkspace({
-      action,
-      workspace_id: workspaceId,
-    });
+      const result = await new TouchDesignerClient({ baseUrl: TD_BASE }).manageArtistWorkspace({
+        action,
+        workspace_id: workspaceId,
+      });
 
-    expect(result.status).toBe(terminal);
-    expect(bodies).toHaveLength(1);
-    expect(String(bodies[0]?.idempotency_key)).toMatch(new RegExp(`^${action}_[a-f0-9]{32}$`));
-  });
+      expect(result.status).toBe(terminal);
+      expect(bodies).toHaveLength(1);
+      expect(String(bodies[0]?.idempotency_key)).toMatch(new RegExp(`^${action}_[a-f0-9]{32}$`));
+    },
+  );
 
   it.each([
     ["restore", "restore_scheduled", "restored"],
     ["cancel", "cancel_scheduled", "cancelled"],
-  ] as const)("recovers one lost %s response with the identical idempotency key", async (action, scheduled, terminal) => {
-    const bodies: Array<Record<string, unknown>> = [];
-    let actionCalls = 0;
-    let statusCalls = 0;
-    server.use(
-      http.post(`${TD_BASE}/api/editor/workspaces/:workspaceId/${action}`, async ({ request }) => {
-        actionCalls += 1;
-        bodies.push((await request.json()) as Record<string, unknown>);
-        if (actionCalls === 1) return HttpResponse.error();
-        return HttpResponse.json({
-          ok: true,
-          data: { ...lifecycleReceipt(action, scheduled), deduplicated: true },
-        });
-      }),
-      http.get(`${TD_BASE}/api/editor/workspaces/:workspaceId`, () => {
-        statusCalls += 1;
-        return HttpResponse.json({
-          ok: true,
-          data: lifecycleReceipt("status", terminal),
-        });
-      }),
-    );
+  ] as const)(
+    "recovers one lost %s response with the identical idempotency key",
+    async (action, scheduled, terminal) => {
+      const bodies: Array<Record<string, unknown>> = [];
+      let actionCalls = 0;
+      let statusCalls = 0;
+      server.use(
+        http.post(
+          `${TD_BASE}/api/editor/workspaces/:workspaceId/${action}`,
+          async ({ request }) => {
+            actionCalls += 1;
+            bodies.push((await request.json()) as Record<string, unknown>);
+            if (actionCalls === 1) return HttpResponse.error();
+            return HttpResponse.json({
+              ok: true,
+              data: { ...lifecycleReceipt(action, scheduled), deduplicated: true },
+            });
+          },
+        ),
+        http.get(`${TD_BASE}/api/editor/workspaces/:workspaceId`, () => {
+          statusCalls += 1;
+          return HttpResponse.json({
+            ok: true,
+            data: lifecycleReceipt("status", terminal),
+          });
+        }),
+      );
 
-    const result = await new TouchDesignerClient({
-      baseUrl: TD_BASE,
-      retries: 0,
-    }).manageArtistWorkspace({ action, workspace_id: workspaceId });
+      const result = await new TouchDesignerClient({
+        baseUrl: TD_BASE,
+        retries: 0,
+      }).manageArtistWorkspace({ action, workspace_id: workspaceId });
 
-    expect(result.status).toBe(terminal);
-    expect(actionCalls).toBe(2);
-    expect(statusCalls).toBe(1);
-    expect(bodies[0]?.idempotency_key).toBe(bodies[1]?.idempotency_key);
-    expect(String(bodies[0]?.idempotency_key)).toMatch(new RegExp(`^${action}_[a-f0-9]{32}$`));
-  });
+      expect(result.status).toBe(terminal);
+      expect(actionCalls).toBe(2);
+      expect(statusCalls).toBe(1);
+      expect(bodies[0]?.idempotency_key).toBe(bodies[1]?.idempotency_key);
+      expect(String(bodies[0]?.idempotency_key)).toMatch(new RegExp(`^${action}_[a-f0-9]{32}$`));
+    },
+  );
 
   it.each([
     ["restore", 400, "workspace_conflict"],

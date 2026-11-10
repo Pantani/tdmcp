@@ -124,7 +124,7 @@ describe("syncTimecodeImpl", () => {
       cue_on_label: false,
     });
     expect(res.isError).not.toBe(true);
-    const text = (res.content?.[0] as { text: string }).text;
+    const text = (res.content?.[0] as { text: string } | undefined)?.text ?? "";
     expect(text).toContain("1 warning");
   });
 

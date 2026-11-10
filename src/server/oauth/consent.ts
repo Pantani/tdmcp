@@ -201,7 +201,7 @@ export class OAuthConsentCoordinator {
   #resolve(id: string, status: "allowed" | "denied"): void {
     this.#prune();
     const record = this.#records.get(id);
-    if (!record || record.status !== "pending") return;
+    if (record?.status !== "pending") return;
     record.status = status;
     record.terminalAt = this.#clock();
   }

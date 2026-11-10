@@ -12,7 +12,7 @@ import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer } from "../helpers/tdMock.js";
 
 const mock = makeTdServer();
-beforeAll(() => mock.listen({ onUnhandledRequest: "bypass" }));
+beforeAll(() => mock.listen({ onUnhandledFrame: "bypass" }));
 afterEach(() => mock.resetHandlers());
 afterAll(() => mock.close());
 

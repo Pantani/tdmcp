@@ -17,7 +17,7 @@ Codex-specific path. For the full picture see [Install](/guide/install).
 
 - **[TouchDesigner](https://derivative.ca/download)** — the free non-commercial
   edition is fine.
-- **[Node.js 20+](https://nodejs.org)** — Codex runs the tdmcp server as a local
+- **[Node.js 22+](https://nodejs.org)** — Codex runs the tdmcp server as a local
   `node` process over stdio.
 - The **Codex CLI** installed and working (`codex --version`).
 

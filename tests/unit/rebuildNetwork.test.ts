@@ -9,7 +9,7 @@ import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -214,32 +214,32 @@ describe("rebuildNetworkImpl auto_layout", () => {
 });
 
 describe("rebuildNetworkImpl", () => {
-  it.each([
-    "EXPRESSION",
-    "BIND",
-  ])("rejects caller-supplied %s source before exec in raw-off mode", async (mode) => {
-    const sink = { script: "" };
-    captureExecScript(sink);
-    const result = await rebuildNetworkImpl(
-      { ...makeCtx(), allowRawPython: false },
-      rebuildNetworkSchema.parse({
-        parent_path: "/project1",
-        spec: {
-          nodes: [
-            {
-              name: "level1",
-              type: "levelTOP",
-              params: { brightness1: { mode, expr: "me.time.seconds" } },
-            },
-          ],
-        },
-      }),
-    );
+  it.each(["EXPRESSION", "BIND"])(
+    "rejects caller-supplied %s source before exec in raw-off mode",
+    async (mode) => {
+      const sink = { script: "" };
+      captureExecScript(sink);
+      const result = await rebuildNetworkImpl(
+        { ...makeCtx(), allowRawPython: false },
+        rebuildNetworkSchema.parse({
+          parent_path: "/project1",
+          spec: {
+            nodes: [
+              {
+                name: "level1",
+                type: "levelTOP",
+                params: { brightness1: { mode, expr: "me.time.seconds" } },
+              },
+            ],
+          },
+        }),
+      );
 
-    expect(result.isError).toBe(true);
-    expect((result.content[0] as { text: string }).text).toContain("raw Python is disabled");
-    expect(sink.script).toBe("");
-  });
+      expect(result.isError).toBe(true);
+      expect((result.content[0] as { text: string }).text).toContain("raw Python is disabled");
+      expect(sink.script).toBe("");
+    },
+  );
 
   it("keeps constant-only rebuilds available in raw-off mode", async () => {
     const sink = { script: "" };
@@ -324,7 +324,7 @@ describe("rebuildNetworkImpl", () => {
     expect(spec.nodes.map((n) => n.name)).toEqual(["noise1", "level1"]);
     expect(spec.nodes.map((n) => n.type)).toEqual(["noiseTOP", "levelTOP"]);
 
-    const text = (result.content?.[0] as { text: string }).text;
+    const text = (result.content?.[0] as { text: string } | undefined)?.text ?? "";
     expect(text).toContain("Rebuilt 2 node(s), 1 wire(s) under /project1");
   });
 
@@ -386,7 +386,7 @@ describe("rebuildNetworkImpl", () => {
       auto_layout: false,
     });
     expect(result.isError).toBeFalsy();
-    const text = (result.content?.[0] as { text: string }).text;
+    const text = (result.content?.[0] as { text: string } | undefined)?.text ?? "";
     expect(text).toContain("cleared 3 existing");
     expect(text).toContain("1 warning(s)");
   });
@@ -410,7 +410,7 @@ describe("rebuildNetworkImpl", () => {
       auto_layout: false,
     });
     expect(result.isError).toBe(true);
-    const text = (result.content?.[0] as { text: string }).text;
+    const text = (result.content?.[0] as { text: string } | undefined)?.text ?? "";
     expect(text).toContain("rebuild_network failed");
     expect(text).toContain("Parent COMP not found");
   });

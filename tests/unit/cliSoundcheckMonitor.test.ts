@@ -24,7 +24,7 @@ import { TD_BASE } from "../helpers/tdMock.js";
 // MSW server (only used for the integration suite)
 // ---------------------------------------------------------------------------
 const server = setupServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

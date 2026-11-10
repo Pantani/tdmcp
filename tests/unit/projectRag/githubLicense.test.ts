@@ -6,7 +6,7 @@ import { fetchGithubLicense } from "../../../src/projectRag/extractors/githubLic
 const LICENSE_URL = "https://api.github.com/repos/torinmb/mediapipe-touchdesigner/license";
 
 const server = setupServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

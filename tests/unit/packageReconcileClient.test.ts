@@ -8,7 +8,7 @@ const ok = (data: unknown) => HttpResponse.json({ ok: true, data });
 const server = setupServer();
 const PLAN_ID = "plan_000000000000000000000001";
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

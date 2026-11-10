@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "✖ Node.js is not installed. Get Node 20+ from https://nodejs.org and re-run ./setup.sh"
+  echo "✖ Node.js is not installed. Get Node 22+ from https://nodejs.org and re-run ./setup.sh"
   exit 1
 fi
 

@@ -83,7 +83,7 @@ const defaultHandlers = [
 
 const server = setupServer(...defaultHandlers);
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => {
   server.resetHandlers();
   vi.restoreAllMocks();

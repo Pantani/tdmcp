@@ -139,7 +139,7 @@ without a firewall. Developers can lock it down further — see
 ## Claude Code, Cursor & other MCP clients {#other-clients}
 
 Claude Desktop (above) is the no-terminal route. For **Claude Code** or **Cursor**,
-connect tdmcp from source — you'll need **[Node.js 20+](https://nodejs.org)**.
+connect tdmcp from source — you'll need **[Node.js 22+](https://nodejs.org)**.
 (**Codex** has its own walkthrough on the [Codex page](/guide/codex); the same
 source build also powers the [local copilot](/guide/local-copilot).)
 

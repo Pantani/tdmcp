@@ -18,7 +18,7 @@ específico do Codex. Para o quadro completo, veja [Instalação](/pt/guide/inst
 
 - **[TouchDesigner](https://derivative.ca/download)** — a edição gratuita
   (não comercial) serve.
-- **[Node.js 20+](https://nodejs.org)** — o Codex roda o servidor tdmcp como um
+- **[Node.js 22+](https://nodejs.org)** — o Codex roda o servidor tdmcp como um
   processo `node` local via stdio.
 - O **Codex CLI** instalado e funcionando (`codex --version`).
 

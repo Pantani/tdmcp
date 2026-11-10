@@ -69,7 +69,9 @@ describe("buildCreativeContextMessage", () => {
     expect(msg?.content).toContain("tdmcp://creative/cards/id2");
     expect(msg?.content).toContain("tdmcp://creative/cards/id3");
     // check summary lines are within limit
-    const lines = (msg?.content as string).split("\n").filter((l) => l.startsWith("- ["));
+    const lines = String(msg?.content ?? "")
+      .split("\n")
+      .filter((l) => l.startsWith("- ["));
     for (const line of lines) {
       const bracketContent = line.match(/^- \[(.+?)\]/)?.[1] ?? "";
       expect(bracketContent.length).toBeLessThanOrEqual(160);
@@ -134,7 +136,9 @@ describe("buildCreativeContextMessage", () => {
     const service = makeService([makeResult("abc", longTitle)]);
     const msg = await buildCreativeContextMessage(service, "query");
     expect(msg).toBeDefined();
-    const line = (msg?.content as string).split("\n").find((l) => l.startsWith("- ["));
+    const line = String(msg?.content ?? "")
+      .split("\n")
+      .find((l) => l.startsWith("- ["));
     const bracketContent = line?.match(/^- \[(.+?)\]/)?.[1] ?? "";
     expect(bracketContent.length).toBeLessThanOrEqual(160);
   });

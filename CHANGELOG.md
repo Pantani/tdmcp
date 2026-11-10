@@ -6,7 +6,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **tdmcp now needs Node.js 22.12 or newer** (was 20.19). Node 20 reached end of
+  life in April 2026, and the test toolchain (Vitest 5, MSW 3, tsup 9) no longer runs
+  on it. The Docker image, CI, and release jobs run on Node 26 LTS; CI also tests
+  Node 22 and 24. Builds now target `node22`.
+- **The optional `@lancedb/lancedb` peer accepts 0.30 through 0.41.** The table
+  calls the RAG store makes were checked against 0.41.
+- **Dev toolchain updated:** Vitest 5, MSW 3, ESLint 10, tsup 9,
+  dependency-cruiser 18, chokidar 6, Biome 2.6, Ruff 0.17, uv 0.13, and the
+  current majors of every pinned GitHub Action. TypeScript stays on 6.0: 7.0 has
+  no JavaScript compiler API yet, which typescript-eslint and tsup's type
+  bundling both need.
+- **Ruff's rule set is now pinned** to the families it used by default before 0.17
+  (`E4`, `E7`, `E9`, `F`), with `target-version = "py311"` to match the Python
+  that TouchDesigner embeds. Ruff 0.17's wider defaults would add about 850
+  findings; adopting them is separate work.
+
 ### Security
+
+- **`npm audit` goes from 17 findings to 2, and production dependencies report
+  none.** Updates and overrides clear the Vite, Vitest, esbuild, minimatch and
+  brace-expansion advisories. Both remaining findings are Zod 3 inside the dev-only
+  `@bottobot/td-mcp` importer. No Zod 3 release fixes it, and the importer only
+  reads that package's own bundled data.
 
 - **`tdmcp init --json` no longer prints the bridge token.** It appeared in the
   install-bridge instructions written to stdout, and in `detection.existingConfig`

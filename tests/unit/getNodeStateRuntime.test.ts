@@ -14,10 +14,10 @@ import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 // ---------------------------------------------------------------------------
-// MSW server — onUnhandledRequest:"error" catches unexpected calls
+// MSW server — onUnhandledFrame:"error" catches unexpected calls
 // ---------------------------------------------------------------------------
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -157,7 +157,7 @@ describe("getNodeStateRuntimeImpl — happy path (TOP)", () => {
     expect(sc?.cook_count).toBe(420);
     expect(sc?.gpu_memory).toBe(8388608);
     expect(Array.isArray(sc?.errors)).toBe(true);
-    expect((sc?.errors as string[]).length).toBe(0);
+    expect((sc?.errors as string[] | undefined)?.length).toBe(0);
   });
 });
 

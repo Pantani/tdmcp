@@ -66,14 +66,15 @@ it("prompt name list snapshot", () => {
 // 3. Per-prompt eval: structural + rendering + budget + description quality
 // ---------------------------------------------------------------------------
 
-describe.each(ALL_PROMPTS.map((p) => ({ prompt: p, name: p.name })))("prompt: $name", ({
-  prompt,
-}) => {
-  it("passes all eval criteria", () => {
-    const result = evalPrompt(prompt);
-    expect(result.failures).toEqual([]);
-  });
-});
+describe.each(ALL_PROMPTS.map((p) => ({ prompt: p, name: p.name })))(
+  "prompt: $name",
+  ({ prompt }) => {
+    it("passes all eval criteria", () => {
+      const result = evalPrompt(prompt);
+      expect(result.failures).toEqual([]);
+    });
+  },
+);
 
 // ---------------------------------------------------------------------------
 // 4. synthesizeArgs unit tests

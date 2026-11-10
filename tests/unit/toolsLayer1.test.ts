@@ -21,7 +21,7 @@ interface CreatedNodeBody {
 }
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -141,19 +141,22 @@ describe("layer 1 tool handlers", () => {
       [8, 128], // below TD's 128 minimum → clamped up
       [512, 512], // inside the valid range → passed through
       [99999, 4096], // above TD's 4096 maximum → clamped down
-    ])("clamps spectrum outlength into TD's 128–4096 range (bands=%i → %i)", async (bands, want) => {
-      const bodies = captureCreateBodies();
-      await createAudioReactiveImpl(makeCtx(), {
-        audio_source: "microphone",
-        visual_style: "glsl",
-        frequency_bands: bands,
-        beat_detection: false,
-        expose_controls: false,
-        parent_path: "/project1",
-      });
-      const spectrum = bodies.find((b) => b.name === "spectrum");
-      expect(spectrum?.parameters?.outlength).toBe(want);
-    });
+    ])(
+      "clamps spectrum outlength into TD's 128–4096 range (bands=%i → %i)",
+      async (bands, want) => {
+        const bodies = captureCreateBodies();
+        await createAudioReactiveImpl(makeCtx(), {
+          audio_source: "microphone",
+          visual_style: "glsl",
+          frequency_bands: bands,
+          beat_detection: false,
+          expose_controls: false,
+          parent_path: "/project1",
+        });
+        const spectrum = bodies.find((b) => b.name === "spectrum");
+        expect(spectrum?.parameters?.outlength).toBe(want);
+      },
+    );
   });
 
   describe("create_particle_system", () => {

@@ -9,7 +9,7 @@ const BASE = "http://127.0.0.1:9980";
 const ok = (data: unknown) => HttpResponse.json({ ok: true, data });
 const server = setupServer();
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -447,24 +447,23 @@ describe("TouchDesignerClient native interaction flows", () => {
     });
   });
 
-  it.each([
-    "expired",
-    "cancelled",
-    "failed",
-  ] as const)("treats %s artifact-overwrite decisions as Keep", async (state) => {
-    server.use(
-      http.post(`${BASE}/api/interactions`, () =>
-        ok(interaction(state, "Keep", "artifact_overwrite")),
-      ),
-    );
-    await expect(
-      new TouchDesignerClient({ baseUrl: BASE }).requestArtifactOverwriteDecision(
-        "/project1/widget",
-        "/tmp/widget.tox",
-        5_000,
-      ),
-    ).resolves.toMatchObject({ choice: "Keep", state });
-  });
+  it.each(["expired", "cancelled", "failed"] as const)(
+    "treats %s artifact-overwrite decisions as Keep",
+    async (state) => {
+      server.use(
+        http.post(`${BASE}/api/interactions`, () =>
+          ok(interaction(state, "Keep", "artifact_overwrite")),
+        ),
+      );
+      await expect(
+        new TouchDesignerClient({ baseUrl: BASE }).requestArtifactOverwriteDecision(
+          "/project1/widget",
+          "/tmp/widget.tox",
+          5_000,
+        ),
+      ).resolves.toMatchObject({ choice: "Keep", state });
+    },
+  );
 
   it("sends bearer auth on the broker and mutation requests", async () => {
     const seen: string[] = [];

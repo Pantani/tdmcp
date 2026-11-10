@@ -69,7 +69,7 @@ Three pieces talk to each other on your computer:
 - An MCP-capable AI assistant: **Claude Desktop** (easiest), **Claude Code**,
   **Codex**, or **Cursor**.
 
-Node.js is only needed for the build-from-source path (**[Node 20+](https://nodejs.org)**).
+Node.js is only needed for the build-from-source path (**[Node 22+](https://nodejs.org)**).
 The one-click Claude Desktop extension needs nothing extra — the server is bundled
 inside the `.mcpb` extension file.
 

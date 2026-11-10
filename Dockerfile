@@ -12,7 +12,7 @@
 # host-gateway mapping that makes this resolvable on Linux).
 
 # ---- Stage 1: build ---------------------------------------------------------
-FROM node:20-slim AS build
+FROM node:26-slim AS build
 WORKDIR /app
 
 # Install ALL deps (including dev) using the lockfile for a reproducible build.
@@ -24,7 +24,7 @@ COPY . .
 RUN npm run build
 
 # ---- Stage 2: runtime -------------------------------------------------------
-FROM node:20-slim AS runtime
+FROM node:26-slim AS runtime
 WORKDIR /app
 
 # Registry scanners (including Glama) build this image to introspect the MCP
