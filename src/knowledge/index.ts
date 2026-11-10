@@ -169,6 +169,9 @@ const EMPTY_SOURCE: ResolvedSource = {
  * imported local data directory; falls back to reading directly from an installed
  * `@bottobot/td-mcp`; otherwise degrades to empty results (never throws on lookup).
  */
+/** Letters, digits, space, underscore, dot, hyphen: no path separators. */
+const SAFE_FILE_STEM = /^[\w .-]+$/;
+
 export class KnowledgeBase {
   private readonly logger: Logger;
   private readonly source: ResolvedSource;
@@ -585,10 +588,18 @@ export class KnowledgeBase {
   getPythonClass(name: string): PythonClass | undefined {
     if (this.source.kind === "empty") return undefined;
     const className = this.pythonLookup().get(compactKey(name)) ?? name;
+    // The name reaches a file path, and callers pass client input (a resource URI
+    // segment, a tool argument): accept only a plain file stem.
+    if (!SAFE_FILE_STEM.test(className) || className.includes("..")) return undefined;
     const cached = this.pyDocCache.get(className);
     if (cached !== undefined) return cached ?? undefined;
-    const file = join(this.source.pythonDir, `${className}.json`);
-    const cls = existsSync(file) ? (this.readJson(file) as PythonClass | undefined) : undefined;
+    // The imported data names files with underscores for spaces ("Error_DAT.json")
+    // while the class name keeps the space ("Error DAT").
+    const pythonDir = this.source.pythonDir;
+    const file = [className, className.replace(/ /g, "_")]
+      .map((stem) => join(pythonDir, `${stem}.json`))
+      .find((candidate) => existsSync(candidate));
+    const cls = file ? (this.readJson(file) as PythonClass | undefined) : undefined;
     this.pyDocCache.set(className, cls ?? null);
     return cls;
   }

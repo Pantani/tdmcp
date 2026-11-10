@@ -40,6 +40,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **`tdmcp://python-api/*` URIs are valid URIs.** Five classes (`Error DAT`,
+  `OP Viewer COMP`, `Pattern CHOP`, `Replicator COMP`, `td Module`) were listed with
+  literal spaces, which fails `format: uri` in strict clients. They are now
+  percent-encoded and decoded on read. Those five could not be read before either:
+  the lookup looked for `Error DAT.json` while the file is `Error_DAT.json`; that
+  affected `get_td_class_details` and `search_python_api` as well as the resource.
 - **`tdmcp init --json` emits valid JSON.** The install-bridge banner no longer
   precedes it, and a failed run no longer says to re-run with `--json`.
 - **`tdmcp ask` now behaves as documented.** It checks the endpoint first, starts
