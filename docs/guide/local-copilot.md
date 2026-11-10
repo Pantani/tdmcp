@@ -17,7 +17,7 @@ whole system built.
 ::: tip Which path is this?
 [Claude Desktop](/guide/install) is the no-terminal route. This page is for running
 tdmcp with a **local model** instead of a paid assistant — it needs
-[Node.js 20+](https://nodejs.org), like the Codex and Cursor paths.
+[Node.js 22+](https://nodejs.org), like the Codex and Cursor paths.
 :::
 
 ## What it's good for
@@ -41,7 +41,7 @@ so nothing has to move.
 
 - **[TouchDesigner](https://derivative.ca/download)** with the bridge on (the same
   one-line step as every client — [see below](#turn-on-the-bridge)).
-- **[Node.js 20+](https://nodejs.org)** — used to launch the copilot.
+- **[Node.js 22+](https://nodejs.org)** — used to launch the copilot.
 - **[Ollama](https://ollama.com)** — the free local model runner. `tdmcp chat`
   starts it for you if it isn't already running.
 

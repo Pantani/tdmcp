@@ -6,7 +6,7 @@ import { TouchDesignerClient } from "../../src/td-client/touchDesignerClient.js"
 const BASE = "http://127.0.0.1:9980";
 const server = setupServer();
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

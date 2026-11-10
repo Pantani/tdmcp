@@ -13,7 +13,7 @@ import { makeTdServer } from "../helpers/tdMock.js";
 // MSW server (kept for any future HTTP-based integration tests)
 // ---------------------------------------------------------------------------
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "warn" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "warn" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

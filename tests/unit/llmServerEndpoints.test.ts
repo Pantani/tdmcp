@@ -85,7 +85,7 @@ describe("startChatServer endpoints", () => {
   let close: () => Promise<void>;
 
   beforeAll(async () => {
-    mswServer.listen({ onUnhandledRequest: "bypass" });
+    mswServer.listen({ onUnhandledFrame: "bypass" });
     port = await freePort();
     const cfg = {
       chatPort: port,

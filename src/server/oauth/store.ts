@@ -387,7 +387,7 @@ export class OAuthStateStore implements OAuthRegisteredClientsStore {
       const now = this.#clock();
       this.#prune(draft, now);
       const record = this.#findToken(draft, refreshToken);
-      if (!record || record.kind !== "refresh" || record.client_id !== clientId) {
+      if (record?.kind !== "refresh" || record.client_id !== clientId) {
         throw new OAuthTokenInvalidError("refresh token is invalid");
       }
       if (record.resource !== resource || record.expires_at <= now || record.status === "revoked") {
@@ -443,8 +443,7 @@ export class OAuthStateStore implements OAuthRegisteredClientsStore {
       const now = this.#clock();
       const record = this.#findToken(this.#state, token);
       if (
-        !record ||
-        record.kind !== "access" ||
+        record?.kind !== "access" ||
         record.status !== "active" ||
         record.expires_at <= now ||
         record.resource !== this.#policy.resource.href

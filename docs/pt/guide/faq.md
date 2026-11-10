@@ -43,7 +43,7 @@ TouchDesigner fechado.
 
 ## O tdmcp roda no macOS e no Windows?
 
-Sim, nos dois — onde quer que o TouchDesigner e o Node.js 20+ rodem.
+Sim, nos dois — onde quer que o TouchDesigner e o Node.js 22+ rodem.
 
 ## É seguro rodar?
 

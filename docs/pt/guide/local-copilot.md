@@ -17,7 +17,7 @@ quiser montar um sistema inteiro.
 ::: tip Qual caminho é este?
 O [Claude Desktop](/pt/guide/install) é a rota sem terminal. Esta página é para
 rodar o tdmcp com um **modelo local** em vez de um assistente pago — precisa do
-[Node.js 20+](https://nodejs.org), como os caminhos do Codex e do Cursor.
+[Node.js 22+](https://nodejs.org), como os caminhos do Codex e do Cursor.
 :::
 
 ## Para que serve
@@ -41,7 +41,7 @@ Eles dirigem o *mesmo* projeto, então nada precisa se mover.
 
 - **[TouchDesigner](https://derivative.ca/download)** com a ponte ligada (o mesmo
   passo de uma linha de todo cliente — [veja abaixo](#turn-on-the-bridge)).
-- **[Node.js 20+](https://nodejs.org)** — usado para iniciar o copiloto.
+- **[Node.js 22+](https://nodejs.org)** — usado para iniciar o copiloto.
 - **[Ollama](https://ollama.com)** — o executor de modelos locais gratuito. O
   `tdmcp chat` o inicia para você se ele ainda não estiver rodando.
 

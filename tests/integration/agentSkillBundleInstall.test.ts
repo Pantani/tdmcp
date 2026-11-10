@@ -88,98 +88,98 @@ function parseStoredArchive(bytes: Buffer): Map<string, Buffer> {
 }
 
 describe("agent skill bundle -> real installer smoke", () => {
-  it.each([
-    "codex",
-    "claude",
-  ] as const)("installs, reports, and uninstalls the %s host payload without touching unrelated skills", (host) => {
-    const root = fixtureRepo();
-    const bundle = buildAgentSkillBundle({
-      repoRoot: root,
-      outputDir: join(root, "bundle"),
-      archiveMode: "skill",
-      bundleVersion: "smoke-1",
-      overwrite: false,
-      verifyReproducible: true,
-    });
-    const manifest = JSON.parse(readFileSync(bundle.manifest_path, "utf8")) as {
-      hosts: Array<{
+  it.each(["codex", "claude"] as const)(
+    "installs, reports, and uninstalls the %s host payload without touching unrelated skills",
+    (host) => {
+      const root = fixtureRepo();
+      const bundle = buildAgentSkillBundle({
+        repoRoot: root,
+        outputDir: join(root, "bundle"),
+        archiveMode: "skill",
+        bundleVersion: "smoke-1",
+        overwrite: false,
+        verifyReproducible: true,
+      });
+      const manifest = JSON.parse(readFileSync(bundle.manifest_path, "utf8")) as {
+        hosts: Array<{
+          host: SkillHost;
+          skills: Array<{
+            name: string;
+            tree_sha256: string;
+            source_path: string;
+            files: Array<{ path: string; sha256: string; size: number }>;
+          }>;
+        }>;
+        archives: Array<{ host: SkillHost; name: string; path: string }>;
+      };
+      const sourceRoot = join(bundle.output_dir, "hosts", host, "skills", "curated");
+      const projectRoot = join(root, `${host}-project`);
+      const installOptions = options(sourceRoot, root);
+
+      for (const archive of manifest.archives.filter((record) => record.host === host)) {
+        const archived = parseStoredArchive(readFileSync(join(bundle.output_dir, archive.path)));
+        expect([...archived.keys()]).toEqual([`${archive.name}/SKILL.md`]);
+        expect(archived.get(`${archive.name}/SKILL.md`)).toEqual(
+          readFileSync(join(sourceRoot, archive.name, "SKILL.md")),
+        );
+      }
+
+      const dry = manageAgentSkills(input(host, projectRoot, "install"), installOptions);
+      expect(dry.status).toBe("planned");
+      expect(dry.applied).toEqual([]);
+      expect(existsSync(dry.target_root)).toBe(false);
+
+      const installed = manageAgentSkills(
+        { ...input(host, projectRoot, "install"), dry_run: false },
+        installOptions,
+      );
+      expect(installed.status).toBe("applied");
+      expect(installed.skills.every((skill) => skill.state === "installed")).toBe(true);
+      const installedManifest = JSON.parse(readFileSync(installed.manifest_path, "utf8")) as {
         host: SkillHost;
+        target_root: string;
+        manifest_path: string;
+        installed_at: string;
+        updated_at: string;
+        source: { package_version: string; bundle_version: string };
         skills: Array<{
           name: string;
           tree_sha256: string;
           source_path: string;
           files: Array<{ path: string; sha256: string; size: number }>;
         }>;
-      }>;
-      archives: Array<{ host: SkillHost; name: string; path: string }>;
-    };
-    const sourceRoot = join(bundle.output_dir, "hosts", host, "skills", "curated");
-    const projectRoot = join(root, `${host}-project`);
-    const installOptions = options(sourceRoot, root);
+      };
+      const bundledHost = manifest.hosts.find((record) => record.host === host);
+      expect(installedManifest.host).toBe(host);
+      expect(installedManifest.source).toEqual({
+        kind: "bundled",
+        package_version: "7.6.5",
+        bundle_version: "smoke-1",
+      });
+      expect(installedManifest.skills).toEqual(bundledHost?.skills);
+      expect(installedManifest.skills.map((skill) => skill.name)).toEqual([...CURATED_SKILL_NAMES]);
+      expect(installedManifest.target_root).toBe(installed.target_root);
+      expect(installedManifest.manifest_path).toBe(installed.manifest_path);
+      expect(installedManifest.installed_at).toBe("2026-07-14T18:00:00.000Z");
 
-    for (const archive of manifest.archives.filter((record) => record.host === host)) {
-      const archived = parseStoredArchive(readFileSync(join(bundle.output_dir, archive.path)));
-      expect([...archived.keys()]).toEqual([`${archive.name}/SKILL.md`]);
-      expect(archived.get(`${archive.name}/SKILL.md`)).toEqual(
-        readFileSync(join(sourceRoot, archive.name, "SKILL.md")),
+      const status = manageAgentSkills(input(host, projectRoot, "status"), installOptions);
+      expect(status.status).toBe("no_change");
+      expect(status.skills.every((skill) => skill.state === "installed")).toBe(true);
+
+      const unrelated = join(installed.target_root, "user-authored-skill");
+      mkdirSync(unrelated);
+      writeFileSync(join(unrelated, "SKILL.md"), "do not remove");
+      const removed = manageAgentSkills(
+        { ...input(host, projectRoot, "uninstall"), dry_run: false },
+        installOptions,
       );
-    }
-
-    const dry = manageAgentSkills(input(host, projectRoot, "install"), installOptions);
-    expect(dry.status).toBe("planned");
-    expect(dry.applied).toEqual([]);
-    expect(existsSync(dry.target_root)).toBe(false);
-
-    const installed = manageAgentSkills(
-      { ...input(host, projectRoot, "install"), dry_run: false },
-      installOptions,
-    );
-    expect(installed.status).toBe("applied");
-    expect(installed.skills.every((skill) => skill.state === "installed")).toBe(true);
-    const installedManifest = JSON.parse(readFileSync(installed.manifest_path, "utf8")) as {
-      host: SkillHost;
-      target_root: string;
-      manifest_path: string;
-      installed_at: string;
-      updated_at: string;
-      source: { package_version: string; bundle_version: string };
-      skills: Array<{
-        name: string;
-        tree_sha256: string;
-        source_path: string;
-        files: Array<{ path: string; sha256: string; size: number }>;
-      }>;
-    };
-    const bundledHost = manifest.hosts.find((record) => record.host === host);
-    expect(installedManifest.host).toBe(host);
-    expect(installedManifest.source).toEqual({
-      kind: "bundled",
-      package_version: "7.6.5",
-      bundle_version: "smoke-1",
-    });
-    expect(installedManifest.skills).toEqual(bundledHost?.skills);
-    expect(installedManifest.skills.map((skill) => skill.name)).toEqual([...CURATED_SKILL_NAMES]);
-    expect(installedManifest.target_root).toBe(installed.target_root);
-    expect(installedManifest.manifest_path).toBe(installed.manifest_path);
-    expect(installedManifest.installed_at).toBe("2026-07-14T18:00:00.000Z");
-
-    const status = manageAgentSkills(input(host, projectRoot, "status"), installOptions);
-    expect(status.status).toBe("no_change");
-    expect(status.skills.every((skill) => skill.state === "installed")).toBe(true);
-
-    const unrelated = join(installed.target_root, "user-authored-skill");
-    mkdirSync(unrelated);
-    writeFileSync(join(unrelated, "SKILL.md"), "do not remove");
-    const removed = manageAgentSkills(
-      { ...input(host, projectRoot, "uninstall"), dry_run: false },
-      installOptions,
-    );
-    expect(removed.status).toBe("applied");
-    expect(readFileSync(join(unrelated, "SKILL.md"), "utf8")).toBe("do not remove");
-    for (const name of CURATED_SKILL_NAMES) {
-      expect(existsSync(join(installed.target_root, name))).toBe(false);
-    }
-  });
+      expect(removed.status).toBe("applied");
+      expect(readFileSync(join(unrelated, "SKILL.md"), "utf8")).toBe("do not remove");
+      for (const name of CURATED_SKILL_NAMES) {
+        expect(existsSync(join(installed.target_root, name))).toBe(false);
+      }
+    },
+  );
 
   it("preserves unowned collisions and blocks drift unless force is explicit", () => {
     const root = fixtureRepo();

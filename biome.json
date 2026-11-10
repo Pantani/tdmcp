@@ -1,9 +1,20 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
-  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/.claude", "!**/src/knowledge/data", "!api-surface", "!dist", "!coverage"]
+    "includes": [
+      "**",
+      "!**/.claude",
+      "!**/src/knowledge/data",
+      "!api-surface",
+      "!dist",
+      "!coverage"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -13,7 +24,9 @@
   },
   "linter": {
     "enabled": true,
-    "rules": { "recommended": true }
+    "rules": {
+      "preset": "recommended"
+    }
   },
   "javascript": {
     "formatter": {
@@ -24,6 +37,20 @@
   },
   "assist": {
     "enabled": true,
-    "actions": { "source": { "organizeImports": "on" } }
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "markdown": {
+    "formatter": {
+      "enabled": false
+    }
+  },
+  "yaml": {
+    "formatter": {
+      "enabled": false
+    }
   }
 }

@@ -11,7 +11,7 @@ import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -100,33 +100,34 @@ describe("applyRecipeImpl", () => {
         ],
       },
     },
-  ])("rejects recipe $label before creating any node when raw Python is disabled", async ({
-    extra,
-  }) => {
-    const recipe = RecipeSchema.parse({
-      id: "restricted_recipe",
-      name: "Restricted recipe",
-      nodes: [{ name: "out1", type: "nullTOP" }],
-      ...extra,
-    });
-    const createNode = vi.fn();
-    const ctx = {
-      ...makeCtx(),
-      allowRawPython: false,
-      client: { createNode },
-      recipes: {
-        get: (id: string) => (id === recipe.id ? recipe : undefined),
-        list: () => [{ id: recipe.id }],
-      },
-    } as unknown as ToolContext;
+  ])(
+    "rejects recipe $label before creating any node when raw Python is disabled",
+    async ({ extra }) => {
+      const recipe = RecipeSchema.parse({
+        id: "restricted_recipe",
+        name: "Restricted recipe",
+        nodes: [{ name: "out1", type: "nullTOP" }],
+        ...extra,
+      });
+      const createNode = vi.fn();
+      const ctx = {
+        ...makeCtx(),
+        allowRawPython: false,
+        client: { createNode },
+        recipes: {
+          get: (id: string) => (id === recipe.id ? recipe : undefined),
+          list: () => [{ id: recipe.id }],
+        },
+      } as unknown as ToolContext;
 
-    const result = await applyRecipeImpl(ctx, {
-      id: recipe.id,
-      parent_path: "/project1",
-    });
+      const result = await applyRecipeImpl(ctx, {
+        id: recipe.id,
+        parent_path: "/project1",
+      });
 
-    expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("raw Python is disabled");
-    expect(createNode).not.toHaveBeenCalled();
-  });
+      expect(result.isError).toBe(true);
+      expect(textOf(result)).toContain("raw Python is disabled");
+      expect(createNode).not.toHaveBeenCalled();
+    },
+  );
 });

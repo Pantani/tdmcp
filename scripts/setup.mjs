@@ -35,8 +35,8 @@ function run(cmd, args) {
 
 // 1. Node version gate.
 const major = Number(process.versions.node.split(".")[0]);
-if (Number.isFinite(major) && major < 20) {
-  say(`✖ Node ${process.versions.node} detected — tdmcp needs Node 20 or newer.`);
+if (Number.isFinite(major) && major < 22) {
+  say(`✖ Node ${process.versions.node} detected — tdmcp needs Node 22 or newer.`);
   say("  Install it from https://nodejs.org and run `npm run setup` again.");
   process.exit(1);
 }

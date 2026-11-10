@@ -203,22 +203,22 @@ describe("turn receipt schema and collector", () => {
     expect(emit).toHaveBeenCalledTimes(1);
   });
 
-  it.each([
-    "cancelled",
-    "max_steps",
-  ] as const)("emits exactly one receipt for the %s terminal path", async (terminalStatus) => {
-    const emit = vi.fn();
-    const collector = createTurnReceiptCollector({
-      requestedTier: "chat",
-      effectiveTier: "chat",
-      goalSummaryFromLatestUserMessage: "chat only",
-      onReceipt: emit,
-    });
-    const receipt = await collector.finalize({ terminalStatus });
-    await collector.finalize({ terminalStatus: "success" });
-    expect(receipt.terminal_status).toBe(terminalStatus);
-    expect(emit).toHaveBeenCalledTimes(1);
-  });
+  it.each(["cancelled", "max_steps"] as const)(
+    "emits exactly one receipt for the %s terminal path",
+    async (terminalStatus) => {
+      const emit = vi.fn();
+      const collector = createTurnReceiptCollector({
+        requestedTier: "chat",
+        effectiveTier: "chat",
+        goalSummaryFromLatestUserMessage: "chat only",
+        onReceipt: emit,
+      });
+      const receipt = await collector.finalize({ terminalStatus });
+      await collector.finalize({ terminalStatus: "success" });
+      expect(receipt.terminal_status).toBe(terminalStatus);
+      expect(emit).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("fails closed to a minimal action when typed evidence is malformed at runtime", async () => {
     const collector = createTurnReceiptCollector({

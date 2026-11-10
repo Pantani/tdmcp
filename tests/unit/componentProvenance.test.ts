@@ -227,33 +227,33 @@ describe("recoverable TOX/provenance pair promotion", () => {
     expect(readdirSync(dir).filter((name) => name.includes(".tdmcp-"))).toEqual([]);
   });
 
-  it.each<PairPromotionPhase>([
-    "promoted_tox",
-    "promoted_provenance",
-  ])("restores the last-known-good pair after induced %s failure", async (failurePhase) => {
-    const dir = workspace();
-    const pair = await preparedPair(dir);
-    writeFileSync(pair.final, "OLD-TOX", "utf8");
-    writeFileSync(`${pair.final}.provenance.json`, "OLD-PROVENANCE", "utf8");
+  it.each<PairPromotionPhase>(["promoted_tox", "promoted_provenance"])(
+    "restores the last-known-good pair after induced %s failure",
+    async (failurePhase) => {
+      const dir = workspace();
+      const pair = await preparedPair(dir);
+      writeFileSync(pair.final, "OLD-TOX", "utf8");
+      writeFileSync(`${pair.final}.provenance.json`, "OLD-PROVENANCE", "utf8");
 
-    await expect(
-      promoteComponentPair({
-        temp_tox_path: pair.temp,
-        final_tox_path: pair.final,
-        provenance_bytes: pair.provenance.bytes,
-        operation_id: OPERATION_ID,
-        hooks: {
-          onPhase: (phase) => {
-            if (phase === failurePhase) throw new Error(`induced ${failurePhase}`);
+      await expect(
+        promoteComponentPair({
+          temp_tox_path: pair.temp,
+          final_tox_path: pair.final,
+          provenance_bytes: pair.provenance.bytes,
+          operation_id: OPERATION_ID,
+          hooks: {
+            onPhase: (phase) => {
+              if (phase === failurePhase) throw new Error(`induced ${failurePhase}`);
+            },
           },
-        },
-      }),
-    ).rejects.toThrow(/promotion failed/);
+        }),
+      ).rejects.toThrow(/promotion failed/);
 
-    expect(readFileSync(pair.final, "utf8")).toBe("OLD-TOX");
-    expect(readFileSync(`${pair.final}.provenance.json`, "utf8")).toBe("OLD-PROVENANCE");
-    expect(readdirSync(dir).filter((name) => name.includes(".tdmcp-"))).toEqual([]);
-  });
+      expect(readFileSync(pair.final, "utf8")).toBe("OLD-TOX");
+      expect(readFileSync(`${pair.final}.provenance.json`, "utf8")).toBe("OLD-PROVENANCE");
+      expect(readdirSync(dir).filter((name) => name.includes(".tdmcp-"))).toEqual([]);
+    },
+  );
 
   it("removes a newly-created partial pair after failure", async () => {
     const dir = workspace();

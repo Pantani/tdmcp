@@ -305,18 +305,15 @@ describe("buildAgentSkillBundle", () => {
     expect(existsSync(join(outside, "bundle.manifest.json"))).toBe(false);
   });
 
-  it.each([
-    "",
-    " contains space",
-    "../bad",
-    "bad/value",
-    "x".repeat(65),
-  ])("rejects invalid bundle version %j without creating output", (bundleVersion) => {
-    const root = fixtureRepo();
-    const output = join(root, "out", "agent-skills");
-    expect(() => build(root, { bundleVersion })).toThrow(/version/u);
-    expect(existsSync(output)).toBe(false);
-  });
+  it.each(["", " contains space", "../bad", "bad/value", "x".repeat(65)])(
+    "rejects invalid bundle version %j without creating output",
+    (bundleVersion) => {
+      const root = fixtureRepo();
+      const output = join(root, "out", "agent-skills");
+      expect(() => build(root, { bundleVersion })).toThrow(/version/u);
+      expect(existsSync(output)).toBe(false);
+    },
+  );
 });
 
 describe("build-agent-skills CLI", () => {

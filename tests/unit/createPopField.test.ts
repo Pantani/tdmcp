@@ -23,7 +23,7 @@ interface PanelControl {
 }
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -140,7 +140,7 @@ describe("create_pop_field", () => {
       unverified?: { pop_op_types?: unknown; render_path?: string };
     };
     expect(Array.isArray(data.unverified?.pop_op_types)).toBe(true);
-    expect((data.unverified?.pop_op_types as string[]).length).toBeGreaterThan(0);
+    expect((data.unverified?.pop_op_types as string[] | undefined)?.length).toBeGreaterThan(0);
     expect(data.unverified?.render_path).toContain("poptoSOP");
   });
 

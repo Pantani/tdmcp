@@ -20,7 +20,7 @@ interface CreatedNodeBody {
 }
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "warn" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "warn" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

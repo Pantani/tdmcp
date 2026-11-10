@@ -93,20 +93,23 @@ describe("addCustomParametersImpl", () => {
   it.each([
     { mode: "EXPRESSION" as const, expression: "run('caller code')" },
     { mode: "BIND" as const, bind_expression: "op('caller')" },
-  ])("rejects caller-supplied $mode code before the bridge when raw Python is disabled", async (fields) => {
-    const apply = vi.fn();
-    const args = addCustomParametersSchema.parse({
-      comp_path: "/project1/sys",
-      operations: [{ action: "edit_parameter", name: "Gain", fields }],
-    });
-    const ctx = { ...fakeCtx(apply), allowRawPython: false };
+  ])(
+    "rejects caller-supplied $mode code before the bridge when raw Python is disabled",
+    async (fields) => {
+      const apply = vi.fn();
+      const args = addCustomParametersSchema.parse({
+        comp_path: "/project1/sys",
+        operations: [{ action: "edit_parameter", name: "Gain", fields }],
+      });
+      const ctx = { ...fakeCtx(apply), allowRawPython: false };
 
-    const result = await addCustomParametersImpl(ctx, args);
+      const result = await addCustomParametersImpl(ctx, args);
 
-    expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("raw Python is disabled");
-    expect(apply).not.toHaveBeenCalled();
-  });
+      expect(result.isError).toBe(true);
+      expect(textOf(result)).toContain("raw Python is disabled");
+      expect(apply).not.toHaveBeenCalled();
+    },
+  );
 
   it("keeps constant custom-parameter edits available when raw Python is disabled", async () => {
     const apply = vi.fn(async () => report());

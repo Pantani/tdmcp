@@ -236,7 +236,8 @@ describe("learnFromMyCorpusImpl", () => {
     const result = await learnFromMyCorpusImpl(fakeCtx(vault), defaults());
     expect(result.isError).not.toBe(true);
     const data = dataOf(result);
-    const warnings = (data?.corpus_style as Record<string, unknown>).warnings as string[];
+    const warnings = ((data?.corpus_style as Record<string, unknown> | undefined)?.warnings ??
+      []) as string[];
     expect(warnings.some((w) => w.includes("Components"))).toBe(true);
     expect(warnings.some((w) => w.includes("Looks"))).toBe(true);
   });

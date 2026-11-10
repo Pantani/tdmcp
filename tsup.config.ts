@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["src/index.ts", "src/cli/agent.ts"],
   format: ["esm"],
-  target: "node20",
+  target: "node22",
   outDir: "dist",
   dts: true,
   sourcemap: true,
