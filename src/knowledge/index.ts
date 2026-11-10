@@ -587,8 +587,13 @@ export class KnowledgeBase {
     const className = this.pythonLookup().get(compactKey(name)) ?? name;
     const cached = this.pyDocCache.get(className);
     if (cached !== undefined) return cached ?? undefined;
-    const file = join(this.source.pythonDir, `${className}.json`);
-    const cls = existsSync(file) ? (this.readJson(file) as PythonClass | undefined) : undefined;
+    // The imported data names files with underscores for spaces ("Error_DAT.json")
+    // while the class name keeps the space ("Error DAT").
+    const pythonDir = this.source.pythonDir;
+    const file = [className, className.replace(/ /g, "_")]
+      .map((stem) => join(pythonDir, `${stem}.json`))
+      .find((candidate) => existsSync(candidate));
+    const cls = file ? (this.readJson(file) as PythonClass | undefined) : undefined;
     this.pyDocCache.set(className, cls ?? null);
     return cls;
   }

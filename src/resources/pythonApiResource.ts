@@ -1,11 +1,11 @@
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
+import { decodeResourceValue, firstVar, jsonContents, type ResourceRegistrar } from "./shared.js";
 
 export const registerPythonApiResource: ResourceRegistrar = (server, ctx) => {
   const template = new ResourceTemplate("tdmcp://python-api/{class_name}", {
     list: async () => ({
       resources: ctx.knowledge.listPythonClasses().map((cls) => ({
-        uri: `tdmcp://python-api/${cls.className}`,
+        uri: `tdmcp://python-api/${encodeURIComponent(cls.className)}`,
         name: `Python: ${cls.className}`,
         description: `${cls.methodCount} methods, ${cls.memberCount} members`,
         mimeType: "application/json",
@@ -30,7 +30,7 @@ export const registerPythonApiResource: ResourceRegistrar = (server, ctx) => {
       mimeType: "application/json",
     },
     async (uri, variables) => {
-      const className = firstVar(variables.class_name);
+      const className = decodeResourceValue(firstVar(variables.class_name));
       const cls = ctx.knowledge.getPythonClass(className);
       if (!cls) return jsonContents(uri, { error: `Python class "${className}" not found.` });
       return jsonContents(uri, cls);
