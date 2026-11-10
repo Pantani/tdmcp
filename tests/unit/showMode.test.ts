@@ -480,48 +480,45 @@ describe("runShowMode mutation and rollback", () => {
     expect(fixture.ctx.setPerformMode).not.toHaveBeenCalled();
   });
 
-  it.each([
-    "throw",
-    "malformed",
-    "false_report",
-    "false_readback",
-    "readback_error",
-  ])("attempts one OFF rollback and no second enter after %s", async (failure) => {
-    const fixture = deps({
-      ctx: context(
-        failure === "false_readback"
-          ? [false, false, false]
-          : failure === "readback_error"
-            ? [false, new Error("lost response"), false]
-            : [false, false],
-      ),
-    });
-    if (failure === "throw") {
-      fixture.ctx.setPerformMode
-        .mockRejectedValueOnce(new Error("timeout"))
-        .mockResolvedValueOnce(write(false));
-    } else if (failure === "malformed") {
-      fixture.ctx.setPerformMode
-        .mockResolvedValueOnce({ enabled: true } as TdPerformModeState)
-        .mockResolvedValueOnce(write(false));
-    } else if (failure === "false_report") {
-      fixture.ctx.setPerformMode
-        .mockResolvedValueOnce({ ...write(true), stored: false })
-        .mockResolvedValueOnce(write(false));
-    }
-    const result = await runShowMode([PROFILE], fixture.injected);
-    expect(result).toMatchObject({
-      code: 3,
-      report: {
-        overall: "FAIL",
-        perform_after: false,
-        action_applied: "rolled_back",
-        rollback: { status: "pass" },
-      },
-    });
-    expect(fixture.ctx.setPerformMode).toHaveBeenCalledTimes(2);
-    expect(fixture.ctx.setPerformMode.mock.calls).toEqual([[true], [false]]);
-  });
+  it.each(["throw", "malformed", "false_report", "false_readback", "readback_error"])(
+    "attempts one OFF rollback and no second enter after %s",
+    async (failure) => {
+      const fixture = deps({
+        ctx: context(
+          failure === "false_readback"
+            ? [false, false, false]
+            : failure === "readback_error"
+              ? [false, new Error("lost response"), false]
+              : [false, false],
+        ),
+      });
+      if (failure === "throw") {
+        fixture.ctx.setPerformMode
+          .mockRejectedValueOnce(new Error("timeout"))
+          .mockResolvedValueOnce(write(false));
+      } else if (failure === "malformed") {
+        fixture.ctx.setPerformMode
+          .mockResolvedValueOnce({ enabled: true } as TdPerformModeState)
+          .mockResolvedValueOnce(write(false));
+      } else if (failure === "false_report") {
+        fixture.ctx.setPerformMode
+          .mockResolvedValueOnce({ ...write(true), stored: false })
+          .mockResolvedValueOnce(write(false));
+      }
+      const result = await runShowMode([PROFILE], fixture.injected);
+      expect(result).toMatchObject({
+        code: 3,
+        report: {
+          overall: "FAIL",
+          perform_after: false,
+          action_applied: "rolled_back",
+          rollback: { status: "pass" },
+        },
+      });
+      expect(fixture.ctx.setPerformMode).toHaveBeenCalledTimes(2);
+      expect(fixture.ctx.setPerformMode.mock.calls).toEqual([[true], [false]]);
+    },
+  );
 
   it("reports failed and unverified rollback states without a third mutation", async () => {
     const failed = deps({ ctx: context([false, false, true]) });
@@ -567,7 +564,7 @@ describe("runShowMode bounded output and first-class route", () => {
   });
 
   const routeServer = setupServer();
-  beforeAll(() => routeServer.listen({ onUnhandledRequest: "error" }));
+  beforeAll(() => routeServer.listen({ onUnhandledFrame: "error" }));
   afterEach(() => routeServer.resetHandlers());
   afterAll(() => routeServer.close());
 

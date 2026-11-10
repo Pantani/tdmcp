@@ -13,7 +13,7 @@ import { Vault } from "../../src/vault/index.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -55,7 +55,7 @@ describe("captureThumbnail", () => {
   // ── no topPath: cheap no-op, no bridge call ────────────────────────────────
   it("returns a warning and writes nothing when no topPath is given (no bridge call)", async () => {
     await withVault(async (vault) => {
-      // onUnhandledRequest:"error" is set globally — any HTTP request would fail the test,
+      // onUnhandledFrame:"error" is set globally — any HTTP request would fail the test,
       // so reaching this assertion proves no bridge call fired.
       const result = await captureThumbnail(makeClient(), vault, "Recipes", "noTop", {});
       expect(result.imageRel).toBeNull();

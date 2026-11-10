@@ -103,21 +103,26 @@ describe("invoke_registered_prompt", () => {
     [{ required: "ok", extra: "private-value" }, "unrecognized_keys"],
     [{ required: 123 }, "invalid_type"],
     [{}, "invalid_type"],
-  ])("rejects invalid registered arguments without echoing values", async (arguments_, issueCode) => {
-    const handler = vi.fn(() => userText("should not run"));
-    const registry = registryWith({ required: z.string().min(2) }, handler);
+  ])(
+    "rejects invalid registered arguments without echoing values",
+    async (arguments_, issueCode) => {
+      const handler = vi.fn(() => userText("should not run"));
+      const registry = registryWith({ required: z.string().min(2) }, handler);
 
-    const result = await invokeRegisteredPromptImpl(registry, {
-      name: "synthetic_prompt",
-      arguments: arguments_,
-    });
+      const result = await invokeRegisteredPromptImpl(registry, {
+        name: "synthetic_prompt",
+        arguments: arguments_,
+      });
 
-    expect(handler).not.toHaveBeenCalled();
-    expect(result.isError).toBe(true);
-    expect(structured(result).error?.code).toBe("invalid_arguments");
-    expect(structured(result).error?.issues?.some((issue) => issue.code === issueCode)).toBe(true);
-    expect(JSON.stringify(result)).not.toContain("private-value");
-  });
+      expect(handler).not.toHaveBeenCalled();
+      expect(result.isError).toBe(true);
+      expect(structured(result).error?.code).toBe("invalid_arguments");
+      expect(structured(result).error?.issues?.some((issue) => issue.code === issueCode)).toBe(
+        true,
+      );
+      expect(JSON.stringify(result)).not.toContain("private-value");
+    },
+  );
 
   it("returns a typed exact-name failure and never guesses aliases", async () => {
     const registry = registryWith({}, () => userText("ok"));
@@ -200,7 +205,9 @@ describe("invoke_registered_prompt", () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(structured(result).error?.code).toBe("handler_timeout");
-    expect((handler.mock.calls[0]?.[1] as LocalPromptHandlerExtra).signal.aborted).toBe(true);
+    expect(
+      (handler.mock.calls[0]?.[1] as LocalPromptHandlerExtra | undefined)?.signal.aborted,
+    ).toBe(true);
   });
 
   it("does not call a handler for a pre-aborted turn", async () => {

@@ -46,7 +46,7 @@ describe("package install metadata", () => {
     });
     expect(pnpmWorkspace.overrides).toMatchObject({
       "@bottobot/td-mcp>cheerio": "1.0.0-rc.12",
-      vite: "6.4.3",
+      vite: "6.4.6",
     });
     expect(pnpmWorkspace.onlyBuiltDependencies).toEqual(["esbuild", "msw"]);
     expect(pnpmWorkspace.allowBuilds).toEqual({ esbuild: true, msw: true });

@@ -64,7 +64,7 @@ const BASE_B = "http://127.0.0.2:3939";
 const BASE_C = "http://127.0.0.3:3939";
 
 const server = setupServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

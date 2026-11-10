@@ -261,18 +261,17 @@ describe("createLookBankImpl — set_ab", () => {
 });
 
 describe("createLookBankImpl — name guards", () => {
-  it.each([
-    "store",
-    "recall",
-    "delete",
-  ] as const)("%s without a slot returns isError naming the missing slot", async (action) => {
-    const exec = reportMock({});
-    const result = await createLookBankImpl(fakeCtx(exec), { ...DEFAULTS, action });
-    expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("slot");
-    // The guard short-circuits before any bridge call.
-    expect(exec).not.toHaveBeenCalled();
-  });
+  it.each(["store", "recall", "delete"] as const)(
+    "%s without a slot returns isError naming the missing slot",
+    async (action) => {
+      const exec = reportMock({});
+      const result = await createLookBankImpl(fakeCtx(exec), { ...DEFAULTS, action });
+      expect(result.isError).toBe(true);
+      expect(textOf(result)).toContain("slot");
+      // The guard short-circuits before any bridge call.
+      expect(exec).not.toHaveBeenCalled();
+    },
+  );
 
   it("set_ab without slot_a or slot_b returns isError", async () => {
     const exec = reportMock({});

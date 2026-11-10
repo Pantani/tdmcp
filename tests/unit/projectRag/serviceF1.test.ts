@@ -47,7 +47,7 @@ const server = setupServer(
   http.get(RAW_TOX, () => HttpResponse.arrayBuffer(TOX_BYTES.buffer)),
 );
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

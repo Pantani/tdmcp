@@ -308,20 +308,18 @@ describe("enhance_build bounded visual critique core", () => {
     expect(deps.commit).not.toHaveBeenCalled();
   });
 
-  it.each([
-    "pending",
-    "expired",
-    "cancelled",
-    "failed",
-  ] as const)("maps native %s to Keep + UNVERIFIED with no commit", async (state) => {
-    const deps = dependencies({
-      approve: vi.fn(async (): Promise<VisualApprovalResult> => ({ state, choice: "Apply" })),
-    });
-    const result = await run(deps, { autoApply: true });
-    expect(result.status).toBe("UNVERIFIED");
-    expect(result.iterations[0]?.decision?.choice).toBe("Keep");
-    expect(deps.commit).not.toHaveBeenCalled();
-  });
+  it.each(["pending", "expired", "cancelled", "failed"] as const)(
+    "maps native %s to Keep + UNVERIFIED with no commit",
+    async (state) => {
+      const deps = dependencies({
+        approve: vi.fn(async (): Promise<VisualApprovalResult> => ({ state, choice: "Apply" })),
+      });
+      const result = await run(deps, { autoApply: true });
+      expect(result.status).toBe("UNVERIFIED");
+      expect(result.iterations[0]?.decision?.choice).toBe("Keep");
+      expect(deps.commit).not.toHaveBeenCalled();
+    },
+  );
 
   it("requires explicit Apply, then verifies exact CAS readback and after evidence", async () => {
     const commits: VisualCommitRequest[] = [];

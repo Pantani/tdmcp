@@ -167,7 +167,7 @@ const makeCtx = () =>
   buildToolContext(loadConfig({ XDG_CONFIG_HOME: sandbox }), { logger: silentLogger });
 
 beforeAll(async () => {
-  bridge.server.listen({ onUnhandledRequest: "error" });
+  bridge.server.listen({ onUnhandledFrame: "error" });
   const tools = captureTools(makeCtx(), [...layer1Registrars, ...layer2Registrars]);
   for (const tool of tools) {
     outcomes.push(await sweepTool(tool, bridge, ARG_OVERRIDES[tool.name]));

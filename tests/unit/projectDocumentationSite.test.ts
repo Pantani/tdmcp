@@ -24,7 +24,7 @@ import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 // Shared MSW server
 // ---------------------------------------------------------------------------
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 

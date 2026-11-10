@@ -17,7 +17,7 @@ import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer, TD_BASE } from "../helpers/tdMock.js";
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -107,9 +107,9 @@ describe("buildIsfMapping + applyShadertoyUniforms sugar", () => {
     // so changing the swatch at runtime drives the shader (not just build-time).
     const tint = mapping.uniforms.find((u) => u.name === "tint");
     expect(Array.isArray(tint?.expr)).toBe(true);
-    expect((tint?.expr as string[])[0]).toMatch(/parent\(\)\.par\.Tintr\.eval\(\)/);
-    expect((tint?.expr as string[])[1]).toMatch(/parent\(\)\.par\.Tintg\.eval\(\)/);
-    expect((tint?.expr as string[])[2]).toMatch(/parent\(\)\.par\.Tintb\.eval\(\)/);
+    expect((tint?.expr as string[] | undefined)?.[0]).toMatch(/parent\(\)\.par\.Tintr\.eval\(\)/);
+    expect((tint?.expr as string[] | undefined)?.[1]).toMatch(/parent\(\)\.par\.Tintg\.eval\(\)/);
+    expect((tint?.expr as string[] | undefined)?.[2]).toMatch(/parent\(\)\.par\.Tintb\.eval\(\)/);
   });
 
   it("caps ISF image inputs at iChannel3 and warns on overflow", () => {

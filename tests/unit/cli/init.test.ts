@@ -198,18 +198,14 @@ describe("parseInitArgs", () => {
     expect("error" in r).toBe(true);
   });
 
-  it.each([
-    "--bridge-dir",
-    "--token",
-    "--profile",
-    "--td-path",
-    "--clients",
-    "--skip",
-  ])("rejects %s without a value", (flag) => {
-    const r = parseInitArgs([flag]);
-    expect("error" in r).toBe(true);
-    if ("error" in r) expect(r.code).toBe(2);
-  });
+  it.each(["--bridge-dir", "--token", "--profile", "--td-path", "--clients", "--skip"])(
+    "rejects %s without a value",
+    (flag) => {
+      const r = parseInitArgs([flag]);
+      expect("error" in r).toBe(true);
+      if ("error" in r) expect(r.code).toBe(2);
+    },
+  );
 
   it("rejects unexpected positional arguments", () => {
     const r = parseInitArgs(["project.td"]);

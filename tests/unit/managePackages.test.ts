@@ -151,8 +151,8 @@ describe("manage_packages MCP tool", () => {
     );
     expect(result.isError).toBeUndefined();
     const gate = (
-      result.structuredContent?.report as { checks: { id: string; status: string }[] }
-    ).checks.find((c) => c.id === "version-gate");
+      result.structuredContent?.report as { checks: { id: string; status: string }[] } | undefined
+    )?.checks.find((c) => c.id === "version-gate");
     expect(gate?.status).toBe("ok");
   });
 

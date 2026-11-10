@@ -35,7 +35,7 @@ const FIXTURE_TOX = join(TMP_DIR, "TDGS.tox");
 writeFileSync(FIXTURE_TOX, "stub");
 
 const server = makeTdServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => {
   server.close();

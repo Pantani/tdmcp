@@ -144,7 +144,7 @@ Wi-Fi público sem firewall. Desenvolvedores podem reforçar isso — veja
 
 O Claude Desktop (acima) é a rota sem terminal. Para **Claude Code** ou **Cursor**,
 conecte o tdmcp a partir do código-fonte — você vai precisar do
-**[Node.js 20+](https://nodejs.org)**. (O **Codex** tem o próprio passo a passo na
+**[Node.js 22+](https://nodejs.org)**. (O **Codex** tem o próprio passo a passo na
 [página do Codex](/pt/guide/codex); o mesmo build a partir do código-fonte também
 roda o [copiloto local](/pt/guide/local-copilot).)
 

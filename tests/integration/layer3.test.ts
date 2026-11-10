@@ -7,7 +7,7 @@ import { silentLogger } from "../../src/utils/logger.js";
 import { makeTdServer } from "../helpers/tdMock.js";
 
 const mock = makeTdServer();
-beforeAll(() => mock.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => mock.listen({ onUnhandledFrame: "error" }));
 afterEach(() => mock.resetHandlers());
 afterAll(() => mock.close());
 

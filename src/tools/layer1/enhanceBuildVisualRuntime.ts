@@ -48,8 +48,7 @@ function endpointFromDescriptor(ctx: ToolContext): { endpoint: string; model: st
   if (!ctx.llm) throw new Error("vision_unverified");
   const descriptor = ctx.llm.describe?.();
   if (
-    !descriptor ||
-    descriptor.transport !== "openai_compatible" ||
+    descriptor?.transport !== "openai_compatible" ||
     descriptor.locality !== "loopback" ||
     descriptor.configuredModel !== EXACT_MODEL ||
     !descriptor.endpointOrigin
@@ -106,8 +105,7 @@ function exactManifest(raw: unknown, fingerprint: string, now: number) {
   if (!Number.isFinite(expiresAtMs) || expiresAtMs <= now) throw new Error("vision_unverified");
   const image = manifest.capabilities.find((capability) => capability.id === "image_input");
   if (
-    !image ||
-    image.status !== "PASS" ||
+    image?.status !== "PASS" ||
     image.samples.passed < 1 ||
     image.samples.failed !== 0 ||
     image.samples.unverified !== 0

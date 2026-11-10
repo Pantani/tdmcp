@@ -76,7 +76,7 @@ const server = setupServer(
   http.get(SMITHSONIAN_SEARCH, () => HttpResponse.json(SMITHSONIAN_RESPONSE)),
 );
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => {
   server.resetHandlers();
   vi.unstubAllEnvs();

@@ -242,7 +242,7 @@ export function validateExactResource(resource: URL | undefined, policy: OAuthPo
 }
 
 export function validateScopes(scopes: readonly string[] | undefined): [typeof OAUTH_SCOPE] {
-  if (!scopes || scopes.length !== 1 || scopes[0] !== OAUTH_SCOPE) {
+  if (scopes?.length !== 1 || scopes[0] !== OAUTH_SCOPE) {
     throw new Error(`OAuth scope must be exactly ${OAUTH_SCOPE}`);
   }
   return [OAUTH_SCOPE];
